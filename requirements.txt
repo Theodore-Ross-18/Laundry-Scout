@@ -1,0 +1,11 @@
+# IDE: VS Code / Android Studio
+
+# Flutter - Framework (Android, IOS, Web)
+# Dart - Programming Language
+
+# Sqlite - Local DB
+# Firebase or Supabase - Cloud or online db
+
+# Github - Version Control and Repository
+
+# Figma - UI Design

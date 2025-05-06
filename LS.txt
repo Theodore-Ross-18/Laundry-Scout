@@ -1,0 +1,78 @@
+CHAPTER 1
+INTRODUCTION
+
+Laundry has always been an important part of our daily routine, helping us to stay clean and organized. As more people move to urban areas for work, education, and other personal reasons, the need for convenient and reliable laundry services has grown. Laundry shops have therefore started appearing in locations such as close to residential areas, universities, and bustling commercial or business districts.
+
+Laundry shops are an advantage to communities, especially for people who are in need of quick and affordable services due to busy schedules, multiple responsibilities, or physical limitations and disabilities. It offers convenient and reliable options instead of doing laundry manually at home. In addition to the convenience and reliability, the close proximity of laundry shops to residential areas makes them even more accessible and beneficial.
+
+A mobile application will provide easy access to laundry services by using a mobile device and internet connection. It will include features such as service booking, order tracking, push notifications to help manage laundry services to improve efficiency in processing customer orders and reduce the use of manual methods. The app will be accessed over an internet connection, which will allow users to interact and place orders with a simple and intuitive design that will allow users to easily browse services, schedule pick-ups and deliveries, and track orders.
+
+Though most individuals are still having trouble finding trustworthy laundry services. They often face problems such as irregular availability of laundry services, too much time needed to schedule pickups or delivery, and a lack of service alternatives, all of which cause frustration. For laundry shops, running a business can be quite equally challenging as they often face problems such as managing their operational costs, maintaining equipment, and ensuring timely service delivery. Despite increasing the demands for better solutions, such issues continue to waste resources as well as time. These problems inspired the development of an application with the goal of improving laundry services and making the process more easier for customers and business owners.
+
+Project Context
+
+Laundry services are important for protecting hygiene and comfort in our daily lives, but lots of people struggle to find effective and reliable laundry solutions. The problem lies in the fragmented nature of laundry services, which makes it difficult for customers to find nearby laundry businesses, manage service requests, or track delivery schedules properly. This gap in service accessibility and management will likely lead to ineffectiveness, wasted time, and dissatisfaction among the users.
+
+Most people currently rely on manual methods to find and manage laundry services, which often leads to poor scheduling, miscommunication, and inconsistent service quality. Customers usually need to search for laundry shops, negotiate conditions, and coordinate with couriers, which can take a lot of time and error-prone. Laundry shops also face challenges in improving their operations, such as managing pick-ups, drop-offs, and deliveries more efficiently. Customers often deal with problems like inflexible schedules, late deliveries, and unclear service procedures. At the same time, many businesses struggle to simplify their processes and use modern technology. Other common issues include shortages in water supply and unexpected power outages, which can cause delays in services and affect customer experience. These problems show the need for the simplest possible solution that combines location-based service finding with effective management tools.
+
+As the proponents of our capstone project, we understand the importance of improving systems that have a direct influence on daily life. Our study experience as researchers and our collaboration with Ma'am Keren Joyce C. Rojas, the owner of Don Ernesto Laundry Shop, has pointed out the need for innovation in the laundry service industry. The Laundry Scout app will connect service providers and customers through a platform that will allow users to find nearby laundry shops based on their laundry needs and manage laundry tasks such as scheduling and order tracking. This project aligns with our goal of improving systems through innovation in technology while also meeting a significant need in the laundry service industry.
+
+Purpose and Description
+
+The purpose of Laundry Scout is to connect users with laundry services easily using a location-based app. It helps users find, book, and manage laundry services while giving business owners the tools to improve their operations. The app will solve common problems when it comes to inefficiency in scheduling and management of orders, lack of clear information such as operating hours, pricing, and service types, and limited access to nearby laundry shops.
+
+The application contains a login and a sign-up page as the welcome page for users, where they may also create an account if the user does not already have one. When the user selects the “Sign Up” button, they are being sent to the “Select Which User” page, where they are going to choose whether they are just a regular user or a business owner.
+To strengthen the application's security, essential features will be implemented, which will include multi-factor authentication for login, signup, and password recovery via email verification, to ensure users can access and use the application securely.
+
+Once the user completes the sign-up procedure and selects either "User" or "Business Owner" on the “Select Which User” page, they will be sent to the “Get Started” page, which is separated into two categories: one for Users and one for Business Owners. Users are then asked to provide personal information, which includes their First and Last name, Mobile Number, and Email Address. On the other side, Business Owners are asked to provide their First and Last name, phone number, business name, business address, type of business (e.g., self-service laundry, full-service laundry, pickup-and-delivery service, etc.) and a business/government permit for verification inside the system. After the user’s or business owner’s account has been successfully verified into the system, they will be directed to their respective homepage or the Business Owner's dashboard. The Laundry Scout system is divided into two categories: Users and Business Owners/Admin. The app's user interface and access controls will differ depending on the category they belong to.
+
+The following are users of the Laundry Scout: Integrated Location and Service Management System:
+
+For Users (Customers):
+
+Location Search: Users will be able to check nearby laundry shops with the app’s geolocation feature.
+Service Comparison: Users will be able to browse information about services offered, pricing, ratings, and reviews.
+Laundry Service Filters: Users will be able to choose what kind of laundry services they wish to choose such as drop-off, wash and fold, ironing, or dry clean.
+Booking: Users will be able to schedule laundry services directly through the app, to secure the availability of the shop and reduce waiting times.
+Order Tracking: Users will be able to check the status of laundry orders from drop-off to pickup or delivery in just seconds.
+Personalization: Users will be able to create their own personalizations, such as saving their favorite shops, checking prior orders, and receiving recommendations based on what they want.
+
+For Laundry Shop Owners:
+
+Service Dashboard: This will help the owner/s to handle bookings, track customer orders, and adjust service offers and availability efficiently.
+
+Analytics and Reports: This will help the owner(s) to gain insights into customer behavior and reviews, as well as the general performance of their shop, in order to optimize operations.
+
+Engagement Tools: This will help the owner/s to respond to customer inquiries, monitor reviews, and establish trust through transparent communication.
+
+Laundry Scout will be an app that will help users find and schedule laundry services effortlessly. It will connect customers who will be in need of laundry done with nearby laundry shops. The app will show available shops using location services and help users compare pricing with other shops, ratings, and reviews. Users will also be able to filter services like wash and fold, ironing, or dry cleaning. They will schedule appointments and track their orders from pickup to delivery, save favorite shops, and get recommendations based on their needs. For Business Owners (Admins), Laundry Scout will offer a dashboard to handle customer orders, update services, and track customer orders easily. The app will also provide a review feature to help businesses understand customer needs and improve their services. In addition, admins will be able to communicate with customers through the chat page, allowing them to answer questions and manage reviews.
+
+Laundry Scout stands out with its two different interfaces: one for users and one for business owners, built to satisfy their needs. The app uses a geolocation feature to locate nearby laundry shops, real-time order updates, and customized suggestions to create a smoother experience for the customers. The main goal of Laundry Scout is to make it easier for customers to identify, book, and manage laundry services with a simple and efficient mobile app. Laundry Scout also helps small businesses by finding more customers and running their services more smoothly. To make sure the app works properly for its users, the proponents will conduct user testing and surveys to gain insight and to ensure the efficiency and usability of the app.
+
+Objectives
+
+General Objective
+
+To develop a system called "Laundry Scout: Integrated Location and Service Management App," a mobile application will be developed to help customers easily find, book, and manage laundry services. The app connects users with laundry businesses, which makes the process faster and convenient. The system also aims to improve accessibility, simplify service coordination, and help businesses run more smoothly by using location-based search with the geolocation feature, real-time tracking, and management tools. The system will be built appropriately with best practices and modern technology to ensure that the system will be easy to use and reliable for everyone.
+
+Specific Objectives
+
+To develop a simple booking and scheduling system that allows customers to select pickup, drop-off, and delivery times while ensuring service availability.
+To provide a convenient way for users to find and connect with nearby laundry services using the location-based search tool.
+To create an easy-to-use interface with separate dashboards for customers and business owners.
+To implement a real-time order tracking so users can monitor their laundry status from pickup to delivery.
+To equip business owners with management tools such as order tracking, customer engagement features (notifications), and analytics of their business.
+
+Significance of the Study
+
+This study is significant as it makes finding and managing laundry services easier through a mobile app and solves problems in laundry services. Many users are struggling to find reliable laundry shops, book services, or track their clothes while they are away from the shop. At the same time, business owners use outdated procedures, which makes it hard to organize orders and improve the efficiency of their business. They often lack tools like mobile apps to handle services properly.
+TThis study offers new ideas about laundry services. It shows how modern technology can solve everyday difficulties and make services easier for everyone. The app solves a problem in the laundry industry by giving customers and companies a new tool they did not have before. For users, Laundry Scout simplifies things like finding shops, booking, and tracking. For business owners, it helps them manage orders more efficiently and serve customers faster while their business continues to grow. With this study, both users and business owners gained benefits from using the mobile app. This study could also inspire other service industries (like food delivery or repair shops) to use similar apps. It can also motivate other small businesses to adopt modern technology to improve their services.
+
+Scope and Limitations
+Scope
+
+The Laundry Scout project was conducted at the Palawan State University (PalSU) Main Campus. It is a mobile app meant to connect customers with nearby laundry services. The app supports two user groups: Users who are in need of laundry services and la who offer and manage those laundry services. Users can search for nearby laundry shops, compare services based on their prices, ratings, and reviews, and filter specific laundry needs such as wash and fold, ironing, or dry cleaning. They can also book services, track their orders in real-time, and save their favorite shops for future needs. In addition, the app has a "Claim and Pick-up", where customers can choose to drop-off and later pick up their laundry in person at the shop. This differs from the usual pick-up service, which involves a courier collecting and delivering the laundry to the customer's location.
+
+For the laundry shop owners, the app provides a dashboard to help manage customer orders and keep track of them. It also lets them update their service offerings. The app includes a chat page to communicate between laundry shop owners and customers, along with a notification feature to notify users of new messages or replies. Business owners also have access to a history of client orders, including the date and time of requested services, and a log history feature that tracks previous transactions and activities. They can also manage schedules to indicate when their shops are open or closed. Additionally, they have access to a summary log and a summary of sales to track the shop’s activity. The app provides a driver account feature to manage deliveries. It also includes a map or the geolocation feature, allowing users to view all available laundry shops in their area.
+
+In order for the app to work on both Android and iOS devices, the Laundry Scout app will be made using Dart as the main programming language and Flutter as its framework. It stores data locally using SQLite. To keep user information safe, the app will have strong security measures such as multi-factor authentication. The app will comply with important laws like the Data Privacy Act of 2012 (RA 10173) and the Intellectual Property Code of the Philippines (RA 8293) to protect personal and intellectual property rights. Access to the app is restricted to registered users and business owners. Both users and business owners will be required to finish a sign-up and verification process before using the app. The app will go into a few testings while collecting feedback in order for the researchers to improve its usability and user experience.
