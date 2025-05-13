@@ -9,3 +9,9 @@
 # Github - Version Control and Repository
 
 # Figma - UI Design
+
+cd "C:\Users\Theodore Ross\Desktop\G I T H U B\Laundry-Scout\laundry_scout"
+
+flutter run -d edge
+
+flutter run -d emulator-5554
