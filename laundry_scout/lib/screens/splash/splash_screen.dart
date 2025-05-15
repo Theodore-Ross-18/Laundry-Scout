@@ -59,38 +59,61 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF6F5ADC),
-      body: Center(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(
-                'lib/assets/lslogo.png',
-                height: 150,
-                width: 150,
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Laundry Scout',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Poppins',
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Column( // Use a Column to arrange content vertically
+          children: [
+            Expanded( // This Expanded widget pushes the content below it to the bottom
+              child: Center( // Center the main content (logo and title)
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'lib/assets/lslogo.png',
+                      height: 150,
+                      width: 150,
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Laundry Scout',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                '© 2024',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 14,
-                  fontFamily: 'Poppins',
-                ),
+            ),
+            // Footer content at the bottom
+            Padding(
+              padding: const EdgeInsets.only(bottom: 40.0), // Add some padding from the bottom edge
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end, // Align content to the bottom
+                children: [
+                  Text(
+                    'Laundry Scout © 2024',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 14,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                  const SizedBox(height: 4), // Small space between the two lines
+                  Text(
+                    'Laundry app Management',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 14,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
