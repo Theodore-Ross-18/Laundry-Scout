@@ -25,19 +25,63 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       try {
-        final response = await Supabase.instance.client.auth.signInWithPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-        );
+        final identifier = _emailController.text.trim();
+        final password = _passwordController.text;
+        String? emailToSignIn;
 
-        if (response.user != null) {
-          if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
-            );
+        // Check if the input is likely an email
+        if (identifier.contains('@')) {
+          emailToSignIn = identifier;
+        } else {
+          // Assume it's a username, query the profiles table
+          // Use maybeSingle() to handle cases where the username is not found
+          final response = await Supabase.instance.client
+              .from('profiles')
+              .select('email')
+              .eq('username', identifier)
+              .maybeSingle(); // Changed from single() to maybeSingle()
+
+          if (response != null && response.isNotEmpty) { // Check if response is not null and not empty
+            emailToSignIn = response['email'] as String?;
+          } else {
+            // Username not found or query returned no results
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Username not found')),
+              );
+            }
+            setState(() {
+              _isLoading = false;
+            });
+            return; // Stop the sign-in process
           }
         }
+
+        // Proceed with sign-in using the determined email
+        if (emailToSignIn != null) {
+          final authResponse = await Supabase.instance.client.auth.signInWithPassword(
+            email: emailToSignIn,
+            password: password,
+          );
+
+          if (authResponse.user != null) {
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const HomeScreen()),
+              );
+            }
+          }
+          // Supabase signInWithPassword automatically throws AuthException on failure
+        } else {
+           // This case should ideally not be reached if username lookup failed
+           if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Could not determine email for login')),
+              );
+            }
+        }
+
       } on AuthException catch (error) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -45,9 +89,11 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       } catch (error) {
+        // This catch block will now primarily handle errors from maybeSingle()
+        // if multiple rows are returned, or other unexpected issues.
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Unexpected error occurred')),
+            SnackBar(content: Text('An unexpected error occurred: ${error.toString()}')), // Added error details for debugging
           );
         }
       } finally {

@@ -33,13 +33,14 @@ class _SignupScreenState extends State<SignupScreen> {
         );
 
         if (response.user != null) {
-          // Insert the username into the profiles table
+          // Insert the username and email into the profiles table
           final user = response.user!;
           await Supabase.instance.client
               .from('profiles')
               .insert({
                 'id': user.id,
                 'username': _usernameController.text.trim(),
+                'email': _emailController.text.trim(), // Add this line to insert email
               });
 
           if (mounted) {
