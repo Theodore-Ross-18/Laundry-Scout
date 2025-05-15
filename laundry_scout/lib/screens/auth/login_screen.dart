@@ -81,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   const SizedBox(height: 40), // Space from top
                   Text(
-                    'Welcome Back',
+                    'Log In',
                     textAlign: TextAlign.center,
                     style: textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
