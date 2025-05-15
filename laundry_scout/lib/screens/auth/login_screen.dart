@@ -107,14 +107,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       : const Text('Login'),
                 ),
                 const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const SignupScreen()),
-                    );
-                  },
-                  child: const Text('Don\'t have an account? Sign up'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Don't have an account? "),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const SignupScreen()),
+                        );
+                      },
+                      child: const Text('Sign up'),
+                    ),
+                  ],
                 ),
               ],
             ),

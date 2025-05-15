@@ -38,7 +38,10 @@ class _SignupScreenState extends State<SignupScreen> {
                 duration: Duration(seconds: 5),
               ),
             );
-            Navigator.pop(context);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const SelectUserScreen()),
+            );
           }
         }
       } on AuthException catch (error) {
@@ -64,6 +67,7 @@ class _SignupScreenState extends State<SignupScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sign Up'),
+        automaticallyImplyLeading: false,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -138,6 +142,19 @@ class _SignupScreenState extends State<SignupScreen> {
                 child: _isLoading
                     ? const CircularProgressIndicator()
                     : const Text('Sign Up'),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('I have an account '),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Log In'),
+                  ),
+                ],
               ),
             ],
           ),
