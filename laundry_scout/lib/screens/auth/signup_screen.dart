@@ -18,6 +18,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
+  bool _signupSuccess = false; // Add state to track signup success
 
   Future<void> _signUp() async {
     if (_formKey.currentState!.validate()) {
@@ -43,17 +44,12 @@ class _SignupScreenState extends State<SignupScreen> {
                 'email': _emailController.text.trim(), // Add this line to insert email
               });
 
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Registration successful! Please check your email for verification.'),
-                duration: Duration(seconds: 5),
-              ),
-            );
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const SelectUserScreen()),
-            );
+          if (mounted) {  
+            // Navigate to SelectUserScreen after successful signup and profile insertion
+            Navigator.pushReplacement( // Add this line
+              context, // Add this line
+              MaterialPageRoute(builder: (context) => const SelectUserScreen()), // Add this line
+            ); // Add this line
           }
         }
       } on AuthException catch (error) {
@@ -83,214 +79,276 @@ class _SignupScreenState extends State<SignupScreen> {
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 40),
-                  Image.asset(
-                    'lib/assets/lslogo.png',
-                    height: 120,
-                    width: 120,
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Sign Up',
-                    textAlign: TextAlign.center,
-                    style: textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 32,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                  TextFormField(
-                    controller: _usernameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Username',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Colors.white70),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a username';
-                      }
-                      return null;
-                    },
-                    style: textTheme.bodyLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Colors.white70),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      // Add more robust email validation if needed
-                      return null;
-                    },
-                    style: textTheme.bodyLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Colors.white70),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                      ),
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a password';
-                      }
-                      // Add password strength validation if needed
-                      return null;
-                    },
-                    style: textTheme.bodyLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _confirmPasswordController,
-                    decoration: const InputDecoration(
-                      labelText: 'Confirm Password',
-                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Colors.white70),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                      ),
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please confirm your password';
-                      }
-                      if (value != _passwordController.text) {
-                        return 'Passwords do not match';
-                      }
-                      return null;
-                    },
-                    style: textTheme.bodyLarge,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _signUp,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF543CDC), // Darker purple for button
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 50),
-                      textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Text('Sign Up'),
-                  ),
-                  const SizedBox(height: 20),
-                   Text(
-                    'Or sign in With',
-                    textAlign: TextAlign.center,
-                    style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                       _buildSocialIcon(
-                        // child: Icon(Icons.facebook, color: Color(0xFF1877F2), size: 24), // Facebook Blue
-                        child: Image.asset('lib/assets/fb.png', height: 24, width: 24), // Use your Facebook icon asset
-                        onPressed: () {
-                          // TODO: Implement Facebook Sign-In
-                        },
-                      ),
-                      const SizedBox(width: 20),
-                      _buildSocialIcon(
-                        // child: Text('G', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF4285F4))), // Google Blue
-                        child: Image.asset('lib/assets/google.png', height: 24, width: 24), // Use your Google icon asset
-                        onPressed: () {
-                          // TODO: Implement Google Sign-In
-                        },
-                      ),
-                      const SizedBox(width: 20),
-                      _buildSocialIcon(
-                        // child: Icon(Icons.apple, color: Colors.black, size: 24), // Apple Black
-                        child: Image.asset('lib/assets/apple.png', height: 24, width: 24), // Use your Apple icon asset
-                        onPressed: () {
-                          // TODO: Implement Apple Sign-In
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'I have an account ',
-                        style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context); // Go back to LoginScreen
-                        },
-                        child: const Text(
-                          'Log In',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+            child: _signupSuccess // Check signup success state
+                ? Center( // Center the success message
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 100), // Add some spacing
+                        Image.asset(
+                          'lib/assets/lslogo.png',
+                          height: 120,
+                          width: 120,
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 40),
+                        Text(
+                          'Registration Successful!',
+                          textAlign: TextAlign.center,
+                          style: textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 28,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Please check your email for a verification link.',
+                          textAlign: TextAlign.center,
+                          style: textTheme.bodyLarge?.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        // Placeholder for the verification link button
+                        TextButton(
+                          onPressed: () {
+                            // TODO: Implement resend verification email or guide user
+                          },
+                          child: const Text(
+                            'Resend Verification Email', // Example link text
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                         const SizedBox(height: 40),
+                         ElevatedButton(
+                            onPressed: () {
+                              // Navigate to login or another screen after user acknowledges
+                              Navigator.pop(context); // Example: Go back to LoginScreen
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF543CDC), // Darker purple for button
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 50),
+                              textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            child: const Text('Back to Login'),
+                          ),
+                      ],
+                    ),
+                  )
+                : Form( // Show the form if signup is not successful
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 40),
+                        Image.asset(
+                          'lib/assets/lslogo.png',
+                          height: 120,
+                          width: 120,
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Sign Up',
+                          textAlign: TextAlign.center,
+                          style: textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 32,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        TextFormField(
+                          controller: _usernameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Username',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                              borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                              borderSide: BorderSide(color: Colors.white70),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                              borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a username';
+                            }
+                            return null;
+                          },
+                          style: textTheme.bodyLarge,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _emailController,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                             border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                              borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                              borderSide: BorderSide(color: Colors.white70),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                              borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            // Add more robust email validation if needed
+                            return null;
+                          },
+                          style: textTheme.bodyLarge,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _passwordController,
+                          decoration: const InputDecoration(
+                            labelText: 'Password',
+                             border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                              borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                              borderSide: BorderSide(color: Colors.white70),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                              borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                            ),
+                          ),
+                          obscureText: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a password';
+                            }
+                            // Add password strength validation if needed
+                            return null;
+                          },
+                          style: textTheme.bodyLarge,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _confirmPasswordController,
+                          decoration: const InputDecoration(
+                            labelText: 'Confirm Password',
+                             border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                              borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                              borderSide: BorderSide(color: Colors.white70),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                              borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                            ),
+                          ),
+                          obscureText: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please confirm your password';
+                            }
+                            if (value != _passwordController.text) {
+                              return 'Passwords do not match';
+                            }
+                            return null;
+                          },
+                          style: textTheme.bodyLarge,
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: _isLoading ? null : _signUp,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF543CDC), // Darker purple for button
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 50),
+                            textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Text('Sign Up'),
+                        ),
+                        const SizedBox(height: 20),
+                         Text(
+                          'Or sign in With',
+                          textAlign: TextAlign.center,
+                          style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                             _buildSocialIcon(
+                              // child: Icon(Icons.facebook, color: Color(0xFF1877F2), size: 24), // Facebook Blue
+                              child: Image.asset('lib/assets/fb.png', height: 24, width: 24), // Use your Facebook icon asset
+                              onPressed: () {
+                                // TODO: Implement Facebook Sign-In
+                              },
+                            ),
+                            const SizedBox(width: 20),
+                            _buildSocialIcon(
+                              // child: Text('G', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF4285F4))), // Google Blue
+                              child: Image.asset('lib/assets/google.png', height: 24, width: 24), // Use your Google icon asset
+                              onPressed: () {
+                                // TODO: Implement Google Sign-In
+                              },
+                            ),
+                            const SizedBox(width: 20),
+                            _buildSocialIcon(
+                              // child: Icon(Icons.apple, color: Colors.black, size: 24), // Apple Black
+                              child: Image.asset('lib/assets/apple.png', height: 24, width: 24), // Use your Apple icon asset
+                              onPressed: () {
+                                // TODO: Implement Apple Sign-In
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'I have an account ',
+                              style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context); // Go back to LoginScreen
+                              },
+                              child: const Text(
+                                'Log In',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
           ),
         ),
       ),

@@ -30,6 +30,10 @@ flutter:
     - lib/assets/user/
     - lib/assets/user/owner.png
     - lib/assets/user/user.png
+    - lib/assets/user/slides/
+    - lib/assets/user/slides/first.png
+    - lib/assets/user/slides/second.png
+    - lib/assets/user/slides/third.png
   
   fonts:
     - family: Poppins
