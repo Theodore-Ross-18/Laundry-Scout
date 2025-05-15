@@ -186,21 +186,24 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _buildSocialIcon(
-                        child: Icon(Icons.facebook, color: Color(0xFF1877F2), size: 24), // Facebook Blue
+                        // child: Icon(Icons.facebook, color: Color(0xFF1877F2), size: 24), // Facebook Blue
+                        child: Image.asset('lib/assets/fb.png', height: 24, width: 24), // Use your Facebook icon asset
                         onPressed: () {
                           // TODO: Implement Facebook Sign-In
                         },
                       ),
                       const SizedBox(width: 20),
                       _buildSocialIcon(
-                        child: Text('G', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF4285F4))), // Google Blue
+                        // child: Text('G', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF4285F4))), // Google Blue
+                        child: Image.asset('lib/assets/google.png', height: 24, width: 24), // Use your Google icon asset
                         onPressed: () {
                           // TODO: Implement Google Sign-In
                         },
                       ),
                       const SizedBox(width: 20),
                       _buildSocialIcon(
-                        child: Icon(Icons.apple, color: Colors.black, size: 24), // Apple Black
+                        // child: Icon(Icons.apple, color: Colors.black, size: 24), // Apple Black
+                        child: Image.asset('lib/assets/apple.png', height: 24, width: 24), // Use your Apple icon asset
                         onPressed: () {
                           // TODO: Implement Apple Sign-In
                         },
@@ -212,7 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        "Dont have an Account? ",
+                        "Don't have an Account? ",
                         style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
                       ),
                       TextButton(
