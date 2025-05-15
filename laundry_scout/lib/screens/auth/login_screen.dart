@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,11 +13,54 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  Future<void> _signIn() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        final response = await Supabase.instance.client.auth.signInWithPassword(
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
+
+        if (response.user != null) {
+          // Navigate to home screen
+          if (mounted) {
+            // TODO: Navigate to your home screen
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Login successful!')),
+            );
+          }
+        }
+      } on AuthException catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.message)),
+        );
+      } catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unexpected error occurred')),
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
+      appBar: AppBar(
+        title: const Text('Login'),
+      ),
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
@@ -24,23 +68,15 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  'Welcome Back',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 30),
                 TextFormField(
                   controller: _emailController,
                   decoration: const InputDecoration(
-                    labelText: 'Email or Username',
+                    labelText: 'Email',
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your email or username';
+                      return 'Please enter your email';
                     }
                     return null;
                   },
@@ -60,62 +96,22 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      // TODO: Implement forgot password
-                    },
-                    child: const Text('Forgot Password?'),
-                  ),
-                ),
+                const SizedBox(height: 24),
                 ElevatedButton(
+                  onPressed: _isLoading ? null : _signIn,
+                  child: _isLoading
+                      ? const CircularProgressIndicator()
+                      : const Text('Login'),
+                ),
+                const SizedBox(height: 16),
+                TextButton(
                   onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      // TODO: Implement login logic
-                    }
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SignupScreen()),
+                    );
                   },
-                  child: const Text('Login'),
-                ),
-                const SizedBox(height: 20),
-                const Text('Or sign in with'),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        // TODO: Implement Google sign in
-                      },
-                      icon: const Icon(Icons.g_mobiledata),
-                      label: const Text('Google'),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        // TODO: Implement Apple sign in
-                      },
-                      icon: const Icon(Icons.apple),
-                      label: const Text('Apple'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text("Don't have an account? "),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SignupScreen(),
-                          ),
-                        );
-                      },
-                      child: const Text('Sign Up'),
-                    ),
-                  ],
+                  child: const Text('Don\'t have an account? Sign up'),
                 ),
               ],
             ),
