@@ -29,10 +29,19 @@ class _SignupScreenState extends State<SignupScreen> {
         final response = await Supabase.instance.client.auth.signUp(
           email: _emailController.text,
           password: _passwordController.text,
-          data: {'username': _usernameController.text},
+          // data: {'username': _usernameController.text}, // Remove this line
         );
 
         if (response.user != null) {
+          // Insert the username into the profiles table
+          final user = response.user!;
+          await Supabase.instance.client
+              .from('profiles')
+              .insert({
+                'id': user.id,
+                'username': _usernameController.text.trim(),
+              });
+
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
