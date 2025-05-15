@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:laundry_scout/screens/auth/login_screen.dart';
-import 'package:laundry_scout/screens/home/home_screen.dart'; // Add this import
-// TODO: Consider creating a SplashScreen widget and setting it as the initial route
-// import 'package:laundry_scout/screens/splash_screen.dart'; // Example import
+import 'package:laundry_scout/screens/splash/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -109,30 +106,7 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       debugShowCheckedModeBanner: false,
-      // home: const SplashScreen(), // TODO: Uncomment and use if SplashScreen is created
-      home: StreamBuilder<AuthState>(
-        stream: Supabase.instance.client.auth.onAuthStateChange,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            // Optionally, show a loading indicator while checking auth state
-            return const Scaffold(body: Center(child: CircularProgressIndicator()));
-          }
-
-          final session = snapshot.data?.session;
-          if (session != null) {
-            // User is logged in, navigate to HomeScreen
-            return const HomeScreen();
-          } else {
-            // User is not logged in, navigate to LoginScreen
-            return const LoginScreen();
-          }
-        },
-      ),
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/home': (context) => const HomeScreen(),
-        // You can add other named routes here if needed
-      },
+      home: const SplashScreen(), // Replace the StreamBuilder with SplashScreen
     );
   }
 }
