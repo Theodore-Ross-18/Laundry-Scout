@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'select_user.dart';
+// Consider importing a package for social icons like font_awesome_flutter
+// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -64,101 +66,200 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sign Up'),
-        automaticallyImplyLeading: false,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextFormField(
-                controller: _usernameController,
-                decoration: const InputDecoration(
-                  labelText: 'Username',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a username';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(),
-                ),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a password';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _confirmPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm Password',
-                  border: OutlineInputBorder(),
-                ),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please confirm your password';
-                  }
-                  if (value != _passwordController.text) {
-                    return 'Passwords do not match';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _signUp,
-                child: _isLoading
-                    ? const CircularProgressIndicator()
-                    : const Text('Sign Up'),
-              ),
-              const SizedBox(height: 16),
-              Row(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('I have an account '),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Log In'),
+                  const SizedBox(height: 40),
+                  Image.asset(
+                    'lib/assets/lslogo.png',
+                    height: 120,
+                    width: 120,
                   ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Sign Up',
+                    textAlign: TextAlign.center,
+                    style: textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 32,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  TextFormField(
+                    controller: _usernameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Username',
+                      // border: OutlineInputBorder(), // Using global theme
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a username';
+                      }
+                      return null;
+                    },
+                    style: textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      // border: OutlineInputBorder(), // Using global theme
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      // Add more robust email validation if needed
+                      return null;
+                    },
+                    style: textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: const InputDecoration(
+                      labelText: 'Password',
+                      // border: OutlineInputBorder(), // Using global theme
+                    ),
+                    obscureText: true,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a password';
+                      }
+                      // Add password strength validation if needed
+                      return null;
+                    },
+                    style: textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    decoration: const InputDecoration(
+                      labelText: 'Confirm Password',
+                      // border: OutlineInputBorder(), // Using global theme
+                    ),
+                    obscureText: true,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please confirm your password';
+                      }
+                      if (value != _passwordController.text) {
+                        return 'Passwords do not match';
+                      }
+                      return null;
+                    },
+                    style: textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _signUp,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF543CDC), // Darker purple for button
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                      textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text('Sign Up'),
+                  ),
+                  const SizedBox(height: 20),
+                   Text(
+                    'Or sign in With',
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                       _buildSocialIcon(
+                        // child: Icon(FontAwesomeIcons.facebookF, color: Colors.blue),
+                        child: Icon(Icons.facebook, color: Theme.of(context).primaryColor, size: 24),
+                        onPressed: () {
+                          // TODO: Implement Facebook Sign-In
+                        },
+                      ),
+                      const SizedBox(width: 20),
+                      _buildSocialIcon(
+                        child: Text('G', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
+                        onPressed: () {
+                          // TODO: Implement Google Sign-In
+                        },
+                      ),
+                      const SizedBox(width: 20),
+                      _buildSocialIcon(
+                        child: Icon(Icons.apple, color: Theme.of(context).primaryColor, size: 24),
+                        onPressed: () {
+                          // TODO: Implement Apple Sign-In
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'I have an account ',
+                        style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context); // Go back to LoginScreen
+                        },
+                        child: const Text(
+                          'Log In',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
                 ],
               ),
-            ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  // Helper widget for social icons (can be extracted to a common file later)
+  Widget _buildSocialIcon({required Widget child, required VoidCallback onPressed}) {
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(25),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+           boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 3,
+            )
+          ]
+        ),
+        child: child,
       ),
     );
   }

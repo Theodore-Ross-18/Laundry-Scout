@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'signup_screen.dart';
 import '../home/home_screen.dart';
+// Consider importing a package for social icons like font_awesome_flutter
+// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -60,59 +62,54 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Get the text theme from the current context
     final textTheme = Theme.of(context).textTheme;
-    // Get the elevated button theme for styling social login buttons
-    final elevatedButtonTheme = Theme.of(context).elevatedButtonTheme;
 
     return Scaffold(
-      // appBar: AppBar( // Removed AppBar to match the image
-      //   title: const Text('Login'),
-      // ),
-      body: SafeArea( // Added SafeArea
+      body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(24.0), // Increased padding
+            padding: const EdgeInsets.all(24.0),
             child: Form(
               key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch, // Make children stretch
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 40), // Space from top
+                  const SizedBox(height: 40),
+                  Image.asset(
+                    'lib/assets/lslogo.png',
+                    height: 120,
+                    width: 120,
+                  ),
+                  const SizedBox(height: 20),
                   Text(
-                    'Log In',
+                    'Login',
                     textAlign: TextAlign.center,
                     style: textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: textTheme.displayLarge?.color ?? Colors.white, // Use themed color
+                      fontSize: 32, // Larger title
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 40),
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
-                      labelText: 'Email or Username',
-                      // border: OutlineInputBorder(), // Using global theme
+                      labelText: 'Username or email',
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your email or username';
                       }
-                      // Basic email validation, can be enhanced
-                      // if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                      //   return 'Please enter a valid email address';
-                      // }
                       return null;
                     },
-                    style: textTheme.bodyLarge, // Ensure input text color from theme
+                    style: textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
                     decoration: const InputDecoration(
                       labelText: 'Password',
-                      // border: OutlineInputBorder(), // Using global theme
                     ),
                     obscureText: true,
                     validator: (value) {
@@ -121,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                       return null;
                     },
-                    style: textTheme.bodyLarge, // Ensure input text color from theme
+                    style: textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 8),
                   Align(
@@ -132,68 +129,67 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                       child: Text(
                         'Forgot Password?',
-                        style: TextStyle(color: textTheme.bodyMedium?.color ?? Colors.white),
+                        // Style directly as TextButtonTheme might be overridden by general white
+                        style: TextStyle(color: Colors.white.withOpacity(0.8), decoration: TextDecoration.underline),
                       ),
                     ),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _signIn,
-                    style: elevatedButtonTheme.style, // Use themed button style
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF543CDC), // Darker purple for button
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 50),
+                      textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
                     child: _isLoading
-                        ? const SizedBox( // Smaller CircularProgressIndicator
+                        ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
                         : const Text('Login'),
                   ),
                   const SizedBox(height: 30),
                   Text(
-                    'Or sign in with',
+                    'Or sign in With',
                     textAlign: TextAlign.center,
-                    style: textTheme.bodyMedium,
+                    style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
                   ),
                   const SizedBox(height: 20),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Expanded( // Make buttons take available space
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            // TODO: Implement Google Sign-In
-                          },
-                          icon: const Icon(Icons.android_outlined), // Placeholder for Google icon
-                          label: const Text('Google'),
-                          style: elevatedButtonTheme.style?.copyWith(
-                             backgroundColor: MaterialStateProperty.all(Colors.white),
-                             foregroundColor: MaterialStateProperty.all(Colors.black87),
-                          ),
-                        ),
+                      _buildSocialIcon(
+                        child: Icon(Icons.facebook, color: Theme.of(context).primaryColor, size: 24),
+                        onPressed: () {
+                          // TODO: Implement Facebook Sign-In
+                        },
                       ),
-                      const SizedBox(width: 16),
-                      Expanded( // Make buttons take available space
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            // TODO: Implement Apple Sign-In
-                          },
-                          icon: const Icon(Icons.apple), // Placeholder for Apple icon
-                          label: const Text('Apple'),
-                          style: elevatedButtonTheme.style?.copyWith(
-                             backgroundColor: MaterialStateProperty.all(Colors.white),
-                             foregroundColor: MaterialStateProperty.all(Colors.black87),
-                          ),
-                        ),
+                      const SizedBox(width: 20),
+                      _buildSocialIcon(
+                        child: Text('G', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
+                        onPressed: () {
+                          // TODO: Implement Google Sign-In
+                        },
+                      ),
+                      const SizedBox(width: 20),
+                      _buildSocialIcon(
+                        child: Icon(Icons.apple, color: Theme.of(context).primaryColor, size: 24),
+                        onPressed: () {
+                          // TODO: Implement Apple Sign-In
+                        },
                       ),
                     ],
                   ),
-                  const SizedBox(height: 40), // Space before sign up link
+                  const SizedBox(height: 40),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        "Don't have an account? ",
-                        style: textTheme.bodyMedium,
+                        "Dont have an Account? ",
+                        style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
                       ),
                       TextButton(
                         onPressed: () {
@@ -202,19 +198,41 @@ class _LoginScreenState extends State<LoginScreen> {
                             MaterialPageRoute(builder: (context) => const SignupScreen()),
                           );
                         },
-                        child: Text(
+                        child: const Text(
                           'Sign Up',
-                           style: Theme.of(context).textButtonTheme.style?.textStyle?.resolve({}),
+                           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20), // Space at bottom
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSocialIcon({required Widget child, required VoidCallback onPressed}) {
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(25),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 3,
+            )
+          ]
+        ),
+        child: child,
       ),
     );
   }

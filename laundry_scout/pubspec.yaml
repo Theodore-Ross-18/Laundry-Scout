@@ -17,33 +17,19 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
   flutter_lints: ^5.0.0
 
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
-
-# The following section is specific to Flutter packages.
 flutter:
   uses-material-design: true
-
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - lib/assets/lslogo.png
+    - .env
   
   fonts:
     - family: Poppins
       fonts:
-        - asset: assets/fonts/Poppins-Regular.ttf
-        # - asset: assets/fonts/Poppins-Italic.ttf
-        #   style: italic
-        - asset: assets/fonts/Poppins-Bold.ttf
+        - asset: lib/assets/font/Poppins-Regular.ttf
+        - asset: lib/assets/font/Poppins-Bold.ttf
           weight: 700
         # Add other weights and styles of Poppins you intend to use
         # e.g.:
@@ -53,6 +39,3 @@ flutter:
         #   weight: 500
         # - asset: assets/fonts/Poppins-Light.ttf
         #   weight: 300
-
-  assets:
-    - .env
