@@ -18,7 +18,6 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
-  bool _signupSuccess = false; // Add state to track signup success
 
   Future<void> _signUp() async {
     if (_formKey.currentState!.validate()) {
@@ -44,12 +43,12 @@ class _SignupScreenState extends State<SignupScreen> {
                 'email': _emailController.text.trim(), // Add this line to insert email
               });
 
-          if (mounted) {  
+          if (mounted) {
             // Navigate to SelectUserScreen after successful signup and profile insertion
-            Navigator.pushReplacement( // Add this line
-              context, // Add this line
-              MaterialPageRoute(builder: (context) => const SelectUserScreen()), // Add this line
-            ); // Add this line
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const SelectUserScreen()),
+            );
           }
         }
       } on AuthException catch (error) {
@@ -79,69 +78,7 @@ class _SignupScreenState extends State<SignupScreen> {
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
-            child: _signupSuccess // Check signup success state
-                ? Center( // Center the success message
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 100), // Add some spacing
-                        Image.asset(
-                          'lib/assets/lslogo.png',
-                          height: 120,
-                          width: 120,
-                        ),
-                        const SizedBox(height: 40),
-                        Text(
-                          'Registration Successful!',
-                          textAlign: TextAlign.center,
-                          style: textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 28,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'Please check your email for a verification link.',
-                          textAlign: TextAlign.center,
-                          style: textTheme.bodyLarge?.copyWith(
-                            color: Colors.white70,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        // Placeholder for the verification link button
-                        TextButton(
-                          onPressed: () {
-                            // TODO: Implement resend verification email or guide user
-                          },
-                          child: const Text(
-                            'Resend Verification Email', // Example link text
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                        ),
-                         const SizedBox(height: 40),
-                         ElevatedButton(
-                            onPressed: () {
-                              // Navigate to login or another screen after user acknowledges
-                              Navigator.pop(context); // Example: Go back to LoginScreen
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF543CDC), // Darker purple for button
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(double.infinity, 50),
-                              textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            child: const Text('Back to Login'),
-                          ),
-                      ],
-                    ),
-                  )
-                : Form( // Show the form if signup is not successful
+            child: Form( // Show the form directly
                     key: _formKey,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,

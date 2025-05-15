@@ -19,6 +19,12 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
   final _lastNameController = TextEditingController();
   final _mobileNumberController = TextEditingController();
   final _emailController = TextEditingController();
+  final _otpController = TextEditingController(); // Add OTP controller
+  final _confirmEmailController = TextEditingController(); // Add controller for confirming email
+
+  bool _isEmailVerified = false; // Track email verification status
+  bool _isSendingOtp = false; // Track if OTP is being sent
+  bool _isVerifyingOtp = false; // Track if OTP is being verified
 
   final List<Map<String, String>> slides = [
     {
@@ -45,6 +51,9 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null && user.email != null) {
       _emailController.text = user.email!;
+      // Check if email is already confirmed (optional, but good practice)
+      // Supabase user metadata might contain email_confirmed_at
+      // For simplicity, we'll assume verification is needed here regardless
     }
   }
 
@@ -55,6 +64,8 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     _lastNameController.dispose();
     _mobileNumberController.dispose();
     _emailController.dispose();
+    _otpController.dispose(); // Dispose OTP controller
+    _confirmEmailController.dispose(); // Dispose confirm email controller
     super.dispose();
   }
 
@@ -77,7 +88,146 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     });
   }
 
+  // Function to send OTP
+  Future<void> _sendOtp() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your email address')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSendingOtp = true;
+    });
+
+    // Removed the debug print statement
+
+    try {
+      // Use OtpType.email for confirming the registered email
+      await Supabase.instance.client.auth.resend(
+        type: OtpType.signup, // Changed from OtpType.email to OtpType.signup
+        email: email, // This will now use the pre-filled email from initState
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Verification code sent to your email!')),
+        );
+      }
+    } on AuthException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error sending code: ${error.message}')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An unexpected error occurred: ${error.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSendingOtp = false;
+        });
+      }
+    }
+  }
+
+  // Function to verify OTP
+  Future<void> _verifyOtp() async {
+    final email = _emailController.text.trim(); // Use the pre-filled email for verification
+    final otp = _otpController.text.trim();
+
+    if (email.isEmpty || otp.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter email and verification code')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isVerifyingOtp = true;
+    });
+
+    try {
+      final AuthResponse res = await Supabase.instance.client.auth.verifyOTP(
+        type: OtpType.email,
+        email: email,
+        token: otp,
+      );
+
+      if (res.user != null) {
+        // OTP verification successful
+        if (mounted) {
+          setState(() {
+            _isEmailVerified = true;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Email verified successfully!')),
+          );
+        }
+      } else {
+         // Handle cases where user is null but no exception was thrown (shouldn't happen with verifyOTP usually)
+         if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Verification failed. Please try again.')),
+            );
+         }
+      }
+
+    } on AuthException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Verification failed: ${error.message}')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An unexpected error occurred: ${error.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isVerifyingOtp = false;
+        });
+      }
+    }
+  }
+
+
   Future<void> _submitUserInfo() async {
+    // Check if email is verified before submitting
+    if (!_isEmailVerified) {
+       ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please verify your email first.')),
+        );
+        return; // Stop the submission process
+    }
+
+    // Get current user ID
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      // Handle case where user is not logged in (shouldn't happen if flow is correct)
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User not logged in')),
+      );
+      return;
+    }
+
+    // Check if the confirmed email matches the email entered in the email field (which is now pre-filled)
+    if (_confirmEmailController.text.trim() != _emailController.text.trim()) {
+       ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Confirmed email must match your registered email.')),
+        );
+        return; // Stop the submission process
+    }
+
+
     if (_formKey.currentState!.validate()) {
       // Get current user ID
       final user = Supabase.instance.client.auth.currentUser;
@@ -97,7 +247,8 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
               'first_name': _firstNameController.text.trim(),
               'last_name': _lastNameController.text.trim(),
               'mobile_number': _mobileNumberController.text.trim(),
-              'email': _emailController.text.trim(), // Update email if needed
+              // Email is handled by auth verification, no need to update here usually
+              // 'email': _emailController.text.trim(), // Removed this line as email update is separate
             })
             .eq('id', user.id); // Filter by the current user's ID
 
@@ -287,20 +438,99 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
               const SizedBox(height: 16),
                _buildTextField(
                 controller: _emailController,
-                labelText: 'Email Address',
+                labelText: 'Email Address (Registered)', // Reverted label
                 keyboardType: TextInputType.emailAddress,
                 textTheme: textTheme,
-                readOnly: true, // Make email field read-only
-                 // You might want to pre-fill this with the user's registered email
-                 // and potentially make it non-editable if email changes are not allowed here.
-                 // For now, it's editable.
+                readOnly: true, // Make email field read-only again
+                 validator: null, // Remove validator for read-only field
               ),
               const SizedBox(height: 30),
+              // Email Verification Section
+              if (!_isEmailVerified) ...[
+                 ElevatedButton(
+                  onPressed: _isSendingOtp ? null : _sendOtp,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6F5ADC), // Purple background
+                    foregroundColor: const Color(0xFFFFFFFF), // White text
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                  ),
+                  child: _isSendingOtp
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Send Verification Code',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  controller: _otpController,
+                  labelText: 'Verification Code',
+                  keyboardType: TextInputType.number,
+                  textTheme: textTheme,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _isVerifyingOtp ? null : _verifyOtp,
+                   style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6F5ADC), // Purple background
+                    foregroundColor: const Color(0xFFFFFFFF), // White text
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                  ),
+                  child: _isVerifyingOtp
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Verify Code',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                ),
+                const SizedBox(height: 30), // Add space before Submit button
+              ],
+
+              // Add Confirm Email field here, after verification section
+              if (_isEmailVerified) ...[ // Only show confirm email if email is verified
+                 _buildTextField(
+                  controller: _confirmEmailController,
+                  labelText: 'Confirm Registered Email', // Reverted label
+                  keyboardType: TextInputType.emailAddress,
+                  textTheme: textTheme,
+                  validator: (value) { // Keep validator for the confirmation field
+                    if (value == null || value.isEmpty) {
+                      return 'Please confirm your registered email';
+                    }
+                    // The actual matching check is done in _submitUserInfo
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 30), // Add space before Submit button
+              ],
+
+
+              // Submit Button (only enabled after verification)
               ElevatedButton(
-                onPressed: _submitUserInfo,
+                onPressed: _isEmailVerified ? _submitUserInfo : null, // Enable only if verified
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFFFFF), // White background
-                  foregroundColor: const Color(0xFF6F5ADC), // Purple text
+                  backgroundColor: _isEmailVerified ? const Color(0xFFFFFFFF) : Colors.grey, // White background when enabled, grey when disabled
+                  foregroundColor: _isEmailVerified ? const Color(0xFF6F5ADC) : Colors.white, // Purple text when enabled, white when disabled
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30.0),
@@ -324,35 +554,40 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     TextInputType keyboardType = TextInputType.text,
     required TextTheme textTheme,
     bool readOnly = false, // Add readOnly parameter
+    String? Function(String?)? validator, // Add validator parameter
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       readOnly: readOnly, // Use the readOnly parameter
+      validator: validator, // Use the validator parameter
+      style: textTheme.bodyLarge?.copyWith(color: Colors.white), // Set text color to white
       decoration: InputDecoration(
         labelText: labelText,
         labelStyle: textTheme.bodyLarge?.copyWith(color: Colors.white70),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18.0),
-          borderSide: const BorderSide(color: Color(0xFFFFFFFF)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18.0),
+        border: OutlineInputBorder( // Completed InputDecoration
+          borderRadius: BorderRadius.circular(8.0),
           borderSide: const BorderSide(color: Colors.white70),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18.0),
-          borderSide: const BorderSide(color: Color(0xFFFFFFFF)),
+        enabledBorder: OutlineInputBorder( // Add enabled border style
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(color: Colors.white70),
         ),
+        focusedBorder: OutlineInputBorder( // Add focused border style
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(color: Colors.white), // Highlight color when focused
+        ),
+        errorBorder: OutlineInputBorder( // Add error border style
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(color: Colors.redAccent), // Error color
+        ),
+        focusedErrorBorder: OutlineInputBorder( // Add focused error border style
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(color: Colors.red), // Focused error color
+        ),
+        filled: true, // Add filled property
+        fillColor: Colors.white.withOpacity(0.1), // Add fill color
       ),
-      validator: readOnly ? null : (value) { // Only validate if not read-only
-        if (value == null || value.isEmpty) {
-          return 'Please enter your $labelText';
-        }
-        // Add more specific validation if needed (e.g., email format, phone number format)
-        return null;
-      },
-      style: textTheme.bodyLarge?.copyWith(color: Colors.white),
     );
   }
 }
