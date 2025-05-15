@@ -8,6 +8,7 @@ class SelectUserScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Select User Type'),
+        automaticallyImplyLeading: false,
       ),
       body: Center(
         child: Padding(
