@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'signup_screen.dart';
+import '../home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,16 +24,30 @@ class _LoginScreenState extends State<LoginScreen> {
 
       try {
         final response = await Supabase.instance.client.auth.signInWithPassword(
-          email: _emailController.text,
+          email: _emailController.text.trim(),
           password: _passwordController.text,
         );
 
         if (response.user != null) {
-          // Navigate to home screen
+          // Check if email is verified using user metadata
+          final userMetadata = response.user!.userMetadata;
+          final isEmailVerified = userMetadata?['email_confirmed'] as bool? ?? false;
+
+          if (!isEmailVerified) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please verify your email before logging in.'),
+                ),
+              );
+            }
+            return;
+          }
+          
           if (mounted) {
-            // TODO: Navigate to your home screen
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Login successful!')),
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
             );
           }
         }
@@ -77,6 +92,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your email';
+                    }
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                      return 'Please enter a valid email address';
                     }
                     return null;
                   },

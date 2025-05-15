@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'select_user.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -33,9 +34,10 @@ class _SignupScreenState extends State<SignupScreen> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Registration successful! Please check your email to verify your account.'),
+                content: Text('Registration successful! Please check your email for verification.'),
               ),
             );
+            // Navigate back to login screen instead of select user screen
             Navigator.pop(context);
           }
         }
