@@ -96,6 +96,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _emailController,
                     decoration: const InputDecoration(
                       labelText: 'Username or email',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                        borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                        borderSide: BorderSide(color: Colors.white70),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                        borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -110,6 +122,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _passwordController,
                     decoration: const InputDecoration(
                       labelText: 'Password',
+                       border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                        borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                        borderSide: BorderSide(color: Colors.white70),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
+                        borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                      ),
                     ),
                     obscureText: true,
                     validator: (value) {
@@ -162,21 +186,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _buildSocialIcon(
-                        child: Icon(Icons.facebook, color: Theme.of(context).primaryColor, size: 24),
+                        child: Icon(Icons.facebook, color: Color(0xFF1877F2), size: 24), // Facebook Blue
                         onPressed: () {
                           // TODO: Implement Facebook Sign-In
                         },
                       ),
                       const SizedBox(width: 20),
                       _buildSocialIcon(
-                        child: Text('G', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor)),
+                        child: Text('G', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF4285F4))), // Google Blue
                         onPressed: () {
                           // TODO: Implement Google Sign-In
                         },
                       ),
                       const SizedBox(width: 20),
                       _buildSocialIcon(
-                        child: Icon(Icons.apple, color: Theme.of(context).primaryColor, size: 24),
+                        child: Icon(Icons.apple, color: Colors.black, size: 24), // Apple Black
                         onPressed: () {
                           // TODO: Implement Apple Sign-In
                         },
