@@ -27,6 +27,9 @@ flutter:
     - lib/assets/google.png
     - lib/assets/apple.png
     - .env
+    - lib/assets/user/
+    - lib/assets/user/owner.png
+    - lib/assets/user/user.png
   
   fonts:
     - family: Poppins

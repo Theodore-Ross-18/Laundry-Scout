@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:laundry_scout/screens/users/set_businessinfo.dart'; // Import the new screen
+import 'package:laundry_scout/screens/users/set_userinfo.dart'; // Import the new screen
 
 class SelectUserScreen extends StatelessWidget {
   const SelectUserScreen({super.key});
@@ -31,12 +33,15 @@ class SelectUserScreen extends StatelessWidget {
               const SizedBox(height: 50),
               _buildUserSelectionCard(
                 context: context,
-                avatar: Icons.person_outline, // Placeholder avatar
-                // avatarImagePath: 'assets/laundry_service_user_avatar.png', // Example for image asset
+                // avatar: Icons.person_outline, // Placeholder avatar - Removed
+                avatarImagePath: 'lib/assets/user/user.png', // Use the user image asset
                 title: 'Laundry Service User',
                 onTap: () {
-                  // TODO: Navigate to Laundry Service User flow
-                  print('Laundry Service User selected');
+                  // Navigate to Laundry Service User info setup
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SetUserInfoScreen()),
+                  );
                 },
               ),
               const SizedBox(height: 20),
@@ -48,12 +53,15 @@ class SelectUserScreen extends StatelessWidget {
               const SizedBox(height: 20),
               _buildUserSelectionCard(
                 context: context,
-                avatar: Icons.business_center_outlined, // Placeholder avatar
-                // avatarImagePath: 'assets/business_owner_avatar.png', // Example for image asset
+                // avatar: Icons.business_center_outlined, // Placeholder avatar - Removed
+                avatarImagePath: 'lib/assets/user/owner.png', // Use the business owner image asset
                 title: 'Business Owner',
                 onTap: () {
-                  // TODO: Navigate to Business Owner flow
-                  print('Business Owner selected');
+                  // Navigate to Business Owner info setup
+                   Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SetBusinessInfoScreen()),
+                  );
                 },
               ),
               const Spacer(), // Pushes footer to the bottom
@@ -91,9 +99,10 @@ class SelectUserScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // You can use Image.asset(avatarImagePath!) if you have image assets
+            // Use Image.asset if avatarImagePath is provided
             if (avatarImagePath != null)
-              Image.asset(avatarImagePath, height: 80, width: 80) // TODO: Add your asset
+              Image.asset(avatarImagePath, height: 80, width: 80)
+            // Fallback to Icon if avatar is provided (though we are using images now)
             else if (avatar != null)
               Icon(avatar, size: 70, color: Colors.white),
             const SizedBox(height: 15),
