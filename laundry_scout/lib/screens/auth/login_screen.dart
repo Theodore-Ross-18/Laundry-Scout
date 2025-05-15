@@ -29,21 +29,6 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
         if (response.user != null) {
-          // Check if email is verified using user metadata
-          final userMetadata = response.user!.userMetadata;
-          final isEmailVerified = userMetadata?['email_confirmed'] as bool? ?? false;
-
-          if (!isEmailVerified) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Please verify your email before logging in.'),
-                ),
-              );
-            }
-            return;
-          }
-          
           if (mounted) {
             Navigator.pushReplacement(
               context,

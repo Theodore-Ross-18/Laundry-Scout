@@ -35,9 +35,9 @@ class _SignupScreenState extends State<SignupScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Registration successful! Please check your email for verification.'),
+                duration: Duration(seconds: 5),
               ),
             );
-            // Navigate back to login screen instead of select user screen
             Navigator.pop(context);
           }
         }
