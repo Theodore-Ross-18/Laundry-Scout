@@ -11,9 +11,9 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  supabase_flutter: ^2.3.4  # Add this line
-  flutter_dotenv: ^5.1.0    # Add this line
-  flutter_launcher_icons: "^0.13.1" # Add this line
+  supabase_flutter: ^2.3.4
+  flutter_dotenv: ^5.1.0
+  flutter_launcher_icons: ^0.13.1
 
 dev_dependencies:
   flutter_test:
@@ -51,7 +51,7 @@ flutter:
         # - asset: assets/fonts/Poppins-Light.ttf
         #   weight: 300
 
-flutter_launcher_icons: # Add this section
+flutter_launcher_icons:
   android: true
   ios: true
   image_path: lib/assets/lslogo.png
