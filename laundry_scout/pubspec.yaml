@@ -52,6 +52,6 @@ flutter:
         #   weight: 300
 
 flutter_launcher_icons: # Add this section
-  android: "true"
-  ios: "true"
-  image_path: "lib/assets/lslogo.png" # Specify the path to your logo image
+  android: true
+  ios: true
+  image_path: lib/assets/lslogo.png
