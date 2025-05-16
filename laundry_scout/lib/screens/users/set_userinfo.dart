@@ -438,11 +438,21 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
               const SizedBox(height: 16),
                _buildTextField(
                 controller: _emailController,
-                labelText: 'Email Address (Registered)', // Reverted label
+                labelText: 'Email Address', // Changed label slightly
                 keyboardType: TextInputType.emailAddress,
                 textTheme: textTheme,
-                readOnly: true, // Make email field read-only again
-                 validator: null, // Remove validator for read-only field
+                // Removed readOnly: true
+                // Removed validator: null
+                 validator: (value) { // Added email validator
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your email address';
+                    }
+                    // Basic email format validation
+                    if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+                      return 'Please enter a valid email address';
+                    }
+                    return null;
+                  },
               ),
               const SizedBox(height: 30),
               // Email Verification Section
@@ -510,12 +520,12 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
               if (_isEmailVerified) ...[ // Only show confirm email if email is verified
                  _buildTextField(
                   controller: _confirmEmailController,
-                  labelText: 'Confirm Registered Email', // Reverted label
+                  labelText: 'Confirm Email Address', // Changed label slightly
                   keyboardType: TextInputType.emailAddress,
                   textTheme: textTheme,
                   validator: (value) { // Keep validator for the confirmation field
                     if (value == null || value.isEmpty) {
-                      return 'Please confirm your registered email';
+                      return 'Please confirm your email address';
                     }
                     // The actual matching check is done in _submitUserInfo
                     return null;
