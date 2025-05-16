@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../home/home_screen.dart'; // Import HomeScreen
+import 'dart:async'; // Import the dart:async library
 
 class SetUserInfoScreen extends StatefulWidget {
   const SetUserInfoScreen({super.key});
@@ -25,6 +26,8 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
   bool _isEmailVerified = false; // Track email verification status
   bool _isSendingOtp = false; // Track if OTP is being sent
   bool _isVerifyingOtp = false; // Track if OTP is being verified
+
+  Timer? _timer; // Add a Timer variable
 
   final List<Map<String, String>> slides = [
     {
@@ -55,6 +58,24 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
       // Supabase user metadata might contain email_confirmed_at
       // For simplicity, we'll assume verification is needed here regardless
     }
+
+    // Start the auto-slide timer
+    _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
+      if (_currentPage < slides.length - 1) {
+        _pageController.nextPage(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeIn,
+        );
+      } else {
+        // If on the last page, stop the timer and show the form
+        timer.cancel();
+        if (mounted) { // Check if the widget is still mounted before calling setState
+           setState(() {
+             _showForm = true;
+           });
+        }
+      }
+    });
   }
 
   @override
@@ -66,6 +87,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     _emailController.dispose();
     _otpController.dispose(); // Dispose OTP controller
     _confirmEmailController.dispose(); // Dispose confirm email controller
+    _timer?.cancel(); // Cancel the timer in dispose
     super.dispose();
   }
 
@@ -76,6 +98,8 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
         curve: Curves.easeIn,
       );
     } else {
+      // If on the last page, cancel the timer and show the form
+      _timer?.cancel();
       setState(() {
         _showForm = true;
       });
@@ -83,6 +107,8 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
   }
 
   void _skipSlides() {
+    // Cancel the timer when skipping slides
+    _timer?.cancel();
     setState(() {
       _showForm = true;
     });

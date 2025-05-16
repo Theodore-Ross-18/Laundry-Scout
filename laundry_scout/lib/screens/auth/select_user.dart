@@ -10,10 +10,7 @@ class SelectUserScreen extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      // appBar: AppBar( // Removed AppBar
-      //   title: const Text('Select User Type'),
-      //   automaticallyImplyLeading: false,
-      // ),
+      backgroundColor: const Color(0xFF6F5ADC), // Set the background color
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30.0),
@@ -21,6 +18,13 @@ class SelectUserScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Add the logo here
+              Image.asset(
+                'lib/assets/lslogo.png', // Adjust the path if necessary
+                height: 30, // Adjust size as needed
+                width: 30, // Adjust size as needed
+              ),
+              const SizedBox(height: 10), // Add spacing after the logo
               Text(
                 'Select User',
                 textAlign: TextAlign.center,
@@ -30,47 +34,56 @@ class SelectUserScreen extends StatelessWidget {
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 50),
+              const SizedBox(height: 50), // Adjusted spacing
               _buildUserSelectionCard(
                 context: context,
-                // avatar: Icons.person_outline, // Placeholder avatar - Removed
-                avatarImagePath: 'lib/assets/user/user.png', // Use the user image asset
+                avatarImagePath: 'lib/assets/user/user.png',
                 title: 'Laundry Service User',
                 onTap: () {
-                  // Navigate to Laundry Service User info setup
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const SetUserInfoScreen()),
                   );
                 },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 20), // Adjusted spacing
               Text(
                 'Or',
                 textAlign: TextAlign.center,
                 style: textTheme.titleMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 20), // Adjusted spacing
               _buildUserSelectionCard(
                 context: context,
-                // avatar: Icons.business_center_outlined, // Placeholder avatar - Removed
-                avatarImagePath: 'lib/assets/user/owner.png', // Use the business owner image asset
+                avatarImagePath: 'lib/assets/user/owner.png',
                 title: 'Business Owner',
                 onTap: () {
-                  // Navigate to Business Owner info setup
-                   Navigator.push(
+                  Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const SetBusinessInfoScreen()),
                   );
                 },
               ),
               const Spacer(), // Pushes footer to the bottom
-              Text(
-                'Laundry Scout © 2024\nLaundry app Management',
-                textAlign: TextAlign.center,
-                style: textTheme.bodySmall?.copyWith(color: Colors.white.withOpacity(0.7)),
+              Padding( // Added Padding for the footer
+                padding: const EdgeInsets.only(bottom: 20.0), // Adjusted bottom padding
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Laundry Scout © 2024',
+                      textAlign: TextAlign.center,
+                      style: textTheme.bodySmall?.copyWith(color: Colors.white.withOpacity(0.7)),
+                    ),
+                    const SizedBox(height: 4), // Small space between the two lines
+                    Text(
+                      'Laundry app Management',
+                      textAlign: TextAlign.center,
+                      style: textTheme.bodySmall?.copyWith(color: Colors.white.withOpacity(0.7)),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 20), // Padding at the very bottom
             ],
           ),
         ),
@@ -81,7 +94,7 @@ class SelectUserScreen extends StatelessWidget {
   Widget _buildUserSelectionCard({
     required BuildContext context,
     IconData? avatar,
-    String? avatarImagePath, // For using actual image assets
+    String? avatarImagePath,
     required String title,
     required VoidCallback onTap,
   }) {
