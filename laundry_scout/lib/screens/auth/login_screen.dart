@@ -4,6 +4,7 @@ import 'signup_screen.dart';
 import '../home/home_screen.dart';
 // Consider importing a package for social icons like font_awesome_flutter
 // import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'forgotpassverify_screen.dart'; // Import the new screen
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -196,6 +197,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: TextButton(
                       onPressed: () {
                         // TODO: Implement Forgot Password
+                        // Navigate to the ForgotPasswordVerifyScreen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ForgotPasswordVerifyScreen()),
+                        );
                       },
                       child: Text(
                         'Forgot Password?',
