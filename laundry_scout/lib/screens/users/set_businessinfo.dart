@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'; // Moved this line up
 // You'll likely need file_picker and path for file uploads
 // import 'package:file_picker/file_picker.dart';
 // import 'dart:io'; // For File type
-
+import '../home/Owner/owner_home_screen.dart'; 
 class SetBusinessInfoScreen extends StatefulWidget {
   const SetBusinessInfoScreen({super.key});
 
@@ -248,10 +248,10 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
           );
           // Potentially navigate to a business dashboard or home screen
           // For example, back to home or a specific business dashboard:
-          // Navigator.pushReplacement(
-          //   context,
-          //   MaterialPageRoute(builder: (context) => const HomeScreen()), // Or a BusinessHomeScreen
-          // );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const OwnerHomeScreen()), // Or a BusinessHomeScreen
+          );
         }
       } catch (error) {
         if (mounted) {

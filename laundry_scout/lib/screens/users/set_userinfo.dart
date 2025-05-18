@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../home/home_screen.dart'; // Import HomeScreen
+import '../home/User/home_screen.dart'; // Import HomeScreen
 import 'dart:async'; // Import the dart:async library
 
 class SetUserInfoScreen extends StatefulWidget {

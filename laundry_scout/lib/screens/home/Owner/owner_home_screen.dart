@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../auth/login_screen.dart';
+import '../../auth/login_screen.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class OwnerHomeScreen extends StatelessWidget { // Renamed class to OwnerHomeScreen
+  const OwnerHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

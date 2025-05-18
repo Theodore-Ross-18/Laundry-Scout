@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'signup_screen.dart';
-import '../home/home_screen.dart';
+import '../home/User/home_screen.dart';
 // Consider importing a package for social icons like font_awesome_flutter
 // import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'forgotpassverify_screen.dart'; // Import the new screen
