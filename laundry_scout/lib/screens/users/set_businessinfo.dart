@@ -24,6 +24,13 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   final _phoneNumberController = TextEditingController();
   final _businessNameController = TextEditingController();
   final _businessAddressController = TextEditingController();
+  final _emailController = TextEditingController(); // Add email controller
+  final _otpController = TextEditingController(); // Add OTP controller
+  final _confirmEmailController = TextEditingController(); // Add controller for confirming email
+
+  bool _isEmailVerified = false; // Track email verification status
+  bool _isVerifyingOtp = false; // Track if OTP is being verified
+
 
   // Copied from set_userinfo.dart - adjust content if needed for business context
   final List<Map<String, String>> slides = [
@@ -47,6 +54,13 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   @override
   void initState() {
     super.initState();
+    // Fetch and pre-fill the user's email if available
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null && user.email != null) {
+      _emailController.text = user.email!;
+      // For simplicity, we'll assume verification is needed here regardless
+    }
+
     _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
       if (_currentPage < slides.length - 1) {
         _pageController.nextPage(
@@ -72,6 +86,9 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     _phoneNumberController.dispose();
     _businessNameController.dispose();
     _businessAddressController.dispose();
+    _emailController.dispose(); // Dispose email controller
+    _otpController.dispose(); // Dispose OTP controller
+    _confirmEmailController.dispose(); // Dispose confirm email controller
     _timer?.cancel();
     super.dispose();
   }
@@ -97,18 +114,99 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     });
   }
 
-  Future<void> _submitBusinessInfo() async {
-    if (_formKey.currentState!.validate()) {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) {
+  // Function to verify OTP
+  Future<void> _verifyOtp() async {
+    final email = _emailController.text.trim(); // Use the pre-filled email for verification
+    final otp = _otpController.text.trim();
+
+    if (email.isEmpty || otp.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter email and verification code')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isVerifyingOtp = true;
+    });
+
+    try {
+      final AuthResponse res = await Supabase.instance.client.auth.verifyOTP(
+        type: OtpType.email,
+        email: email,
+        token: otp,
+      );
+
+      if (res.user != null) {
+        // OTP verification successful
         if (mounted) {
+          setState(() {
+            _isEmailVerified = true;
+          });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('User not logged in. Please log in again.')),
+            const SnackBar(content: Text('Email verified successfully!')),
           );
         }
-        return;
+      } else {
+         // Handle cases where user is null but no exception was thrown (shouldn't happen with verifyOTP usually)
+         if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Verification failed. Please try again.')),
+            );
+         }
       }
 
+    } on AuthException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Verification failed: ${error.message}')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An unexpected error occurred: ${error.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isVerifyingOtp = false;
+        });
+      }
+    }
+  }
+
+
+  Future<void> _submitBusinessInfo() async {
+    // Check if email is verified before submitting
+    if (!_isEmailVerified) {
+       ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please verify your email first.')),
+        );
+        return; // Stop the submission process
+    }
+
+    // Get current user ID
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      // Handle case where user is not logged in (shouldn't happen if flow is correct)
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User not logged in')),
+      );
+      return;
+    }
+
+    // Check if the confirmed email matches the email entered in the email field (which is now pre-filled)
+    if (_confirmEmailController.text.trim() != _emailController.text.trim()) {
+       ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Confirmed email must match your registered email.')),
+        );
+        return; // Stop the submission process
+    }
+
+
+    if (_formKey.currentState!.validate()) {
       // Placeholder for file upload logic:
       // String? birUrl, certificateUrl, permitUrl;
       // try {
@@ -333,18 +431,97 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 labelText: 'Business Address',
                 textTheme: textTheme,
               ),
+              const SizedBox(height: 20), // Added spacing
+              _buildFormTextField( // Added Email field
+                controller: _emailController,
+                labelText: 'Email Address',
+                keyboardType: TextInputType.emailAddress,
+                textTheme: textTheme,
+                readOnly: false, // Changed from true to false
+                validator: (value) { // Added email validator
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your email address';
+                    }
+                    // Basic email format validation
+                    if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+                      return 'Please enter a valid email address';
+                    }
+                    return null;
+                  },
+              ),
               const SizedBox(height: 30),
-              _buildFileUploadField(label: 'Attach BIR Registration', textTheme: textTheme),
-              const SizedBox(height: 20),
-              _buildFileUploadField(label: 'Business Certificate', textTheme: textTheme),
-              const SizedBox(height: 20),
-              _buildFileUploadField(label: 'Business Mayors Permit', textTheme: textTheme),
-              const SizedBox(height: 40),
-              ElevatedButton(
-                onPressed: _submitBusinessInfo,
+              // Email Verification Section
+              if (!_isEmailVerified) ...[
+                 // Removed the "Send Verification Code" button (Supabase sends automatically on signup)
+                const SizedBox(height: 16), // Keep or adjust spacing as needed
+                _buildFormTextField( // Added OTP field
+                  controller: _otpController,
+                  labelText: 'Verification Code',
+                  keyboardType: TextInputType.number,
+                  textTheme: textTheme,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton( // Added Verify Code button
+                  onPressed: _isVerifyingOtp ? null : _verifyOtp,
+                   style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6F5ADC), // Purple background
+                    foregroundColor: const Color(0xFFFFFFFF), // White text
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                  ),
+                  child: _isVerifyingOtp
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Verify Code',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                ),
+                const SizedBox(height: 30), // Add space before Submit button
+              ],
+
+              // Add Confirm Email field here, after verification section
+              if (_isEmailVerified) ...[ // Only show confirm email if email is verified
+                 _buildFormTextField( // Added Confirm Email field
+                  controller: _confirmEmailController,
+                  labelText: 'Confirm Email Address',
+                  keyboardType: TextInputType.emailAddress,
+                  textTheme: textTheme,
+                  validator: (value) { // Keep validator for the confirmation field
+                    if (value == null || value.isEmpty) {
+                      return 'Please confirm your email address';
+                    }
+                    // The actual matching check is done in _submitBusinessInfo
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 30), // Add space before file uploads
+              ],
+
+              // File Upload Fields (only shown after email is verified)
+              if (_isEmailVerified) ...[
+                _buildFileUploadField(label: 'Attach BIR Registration', textTheme: textTheme),
+                const SizedBox(height: 20),
+                _buildFileUploadField(label: 'Business Certificate', textTheme: textTheme),
+                const SizedBox(height: 20),
+                _buildFileUploadField(label: 'Business Mayors Permit', textTheme: textTheme),
+                const SizedBox(height: 40),
+              ],
+
+
+              ElevatedButton( // Submit Button (only enabled after verification)
+                onPressed: _isEmailVerified ? _submitBusinessInfo : null, // Enable only if verified
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Theme.of(context).primaryColor, // Use theme color
+                  backgroundColor: _isEmailVerified ? Colors.white : Colors.grey, // White background when enabled, grey when disabled
+                  foregroundColor: _isEmailVerified ? Theme.of(context).primaryColor : Colors.white, // Use theme color when enabled, white when disabled
                   padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                   textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   shape: RoundedRectangleBorder(
@@ -365,11 +542,14 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     required String labelText,
     TextInputType keyboardType = TextInputType.text,
     required TextTheme textTheme,
+    bool readOnly = false,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      readOnly: readOnly,
+      // validator: validator, // Remove this line
       style: textTheme.bodyLarge?.copyWith(color: Colors.white),
       decoration: InputDecoration(
         labelText: labelText,
@@ -398,6 +578,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
         ),
         contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 15.0),
       ),
+      // Keep the default validator if none is provided
       validator: validator ?? (value) {
         if (value == null || value.isEmpty) {
           return 'Please enter $labelText';
