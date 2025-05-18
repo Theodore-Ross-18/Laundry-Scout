@@ -125,8 +125,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 40),
                   Image.asset(
                     'lib/assets/lslogo.png',
-                    height: 120,
-                    width: 120,
+                    height: 76,
+                    width: 76,
                   ),
                   const SizedBox(height: 20),
                   Text(
@@ -134,11 +134,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                     style: textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: 32, // Larger title
+                      fontSize: 40, // Larger title
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 30),
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
@@ -164,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     style: textTheme.bodyLarge,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   TextFormField(
                     controller: _passwordController,
                     decoration: const InputDecoration(
