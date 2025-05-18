@@ -108,8 +108,8 @@ class _SignupScreenState extends State<SignupScreen> {
                         const SizedBox(height: 40),
                         Image.asset(
                           'lib/assets/lslogo.png',
-                          height: 120,
-                          width: 120,
+                          height: 76,
+                          width: 76,
                         ),
                         const SizedBox(height: 20),
                         Text(
@@ -117,122 +117,159 @@ class _SignupScreenState extends State<SignupScreen> {
                           textAlign: TextAlign.center,
                           style: textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            fontSize: 32,
+                            fontSize: 40,
                             color: Colors.white,
                           ),
                         ),
                         const SizedBox(height: 30),
-                        TextFormField(
-                          controller: _usernameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Username',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                              borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                              borderSide: BorderSide(color: Colors.white70),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                              borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                        // Username Field
+                        Center( // Wrap SizedBox with Center
+                          child: SizedBox(
+                            width: 298,
+                            height: 57,
+                            child: TextFormField(
+                              controller: _usernameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Username',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                                  borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                                  borderSide: BorderSide(color: Colors.white70),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                                  borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                                ),
+                                // Removed contentPadding
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter a username';
+                                }
+                                // You can add more username validation if needed
+                                return null;
+                              },
+                              style: textTheme.bodyLarge,
                             ),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a username';
-                            }
-                            return null;
-                          },
-                          style: textTheme.bodyLarge,
                         ),
                         const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _emailController,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                              borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                              borderSide: BorderSide(color: Colors.white70),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                              borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                        // Email Field
+                        Center( // Wrap SizedBox with Center
+                          child: SizedBox(
+                            width: 298,
+                            height: 57,
+                            child: TextFormField(
+                              controller: _emailController,
+                              decoration: const InputDecoration(
+                                labelText: 'Email',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                                  borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                                  borderSide: BorderSide(color: Colors.white70),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                                  borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                                ),
+                                // Removed contentPadding
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your email';
+                                }
+                                if (!value.contains('@')) {
+                                  return 'Please enter a valid email';
+                                }
+                                return null;
+                              },
+                              style: textTheme.bodyLarge,
                             ),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your email';
-                            }
-                            // Add more robust email validation if needed
-                            return null;
-                          },
-                          style: textTheme.bodyLarge,
                         ),
                         const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passwordController,
-                          decoration: const InputDecoration(
-                            labelText: 'Password',
-                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                              borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                              borderSide: BorderSide(color: Colors.white70),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                              borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                        // Password Field
+                        Center( // Wrap SizedBox with Center
+                          child: SizedBox(
+                            width: 298,
+                            height: 57,
+                            child: TextFormField(
+                              controller: _passwordController,
+                              decoration: const InputDecoration(
+                                labelText: 'Password',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                                  borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                                  borderSide: BorderSide(color: Colors.white70),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                                  borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                                ),
+                                // Removed contentPadding
+                              ),
+                              obscureText: true,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your password';
+                                }
+                                if (value.length < 6) {
+                                  return 'Password must be at least 6 characters';
+                                }
+                                return null;
+                              },
+                              style: textTheme.bodyLarge,
                             ),
                           ),
-                          obscureText: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter a password';
-                            }
-                            // Add password strength validation if needed
-                            return null;
-                          },
-                          style: textTheme.bodyLarge,
                         ),
                         const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _confirmPasswordController,
-                          decoration: const InputDecoration(
-                            labelText: 'Confirm Password',
-                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                              borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                              borderSide: BorderSide(color: Colors.white70),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                              borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                        // Confirm Password Field
+                        Center( // Wrap SizedBox with Center
+                          child: SizedBox(
+                            width: 298,
+                            height: 57,
+                            child: TextFormField(
+                              controller: _confirmPasswordController,
+                              decoration: const InputDecoration(
+                                labelText: 'Confirm Password',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                                  borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                                  borderSide: BorderSide(color: Colors.white70),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                                  borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                                ),
+                                // Removed contentPadding
+                              ),
+                              obscureText: true,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please confirm your password';
+                                }
+                                if (value != _passwordController.text) {
+                                  return 'Passwords do not match';
+                                }
+                                return null;
+                              },
+                              style: textTheme.bodyLarge,
                             ),
                           ),
-                          obscureText: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please confirm your password';
-                            }
-                            if (value != _passwordController.text) {
-                              return 'Passwords do not match';
-                            }
-                            return null;
-                          },
-                          style: textTheme.bodyLarge,
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: _isLoading ? null : _signUp,
                           style: ElevatedButton.styleFrom(
