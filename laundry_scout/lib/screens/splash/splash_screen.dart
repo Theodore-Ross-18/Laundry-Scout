@@ -70,15 +70,15 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   children: [
                     Image.asset(
                       'lib/assets/lslogo.png',
-                      height: 150,
-                      width: 150,
+                      height: 100,
+                      width: 100,
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 5),
                     const Text(
                       'Laundry Scout',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 32,
+                        fontSize: 40,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Poppins',
                       ),
@@ -101,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       fontFamily: 'Poppins',
                     ),
                   ),
-                  const SizedBox(height: 4), // Small space between the two lines
+                  const SizedBox(height: 1), // Small space between the two lines
                   Text(
                     'Laundry app Management',
                     style: TextStyle(
