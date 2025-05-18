@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'signup_screen.dart';
 import '../home/User/home_screen.dart';
+import '../home/Owner/owner_home_screen.dart'; 
 // Consider importing a package for social icons like font_awesome_flutter
 // import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'forgotpassverify_screen.dart'; // Import the new screen
@@ -44,10 +45,19 @@ class _LoginScreenState extends State<LoginScreen> {
         final identifier = _emailController.text.trim();
         final password = _passwordController.text;
         String? emailToSignIn;
+        // Add a variable to track the profile type found
+        String? profileType; // 'user' or 'business'
 
         // Check if the input is likely an email
         if (identifier.contains('@')) {
           emailToSignIn = identifier;
+          // If it's an email, we'll need to query after successful auth
+          // to determine the profile type, or handle this differently.
+          // For now, let's assume email login defaults to user profile
+          // unless we add a separate flow or check after auth.
+          // A more robust solution might involve querying both tables by email
+          // or adding a 'type' column to the auth.users table if possible.
+          // For this fix, we'll proceed with email sign-in and then check profile.
         } else {
           // Assume it's a username, query the user_profiles table first
           final userProfileResponse = await Supabase.instance.client
@@ -58,6 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
           if (userProfileResponse != null && userProfileResponse.isNotEmpty) {
             emailToSignIn = userProfileResponse['email'] as String?;
+            profileType = 'user'; // Found in user_profiles
           } else {
             // Username not found in user_profiles, check business_profiles
             final businessProfileResponse = await Supabase.instance.client
@@ -68,6 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
             if (businessProfileResponse != null && businessProfileResponse.isNotEmpty) {
               emailToSignIn = businessProfileResponse['email'] as String?;
+              profileType = 'business'; // Found in business_profiles
             } else {
               // Username not found in either table
               if (mounted) {
@@ -95,12 +107,64 @@ class _LoginScreenState extends State<LoginScreen> {
             // based on the profile found (user_profiles or business_profiles)
             // and navigate to the appropriate home screen (HomeScreen or OwnerHomeScreen).
             // For now, it navigates to HomeScreen as before.
-            if (mounted) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const HomeScreen()),
-              );
+
+            // --- Start of added/modified logic ---
+            // If the login was via username, we already know the profile type.
+            // If the login was via email, we need to query the profiles table
+            // using the authenticated user's ID to determine the type.
+            if (profileType == null) {
+               // Login was likely via email. Query profiles to find the type.
+               final userId = authResponse.user!.id;
+
+               final userProfileCheck = await Supabase.instance.client
+                  .from('user_profiles')
+                  .select('id') // Select any column, just checking for existence
+                  .eq('id', userId)
+                  .maybeSingle();
+
+               if (userProfileCheck != null && userProfileCheck.isNotEmpty) {
+                  profileType = 'user';
+               } else {
+                  final businessProfileCheck = await Supabase.instance.client
+                     .from('business_profiles')
+                     .select('id') // Select any column
+                     .eq('id', userId)
+                     .maybeSingle();
+
+                  if (businessProfileCheck != null && businessProfileCheck.isNotEmpty) {
+                     profileType = 'business';
+                  } else {
+                     // Should not happen if user exists in auth.users but not in profiles
+                     // Handle this edge case if necessary, maybe log out or show error
+                     if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                           const SnackBar(content: Text('User profile not found after login.')),
+                        );
+                        // Optionally sign out the user if profile is missing
+                        await Supabase.instance.client.auth.signOut();
+                     }
+                     setState(() { _isLoading = false; });
+                     return;
+                  }
+               }
             }
+
+            // Navigate based on the determined profile type
+            if (mounted) {
+              if (profileType == 'business') {
+                 Navigator.pushReplacement(
+                   context,
+                   MaterialPageRoute(builder: (context) => const OwnerHomeScreen()),
+                 );
+              } else { // Default to user if type is 'user' or undetermined after email login
+                 Navigator.pushReplacement(
+                   context,
+                   MaterialPageRoute(builder: (context) => const HomeScreen()),
+                 );
+              }
+            }
+            // --- End of added/modified logic ---
+
           }
           // Supabase signInWithPassword automatically throws AuthException on failure
         } else {
