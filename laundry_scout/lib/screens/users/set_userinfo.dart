@@ -255,6 +255,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false, // Add this line
         title: Text(_showForm ? 'Setting Profile Info' : 'Laundry Scout'),
         actions: _showForm
             ? null // No actions on the form page
