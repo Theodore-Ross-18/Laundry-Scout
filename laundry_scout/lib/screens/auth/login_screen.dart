@@ -120,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
               key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.stretch, // Keep or change to Center if all children are centered
                 children: [
                   const SizedBox(height: 40),
                   Image.asset(
@@ -139,93 +139,126 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 30),
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Username or email',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Colors.white70),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                  Center( // Center the input field
+                    child: SizedBox(
+                      width: 298,
+                      height: 57,
+                      child: TextFormField(
+                        controller: _emailController,
+                        decoration: const InputDecoration(
+                          labelText: 'Username or email',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                            borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                            borderSide: BorderSide(color: Colors.white70),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                            borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                          ),
+                          // Consider adding contentPadding if text is not vertically centered
+                          // contentPadding: EdgeInsets.symmetric(vertical: (57 - (textTheme.bodyLarge?.fontSize ?? 16) * 1.5) / 2), // Example
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email or username';
+                          }
+                          return null;
+                        },
+                        style: textTheme.bodyLarge,
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email or username';
-                      }
-                      return null;
-                    },
-                    style: textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 14),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Colors.white70),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(18.0)), // Apply border radius
-                        borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                  Center( // Center the input field
+                    child: SizedBox(
+                      width: 298,
+                      height: 57,
+                      child: TextFormField(
+                        controller: _passwordController,
+                        decoration: const InputDecoration(
+                          labelText: 'Password',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                            borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                            borderSide: BorderSide(color: Colors.white70),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                            borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                          ),
+                          // Consider adding contentPadding if text is not vertically centered
+                        ),
+                        obscureText: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your password';
+                          }
+                          return null;
+                        },
+                        style: textTheme.bodyLarge,
                       ),
                     ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      return null;
-                    },
-                    style: textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        // TODO: Implement Forgot Password
-                        // Navigate to the ForgotPasswordVerifyScreen
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const ForgotPasswordVerifyScreen()),
-                        );
-                      },
-                      child: Text(
-                        'Forgot Password?',
-                        // Style directly as TextButtonTheme might be overridden by general white
-                        style: TextStyle(color: Colors.white.withOpacity(0.8), decoration: TextDecoration.underline),
+                  Center( // Center the SizedBox that constrains the "Forgot Password?" alignment
+                    child: SizedBox(
+                      width: 298, // Match the width of the password field above
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {
+                            // TODO: Implement Forgot Password
+                            // Navigate to the ForgotPasswordVerifyScreen
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const ForgotPasswordVerifyScreen()),
+                            );
+                          },
+                          style: TextButton.styleFrom( // Add padding to make it easier to tap
+                            padding: const EdgeInsets.symmetric(vertical: 4.0),
+                            minimumSize: Size.zero, // Allow the button to be as small as its content
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap, // Reduce tap target size
+                          ),
+                          child: Text(
+                            'Forgot Password?',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.8),
+                              decoration: TextDecoration.underline,
+                              fontSize: 11, // Adjusted font size
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _signIn,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF543CDC), // Darker purple for button
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 50),
-                      textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 16),
+                  Center( // Center the button
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _signIn,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF543CDC),
+                        foregroundColor: Colors.white,
+                        fixedSize: const Size(120, 52), // Further reduced width to 120
+                        textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(26.0), // Half of the height for a capsule shape
+                        ),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text('Login'),
                     ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Text('Login'),
                   ),
                   const SizedBox(height: 30),
                   Text(
