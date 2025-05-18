@@ -4,7 +4,11 @@ import 'package:laundry_scout/screens/users/set_userinfo.dart'; // Import the ne
 
 // Convert StatelessWidget to StatefulWidget
 class SelectUserScreen extends StatefulWidget {
-  const SelectUserScreen({super.key});
+  // Add a field to receive the username
+  final String username;
+
+  // Update the constructor to require the username
+  const SelectUserScreen({super.key, required this.username});
 
   @override
   State<SelectUserScreen> createState() => _SelectUserScreenState();
@@ -78,7 +82,9 @@ class _SelectUserScreenState extends State<SelectUserScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const SetUserInfoScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => SetUserInfoScreen(username: widget.username), // Pass the username
+                    ),
                   );
                 },
               ),
@@ -96,7 +102,9 @@ class _SelectUserScreenState extends State<SelectUserScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const SetBusinessInfoScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => SetBusinessInfoScreen(username: widget.username), // Pass the username
+                    ),
                   );
                 },
               ),

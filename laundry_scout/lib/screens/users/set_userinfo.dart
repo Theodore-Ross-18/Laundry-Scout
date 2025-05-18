@@ -4,7 +4,11 @@ import '../home/User/home_screen.dart'; // Import HomeScreen
 import 'dart:async'; // Import the dart:async library
 
 class SetUserInfoScreen extends StatefulWidget {
-  const SetUserInfoScreen({super.key});
+  // Add a field to receive the username
+  final String username;
+
+  // Update the constructor to require the username
+  const SetUserInfoScreen({super.key, required this.username});
 
   @override
   _SetUserInfoScreenState createState() => _SetUserInfoScreenState();
@@ -222,6 +226,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
             .from('user_profiles') // Changed from 'profiles' to 'user_profiles'
             .upsert({
               'id': user.id, // Ensure 'id' is included for upsert to identify the row
+              'username': widget.username, // Add the username here
               'first_name': _firstNameController.text.trim(),
               'last_name': _lastNameController.text.trim(),
               'mobile_number': _mobileNumberController.text.trim(),

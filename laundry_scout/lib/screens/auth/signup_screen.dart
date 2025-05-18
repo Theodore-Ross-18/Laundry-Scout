@@ -27,7 +27,7 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderStateMixin { // Added SingleTickerProviderStateMixin
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
+  final _usernameController = TextEditingController(); // Controller for username
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -88,39 +88,22 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
 
         // Proceed with Supabase auth signup (handles email uniqueness)
         final response = await Supabase.instance.client.auth.signUp(
-          email: _emailController.text,
-          password: _passwordController.text,
-          // data: {'username': _usernameController.text}, // Remove this line
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+          // You might want to add user_metadata here if Supabase supports it directly on signup
+          // options: AuthOptions(
+          //   data: {'username': _usernameController.text.trim()},
+          // ),
         );
 
         if (response.user != null) {
-          // Insert the username into the profiles table
-          final user = response.user!;
-          try {
-            await Supabase.instance.client
-                .from('user_profiles')
-                .insert({
-                  'id': user.id,
-                  'username': _usernameController.text.trim(),
-                  // Remove the email line as it's not in your user_profiles schema
-                  // 'email': _emailController.text.trim(),
-                });
-
-            if (mounted) {
-              // Navigate to SelectUserScreen after successful signup and profile insertion
-              Navigator.pushReplacement(
+          // User successfully created in Supabase Auth
+          // Now, navigate to the SelectUserScreen, passing the username
+          if (mounted) {
+             Navigator.pushReplacement(
                 context,
-                _createFadeRoute(const SelectUserScreen()),
-              );
-            }
-          } catch (dbError) {
-             if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Failed to create user profile: $dbError')),
-                );
-             }
-             // Optionally, you might want to delete the auth user if profile creation fails
-             // await Supabase.instance.client.auth.admin.deleteUser(user.id);
+                _createFadeRoute(SelectUserScreen(username: _usernameController.text.trim())), // Pass the username
+             );
           }
         } else {
            // Handle cases where auth.signUp succeeds but response.user is null (less common)

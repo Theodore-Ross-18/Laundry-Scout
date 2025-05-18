@@ -9,7 +9,7 @@ class OwnerHomeScreen extends StatelessWidget { // Renamed class to OwnerHomeScr
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Laundry Scout'),
+        title: const Text('Owner'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),

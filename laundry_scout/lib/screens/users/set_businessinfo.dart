@@ -6,14 +6,19 @@ import 'package:supabase_flutter/supabase_flutter.dart'; // Moved this line up
 // import 'dart:io'; // For File type
 import '../home/Owner/owner_home_screen.dart'; 
 class SetBusinessInfoScreen extends StatefulWidget {
-  const SetBusinessInfoScreen({super.key});
+  // Add a field to receive the username
+  final String username;
+
+  // Update the constructor to require the username
+  const SetBusinessInfoScreen({super.key, required this.username});
 
   @override
   _SetBusinessInfoScreenState createState() => _SetBusinessInfoScreenState();
 }
 
 class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
-  final PageController _pageController = PageController();
+  // Remove 'final' from the declaration
+  PageController _pageController = PageController();
   int _currentPage = 0;
   bool _showForm = false;
   Timer? _timer;
@@ -54,26 +59,15 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch and pre-fill the user's email if available
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user != null && user.email != null) {
-      _emailController.text = user.email!;
-      // For simplicity, we'll assume verification is needed here regardless
-    }
-
-    _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
-      if (_currentPage < slides.length - 1) {
-        _pageController.nextPage(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeIn,
-        );
-      } else {
-        timer.cancel();
-        if (mounted) {
-          setState(() {
-            _showForm = true;
-          });
-        }
+    // You can access the username here using widget.username
+    // For example, to pre-fill a field or display it:
+    // _businessNameController.text = widget.username; // Or handle as needed
+    // Schedule the timer to show the form after slides
+    _timer = Timer(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _showForm = true;
+        });
       }
     });
   }
@@ -231,6 +225,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
             .from('business_profiles') // Changed to 'business_profiles'
             .upsert({
               'id': user.id, // Primary key, links to auth.users
+              'username': widget.username, // Add the username here
               'owner_first_name': _firstNameController.text.trim(),
               'owner_last_name': _lastNameController.text.trim(),
               'business_name': _businessNameController.text.trim(),

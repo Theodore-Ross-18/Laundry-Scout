@@ -49,27 +49,37 @@ class _LoginScreenState extends State<LoginScreen> {
         if (identifier.contains('@')) {
           emailToSignIn = identifier;
         } else {
-          // Assume it's a username, query the profiles table
-          // Use maybeSingle() to handle cases where the username is not found
-          final response = await Supabase.instance.client
-              .from('user_profiles') // Changed from 'profiles' to 'user_profiles'
+          // Assume it's a username, query the user_profiles table first
+          final userProfileResponse = await Supabase.instance.client
+              .from('user_profiles')
               .select('email')
               .eq('username', identifier)
-              .maybeSingle(); // Changed from single() to maybeSingle()
+              .maybeSingle();
 
-          if (response != null && response.isNotEmpty) { // Check if response is not null and not empty
-            emailToSignIn = response['email'] as String?;
+          if (userProfileResponse != null && userProfileResponse.isNotEmpty) {
+            emailToSignIn = userProfileResponse['email'] as String?;
           } else {
-            // Username not found or query returned no results
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Username not found')),
-              );
+            // Username not found in user_profiles, check business_profiles
+            final businessProfileResponse = await Supabase.instance.client
+                .from('business_profiles') // Assuming your business table is named 'business_profiles'
+                .select('email')
+                .eq('username', identifier)
+                .maybeSingle();
+
+            if (businessProfileResponse != null && businessProfileResponse.isNotEmpty) {
+              emailToSignIn = businessProfileResponse['email'] as String?;
+            } else {
+              // Username not found in either table
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Username not found in user or business profiles')),
+                );
+              }
+              setState(() {
+                _isLoading = false;
+              });
+              return; // Stop the sign-in process
             }
-            setState(() {
-              _isLoading = false;
-            });
-            return; // Stop the sign-in process
           }
         }
 
@@ -81,6 +91,10 @@ class _LoginScreenState extends State<LoginScreen> {
           );
 
           if (authResponse.user != null) {
+            // TODO: Add logic here to determine if the user is a regular user or a business owner
+            // based on the profile found (user_profiles or business_profiles)
+            // and navigate to the appropriate home screen (HomeScreen or OwnerHomeScreen).
+            // For now, it navigates to HomeScreen as before.
             if (mounted) {
               Navigator.pushReplacement(
                 context,
