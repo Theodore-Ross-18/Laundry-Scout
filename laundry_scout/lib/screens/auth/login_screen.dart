@@ -6,6 +6,21 @@ import '../home/home_screen.dart';
 // import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'forgotpassverify_screen.dart'; // Import the new screen
 
+// Helper function for creating a fade transition
+Route _createFadeRoute(Widget page) {
+  return PageRouteBuilder(
+    pageBuilder: (context, animation, secondaryAnimation) => page,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      // Use FadeTransition for a fade-in/fade-out effect
+      return FadeTransition(
+        opacity: animation,
+        child: child,
+      );
+    },
+    transitionDuration: const Duration(milliseconds: 300), // Adjust duration as needed
+  );
+}
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -307,7 +322,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const SignupScreen()),
+                            _createFadeRoute(const SignupScreen()), // Updated navigation to use fade route
                           );
                         },
                         child: const Text(
