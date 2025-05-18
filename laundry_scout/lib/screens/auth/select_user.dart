@@ -2,8 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:laundry_scout/screens/users/set_businessinfo.dart'; // Import the new screen
 import 'package:laundry_scout/screens/users/set_userinfo.dart'; // Import the new screen
 
-class SelectUserScreen extends StatelessWidget {
+// Convert StatelessWidget to StatefulWidget
+class SelectUserScreen extends StatefulWidget {
   const SelectUserScreen({super.key});
+
+  @override
+  State<SelectUserScreen> createState() => _SelectUserScreenState();
+}
+
+class _SelectUserScreenState extends State<SelectUserScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Schedule the dialog to be shown after the first frame is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showVerificationSentDialog(context);
+    });
+  }
+
+  // Function to show the alert dialog
+  void _showVerificationSentDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Verification Code'),
+          content: const Text('The verification code is sent to your email!'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Dismiss the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

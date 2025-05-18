@@ -52,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
           // Assume it's a username, query the profiles table
           // Use maybeSingle() to handle cases where the username is not found
           final response = await Supabase.instance.client
-              .from('profiles')
+              .from('user_profiles') // Changed from 'profiles' to 'user_profiles'
               .select('email')
               .eq('username', identifier)
               .maybeSingle(); // Changed from single() to maybeSingle()

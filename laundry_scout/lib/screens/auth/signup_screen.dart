@@ -68,7 +68,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
       try {
         // Check if username already exists in the profiles table
         final existingUsername = await Supabase.instance.client
-            .from('profiles')
+            .from('user_profiles') // Changed from 'profiles' to 'user_profiles'
             .select('username')
             .eq('username', _usernameController.text.trim())
             .limit(1)
@@ -94,31 +94,49 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
         );
 
         if (response.user != null) {
-          // Insert the username and email into the profiles table
+          // Insert the username into the profiles table
           final user = response.user!;
-          await Supabase.instance.client
-              .from('profiles')
-              .insert({
-                'id': user.id,
-                'username': _usernameController.text.trim(),
-                'email': _emailController.text.trim(), // Add this line to insert email
-              });
+          try {
+            await Supabase.instance.client
+                .from('user_profiles')
+                .insert({
+                  'id': user.id,
+                  'username': _usernameController.text.trim(),
+                  // Remove the email line as it's not in your user_profiles schema
+                  // 'email': _emailController.text.trim(),
+                });
 
-          if (mounted) {
-            // Navigate to SelectUserScreen after successful signup and profile insertion
-            Navigator.pushReplacement(
-              context,
-              _createFadeRoute(const SelectUserScreen()), // Updated navigation
-            );
+            if (mounted) {
+              // Navigate to SelectUserScreen after successful signup and profile insertion
+              Navigator.pushReplacement(
+                context,
+                _createFadeRoute(const SelectUserScreen()),
+              );
+            }
+          } catch (dbError) {
+             if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Failed to create user profile: $dbError')),
+                );
+             }
+             // Optionally, you might want to delete the auth user if profile creation fails
+             // await Supabase.instance.client.auth.admin.deleteUser(user.id);
           }
+        } else {
+           // Handle cases where auth.signUp succeeds but response.user is null (less common)
+           if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Signup failed: User not created')),
+              );
+           }
         }
       } on AuthException catch (error) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message)),
+          SnackBar(content: Text('Auth Error: ${error.message}')),
         );
       } catch (error) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unexpected error occurred')),
+          SnackBar(content: Text('General Error: $error')),
         );
       } finally {
         if (mounted) {

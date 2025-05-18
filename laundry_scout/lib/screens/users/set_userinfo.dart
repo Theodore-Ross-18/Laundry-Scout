@@ -206,28 +206,27 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
 
 
     if (_formKey.currentState!.validate()) {
-      // Get current user ID
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) {
-        // Handle case where user is not logged in (shouldn't happen if flow is correct)
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not logged in')),
-        );
-        return;
-      }
+      // Get current user ID again (though already fetched, good for clarity)
+      // final user = Supabase.instance.client.auth.currentUser; // Already defined above
+      // if (user == null) { // Already checked above
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     const SnackBar(content: Text('User not logged in')),
+      //   );
+      //   return;
+      // }
 
       try {
-        // Update the profiles table
+        // Upsert the data into the user_profiles table
+        // Upsert will insert if the row doesn't exist, or update if it does, based on the 'id'
         await Supabase.instance.client
-            .from('profiles')
-            .update({
+            .from('user_profiles') // Changed from 'profiles' to 'user_profiles'
+            .upsert({
+              'id': user.id, // Ensure 'id' is included for upsert to identify the row
               'first_name': _firstNameController.text.trim(),
               'last_name': _lastNameController.text.trim(),
               'mobile_number': _mobileNumberController.text.trim(),
-              // Email is handled by auth verification, no need to update here usually
-              // 'email': _emailController.text.trim(), // Removed this line as email update is separate
-            })
-            .eq('id', user.id); // Filter by the current user's ID
+              // 'updated_at': DateTime.now().toIso8601String(), // Supabase trigger handles this
+            });
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async'; // Import the dart:async library
+import 'package:supabase_flutter/supabase_flutter.dart'; // Moved this line up
+// You'll likely need file_picker and path for file uploads
+// import 'package:file_picker/file_picker.dart';
+// import 'dart:io'; // For File type
 
 class SetBusinessInfoScreen extends StatefulWidget {
   const SetBusinessInfoScreen({super.key});
@@ -95,20 +99,68 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
 
   Future<void> _submitBusinessInfo() async {
     if (_formKey.currentState!.validate()) {
-      // Handle form submission logic here
-      // For example, save to Supabase
-      print('First Name: ${_firstNameController.text}');
-      print('Last Name: ${_lastNameController.text}');
-      print('Phone Number: ${_phoneNumberController.text}');
-      print('Business Name: ${_businessNameController.text}');
-      print('Business Address: ${_businessAddressController.text}');
-      // Add logic for file uploads
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User not logged in. Please log in again.')),
+          );
+        }
+        return;
+      }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Business information submitted (placeholder)')),
-        );
-        // Potentially navigate to a business dashboard or home screen
+      // Placeholder for file upload logic:
+      // String? birUrl, certificateUrl, permitUrl;
+      // try {
+      //   if (_birFile != null) {
+      //     final String fileName = 'bir_${user.id}.${_birFile!.path.split('.').last}';
+      //     await Supabase.instance.client.storage.from('business_documents').upload(fileName, _birFile!);
+      //     birUrl = Supabase.instance.client.storage.from('business_documents').getPublicUrl(fileName);
+      //   }
+      //   // Repeat for _certificateFile and _permitFile
+      // } catch (e) {
+      //   if (mounted) {
+      //     ScaffoldMessenger.of(context).showSnackBar(
+      //       SnackBar(content: Text('Error uploading files: ${e.toString()}')),
+      //     );
+      //   }
+      //   return;
+      // }
+
+
+      try {
+        await Supabase.instance.client
+            .from('business_profiles') // Changed to 'business_profiles'
+            .upsert({
+              'id': user.id, // Primary key, links to auth.users
+              'owner_first_name': _firstNameController.text.trim(),
+              'owner_last_name': _lastNameController.text.trim(),
+              'business_name': _businessNameController.text.trim(),
+              'business_address': _businessAddressController.text.trim(),
+              'business_phone_number': _phoneNumberController.text.trim(),
+              // 'bir_registration_url': birUrl,
+              // 'business_certificate_url': certificateUrl,
+              // 'mayors_permit_url': permitUrl,
+              // 'updated_at': DateTime.now().toIso8601String(), // Supabase trigger handles this
+            });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Business information submitted successfully!')),
+          );
+          // Potentially navigate to a business dashboard or home screen
+          // For example, back to home or a specific business dashboard:
+          // Navigator.pushReplacement(
+          //   context,
+          //   MaterialPageRoute(builder: (context) => const HomeScreen()), // Or a BusinessHomeScreen
+          // );
+        }
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error submitting business info: ${error.toString()}')),
+          );
+        }
       }
     }
   }
