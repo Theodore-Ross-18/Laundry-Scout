@@ -121,7 +121,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
       // appBar uses theme's scaffoldBackgroundColor by default if not overridden
       appBar: AppBar(
         automaticallyImplyLeading: false, // Add this line
-        title: Text(_showForm ? 'Set Up Business Profile' : 'Welcome to Laundry Scout'),
+        title: const Text(''), // Empty title
         actions: _showForm
             ? null
             : [
