@@ -389,25 +389,25 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
   }
 
   // Helper widget for social icons (can be extracted to a common file later)
-  Widget _buildSocialIcon({required Widget child, required VoidCallback onPressed}) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(25),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 3,
-            )
-          ]
-        ),
-        child: child,
-      ),
-    );
-  }
+  // Widget _buildSocialIcon({required Widget child, required VoidCallback onPressed}) {
+  //   return InkWell(
+  //     onTap: onPressed,
+  //     borderRadius: BorderRadius.circular(25),
+  //     child: Container(
+  //       padding: const EdgeInsets.all(12),
+  //       decoration: BoxDecoration(
+  //         color: Colors.white,
+  //         shape: BoxShape.circle,
+  //          boxShadow: [
+  //           BoxShadow(
+  //             color: Colors.black.withOpacity(0.1),
+  //             spreadRadius: 1,
+  //             blurRadius: 3,
+  //           )
+  //         ]
+  //       ),
+  //       child: child,
+  //     ),
+  //   );
+  // }
 }
