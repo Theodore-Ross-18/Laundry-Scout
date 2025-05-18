@@ -48,6 +48,12 @@ class SetBusinessInfoScreen extends StatelessWidget {
               _buildTextField(label: 'Business Name', initialValue: 'Don Ernesto Laundry'),
               const SizedBox(height: 20),
               _buildTextField(label: 'Business Address', initialValue: 'Plaza Feliz Bldg. Brgy. San'),
+              const SizedBox(height: 30), // Adjusted spacing
+              _buildFileUploadField(label: 'Attach BIR Registration'),
+              const SizedBox(height: 20),
+              _buildFileUploadField(label: 'Business Certificate'),
+              const SizedBox(height: 20),
+              _buildFileUploadField(label: 'Business Mayors Permit'),
               const SizedBox(height: 40),
               Center(
                 child: ElevatedButton(
@@ -106,6 +112,56 @@ class SetBusinessInfoScreen extends StatelessWidget {
             ),
           ),
           style: const TextStyle(fontSize: 16, color: Colors.black54),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFileUploadField({required String label}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () {
+            // Handle file upload tap
+            print('$label tapped');
+          },
+          child: Container(
+            height: 120, // Adjust height as needed
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Icon(
+                    Icons.cloud_upload_outlined,
+                    size: 40,
+                    color: Colors.black54,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Click here to upload',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ],
     );
