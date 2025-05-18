@@ -21,8 +21,8 @@ class SelectUserScreen extends StatelessWidget {
               // Add the logo here
               Image.asset(
                 'lib/assets/lslogo.png', // Adjust the path if necessary
-                height: 30, // Adjust size as needed
-                width: 30, // Adjust size as needed
+                height: 50, // Adjust size as needed
+                width: 50, // Adjust size as needed
               ),
               const SizedBox(height: 10), // Add spacing after the logo
               Text(
@@ -30,11 +30,11 @@ class SelectUserScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  fontSize: 28,
+                  fontSize: 32,
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 50), // Adjusted spacing
+              const SizedBox(height: 20), // Adjusted spacing
               _buildUserSelectionCard(
                 context: context,
                 avatarImagePath: 'lib/assets/user/user.png',
