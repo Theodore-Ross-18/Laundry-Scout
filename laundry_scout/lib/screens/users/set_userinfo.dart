@@ -24,7 +24,6 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
   final _confirmEmailController = TextEditingController(); // Add controller for confirming email
 
   bool _isEmailVerified = false; // Track email verification status
-  bool _isSendingOtp = false; // Track if OTP is being sent
   bool _isVerifyingOtp = false; // Track if OTP is being verified
 
   Timer? _timer; // Add a Timer variable
@@ -112,54 +111,6 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     setState(() {
       _showForm = true;
     });
-  }
-
-  // Function to send OTP
-  Future<void> _sendOtp() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your email address')),
-      );
-      return;
-    }
-
-    setState(() {
-      _isSendingOtp = true;
-    });
-
-    // Removed the debug print statement
-
-    try {
-      // Use OtpType.email for confirming the registered email
-      await Supabase.instance.client.auth.resend(
-        type: OtpType.signup, // Changed from OtpType.email to OtpType.signup
-        email: email, // This will now use the pre-filled email from initState
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Verification code sent to your email!')),
-        );
-      }
-    } on AuthException catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error sending code: ${error.message}')),
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('An unexpected error occurred: ${error.toString()}')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSendingOtp = false;
-        });
-      }
-    }
   }
 
   // Function to verify OTP
