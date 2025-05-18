@@ -26,6 +26,27 @@ class _SignupScreenState extends State<SignupScreen> {
       });
 
       try {
+        // Check if username already exists in the profiles table
+        final existingUsername = await Supabase.instance.client
+            .from('profiles')
+            .select('username')
+            .eq('username', _usernameController.text.trim())
+            .limit(1)
+            .maybeSingle();
+
+        if (existingUsername != null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Username already taken')),
+            );
+          }
+          setState(() {
+            _isLoading = false;
+          });
+          return; // Stop the signup process if username exists
+        }
+
+        // Proceed with Supabase auth signup (handles email uniqueness)
         final response = await Supabase.instance.client.auth.signUp(
           email: _emailController.text,
           password: _passwordController.text,
