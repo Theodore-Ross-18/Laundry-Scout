@@ -483,31 +483,8 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
               const SizedBox(height: 30),
               // Email Verification Section
               if (!_isEmailVerified) ...[
-                 ElevatedButton(
-                  onPressed: _isSendingOtp ? null : _sendOtp,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6F5ADC), // Purple background
-                    foregroundColor: const Color(0xFFFFFFFF), // White text
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                  ),
-                  child: _isSendingOtp
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          'Send Verification Code',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                ),
-                const SizedBox(height: 16),
+                 // Removed the "Send Verification Code" button
+                const SizedBox(height: 16), // Keep or adjust spacing as needed
                 _buildTextField(
                   controller: _otpController,
                   labelText: 'Verification Code',
