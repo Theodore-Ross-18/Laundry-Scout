@@ -230,6 +230,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
               'first_name': _firstNameController.text.trim(),
               'last_name': _lastNameController.text.trim(),
               'mobile_number': _mobileNumberController.text.trim(),
+              'email': _emailController.text.trim(), // Add this line
               // 'updated_at': DateTime.now().toIso8601String(), // Supabase trigger handles this
             });
 

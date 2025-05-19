@@ -231,6 +231,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
               'business_name': _businessNameController.text.trim(),
               'business_address': _businessAddressController.text.trim(),
               'business_phone_number': _phoneNumberController.text.trim(),
+              'email': _emailController.text.trim(), // Add this line
               // 'bir_registration_url': birUrl,
               // 'business_certificate_url': certificateUrl,
               // 'mayors_permit_url': permitUrl,

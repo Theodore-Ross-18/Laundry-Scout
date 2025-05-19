@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui'; // Make sure this import is present for ImageFilter
 import 'package:laundry_scout/screens/users/set_businessinfo.dart'; // Import the new screen
 import 'package:laundry_scout/screens/users/set_userinfo.dart'; // Import the new screen
 
@@ -29,17 +30,33 @@ class _SelectUserScreenState extends State<SelectUserScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Verification Code'),
-          content: const Text('The verification code is sent to your email!'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop(); // Dismiss the dialog
-              },
+        return BackdropFilter( // Wrap AlertDialog with BackdropFilter
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5), // Adjust blur intensity as needed
+          child: AlertDialog(
+            backgroundColor: const Color(0xFF6F5ADC).withOpacity(0.5), // Dialog background color with opacity
+            title: const Text(
+              'Verification Code',
+              style: TextStyle(color: Colors.white), // Title text color
             ),
-          ],
+            content: const Text(
+              'The verification code is sent to your email!',
+              style: TextStyle(color: Colors.white), // Content text color
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text(
+                  'OK',
+                  style: TextStyle(color: Colors.white), // Button text color
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Dismiss the dialog
+                },
+              ),
+            ],
+            shape: RoundedRectangleBorder( // Optional: for rounded corners
+              borderRadius: BorderRadius.circular(15.0),
+            ),
+          ),
         );
       },
     );
