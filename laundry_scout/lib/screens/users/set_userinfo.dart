@@ -437,7 +437,23 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                     return null;
                   },
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 16), // Adjusted spacing, was 30
+              // Moved Confirm Email field here and removed if (_isEmailVerified) wrapper
+              _buildTextField(
+                controller: _confirmEmailController,
+                labelText: 'Confirm Email Address', 
+                keyboardType: TextInputType.emailAddress,
+                textTheme: textTheme,
+                validator: (value) { 
+                  if (value == null || value.isEmpty) {
+                    return 'Please confirm your email address';
+                  }
+                  // The actual matching check is done in _submitUserInfo
+                  return null;
+                },
+              ),
+              const SizedBox(height: 30), // Spacer after Confirm Email
+
               // Email Verification Section
               if (!_isEmailVerified) ...[
                  // Removed the "Send Verification Code" button
@@ -475,25 +491,6 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                 ),
                 const SizedBox(height: 30), // Add space before Submit button
               ],
-
-              // Add Confirm Email field here, after verification section
-              if (_isEmailVerified) ...[ // Only show confirm email if email is verified
-                 _buildTextField(
-                  controller: _confirmEmailController,
-                  labelText: 'Confirm Email Address', // Changed label slightly
-                  keyboardType: TextInputType.emailAddress,
-                  textTheme: textTheme,
-                  validator: (value) { // Keep validator for the confirmation field
-                    if (value == null || value.isEmpty) {
-                      return 'Please confirm your email address';
-                    }
-                    // The actual matching check is done in _submitUserInfo
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 30), // Add space before Submit button
-              ],
-
 
               // Submit Button (only enabled after verification)
               ElevatedButton(
