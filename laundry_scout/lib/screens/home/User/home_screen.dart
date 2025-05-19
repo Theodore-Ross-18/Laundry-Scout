@@ -24,6 +24,7 @@ class HomeScreen extends StatelessWidget {
             },
           ),
         ],
+        automaticallyImplyLeading: false, // Remove the back button
       ),
       body: const Center(
         child: Text('Welcome to Laundry Scout!'),

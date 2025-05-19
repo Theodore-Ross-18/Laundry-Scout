@@ -9,6 +9,7 @@ class OwnerHomeScreen extends StatelessWidget { // Renamed class to OwnerHomeScr
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false, // Remove the back button
         title: const Text('Owner'),
         actions: [
           IconButton(

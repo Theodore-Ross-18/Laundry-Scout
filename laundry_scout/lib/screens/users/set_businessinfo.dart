@@ -546,84 +546,12 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
         filled: true,
         fillColor: Colors.white.withOpacity(0.1),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
+          borderRadius: BorderRadius.circular(8.0),
           borderSide: BorderSide.none,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
-          borderSide: const BorderSide(color: Colors.white, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
-          borderSide: BorderSide(color: Colors.redAccent.shade100, width: 1.5),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
-          borderSide: BorderSide(color: Colors.redAccent.shade400, width: 1.5),
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 15.0),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       ),
-      // Keep the default validator if none is provided
-      validator: validator ?? (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter $labelText';
-        }
-        return null;
-      },
-    );
-  }
-
-  Widget _buildFileUploadField({required String label, required TextTheme textTheme}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(
-          label,
-          style: textTheme.titleMedium?.copyWith(
-            color: Colors.white, // Changed from black87
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: () {
-            // Handle file upload tap
-            print('$label tapped for upload');
-            // Implement file picking logic here
-          },
-          child: Container(
-            height: 120,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1), // Changed from grey[200]
-              borderRadius: BorderRadius.circular(12.0),
-              border: Border.all(color: Colors.white.withOpacity(0.3)), // Added a subtle border
-            ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Icon(
-                    Icons.cloud_upload_outlined,
-                    size: 40,
-                    color: Colors.white70, // Changed from black54
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Click here to upload',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: Colors.white70, // Changed from black54
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
+      validator: validator, // Add validator back here
     );
   }
 }
