@@ -486,9 +486,9 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
 
               // Add Confirm Email field here, after verification section
               if (_isEmailVerified) ...[ // Only show confirm email if email is verified
-                 _buildFormTextField( // Added Confirm Email field
+                 _buildFormTextField(
                   controller: _confirmEmailController,
-                  labelText: 'Confirm Email Address',
+                  labelText: 'Confirm Email Address', // Changed label slightly
                   keyboardType: TextInputType.emailAddress,
                   textTheme: textTheme,
                   validator: (value) { // Keep validator for the confirmation field
@@ -499,32 +499,25 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 30), // Add space before file uploads
-              ],
-
-              // File Upload Fields (only shown after email is verified)
-              if (_isEmailVerified) ...[
-                _buildFileUploadField(label: 'Attach BIR Registration', textTheme: textTheme),
-                const SizedBox(height: 20),
-                _buildFileUploadField(label: 'Business Certificate', textTheme: textTheme),
-                const SizedBox(height: 20),
-                _buildFileUploadField(label: 'Business Mayors Permit', textTheme: textTheme),
-                const SizedBox(height: 40),
+                const SizedBox(height: 30), // Add space before Submit button
               ],
 
 
-              ElevatedButton( // Submit Button (only enabled after verification)
+              // Submit Button (only enabled after verification)
+              ElevatedButton(
                 onPressed: _isEmailVerified ? _submitBusinessInfo : null, // Enable only if verified
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _isEmailVerified ? Colors.white : Colors.grey, // White background when enabled, grey when disabled
-                  foregroundColor: _isEmailVerified ? Theme.of(context).primaryColor : Colors.white, // Use theme color when enabled, white when disabled
-                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  backgroundColor: _isEmailVerified ? const Color(0xFFFFFFFF) : Colors.grey, // White background when enabled, grey when disabled
+                  foregroundColor: _isEmailVerified ? const Color(0xFF6F5ADC) : Colors.white, // Purple text when enabled, white when disabled
+                  padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30.0),
                   ),
                 ),
-                child: const Text('SUBMIT'),
+                child: const Text(
+                  'Submit',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
