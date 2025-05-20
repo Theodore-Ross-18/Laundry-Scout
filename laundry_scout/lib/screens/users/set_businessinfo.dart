@@ -427,84 +427,135 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 labelText: 'Business Address',
                 textTheme: textTheme,
               ),
-              const SizedBox(height: 20), // Added spacing
-              _buildFormTextField( // Added Email field
-                controller: _emailController,
-                labelText: 'Email Address',
-                keyboardType: TextInputType.emailAddress,
-                textTheme: textTheme,
-                readOnly: false, // Changed from true to false
-                validator: (value) { // Added email validator
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email address';
-                    }
-                    // Basic email format validation
-                    if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
-                      return 'Please enter a valid email address';
-                    }
-                    return null;
-                  },
-              ),
-              const SizedBox(height: 20), // Adjusted spacing, was 30
-              // Moved Confirm Email field here
-              _buildFormTextField(
-                controller: _confirmEmailController,
-                labelText: 'Confirm Email Address', 
-                keyboardType: TextInputType.emailAddress,
-                textTheme: textTheme,
-                validator: (value) { 
-                  if (value == null || value.isEmpty) {
-                    return 'Please confirm your email address';
-                  }
-                  // The actual matching check is done in _submitBusinessInfo
-                  return null;
-                },
-              ),
-              const SizedBox(height: 30), // Spacer after Confirm Email
-              // Email Verification Section
-              if (!_isEmailVerified) ...[
-                 // Removed the "Send Verification Code" button (Supabase sends automatically on signup)
-                const SizedBox(height: 16), // Keep or adjust spacing as needed
-                _buildFormTextField( // Added OTP field
-                  controller: _otpController,
-                  labelText: 'Verification Code',
-                  keyboardType: TextInputType.number,
-                  textTheme: textTheme,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton( // Added Verify Code button
-                  onPressed: _isVerifyingOtp ? null : _verifyOtp,
-                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6F5ADC), // Purple background
-                    foregroundColor: const Color(0xFFFFFFFF), // White text
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
+              const SizedBox(height: 20),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Attach BIR Registration',
+                    style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
+                  ),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () {
+                      // TODO: Implement file picker
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.cloud_upload_outlined,
+                            color: Colors.white.withOpacity(0.7),
+                            size: 32,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Click here to upload',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  child: _isVerifyingOtp
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            strokeWidth: 2,
+                ],
+              ),
+              const SizedBox(height: 20),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Business Certificate',
+                    style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
+                  ),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () {
+                      // TODO: Implement file picker
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.cloud_upload_outlined,
+                            color: Colors.white.withOpacity(0.7),
+                            size: 32,
                           ),
-                        )
-                      : const Text(
-                          'Verify Code',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                ),
-                const SizedBox(height: 30), // Add space before Submit button
-              ],
-
-              // Submit Button (only enabled after verification)
+                          const SizedBox(height: 8),
+                          Text(
+                            'Click here to upload',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Business Mayors Permit',
+                    style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
+                  ),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () {
+                      // TODO: Implement file picker
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.cloud_upload_outlined,
+                            color: Colors.white.withOpacity(0.7),
+                            size: 32,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Click here to upload',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 30),
               ElevatedButton(
-                onPressed: _isEmailVerified ? _submitBusinessInfo : null, // Enable only if verified
+                onPressed: _submitBusinessInfo,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _isEmailVerified ? const Color(0xFFFFFFFF) : Colors.grey, // White background when enabled, grey when disabled
-                  foregroundColor: _isEmailVerified ? const Color(0xFF6F5ADC) : Colors.white, // Purple text when enabled, white when disabled
+                  backgroundColor: const Color(0xFFFFFFFF),
+                  foregroundColor: const Color(0xFF6F5ADC),
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30.0),
