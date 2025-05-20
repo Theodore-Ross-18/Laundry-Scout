@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'; // Moved this line up
 // You'll likely need file_picker and path for file uploads
 // import 'package:file_picker/file_picker.dart';
 // import 'dart:io'; // For File type
-import '../home/Owner/owner_home_screen.dart'; 
+import '../home/Owner/owner_home_screen.dart';
 class SetBusinessInfoScreen extends StatefulWidget {
   // Add a field to receive the username
   final String username;
@@ -63,11 +63,30 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     // For example, to pre-fill a field or display it:
     // _businessNameController.text = widget.username; // Or handle as needed
     // Schedule the timer to show the form after slides
-    _timer = Timer(const Duration(seconds: 5), () {
-      if (mounted) {
-        setState(() {
-          _showForm = true;
-        });
+    // Fetch and pre-fill the user's email if available
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null && user.email != null) {
+      _emailController.text = user.email!;
+      // Check if email is already confirmed (optional, but good practice)
+      // Supabase user metadata might contain email_confirmed_at
+      // For simplicity, we'll assume verification is needed here regardless
+    }
+
+    // Start the auto-slide timer
+    _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
+      if (_currentPage < slides.length - 1) {
+        _pageController.nextPage(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeIn,
+        );
+      } else {
+        // If on the last page, stop the timer and show the form
+        timer.cancel();
+        if (mounted) { // Check if the widget is still mounted before calling setState
+           setState(() {
+             _showForm = true;
+           });
+        }
       }
     });
   }
@@ -396,6 +415,12 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                       controller: _firstNameController,
                       labelText: 'First name',
                       textTheme: textTheme,
+                       validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your first name';
+                        }
+                        return null;
+                      },
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -404,6 +429,12 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                       controller: _lastNameController,
                       labelText: 'Last name',
                       textTheme: textTheme,
+                       validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your last name';
+                        }
+                        return null;
+                      },
                     ),
                   ),
                 ],
@@ -414,20 +445,119 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 labelText: 'Phone Number',
                 keyboardType: TextInputType.phone,
                 textTheme: textTheme,
+                 validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your phone number';
+                    }
+                    // Basic phone number validation (adjust regex as needed)
+                    if (!RegExp(r'^\+?[0-9]{10,15}$').hasMatch(value)) {
+                      return 'Please enter a valid phone number';
+                    }
+                    return null;
+                  },
               ),
               const SizedBox(height: 20),
               _buildFormTextField(
                 controller: _businessNameController,
                 labelText: 'Business Name',
                 textTheme: textTheme,
+                 validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your business name';
+                    }
+                    return null;
+                  },
               ),
               const SizedBox(height: 20),
               _buildFormTextField(
                 controller: _businessAddressController,
                 labelText: 'Business Address',
                 textTheme: textTheme,
+                 validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your business address';
+                    }
+                    return null;
+                  },
               ),
               const SizedBox(height: 20),
+               _buildFormTextField(
+                controller: _emailController,
+                labelText: 'Email Address',
+                keyboardType: TextInputType.emailAddress,
+                textTheme: textTheme,
+                 validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your email address';
+                    }
+                    // Basic email format validation
+                    if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+                      return 'Please enter a valid email address';
+                    }
+                    return null;
+                  },
+              ),
+              const SizedBox(height: 16),
+              _buildFormTextField(
+                controller: _confirmEmailController,
+                labelText: 'Confirm Email Address',
+                keyboardType: TextInputType.emailAddress,
+                textTheme: textTheme,
+                 validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please confirm your email address';
+                  }
+                  // The actual matching check is done in _submitBusinessInfo
+                  return null;
+                },
+              ),
+              const SizedBox(height: 30), // Spacer after Confirm Email
+
+              // Email Verification Section
+              if (!_isEmailVerified) ...[
+                 // Removed the "Send Verification Code" button
+                const SizedBox(height: 16), // Keep or adjust spacing as needed
+                _buildFormTextField(
+                  controller: _otpController,
+                  labelText: 'Verification Code',
+                  keyboardType: TextInputType.number,
+                  textTheme: textTheme,
+                   validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter the verification code';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _isVerifyingOtp ? null : _verifyOtp,
+                   style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6F5ADC), // Purple background
+                    foregroundColor: const Color(0xFFFFFFFF), // White text
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                  ),
+                  child: _isVerifyingOtp
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Verify Code',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                ),
+                const SizedBox(height: 30), // Add space before Submit button
+              ],
+
+              // File Upload Sections (Keep these as placeholders for now)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -551,11 +681,12 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 ],
               ),
               const SizedBox(height: 30),
+              // Submit Button (only enabled after verification)
               ElevatedButton(
-                onPressed: _submitBusinessInfo,
+                onPressed: _isEmailVerified ? _submitBusinessInfo : null, // Enable only if verified
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFFFFF),
-                  foregroundColor: const Color(0xFF6F5ADC),
+                  backgroundColor: _isEmailVerified ? const Color(0xFFFFFFFF) : Colors.grey, // White background when enabled, grey when disabled
+                  foregroundColor: _isEmailVerified ? const Color(0xFF6F5ADC) : Colors.white, // Purple text when enabled, white when disabled
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30.0),
@@ -573,32 +704,46 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     );
   }
 
+  // Helper method for building text fields with consistent styling
   Widget _buildFormTextField({
     required TextEditingController controller,
     required String labelText,
     TextInputType keyboardType = TextInputType.text,
     required TextTheme textTheme,
-    bool readOnly = false,
-    String? Function(String?)? validator,
+    String? Function(String?)? validator, // Add validator parameter
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
-      readOnly: readOnly,
-      // validator: validator, // Remove this line
-      style: textTheme.bodyLarge?.copyWith(color: Colors.white),
+      validator: validator, // Use the validator parameter
+      style: textTheme.bodyLarge?.copyWith(color: Colors.white), // Set text color to white
       decoration: InputDecoration(
         labelText: labelText,
-        labelStyle: textTheme.bodyMedium?.copyWith(color: Colors.white70),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
+        labelStyle: textTheme.bodyLarge?.copyWith(color: Colors.white70),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: Colors.white70),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(color: Colors.white70),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(color: Colors.white), // Highlight color when focused
+        ),
+        errorBorder: OutlineInputBorder( // Add error border style
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(color: Colors.red), // Red border for errors
+        ),
+        focusedErrorBorder: OutlineInputBorder( // Add focused error border style
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(color: Colors.redAccent), // Slightly different red when focused on error
+        ),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.1), // Slightly transparent white fill
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 15.0), // Adjust padding
       ),
-      validator: validator, // Add validator back here
     );
   }
 }
