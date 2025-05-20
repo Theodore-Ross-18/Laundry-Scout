@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
-import 'dart:async'; // Import the dart:async library
-import 'package:supabase_flutter/supabase_flutter.dart'; // Moved this line up
-// You'll likely need file_picker and path for file uploads
-// import 'package:file_picker/file_picker.dart';
-// import 'dart:io'; // For File type
-import '../home/Owner/owner_home_screen.dart';
-class SetBusinessInfoScreen extends StatefulWidget {
-  // Add a field to receive the username
-  final String username;
+import 'dart:async';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+import 'set_businessprofile.dart';
 
-  // Update the constructor to require the username
+class SetBusinessInfoScreen extends StatefulWidget {
+  final String username;
   const SetBusinessInfoScreen({super.key, required this.username});
 
   @override
@@ -17,7 +14,6 @@ class SetBusinessInfoScreen extends StatefulWidget {
 }
 
 class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
-  // Remove 'final' from the declaration
   PageController _pageController = PageController();
   int _currentPage = 0;
   bool _showForm = false;
@@ -29,18 +25,22 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   final _phoneNumberController = TextEditingController();
   final _businessNameController = TextEditingController();
   final _businessAddressController = TextEditingController();
-  final _emailController = TextEditingController(); // Add email controller
-  final _otpController = TextEditingController(); // Add OTP controller
-  final _confirmEmailController = TextEditingController(); // Add controller for confirming email
+  final _emailController = TextEditingController();
+  final _otpController = TextEditingController();
+  final _confirmEmailController = TextEditingController();
 
-  bool _isEmailVerified = false; // Track email verification status
-  bool _isVerifyingOtp = false; // Track if OTP is being verified
+  File? _birFile;
+  File? _certificateFile;
+  File? _permitFile;
 
+  bool _isEmailVerified = false;
+  bool _isVerifyingOtp = false;
+  bool _isSubmitting = false;
+  bool _submissionComplete = false;
 
-  // Copied from set_userinfo.dart - adjust content if needed for business context
   final List<Map<String, String>> slides = [
     {
-      'image': 'lib/assets/user/slides/first.png', // Consider business-specific images
+      'image': 'lib/assets/user/slides/first.png',
       'title': 'Welcome, Business Owner!',
       'description': 'Let\'s get your laundry business set up on Laundry Scout.',
     },
@@ -59,20 +59,10 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   @override
   void initState() {
     super.initState();
-    // You can access the username here using widget.username
-    // For example, to pre-fill a field or display it:
-    // _businessNameController.text = widget.username; // Or handle as needed
-    // Schedule the timer to show the form after slides
-    // Fetch and pre-fill the user's email if available
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null && user.email != null) {
       _emailController.text = user.email!;
-      // Check if email is already confirmed (optional, but good practice)
-      // Supabase user metadata might contain email_confirmed_at
-      // For simplicity, we'll assume verification is needed here regardless
     }
-
-    // Start the auto-slide timer
     _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
       if (_currentPage < slides.length - 1) {
         _pageController.nextPage(
@@ -80,9 +70,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
           curve: Curves.easeIn,
         );
       } else {
-        // If on the last page, stop the timer and show the form
         timer.cancel();
-        if (mounted) { // Check if the widget is still mounted before calling setState
+        if (mounted) {
            setState(() {
              _showForm = true;
            });
@@ -99,9 +88,9 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     _phoneNumberController.dispose();
     _businessNameController.dispose();
     _businessAddressController.dispose();
-    _emailController.dispose(); // Dispose email controller
-    _otpController.dispose(); // Dispose OTP controller
-    _confirmEmailController.dispose(); // Dispose confirm email controller
+    _emailController.dispose();
+    _otpController.dispose();
+    _confirmEmailController.dispose();
     _timer?.cancel();
     super.dispose();
   }
@@ -127,48 +116,34 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     });
   }
 
-  // Function to verify OTP
   Future<void> _verifyOtp() async {
-    final email = _emailController.text.trim(); // Use the pre-filled email for verification
+    final email = _emailController.text.trim();
     final otp = _otpController.text.trim();
-
     if (email.isEmpty || otp.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter email and verification code')),
       );
       return;
     }
-
-    setState(() {
-      _isVerifyingOtp = true;
-    });
-
+    setState(() { _isVerifyingOtp = true; });
     try {
       final AuthResponse res = await Supabase.instance.client.auth.verifyOTP(
-        type: OtpType.email,
-        email: email,
-        token: otp,
+        type: OtpType.email, email: email, token: otp,
       );
-
       if (res.user != null) {
-        // OTP verification successful
         if (mounted) {
-          setState(() {
-            _isEmailVerified = true;
-          });
+          setState(() { _isEmailVerified = true; });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Email verified successfully!')),
           );
         }
       } else {
-         // Handle cases where user is null but no exception was thrown (shouldn't happen with verifyOTP usually)
          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Verification failed. Please try again.')),
             );
          }
       }
-
     } on AuthException catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -183,96 +158,115 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isVerifyingOtp = false;
-        });
+        setState(() { _isVerifyingOtp = false; });
       }
     }
   }
 
+  Future<void> _pickFile(Function(File) onFilePicked, String fileTypeLabel) async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+      );
+      if (result != null && result.files.single.path != null) {
+        onFilePicked(File(result.files.single.path!));
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('No $fileTypeLabel selected or file path is invalid.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking $fileTypeLabel: ${e.toString()}')),
+        );
+      }
+    }
+  }
 
   Future<void> _submitBusinessInfo() async {
-    // Check if email is verified before submitting
     if (!_isEmailVerified) {
        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please verify your email first.')),
         );
-        return; // Stop the submission process
+        return;
     }
-
-    // Get current user ID
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
-      // Handle case where user is not logged in (shouldn't happen if flow is correct)
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('User not logged in')),
       );
       return;
     }
-
-    // Check if the confirmed email matches the email entered in the email field (which is now pre-filled)
     if (_confirmEmailController.text.trim() != _emailController.text.trim()) {
        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Confirmed email must match your registered email.')),
         );
-        return; // Stop the submission process
+        return;
     }
-
-
     if (_formKey.currentState!.validate()) {
-      // Placeholder for file upload logic:
-      // String? birUrl, certificateUrl, permitUrl;
-      // try {
-      //   if (_birFile != null) {
-      //     final String fileName = 'bir_${user.id}.${_birFile!.path.split('.').last}';
-      //     await Supabase.instance.client.storage.from('business_documents').upload(fileName, _birFile!);
-      //     birUrl = Supabase.instance.client.storage.from('business_documents').getPublicUrl(fileName);
-      //   }
-      //   // Repeat for _certificateFile and _permitFile
-      // } catch (e) {
-      //   if (mounted) {
-      //     ScaffoldMessenger.of(context).showSnackBar(
-      //       SnackBar(content: Text('Error uploading files: ${e.toString()}')),
-      //     );
-      //   }
-      //   return;
-      // }
-
-
+      setState(() { _isSubmitting = true; });
+      String? birUrl, certificateUrl, permitUrl;
+      try {
+        final userId = user.id;
+        if (_birFile != null) {
+          final String fileExtension = _birFile!.path.split('.').last;
+          final String fileName = 'bir_${userId}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+          await Supabase.instance.client.storage.from('business_documents').upload(fileName, _birFile!);
+          birUrl = Supabase.instance.client.storage.from('business_documents').getPublicUrl(fileName);
+        }
+        if (_certificateFile != null) {
+          final String fileExtension = _certificateFile!.path.split('.').last;
+          final String fileName = 'certificate_${userId}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+          await Supabase.instance.client.storage.from('business_documents').upload(fileName, _certificateFile!);
+          certificateUrl = Supabase.instance.client.storage.from('business_documents').getPublicUrl(fileName);
+        }
+        if (_permitFile != null) {
+          final String fileExtension = _permitFile!.path.split('.').last;
+          final String fileName = 'permit_${userId}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+          await Supabase.instance.client.storage.from('business_documents').upload(fileName, _permitFile!);
+          permitUrl = Supabase.instance.client.storage.from('business_documents').getPublicUrl(fileName);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error uploading files: ${e.toString()}')),
+          );
+        }
+        setState(() { _isSubmitting = false; });
+        return;
+      }
       try {
         await Supabase.instance.client
-            .from('business_profiles') // Changed to 'business_profiles'
+            .from('business_profiles')
             .upsert({
-              'id': user.id, // Primary key, links to auth.users
-              'username': widget.username, // Add the username here
+              'id': user.id,
+              'username': widget.username,
               'owner_first_name': _firstNameController.text.trim(),
               'owner_last_name': _lastNameController.text.trim(),
               'business_name': _businessNameController.text.trim(),
               'business_address': _businessAddressController.text.trim(),
               'business_phone_number': _phoneNumberController.text.trim(),
-              'email': _emailController.text.trim(), // Add this line
-              // 'bir_registration_url': birUrl,
-              // 'business_certificate_url': certificateUrl,
-              // 'mayors_permit_url': permitUrl,
-              // 'updated_at': DateTime.now().toIso8601String(), // Supabase trigger handles this
+              'email': _emailController.text.trim(),
+              'bir_registration_url': birUrl,
+              'business_certificate_url': certificateUrl,
+              'mayors_permit_url': permitUrl,
             });
-
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Business information submitted successfully!')),
-          );
-          // Potentially navigate to a business dashboard or home screen
-          // For example, back to home or a specific business dashboard:
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const OwnerHomeScreen()), // Or a BusinessHomeScreen
-          );
+          setState(() {
+            _isSubmitting = false;
+            _submissionComplete = true;
+          });
         }
       } catch (error) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error submitting business info: ${error.toString()}')),
           );
+          setState(() { _isSubmitting = false; });
         }
       }
     }
@@ -281,25 +275,39 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-
+    Widget bodyContent;
+    if (!_showForm) {
+      bodyContent = _buildSlides(textTheme);
+    } else if (_isSubmitting) {
+      bodyContent = const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+            SizedBox(height: 20),
+            Text('Submitting...', style: TextStyle(color: Colors.white, fontSize: 16)),
+          ],
+        ),
+      );
+    } else if (_submissionComplete) {
+      bodyContent = _buildVerifiedScreen(textTheme);
+    } else {
+      bodyContent = _buildBusinessInfoForm(textTheme);
+    }
     return Scaffold(
-      // appBar uses theme's scaffoldBackgroundColor by default if not overridden
       appBar: AppBar(
-        automaticallyImplyLeading: false, // Add this line
-        title: const Text(''), // Empty title
-        actions: _showForm
+        automaticallyImplyLeading: false,
+        title: const Text(''),
+        actions: _showForm && !_isSubmitting && !_submissionComplete
             ? null
-            : [
+            : (_showForm ? null : [
                 TextButton(
                   onPressed: _skipSlides,
-                  child: const Text(
-                    'Skip',
-                    style: TextStyle(color: Colors.white),
-                  ),
+                  child: const Text('Skip', style: TextStyle(color: Colors.white)),
                 ),
-              ],
+              ]),
       ),
-      body: _showForm ? _buildBusinessInfoForm(textTheme) : _buildSlides(textTheme),
+      body: bodyContent,
     );
   }
 
@@ -311,9 +319,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
             controller: _pageController,
             itemCount: slides.length,
             onPageChanged: (index) {
-              setState(() {
-                _currentPage = index;
-              });
+              setState(() { _currentPage = index; });
             },
             itemBuilder: (context, index) {
               return Padding(
@@ -321,26 +327,18 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset(
-                      slides[index]['image']!,
-                      height: 250,
-                    ),
+                    Image.asset(slides[index]['image']!, height: 250),
                     const SizedBox(height: 40),
                     Text(
                       slides[index]['title']!,
                       textAlign: TextAlign.center,
-                      style: textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                      style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                     const SizedBox(height: 16),
                     Text(
                       slides[index]['description']!,
                       textAlign: TextAlign.center,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withOpacity(0.8),
-                      ),
+                      style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
                     ),
                   ],
                 ),
@@ -371,11 +369,9 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 onPressed: _nextPage,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
-                  foregroundColor: Theme.of(context).primaryColor, // Use theme color
+                  foregroundColor: Theme.of(context).primaryColor,
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
                 ),
                 child: Text(
                   _currentPage == slides.length - 1 ? 'Get Started' : 'Next',
@@ -402,10 +398,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
               Text(
                 'LET\'S GET STARTED',
                 textAlign: TextAlign.center,
-                style: textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+                style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
               ),
               const SizedBox(height: 30),
               Row(
@@ -416,9 +409,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                       labelText: 'First name',
                       textTheme: textTheme,
                        validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your first name';
-                        }
+                        if (value == null || value.isEmpty) return 'Please enter your first name';
                         return null;
                       },
                     ),
@@ -430,9 +421,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                       labelText: 'Last name',
                       textTheme: textTheme,
                        validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your last name';
-                        }
+                        if (value == null || value.isEmpty) return 'Please enter your last name';
                         return null;
                       },
                     ),
@@ -446,13 +435,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 keyboardType: TextInputType.phone,
                 textTheme: textTheme,
                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your phone number';
-                    }
-                    // Basic phone number validation (adjust regex as needed)
-                    if (!RegExp(r'^\+?[0-9]{10,15}$').hasMatch(value)) {
-                      return 'Please enter a valid phone number';
-                    }
+                    if (value == null || value.isEmpty) return 'Please enter your phone number';
+                    if (!RegExp(r'^\+?[0-9]{10,15}$').hasMatch(value)) return 'Please enter a valid phone number';
                     return null;
                   },
               ),
@@ -462,9 +446,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 labelText: 'Business Name',
                 textTheme: textTheme,
                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your business name';
-                    }
+                    if (value == null || value.isEmpty) return 'Please enter your business name';
                     return null;
                   },
               ),
@@ -474,229 +456,105 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 labelText: 'Business Address',
                 textTheme: textTheme,
                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your business address';
-                    }
+                    if (value == null || value.isEmpty) return 'Please enter your business address';
                     return null;
                   },
               ),
               const SizedBox(height: 20),
-               _buildFormTextField(
+              _buildFormTextField(
                 controller: _emailController,
                 labelText: 'Email Address',
                 keyboardType: TextInputType.emailAddress,
                 textTheme: textTheme,
-                 validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email address';
-                    }
-                    // Basic email format validation
-                    if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
-                      return 'Please enter a valid email address';
-                    }
-                    return null;
-                  },
-              ),
-              const SizedBox(height: 16),
-              _buildFormTextField(
-                controller: _confirmEmailController,
-                labelText: 'Confirm Email Address',
-                keyboardType: TextInputType.emailAddress,
-                textTheme: textTheme,
-                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please confirm your email address';
-                  }
-                  // The actual matching check is done in _submitBusinessInfo
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Please enter your email';
+                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return 'Please enter a valid email';
                   return null;
                 },
               ),
-              const SizedBox(height: 30), // Spacer after Confirm Email
-
-              // Email Verification Section
+              const SizedBox(height: 10),
+              _buildFormTextField(
+                controller: _confirmEmailController, // Use confirm email controller
+                labelText: 'Confirm Email Address',
+                keyboardType: TextInputType.emailAddress,
+                textTheme: textTheme,
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Please confirm your email';
+                  if (value != _emailController.text) return 'Emails do not match';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 10),
               if (!_isEmailVerified) ...[
-                 // Removed the "Send Verification Code" button
-                const SizedBox(height: 16), // Keep or adjust spacing as needed
                 _buildFormTextField(
                   controller: _otpController,
-                  labelText: 'Verification Code',
+                  labelText: 'Verification Code (OTP)',
                   keyboardType: TextInputType.number,
                   textTheme: textTheme,
-                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter the verification code';
-                    }
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Please enter the OTP';
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: _isVerifyingOtp ? null : _verifyOtp,
-                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6F5ADC), // Purple background
-                    foregroundColor: const Color(0xFFFFFFFF), // White text
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orangeAccent,
                     padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
                   ),
                   child: _isVerifyingOtp
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          'Verify Code',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
+                      : const Text('Verify Email', style: TextStyle(color: Colors.white, fontSize: 16)),
                 ),
-                const SizedBox(height: 30), // Add space before Submit button
+                const SizedBox(height: 10),
+              ] else ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.greenAccent),
+                    const SizedBox(width: 8),
+                    Text('Email Verified', style: textTheme.bodyMedium?.copyWith(color: Colors.greenAccent)),
+                  ],
+                ),
+                const SizedBox(height: 20),
               ],
-
-              // File Upload Sections (Keep these as placeholders for now)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Attach BIR Registration',
-                    style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
-                  ),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: () {
-                      // TODO: Implement file picker
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.cloud_upload_outlined,
-                            color: Colors.white.withOpacity(0.7),
-                            size: 32,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Click here to upload',
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+              _buildFileUploadField(
+                label: 'Attach BIR Registration',
+                file: _birFile,
+                onTap: () => _pickFile((file) => setState(() => _birFile = file), 'BIR Registration'),
+                textTheme: textTheme,
               ),
               const SizedBox(height: 20),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Business Certificate',
-                    style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
-                  ),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: () {
-                      // TODO: Implement file picker
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.cloud_upload_outlined,
-                            color: Colors.white.withOpacity(0.7),
-                            size: 32,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Click here to upload',
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+              _buildFileUploadField(
+                label: 'Business Certificate',
+                file: _certificateFile,
+                onTap: () => _pickFile((file) => setState(() => _certificateFile = file), 'Business Certificate'),
+                textTheme: textTheme,
               ),
               const SizedBox(height: 20),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Business Mayors Permit',
-                    style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
-                  ),
-                  const SizedBox(height: 8),
-                  InkWell(
-                    onTap: () {
-                      // TODO: Implement file picker
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.cloud_upload_outlined,
-                            color: Colors.white.withOpacity(0.7),
-                            size: 32,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Click here to upload',
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+              _buildFileUploadField(
+                label: 'Business Mayors Permit',
+                file: _permitFile,
+                onTap: () => _pickFile((file) => setState(() => _permitFile = file), 'Mayor\'s Permit'),
+                textTheme: textTheme,
               ),
               const SizedBox(height: 30),
-              // Submit Button (only enabled after verification)
               ElevatedButton(
-                onPressed: _isEmailVerified ? _submitBusinessInfo : null, // Enable only if verified
+                onPressed: _isSubmitting ? null : _submitBusinessInfo,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _isEmailVerified ? const Color(0xFFFFFFFF) : Colors.grey, // White background when enabled, grey when disabled
-                  foregroundColor: _isEmailVerified ? const Color(0xFF6F5ADC) : Colors.white, // Purple text when enabled, white when disabled
+                  backgroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).primaryColor,
                   padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
+                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                child: const Text(
-                  'Submit',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+                child: _isSubmitting
+                    ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, valueColor: AlwaysStoppedAnimation<Color>(Colors.blue)))
+                    : const Text('Submit'),
               ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -704,46 +562,130 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     );
   }
 
-  // Helper method for building text fields with consistent styling
+  // THIS IS THE DEFINITION OF _buildFormTextField
   Widget _buildFormTextField({
     required TextEditingController controller,
     required String labelText,
-    TextInputType keyboardType = TextInputType.text,
     required TextTheme textTheme,
-    String? Function(String?)? validator, // Add validator parameter
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
+    bool obscureText = false,
+    Widget? suffixIcon,
   }) {
     return TextFormField(
       controller: controller,
-      keyboardType: keyboardType,
-      validator: validator, // Use the validator parameter
-      style: textTheme.bodyLarge?.copyWith(color: Colors.white), // Set text color to white
       decoration: InputDecoration(
         labelText: labelText,
-        labelStyle: textTheme.bodyLarge?.copyWith(color: Colors.white70),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: const BorderSide(color: Colors.white70),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: const BorderSide(color: Colors.white70),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: const BorderSide(color: Colors.white), // Highlight color when focused
-        ),
-        errorBorder: OutlineInputBorder( // Add error border style
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: const BorderSide(color: Colors.red), // Red border for errors
-        ),
-        focusedErrorBorder: OutlineInputBorder( // Add focused error border style
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: const BorderSide(color: Colors.redAccent), // Slightly different red when focused on error
-        ),
+        labelStyle: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.7)),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1), // Slightly transparent white fill
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 15.0), // Adjust padding
+        fillColor: Colors.white.withOpacity(0.1),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Colors.white)),
+        suffixIcon: suffixIcon,
+      ),
+      style: textTheme.bodyMedium?.copyWith(color: Colors.white),
+      keyboardType: keyboardType,
+      validator: validator,
+      obscureText: obscureText,
+    );
+  }
+
+  // THIS IS THE DEFINITION OF _buildFileUploadField
+  Widget _buildFileUploadField({
+    required String label,
+    required File? file,
+    required VoidCallback onTap,
+    required TextTheme textTheme,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.9), fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey[200]?.withOpacity(0.85),
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            child: file != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: (file.path.toLowerCase().endsWith('.jpg') ||
+                             file.path.toLowerCase().endsWith('.jpeg') ||
+                             file.path.toLowerCase().endsWith('.png'))
+                          ? Image.file(file, fit: BoxFit.contain)
+                          : Text(
+                              file.path.split(Platform.isWindows ? '\\' : '/').last,
+                              style: textTheme.bodySmall?.copyWith(color: Colors.black87),
+                              textAlign: TextAlign.center,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                    ),
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.cloud_upload_outlined, color: Colors.grey[700], size: 40),
+                      const SizedBox(height: 8),
+                      Text('Click here to upload', style: textTheme.bodyMedium?.copyWith(color: Colors.grey[700])),
+                    ],
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // THIS IS THE DEFINITION OF _buildVerifiedScreen
+  Widget _buildVerifiedScreen(TextTheme textTheme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(Icons.check_circle_outline_rounded, color: Colors.greenAccent, size: 100),
+            const SizedBox(height: 24),
+            Text(
+              'Information Submitted!',
+              textAlign: TextAlign.center,
+              style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Your business information has been successfully submitted. You can now proceed to set up your business profile.',
+              textAlign: TextAlign.center,
+              style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
+            ),
+            const SizedBox(height: 40),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => SetBusinessProfileScreen(username: widget.username)),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Theme.of(context).primaryColor,
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
+              ),
+              child: const Text('Set Up Business Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
       ),
     );
   }
-}
+
+} // <-- THIS IS THE FINAL CLOSING BRACE FOR THE _SetBusinessInfoScreenState CLASS. ALL METHODS ABOVE MUST BE INSIDE.
