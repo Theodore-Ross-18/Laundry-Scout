@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb; // Add this import
+// For Supabase uploadBinary, you might need mime type. Add to pubspec.yaml: mime: ^1.0.4
+import 'package:mime/mime.dart'; 
 import 'set_businessprofile.dart';
 
 class SetBusinessInfoScreen extends StatefulWidget {
@@ -29,9 +32,12 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   final _otpController = TextEditingController();
   final _confirmEmailController = TextEditingController();
 
-  File? _birFile;
-  File? _certificateFile;
-  File? _permitFile;
+  // File? _birFile; // Old
+  // File? _certificateFile; // Old
+  // File? _permitFile; // Old
+  PlatformFile? _birFile; // New
+  PlatformFile? _certificateFile; // New
+  PlatformFile? _permitFile; // New
 
   bool _isEmailVerified = false;
   bool _isVerifyingOtp = false;
@@ -163,18 +169,39 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     }
   }
 
-  Future<void> _pickFile(Function(File) onFilePicked, String fileTypeLabel) async {
+  Future<void> _pickFile(Function(PlatformFile) onFilePicked, String fileTypeLabel) async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+        withData: kIsWeb, // Ensure bytes are loaded on web
       );
-      if (result != null && result.files.single.path != null) {
-        onFilePicked(File(result.files.single.path!));
+      if (result != null && result.files.isNotEmpty) { // Changed condition here
+        final pickedFile = result.files.single; // Use single picked file
+
+        // On web, path is null, but bytes should be available if withData: true
+        if (kIsWeb && pickedFile.bytes == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to load file bytes for $fileTypeLabel on web.')),
+            );
+          }
+          return;
+        }
+        // On mobile, path should be available
+        if (!kIsWeb && pickedFile.path == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('File path is invalid for $fileTypeLabel.')),
+            );
+          }
+          return;
+        }
+        onFilePicked(pickedFile);
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('No $fileTypeLabel selected or file path is invalid.')),
+            SnackBar(content: Text('No $fileTypeLabel selected.')),
           );
         }
       }
@@ -212,24 +239,40 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
       String? birUrl, certificateUrl, permitUrl;
       try {
         final userId = user.id;
-        if (_birFile != null) {
-          final String fileExtension = _birFile!.path.split('.').last;
-          final String fileName = 'bir_${userId}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
-          await Supabase.instance.client.storage.from('business_documents').upload(fileName, _birFile!);
-          birUrl = Supabase.instance.client.storage.from('business_documents').getPublicUrl(fileName);
+
+        // Helper function for uploading
+        Future<String?> uploadDocument(PlatformFile? file, String docType) async {
+          if (file == null) return null; // file is promoted to non-nullable PlatformFile after this
+          final String fileExtension = file.extension ?? 'bin';
+          final String fileName = '${docType}_${userId}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+          
+          if (kIsWeb) {
+            if (file.bytes == null) {
+              throw Exception('File bytes are null for $docType on web.');
+            }
+            await Supabase.instance.client.storage.from('business_documents').uploadBinary(
+                  fileName,
+                  file.bytes!,
+                  fileOptions: FileOptions(
+                    contentType: lookupMimeType(file.name) ?? 'application/octet-stream' // Corrected line
+                  ),
+                );
+          } else {
+            if (file.path == null) {
+              throw Exception('File path is null for $docType on mobile.');
+            }
+            await Supabase.instance.client.storage.from('business_documents').upload(
+                  fileName,
+                  File(file.path!),
+                );
+          }
+          return Supabase.instance.client.storage.from('business_documents').getPublicUrl(fileName);
         }
-        if (_certificateFile != null) {
-          final String fileExtension = _certificateFile!.path.split('.').last;
-          final String fileName = 'certificate_${userId}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
-          await Supabase.instance.client.storage.from('business_documents').upload(fileName, _certificateFile!);
-          certificateUrl = Supabase.instance.client.storage.from('business_documents').getPublicUrl(fileName);
-        }
-        if (_permitFile != null) {
-          final String fileExtension = _permitFile!.path.split('.').last;
-          final String fileName = 'permit_${userId}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
-          await Supabase.instance.client.storage.from('business_documents').upload(fileName, _permitFile!);
-          permitUrl = Supabase.instance.client.storage.from('business_documents').getPublicUrl(fileName);
-        }
+
+        birUrl = await uploadDocument(_birFile, 'bir');
+        certificateUrl = await uploadDocument(_certificateFile, 'certificate');
+        permitUrl = await uploadDocument(_permitFile, 'permit');
+
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -594,7 +637,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   // THIS IS THE DEFINITION OF _buildFileUploadField
   Widget _buildFileUploadField({
     required String label,
-    required File? file,
+    required PlatformFile? file, // Changed from File?
     required VoidCallback onTap,
     required TextTheme textTheme,
   }) {
@@ -619,12 +662,20 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 ? Center(
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: (file.path.toLowerCase().endsWith('.jpg') ||
-                             file.path.toLowerCase().endsWith('.jpeg') ||
-                             file.path.toLowerCase().endsWith('.png'))
-                          ? Image.file(file, fit: BoxFit.contain)
+                      child: (file.extension?.toLowerCase() == 'jpg' ||
+                             file.extension?.toLowerCase() == 'jpeg' ||
+                             file.extension?.toLowerCase() == 'png')
+                          ? (kIsWeb && file.bytes != null
+                              ? Image.memory(file.bytes!, fit: BoxFit.contain)
+                              : (!kIsWeb && file.path != null
+                                  ? Image.file(File(file.path!), fit: BoxFit.contain)
+                                  : Text(file.name, // Fallback to name if bytes/path issue
+                                      style: textTheme.bodySmall?.copyWith(color: Colors.black87),
+                                      textAlign: TextAlign.center,
+                                      overflow: TextOverflow.ellipsis,
+                                    )))
                           : Text(
-                              file.path.split(Platform.isWindows ? '\\' : '/').last,
+                              file.name, // Display file name for non-images (like PDF)
                               style: textTheme.bodySmall?.copyWith(color: Colors.black87),
                               textAlign: TextAlign.center,
                               overflow: TextOverflow.ellipsis,
