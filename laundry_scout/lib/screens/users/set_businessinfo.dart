@@ -250,7 +250,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
             if (file.bytes == null) {
               throw Exception('File bytes are null for $docType on web.');
             }
-            await Supabase.instance.client.storage.from('business_documents').uploadBinary(
+            await Supabase.instance.client.storage.from('businessdocuments').uploadBinary(
                   fileName,
                   file.bytes!,
                   fileOptions: FileOptions(
@@ -261,7 +261,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
             if (file.path == null) {
               throw Exception('File path is null for $docType on mobile.');
             }
-            await Supabase.instance.client.storage.from('business_documents').upload(
+            await Supabase.instance.client.storage.from('businessdocuments').upload(
                   fileName,
                   File(file.path!),
                 );
