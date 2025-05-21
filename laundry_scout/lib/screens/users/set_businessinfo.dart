@@ -777,8 +777,16 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
             const SizedBox(height: 40),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => SetBusinessProfileScreen(username: widget.username)),
+                // Navigate to SetBusinessProfileScreen
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SetBusinessProfileScreen(
+                      username: widget.username,
+                      businessName: _businessNameController.text.trim(), // Pass business name
+                      exactLocation: _businessAddressController.text.trim(), // Pass business address as exact location
+                    ),
+                  ),
                 );
               },
               style: ElevatedButton.styleFrom(
