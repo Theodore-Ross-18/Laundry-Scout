@@ -411,8 +411,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
               ElevatedButton(
                 onPressed: _nextPage,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Theme.of(context).primaryColor,
+                  backgroundColor: const Color(0xFF6F5ADC), // Purple background
+                  foregroundColor: const Color(0xFFFFFFFF), // White text
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
                 ),
@@ -543,8 +543,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 ElevatedButton(
                   onPressed: _isVerifyingOtp ? null : _verifyOtp,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6F5ADC),
-                    foregroundColor: const Color(0xFFFFFFFF),
+                    backgroundColor: const Color(0xFF6F5ADC), // Purple background
+                    foregroundColor: const Color(0xFFFFFFFF), // White text
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
                   ),
@@ -588,8 +588,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
               ElevatedButton(
                 onPressed: _isSubmitting ? null : _submitBusinessInfo,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Theme.of(context).primaryColor,
+                   backgroundColor: const Color(0xFF6F5ADC), // Purple background
+                   foregroundColor: const Color(0xFFFFFFFF), // White text
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
                   textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -727,8 +727,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Theme.of(context).primaryColor,
+                backgroundColor: const Color(0xFF6F5ADC), // Purple background
+                foregroundColor: const Color(0xFFFFFFFF), // White text
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
               ),

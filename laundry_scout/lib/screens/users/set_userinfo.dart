@@ -346,8 +346,8 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                 ElevatedButton(
                   onPressed: _nextPage,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFFFFF), // White background
-                    foregroundColor: const Color(0xFF6F5ADC), // Purple text
+                    backgroundColor: const Color(0xFF6F5ADC), // Purple background
+                    foregroundColor: const Color(0xFFFFFFFF), // White text
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0),
@@ -362,8 +362,8 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                 ElevatedButton(
                    onPressed: _nextPage,
                    style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFFFFF), // White background
-                    foregroundColor: const Color(0xFF6F5ADC), // Purple text
+                    backgroundColor: const Color(0xFF6F5ADC), // Purple background
+                    foregroundColor: const Color(0xFFFFFFFF), // White text
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0),
