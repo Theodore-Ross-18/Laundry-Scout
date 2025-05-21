@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:mime/mime.dart';
+import 'package:laundry_scout/screens/home/Owner/owner_home_screen.dart';
 
 class SetBusinessProfileScreen extends StatefulWidget {
   final String username;
@@ -30,7 +31,9 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
   PlatformFile? _coverPhotoFile;
   String? _coverPhotoUrl; // This variable will now be used
   bool _isLoading = false;
-
+  // Add this line to define the missing variable
+  List<String> _selectedServices = ['Wash & Fold', 'Ironing', 'Deliver'];
+  
   @override
   void initState() {
     super.initState();
@@ -134,6 +137,50 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
   }
 
 
+  Future<void> _showCompletionDialogAndNavigate() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.check_circle, color: Color(0xFF6F5ADC), size: 64),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Complete',
+                    style: TextStyle(
+                      color: Color(0xFF6F5ADC),
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
+    if (mounted) {
+      Navigator.of(context).pop(); // Close the dialog
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const OwnerHomeScreen()),
+      );
+    }
+  }
+
   Future<void> _saveBusinessProfile() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -160,41 +207,23 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
          }
       }
 
-
       try {
-        // Assuming business_profiles table has a user_id column linking to auth.users
-        // and you want to update the existing profile created during set_businessinfo
-        final response = await Supabase.instance.client
+        await Supabase.instance.client
             .from('business_profiles')
-            .update({
-              'cover_photo_url': _coverPhotoUrl, // Use the state variable here
-              'business_name': _businessNameController.text.trim(), // Assuming this might be updated here too
-              'services_offered': [], // Placeholder: You'll need a way to manage services
-              'does_delivery': _doesDelivery,
+            .upsert({
+              'id': user.id,
+              'business_name': _businessNameController.text.trim(),
               'about_business': _aboutBusinessController.text.trim(),
               'exact_location': _exactLocationController.text.trim(),
-            })
-            .eq('user_id', user.id)
-            .select(); // Select the updated row to confirm
+              'does_delivery': _doesDelivery,
+              'cover_photo_url': _coverPhotoUrl,
+              'services_offered': _selectedServices, // Changed from 'services' to 'services_offered'
+            });
 
-        if (response.isNotEmpty) {
-           if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                 const SnackBar(content: Text('Business profile saved successfully!')),
-              );
-              // Navigate to the next screen, e.g., Owner Home Screen
-               Navigator.pushReplacementNamed(context, '/owner_home'); // Use named route if available
-               // Or use MaterialPageRoute
-               // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OwnerHomeScreen()));
-           }
-        } else {
-           if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                 const SnackBar(content: Text('Failed to save business profile. Profile not found?')),
-              );
-           }
+        // Show success dialog and navigate
+        if (mounted) {
+          await _showCompletionDialogAndNavigate();
         }
-
       } on PostgrestException catch (error) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
