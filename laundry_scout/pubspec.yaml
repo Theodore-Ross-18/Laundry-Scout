@@ -14,7 +14,7 @@ dependencies:
   supabase_flutter: ^2.3.4
   flutter_dotenv: ^5.1.0
   flutter_launcher_icons: ^0.13.1
-  file_picker: ^6.2.0 # or your current version
+  file_picker: ^10.1.9 # Updated to a potentially compatible version
   mime: ^1.0.5 # Add this line
 
 dev_dependencies:
