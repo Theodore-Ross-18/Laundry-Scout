@@ -31,6 +31,9 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
   bool _isVerifyingOtp = false; // Track if OTP is being verified
 
   Timer? _timer; // Add a Timer variable
+  Timer? _otpTimer; // Timer for OTP countdown
+  int _otpTimerDuration = 60; // Initial duration in seconds
+  bool _isOtpTimerActive = false; // Track if OTP timer is running
 
   final List<Map<String, String>> slides = [
     {
@@ -91,6 +94,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     _otpController.dispose(); // Dispose OTP controller
     _confirmEmailController.dispose(); // Dispose confirm email controller
     _timer?.cancel(); // Cancel the timer in dispose
+    _otpTimer?.cancel(); // Cancel the OTP timer
     super.dispose();
   }
 
@@ -133,6 +137,9 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
       _isVerifyingOtp = true;
     });
 
+    // Start the timer when verification is attempted
+    _startOtpTimer();
+
     try {
       final AuthResponse res = await Supabase.instance.client.auth.verifyOTP(
         type: OtpType.email,
@@ -149,6 +156,8 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Email verified successfully!')),
           );
+          _otpTimer?.cancel(); // Stop the timer on success
+          _isOtpTimerActive = false; // Update state
         }
       } else {
          // Handle cases where user is null but no exception was thrown (shouldn't happen with verifyOTP usually)
@@ -175,9 +184,43 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
       if (mounted) {
         setState(() {
           _isVerifyingOtp = false;
+          // Timer continues if verification failed, stops if successful (handled above)
         });
       }
     }
+  }
+
+  // Function to start the OTP countdown timer
+  void _startOtpTimer() {
+    _otpTimer?.cancel(); // Cancel any existing timer
+    _otpTimerDuration = 60; // Reset duration
+    _isOtpTimerActive = true; // Set timer active state
+
+    _otpTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_otpTimerDuration < 1) {
+        timer.cancel();
+        if (mounted) {
+          setState(() {
+            _isOtpTimerActive = false; // Timer finished
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _otpTimerDuration--;
+          });
+        }
+      }
+    });
+  }
+
+  // Function to resend OTP (placeholder)
+  void _resendOtp() {
+    // TODO: Implement actual OTP resend logic here
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Resending OTP... Please wait...')),
+    );
+    _startOtpTimer(); // Restart the timer
   }
 
 
@@ -466,7 +509,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: _isVerifyingOtp ? null : _verifyOtp,
+                  onPressed: (_isVerifyingOtp || _isOtpTimerActive) ? null : _verifyOtp, // Disable while verifying or timer is active
                    style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6F5ADC), // Purple background
                     foregroundColor: const Color(0xFFFFFFFF), // White text
@@ -489,6 +532,24 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                 ),
+                const SizedBox(height: 10), // Add space below the Verify button
+                if (_isOtpTimerActive) // Show timer if active
+                  Center(
+                    child: Text(
+                      'Resend code in $_otpTimerDuration seconds',
+                      style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
+                    ),
+                  ),
+                if (!_isOtpTimerActive && !_isEmailVerified) // Show resend button if timer finished and not verified
+                   Center(
+                    child: TextButton(
+                      onPressed: _resendOtp,
+                      child: Text(
+                        'Resend Code',
+                        style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 30), // Add space before Submit button
               ],
 

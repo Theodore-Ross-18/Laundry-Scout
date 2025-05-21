@@ -20,7 +20,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   PageController _pageController = PageController();
   int _currentPage = 0;
   bool _showForm = false;
-  Timer? _timer;
+  Timer? _timer; // Timer for slides
 
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
@@ -43,6 +43,11 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   bool _isVerifyingOtp = false;
   bool _isSubmitting = false;
   bool _submissionComplete = false;
+
+  Timer? _otpTimer; // Timer for OTP countdown
+  int _otpTimerDuration = 60; // Initial duration in seconds
+  bool _isOtpTimerActive = false; // Track if OTP timer is running
+
 
   final List<Map<String, String>> slides = [
     {
@@ -97,7 +102,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     _emailController.dispose();
     _otpController.dispose();
     _confirmEmailController.dispose();
-    _timer?.cancel();
+    _timer?.cancel(); // Cancel slide timer
+    _otpTimer?.cancel(); // Cancel OTP timer
     super.dispose();
   }
 
@@ -132,6 +138,10 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
       return;
     }
     setState(() { _isVerifyingOtp = true; });
+
+    // Start the timer when verification is attempted
+    _startOtpTimer();
+
     try {
       final AuthResponse res = await Supabase.instance.client.auth.verifyOTP(
         type: OtpType.email, email: email, token: otp,
@@ -142,6 +152,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Email verified successfully!')),
           );
+          _otpTimer?.cancel(); // Stop the timer on success
+          _isOtpTimerActive = false; // Update state
         }
       } else {
          if (mounted) {
@@ -164,10 +176,47 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() { _isVerifyingOtp = false; });
+        setState(() {
+          _isVerifyingOtp = false;
+          // Timer continues if verification failed, stops if successful (handled above)
+        });
       }
     }
   }
+
+  // Function to start the OTP countdown timer
+  void _startOtpTimer() {
+    _otpTimer?.cancel(); // Cancel any existing timer
+    _otpTimerDuration = 60; // Reset duration
+    _isOtpTimerActive = true; // Set timer active state
+
+    _otpTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_otpTimerDuration < 1) {
+        timer.cancel();
+        if (mounted) {
+          setState(() {
+            _isOtpTimerActive = false; // Timer finished
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _otpTimerDuration--;
+          });
+        }
+      }
+    });
+  }
+
+  // Function to resend OTP (placeholder)
+  void _resendOtpBusiness() {
+    // TODO: Implement actual OTP resend logic here
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Resending OTP... Please wait...')),
+    );
+    _startOtpTimer(); // Restart the timer
+  }
+
 
   Future<void> _pickFile(Function(PlatformFile) onFilePicked, String fileTypeLabel) async {
     try {
@@ -541,7 +590,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton(
-                  onPressed: _isVerifyingOtp ? null : _verifyOtp,
+                  onPressed: (_isVerifyingOtp || _isOtpTimerActive) ? null : _verifyOtp, // Disable while verifying or timer is active
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6F5ADC), // Purple background
                     foregroundColor: const Color(0xFFFFFFFF), // White text
@@ -550,20 +599,29 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                   ),
                   child: _isVerifyingOtp
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-                      : const Text('Verify', style: TextStyle(color: Colors.white, fontSize: 16)),
+                      : const Text('Verify', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
-                const SizedBox(height: 10),
-              ] else ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.check_circle, color: Colors.greenAccent),
-                    const SizedBox(width: 8),
-                    Text('Email Verified', style: textTheme.bodyMedium?.copyWith(color: Colors.greenAccent)),
-                  ],
-                ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 10), // Add space below the Verify button
+                if (_isOtpTimerActive) // Show timer if active
+                  Center(
+                    child: Text(
+                      'Resend code in $_otpTimerDuration seconds',
+                      style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
+                    ),
+                  ),
+                if (!_isOtpTimerActive && !_isEmailVerified) // Show resend button if timer finished and not verified
+                   Center(
+                    child: TextButton(
+                      onPressed: _resendOtpBusiness,
+                      child: Text(
+                        'Resend Code',
+                        style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 30), // Add space before file pickers
               ],
+
               _buildFileUploadField(
                 label: 'Attach BIR Registration',
                 file: _birFile,
@@ -606,7 +664,6 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     );
   }
 
-  // THIS IS THE DEFINITION OF _buildFormTextField
   Widget _buildFormTextField({
     required TextEditingController controller,
     required String labelText,
@@ -635,7 +692,6 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     );
   }
 
-  // THIS IS THE DEFINITION OF _buildFileUploadField
   Widget _buildFileUploadField({
     required String label,
     required PlatformFile? file, // Changed from File?
@@ -697,7 +753,6 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     );
   }
 
-  // THIS IS THE DEFINITION OF _buildVerifiedScreen
   Widget _buildVerifiedScreen(TextTheme textTheme) {
     return Center(
       child: Padding(
