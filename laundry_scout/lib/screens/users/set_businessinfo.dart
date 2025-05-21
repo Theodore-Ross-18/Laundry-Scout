@@ -283,6 +283,28 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
         );
         return;
     }
+
+    // Add checks for required files here
+    if (_birFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please upload your BIR Registration.')),
+      );
+      return;
+    }
+    if (_certificateFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please upload your Business Certificate.')),
+      );
+      return;
+    }
+    if (_permitFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please upload your Mayor\'s Permit.')),
+      );
+      return;
+    }
+    // End of file checks
+
     if (_formKey.currentState!.validate()) {
       setState(() { _isSubmitting = true; });
       String? birUrl, certificateUrl, permitUrl;
@@ -294,7 +316,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
           if (file == null) return null; // file is promoted to non-nullable PlatformFile after this
           final String fileExtension = file.extension ?? 'bin';
           final String fileName = '${docType}_${userId}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
-          
+
           if (kIsWeb) {
             if (file.bytes == null) {
               throw Exception('File bytes are null for $docType on web.');
