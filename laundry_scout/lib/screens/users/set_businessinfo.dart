@@ -543,13 +543,14 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 ElevatedButton(
                   onPressed: _isVerifyingOtp ? null : _verifyOtp,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orangeAccent,
+                    backgroundColor: const Color(0xFF6F5ADC),
+                    foregroundColor: const Color(0xFFFFFFFF),
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
                   ),
                   child: _isVerifyingOtp
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-                      : const Text('Verify Email', style: TextStyle(color: Colors.white, fontSize: 16)),
+                      : const Text('Verify', style: TextStyle(color: Colors.white, fontSize: 16)),
                 ),
                 const SizedBox(height: 10),
               ] else ...[

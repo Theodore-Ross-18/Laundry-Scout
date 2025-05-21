@@ -485,7 +485,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                           ),
                         )
                       : const Text(
-                          'Verify Code',
+                          'Verify',
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                 ),
