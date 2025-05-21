@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:mime/mime.dart';
 import 'package:laundry_scout/screens/home/Owner/owner_home_screen.dart';
+// Add this import at the top with other imports
+import 'package:laundry_scout/screens/users/businessprofilepreview.dart';
 
 class SetBusinessProfileScreen extends StatefulWidget {
   final String username;
@@ -253,28 +255,7 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        // Removed the title from the AppBar
-        // title: const Text('Business Profile'),
         automaticallyImplyLeading: false,
-        // Removed the leading TextButton for Cancel
-        // leading: TextButton(
-        //   onPressed: () {
-        //     // Handle Cancel action
-        //     Navigator.of(context).pop(); // Example: go back
-        //   },
-        //   child: const Expanded( // Wrap Text in Expanded to prevent overflow
-        //     child: Text('Cancel', style: TextStyle(color: Colors.white)),
-        //   ),
-        // ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              // Handle Preview action
-              // This might involve showing a preview of the profile
-            },
-            child: const Text('Preview', style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
@@ -466,9 +447,9 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
                       const SizedBox(height: 10),
                       TextFormField(
                         controller: _exactLocationController,
-                        style: const TextStyle(color: Colors.black), // Set input text color to black
+                        style: const TextStyle(color: Colors.black),
                         decoration: InputDecoration(
-                          labelStyle: const TextStyle(color: Colors.black54), // Set label text color
+                          labelStyle: const TextStyle(color: Colors.black54),
                           prefixIcon: Icon(Icons.location_on, color: Colors.grey[700]),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
                           filled: true,
@@ -487,13 +468,52 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
                       ElevatedButton(
                         onPressed: _saveBusinessProfile,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6F5ADC), // Purple background
-                          foregroundColor: const Color(0xFFFFFFFF), // White text
-                          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
+                          backgroundColor: const Color(0xFF6F5ADC),
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                          ),
                         ),
-                        child: const Text('Published', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Published',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
+
+                      const SizedBox(height: 16),
+
+                      // Preview Button
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BusinessProfilePreview(
+                                businessName: _businessNameController.text,
+                                location: _exactLocationController.text,
+                                aboutBusiness: _aboutBusinessController.text,
+                                coverPhotoUrl: _coverPhotoUrl,
+                                coverPhotoFile: _coverPhotoFile, // Ensure this is passed
+                                doesDelivery: _doesDelivery,
+                                services: _selectedServices,
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Preview Profile',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
