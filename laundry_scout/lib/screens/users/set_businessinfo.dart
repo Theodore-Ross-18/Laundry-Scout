@@ -720,6 +720,11 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     required VoidCallback onTap,
     required TextTheme textTheme,
   }) {
+    bool isImage =
+        (file?.extension?.toLowerCase() == 'jpg' ||
+         file?.extension?.toLowerCase() == 'jpeg' ||
+         file?.extension?.toLowerCase() == 'png');
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -732,45 +737,47 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
           onTap: onTap,
           child: Container(
             height: 120,
-            width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.grey[200]?.withOpacity(0.85),
+              color: Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12.0),
+              border: Border.all(color: Colors.white.withOpacity(0.3)),
+              image: isImage && file != null
+                  ? DecorationImage(
+                      image: kIsWeb
+                          ? MemoryImage(file.bytes!) as ImageProvider<Object>
+                          : FileImage(File(file.path!)) as ImageProvider<Object>,
+                      fit: BoxFit.cover,
+                    )
+                  : null,
             ),
-            child: file != null
+            child: file == null
                 ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: (file.extension?.toLowerCase() == 'jpg' ||
-                             file.extension?.toLowerCase() == 'jpeg' ||
-                             file.extension?.toLowerCase() == 'png')
-                          ? (kIsWeb && file.bytes != null
-                              ? Image.memory(file.bytes!, fit: BoxFit.contain)
-                              : (!kIsWeb && file.path != null
-                                  ? Image.file(File(file.path!), fit: BoxFit.contain)
-                                  : Text(file.name, // Fallback to name if bytes/path issue
-                                      style: textTheme.bodySmall?.copyWith(color: Colors.black87),
-                                      textAlign: TextAlign.center,
-                                      overflow: TextOverflow.ellipsis,
-                                    )))
-                          : Text(
-                              file.name, // Display file name for non-images (like PDF)
-                              style: textTheme.bodySmall?.copyWith(color: Colors.black87),
-                              textAlign: TextAlign.center,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.cloud_upload, size: 40, color: Colors.white.withOpacity(0.7)),
+                        const SizedBox(height: 8),
+                        Text('Click to upload', style: textTheme.bodySmall?.copyWith(color: Colors.white.withOpacity(0.7))),
+                      ],
                     ),
                   )
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.cloud_upload_outlined, color: Colors.grey[700], size: 40),
-                      const SizedBox(height: 8),
-                      Text('Click here to upload', style: textTheme.bodyMedium?.copyWith(color: Colors.grey[700])),
-                    ],
-                  ),
+                : isImage
+                    ? null // Image is shown as background
+                    : Center(
+                        child: Text(
+                          file.name,
+                          style: textTheme.bodySmall?.copyWith(color: Colors.white),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
           ),
         ),
+        const SizedBox(height: 8),
+        if (file != null && !isImage)
+          Text(
+            file.name,
+            style: textTheme.bodySmall?.copyWith(color: Colors.white.withOpacity(0.7)),
+          ),
       ],
     );
   }
