@@ -37,6 +37,7 @@ flutter:
     - lib/assets/user/slides/first.png
     - lib/assets/user/slides/second.png
     - lib/assets/user/slides/third.png
+    - lib/assets/promo_example.png
   
   fonts:
     - family: Poppins

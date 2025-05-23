@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'business_profile_screen.dart';
+import 'add_promo_screen.dart'; // Import the new screen
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -173,7 +174,16 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                             children: [
                               Row(
                                 children: [
-                                  Expanded(child: _actionCard(Icons.percent, 'Add Promo', Colors.deepPurple)),
+                                  Expanded(
+                                    child: GestureDetector( // Wrap with GestureDetector
+                                      onTap: () {
+                                        Navigator.of(context).push( // Navigate to AddPromoScreen
+                                          MaterialPageRoute(builder: (context) => const AddPromoScreen()),
+                                        );
+                                      },
+                                      child: _actionCard(Icons.percent, 'Add Promo', Colors.deepPurple),
+                                    ),
+                                  ),
                                   const SizedBox(width: 12),
                                   Expanded(child: _actionCard(Icons.edit, 'Edit Profile', Colors.deepPurple)),
                                 ],
