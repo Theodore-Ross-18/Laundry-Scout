@@ -14,11 +14,13 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _userName = 'User'; // Default name
   bool _isLoading = true;
+  List<Map<String, dynamic>> _laundryShops = []; // State variable to hold laundry shops
 
   @override
   void initState() {
     super.initState();
     _loadUserProfile();
+    _loadLaundryShops(); // Load laundry shops when the screen initializes
   }
 
   Future<void> _loadUserProfile() async {
@@ -60,6 +62,28 @@ class _HomeScreenState extends State<HomeScreen> {
         // Optionally show an error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error loading user profile: $e')),
+        );
+      }
+    }
+  }
+
+  // New method to load laundry shops from Supabase
+  Future<void> _loadLaundryShops() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('id, business_name, exact_location, cover_photo_url, does_delivery'); // Select relevant columns
+
+      if (mounted) {
+        setState(() {
+          _laundryShops = List<Map<String, dynamic>>.from(response); // Cast response to the correct type
+        });
+      }
+    } catch (e) {
+      print('Error loading laundry shops: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading laundry shops: $e')),
         );
       }
     }
@@ -273,12 +297,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       height: 200, // Adjust height as needed
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
-                        itemCount: 5, // Placeholder item count
+                        itemCount: _laundryShops.length, // Use the actual number of fetched shops
                         itemBuilder: (context, index) {
+                          final shop = _laundryShops[index]; // Get the current shop data
                           // TODO: Replace with actual Laundry Shop Card widget
                           return Container(
                             width: 180, // Adjust width as needed
-                            margin: EdgeInsets.only(left: index == 0 ? 16.0 : 8.0, right: index == 4 ? 16.0 : 0),
+                            margin: EdgeInsets.only(left: index == 0 ? 16.0 : 8.0, right: index == _laundryShops.length - 1 ? 16.0 : 0), // Adjust margin based on list length
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(15),
@@ -294,15 +319,20 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Placeholder Image
+                                // Placeholder Image - Use actual cover photo if available
                                 Container(
                                   height: 100,
                                   decoration: BoxDecoration(
                                     borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                                    image: DecorationImage(
-                                      image: AssetImage('lib/assets/laundry_placeholder.png'), // Placeholder image
-                                      fit: BoxFit.cover,
-                                    ),
+                                    image: shop['cover_photo_url'] != null
+                                        ? DecorationImage(
+                                            image: NetworkImage(shop['cover_photo_url']), // Use fetched image URL
+                                            fit: BoxFit.cover,
+                                          )
+                                        : const DecorationImage( // Fallback placeholder image
+                                            image: AssetImage('lib/assets/laundry_placeholder.png'),
+                                            fit: BoxFit.cover,
+                                          ),
                                   ),
                                 ),
                                 Padding(
@@ -311,7 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Laundry Shop ${index + 1}', // Placeholder name
+                                        shop['business_name'] ?? 'Laundry Shop', // Use fetched business name
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
@@ -324,7 +354,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           const SizedBox(width: 4),
                                           Expanded(
                                             child: Text(
-                                              'Address Placeholder', // Placeholder address
+                                              shop['exact_location'] ?? 'Address Placeholder', // Use fetched location
                                               style: TextStyle(fontSize: 12, color: Colors.grey),
                                               overflow: TextOverflow.ellipsis,
                                             ),
@@ -334,11 +364,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                       const SizedBox(height: 4),
                                       Row(
                                         children: [
-                                          Icon(Icons.circle, size: 10, color: index.isEven ? Colors.green : Colors.orange), // Placeholder status indicator
+                                          // Placeholder status indicator - You might need to add a status field to business_profiles
+                                          Icon(Icons.circle, size: 10, color: shop['does_delivery'] == true ? Colors.green : Colors.orange), // Example: Use does_delivery for status
                                           const SizedBox(width: 4),
                                           Text(
-                                            index.isEven ? 'Open Slots' : 'Filling Up', // Placeholder status text
-                                            style: TextStyle(fontSize: 12, color: index.isEven ? Colors.green : Colors.orange),
+                                            shop['does_delivery'] == true ? 'Delivery Available' : 'No Delivery', // Example status text
+                                            style: TextStyle(fontSize: 12, color: shop['does_delivery'] == true ? Colors.green : Colors.orange),
                                           ),
                                         ],
                                       ),
