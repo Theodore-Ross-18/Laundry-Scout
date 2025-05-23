@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/login_screen.dart';
+import 'profile_screen.dart'; // Import the new profile screen
 
 // Convert StatelessWidget to StatefulWidget
 class HomeScreen extends StatefulWidget {
@@ -112,12 +113,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ],
                               ),
-                              // Profile Picture (Placeholder)
-                              CircleAvatar(
-                                radius: 25,
-                                backgroundColor: Colors.white,
-                                child: Icon(Icons.person, color: Color(0xFF6F5ADC)), // Placeholder icon
-                                // TODO: Load actual user profile picture if available
+                              // Profile Picture (Placeholder) - Make it tappable
+                              GestureDetector( // Wrap with GestureDetector
+                                onTap: () {
+                                  // Navigate to the ProfileScreen
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                                  );
+                                },
+                                child: CircleAvatar(
+                                  radius: 25,
+                                  backgroundColor: Colors.white,
+                                  child: Icon(Icons.person, color: Color(0xFF6F5ADC)), // Placeholder icon
+                                  // TODO: Load actual user profile picture if available
+                                ),
                               ),
                             ],
                           ),
