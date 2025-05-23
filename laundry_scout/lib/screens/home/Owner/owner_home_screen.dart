@@ -244,63 +244,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       ),
     );
   }
-
-  Widget _buildActionButton(String title, IconData icon, {bool isAvailable = false}) {
-    return Container(
-      width: double.infinity,
-      height: 50,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Icon(icon, color: Color(0xFF543CDC)),
-          ),
-          Expanded(
-            child: Text(
-              title,
-              style: TextStyle(fontSize: 16, color: Colors.black),
-            ),
-          ),
-          if (isAvailable)
-            Container(
-              margin: const EdgeInsets.all(8.0),
-              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
-              decoration: BoxDecoration(
-                color: Colors.green,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'Set Availability',
-                style: TextStyle(color: Colors.white, fontSize: 12),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label, bool isSelected) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: isSelected ? Color(0xFF543CDC) : Colors.grey,
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Color(0xFF543CDC) : Colors.grey,
-            fontSize: 12,
-          ),
-        ),
-      ],
-    );
-  }
 }
 
 // Helper widgets:
