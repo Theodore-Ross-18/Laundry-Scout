@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'business_profile_screen.dart';
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -87,10 +88,17 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                   ),
                                 ],
                               ),
-                              CircleAvatar(
-                                radius: 24,
-                                backgroundColor: Colors.white,
-                                child: Icon(Icons.person, color: Color(0xFF7B61FF), size: 32),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (context) => const BusinessProfileScreen()),
+                                  );
+                                },
+                                child: CircleAvatar(
+                                  radius: 24,
+                                  backgroundColor: Colors.white,
+                                  child: Icon(Icons.person, color: Color(0xFF7B61FF), size: 32),
+                                ),
                               ),
                             ],
                           ),
