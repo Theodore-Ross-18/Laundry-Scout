@@ -308,18 +308,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          promo['title'] ?? 'No Title',
-                                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        Text(
-                                          promo['description'] ?? 'No Description',
-                                          style: const TextStyle(color: Colors.white70, fontSize: 12),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                                    
                                         Text(
                                           'By: $businessName',
                                           style: const TextStyle(color: Colors.white70, fontSize: 10),

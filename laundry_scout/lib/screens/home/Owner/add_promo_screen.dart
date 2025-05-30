@@ -43,10 +43,6 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
     }
   }
 
-  // Add TextEditingControllers
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
-
   void _publishPromo() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
@@ -105,8 +101,6 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
       await Supabase.instance.client.from('promos').insert({
         'creator_id': user.id, 
         'business_id': user.id, 
-        'title': _titleController.text,
-        'description': _descriptionController.text,
         'image_url': publicImageUrl, // Use the public URL (which can be null)
         'created_at': DateTime.now().toIso8601String(),
       });
