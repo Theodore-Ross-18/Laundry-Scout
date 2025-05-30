@@ -193,6 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: const TextField(
                                     decoration: InputDecoration(
                                       hintText: 'Search Here',
+                                      hintStyle: TextStyle(color: Colors.grey), // Set hint text color to grey
                                       border: InputBorder.none,
                                       icon: Icon(Icons.search, color: Colors.grey),
                                     ),
