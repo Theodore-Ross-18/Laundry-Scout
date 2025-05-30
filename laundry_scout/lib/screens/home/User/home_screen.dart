@@ -230,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     onSubmitted: _filterLaundryShops, // Trigger search on submit
                                     decoration: const InputDecoration(
                                       hintText: 'Search Here',
-                                      hintStyle: TextStyle(color: Colors.black), // Set hint text color to black
+                                      hintStyle: TextStyle(color: Colors.grey), // Set hint text color to black
                                       border: InputBorder.none,
                                       icon: Icon(Icons.search, color: Colors.grey),
                                     ),
