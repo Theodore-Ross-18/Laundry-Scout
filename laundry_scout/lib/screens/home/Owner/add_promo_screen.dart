@@ -48,60 +48,31 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) throw Exception('Not authenticated');
   
-      String? imagePath; // To store the path from storage response
-      String? publicImageUrl; // To store the final public URL - CHANGED to nullable String
+      String? imageUrlToStore; // To store the public URL
 
       if (kIsWeb && _selectedImageBytes != null) {
         final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-        imagePath = await Supabase.instance.client.storage
+        // Upload the binary data
+        await Supabase.instance.client.storage
             .from('promoimages')
             .uploadBinary(
               fileName,
               _selectedImageBytes!,
             );
-      } else if (_selectedImageFile != null) {
-        final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-        imagePath = await Supabase.instance.client.storage
+        // Get the public URL after successful upload
+        imageUrlToStore = Supabase.instance.client.storage
             .from('promoimages')
-            .upload(
-              fileName,
-              _selectedImageFile!,
-            );
-      }
+            .getPublicUrl(fileName);
+      } 
 
-      // If image was uploaded, get its public URL
-      if (imagePath != null) {
-        // The path returned by upload is often just the key/filename.
-        // We need to construct the public URL.
-        // Supabase storage response for upload is the key of the object, not the full path.
-        // We need to use the path that was used for uploading to get the public URL.
-        // Let's assume the 'imagePath' from the upload IS the 'path' argument needed for getPublicUrl.
-        // If the upload methods return the full path within the bucket (e.g., 'public/filename.jpg'),
-        // then that's what you use. If they return just 'filename.jpg', and it's in the root of the bucket,
-        // then that's fine too.
-        // The key is that the 'path' for getPublicUrl must match how it's stored.
-        // From your Supabase screenshot, it seems the path is like 'promoimages/filename.jpg'
-        // but the upload functions in Supabase Flutter usually return the path *within* the bucket.
-        // So if you upload to 'filename.jpg' in 'promoimages' bucket, the path is 'filename.jpg'.
-
-        // The path returned by Supabase `upload` or `uploadBinary` is the key of the object.
-        // For example, if you uploaded as 'public/123.jpg', imagePath would be 'public/123.jpg'.
-        // If you uploaded as '123.jpg', imagePath would be '123.jpg'.
-        // The screenshot shows 'promoimages/...' which implies the bucket name is part of the path stored in the DB.
-        // This is unusual. Typically, image_url would store the path *within* the bucket, or the full public URL.
-
-        // Let's assume the 'imagePath' variable from the upload is the path *within* the 'promoimages' bucket.
-        // For example, if imagePath is '1748438847168.jpg'
-        publicImageUrl = Supabase.instance.client.storage
-            .from('promoimages')
-            .getPublicUrl(imagePath); // imagePath here is the path *within* the bucket
-      }
+     
+        
   
       // Save promo data
       await Supabase.instance.client.from('promos').insert({
         'creator_id': user.id, 
         'business_id': user.id, 
-        'image_url': publicImageUrl, // Use the public URL (which can be null)
+        'image_url': imageUrlToStore, // Store the public URL
         'created_at': DateTime.now().toIso8601String(),
       });
   
