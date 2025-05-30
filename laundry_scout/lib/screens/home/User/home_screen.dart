@@ -490,12 +490,6 @@ class HomeScreenBody extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      promo['title'] ?? 'Promo Title',
-                                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
                                       'By: $businessName',
                                       style: const TextStyle(color: Colors.white70, fontSize: 10),
                                       maxLines: 1,
