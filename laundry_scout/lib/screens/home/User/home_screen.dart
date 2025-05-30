@@ -15,12 +15,14 @@ class _HomeScreenState extends State<HomeScreen> {
   String _userName = 'User'; // Default name
   bool _isLoading = true;
   List<Map<String, dynamic>> _laundryShops = []; // State variable to hold laundry shops
+  List<Map<String, dynamic>> _promos = []; // State variable to hold promo data
 
   @override
   void initState() {
     super.initState();
     _loadUserProfile();
     _loadLaundryShops(); // Load laundry shops when the screen initializes
+    _loadPromos(); // Load promos when the screen initializes
   }
 
   Future<void> _loadUserProfile() async {
@@ -84,6 +86,28 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error loading laundry shops: $e')),
+        );
+      }
+    }
+  }
+
+  // New method to load promos from Supabase
+  Future<void> _loadPromos() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('promos')
+          .select('*, business_profiles(business_name)'); // Select all columns from the promos table and join business_profiles to get business_name
+
+      if (mounted) {
+        setState(() {
+          _promos = List<Map<String, dynamic>>.from(response);
+        });
+      }
+    } catch (e) {
+      print('Error loading promos: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading promos: $e')),
         );
       }
     }
@@ -236,34 +260,78 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    // Horizontal list of promos (Placeholder)
+                    // Horizontal list of promos
                     SizedBox(
                       height: 150, // Adjust height as needed
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: 3, // Placeholder item count
-                        itemBuilder: (context, index) {
-                          // TODO: Replace with actual Promo Card widget
-                          return Container(
-                            width: 250, // Adjust width as needed
-                            margin: EdgeInsets.only(left: index == 0 ? 16.0 : 8.0, right: index == 2 ? 16.0 : 0),
-                            decoration: BoxDecoration(
-                              color: Colors.blueAccent, // Placeholder color
-                              borderRadius: BorderRadius.circular(15),
-                              image: DecorationImage(
-                                image: AssetImage('lib/assets/promo_placeholder.png'), // Placeholder image
-                                fit: BoxFit.cover,
-                              ),
+                      child: _promos.isEmpty
+                          ? const Center(child: Text('No promos available.'))
+                          : ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              shrinkWrap: false,
+                              physics: const ClampingScrollPhysics(),
+                              itemCount: _promos.length,
+                              itemBuilder: (context, index) {
+                                final promo = _promos[index];
+                                final businessName = promo['business_profiles']?['business_name'] ?? 'Unknown Business';
+                                print('Promo Image URL for ${promo['title']}: ${promo['image_url']}'); // Add this line
+                                return Container(
+                                  width: 250, // Adjust width as needed
+                                  margin: EdgeInsets.only(left: index == 0 ? 16.0 : 8.0, right: index == _promos.length - 1 ? 16.0 : 0),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blueAccent, // Placeholder color
+                                    borderRadius: BorderRadius.circular(15),
+                                    image: promo['image_url'] != null
+                                        ? DecorationImage(
+                                            image: NetworkImage(promo['image_url']),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : const DecorationImage(
+                                            image: AssetImage('lib/assets/promo_placeholder.png'), // Fallback placeholder image
+                                            fit: BoxFit.cover,
+                                          ),
+                                  ),
+                                  child: Container(
+                                    // Optional: Add a gradient overlay for better text readability
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(15),
+                                      gradient: LinearGradient(
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                        colors: [
+                                          Colors.black.withOpacity(0.7),
+                                          Colors.transparent,
+                                        ],
+                                      ),
+                                    ),
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          promo['title'] ?? 'No Title',
+                                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          promo['description'] ?? 'No Description',
+                                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          'By: $businessName',
+                                          style: const TextStyle(color: Colors.white70, fontSize: 10),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
-                            child: Center(
-                              child: Text(
-                                'Promo ${index + 1}',
-                                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
                     ),
                     const SizedBox(height: 20),
                     // Nearest Laundry Shop's Section
@@ -292,12 +360,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    // Horizontal list of laundry shops (Placeholder)
+                    // Horizontal list of laundry shops
                     SizedBox(
-                      height: 200, // Adjust height as needed
+                      height: 200, // Defines the height of the horizontal list
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
-                        itemCount: _laundryShops.length, // Use the actual number of fetched shops
+                        shrinkWrap: false,
+                        physics: const ClampingScrollPhysics(),
+                        itemCount: _laundryShops.length,
                         itemBuilder: (context, index) {
                           final shop = _laundryShops[index]; // Get the current shop data
                           // TODO: Replace with actual Laundry Shop Card widget
@@ -341,10 +411,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        shop['business_name'] ?? 'Laundry Shop', // Use fetched business name
+                                        shop['business_name'] ?? 'Laundry Shop',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
+                                          color: Colors.black87, // More visible color
                                         ),
                                       ),
                                       const SizedBox(height: 4),
