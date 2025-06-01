@@ -34,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true; // Added for password visibility
 
   Future<void> _signIn() async {
     if (_formKey.currentState!.validate()) {
@@ -238,22 +239,30 @@ class _LoginScreenState extends State<LoginScreen> {
                       height: 57,
                       child: TextFormField(
                         controller: _emailController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Username or email',
-                          border: OutlineInputBorder(
+                          border: const OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(18.0)),
                             borderSide: BorderSide(color: Color(0xFFFFFFFF)),
                           ),
-                          enabledBorder: OutlineInputBorder(
+                          enabledBorder: const OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(18.0)),
                             borderSide: BorderSide(color: Colors.white70),
                           ),
-                          focusedBorder: OutlineInputBorder(
+                          focusedBorder: const OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(18.0)),
                             borderSide: BorderSide(color: Color(0xFFFFFFFF)),
                           ),
-                          // Consider adding contentPadding if text is not vertically centered
-                          // contentPadding: EdgeInsets.symmetric(vertical: (57 - (textTheme.bodyLarge?.fontSize ?? 16) * 1.5) / 2), // Example
+                          suffixIcon: _emailController.text.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear, size: 18.0), // Smaller icon
+                                  onPressed: () {
+                                    setState(() {
+                                      _emailController.clear();
+                                    });
+                                  },
+                                )
+                              : null,
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -262,6 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           return null;
                         },
                         style: textTheme.bodyLarge,
+                        onChanged: (text) => setState(() {}), // Rebuild to show/hide clear button
                       ),
                     ),
                   ),
@@ -272,23 +282,36 @@ class _LoginScreenState extends State<LoginScreen> {
                       height: 57,
                       child: TextFormField(
                         controller: _passwordController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Password',
-                          border: OutlineInputBorder(
+                          border: const OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(18.0)),
                             borderSide: BorderSide(color: Color(0xFFFFFFFF)),
                           ),
-                          enabledBorder: OutlineInputBorder(
+                          enabledBorder: const OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(18.0)),
                             borderSide: BorderSide(color: Colors.white70),
                           ),
-                          focusedBorder: OutlineInputBorder(
+                          focusedBorder: const OutlineInputBorder(
                             borderRadius: BorderRadius.all(Radius.circular(18.0)),
                             borderSide: BorderSide(color: Color(0xFFFFFFFF)),
                           ),
-                          // Consider adding contentPadding if text is not vertically centered
+                          suffixIcon: _passwordController.text.isNotEmpty
+                              ? IconButton(
+                                  icon: Icon(
+                                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                    size: 18.0,
+                                    color: Colors.white70, // Optional: Adjust icon color
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
+                                )
+                              : null, // Show icon only if text is not empty
                         ),
-                        obscureText: true,
+                        obscureText: _obscurePassword, // Use state variable here
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your password';
@@ -296,6 +319,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           return null;
                         },
                         style: textTheme.bodyLarge,
+                        onChanged: (text) => setState(() {}), // Rebuild to show/hide suffixIcon
                       ),
                     ),
                   ),

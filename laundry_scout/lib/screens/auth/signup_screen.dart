@@ -25,33 +25,57 @@ class SignupScreen extends StatefulWidget {
   _SignupScreenState createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderStateMixin { // Added SingleTickerProviderStateMixin
+class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController(); // Controller for username
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
-  late AnimationController _animationController; // Added AnimationController
-  late Animation<double> _fadeAnimation; // Added Animation
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700), // Adjust duration as needed
+      duration: const Duration(milliseconds: 700),
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    _animationController.forward(); // Start the animation
+    _animationController.forward();
+
+    // Add listeners to controllers to update UI for suffixIcon visibility
+    _usernameController.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+    _emailController.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+    _passwordController.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+    _confirmPasswordController.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override
   void dispose() {
-    _animationController.dispose(); // Dispose the controller
+    _animationController.dispose();
     _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -166,27 +190,34 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                           ),
                           const SizedBox(height: 30),
                           // Username Field
-                          Center( // Wrap SizedBox with Center
+                          Center( 
                             child: SizedBox(
                               width: 298,
                               height: 57,
                               child: TextFormField(
                                 controller: _usernameController,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   labelText: 'Username',
-                                  border: OutlineInputBorder(
+                                  border: const OutlineInputBorder(
                                     borderRadius: BorderRadius.all(Radius.circular(18.0)),
                                     borderSide: BorderSide(color: Color(0xFFFFFFFF)),
                                   ),
-                                  enabledBorder: OutlineInputBorder(
+                                  enabledBorder: const OutlineInputBorder(
                                     borderRadius: BorderRadius.all(Radius.circular(18.0)),
                                     borderSide: BorderSide(color: Colors.white70),
                                   ),
-                                  focusedBorder: OutlineInputBorder(
+                                  focusedBorder: const OutlineInputBorder(
                                     borderRadius: BorderRadius.all(Radius.circular(18.0)),
                                     borderSide: BorderSide(color: Color(0xFFFFFFFF)),
                                   ),
-                                  // Removed contentPadding
+                                  suffixIcon: _usernameController.text.isNotEmpty
+                                      ? IconButton(
+                                          icon: const Icon(Icons.clear, size: 18.0),
+                                          onPressed: () {
+                                            _usernameController.clear();
+                                          },
+                                        )
+                                      : null,
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -201,27 +232,34 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                           ),
                           const SizedBox(height: 16),
                           // Email Field
-                          Center( // Wrap SizedBox with Center
+                          Center( 
                             child: SizedBox(
                               width: 298,
                               height: 57,
                               child: TextFormField(
                                 controller: _emailController,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   labelText: 'Email',
-                                  border: OutlineInputBorder(
+                                  border: const OutlineInputBorder(
                                     borderRadius: BorderRadius.all(Radius.circular(18.0)),
                                     borderSide: BorderSide(color: Color(0xFFFFFFFF)),
                                   ),
-                                  enabledBorder: OutlineInputBorder(
+                                  enabledBorder: const OutlineInputBorder(
                                     borderRadius: BorderRadius.all(Radius.circular(18.0)),
                                     borderSide: BorderSide(color: Colors.white70),
                                   ),
-                                  focusedBorder: OutlineInputBorder(
+                                  focusedBorder: const OutlineInputBorder(
                                     borderRadius: BorderRadius.all(Radius.circular(18.0)),
                                     borderSide: BorderSide(color: Color(0xFFFFFFFF)),
                                   ),
-                                  // Removed contentPadding
+                                  suffixIcon: _emailController.text.isNotEmpty
+                                      ? IconButton(
+                                          icon: const Icon(Icons.clear, size: 18.0),
+                                          onPressed: () {
+                                            _emailController.clear();
+                                          },
+                                        )
+                                      : null,
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -238,29 +276,41 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                           ),
                           const SizedBox(height: 16),
                           // Password Field
-                          Center( // Wrap SizedBox with Center
+                          Center( 
                             child: SizedBox(
                               width: 298,
                               height: 57,
                               child: TextFormField(
                                 controller: _passwordController,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   labelText: 'Password',
-                                  border: OutlineInputBorder(
+                                  border: const OutlineInputBorder(
                                     borderRadius: BorderRadius.all(Radius.circular(18.0)),
                                     borderSide: BorderSide(color: Color(0xFFFFFFFF)),
                                   ),
-                                  enabledBorder: OutlineInputBorder(
+                                  enabledBorder: const OutlineInputBorder(
                                     borderRadius: BorderRadius.all(Radius.circular(18.0)),
                                     borderSide: BorderSide(color: Colors.white70),
                                   ),
-                                  focusedBorder: OutlineInputBorder(
+                                  focusedBorder: const OutlineInputBorder(
                                     borderRadius: BorderRadius.all(Radius.circular(18.0)),
                                     borderSide: BorderSide(color: Color(0xFFFFFFFF)),
                                   ),
-                                  // Removed contentPadding
+                                  suffixIcon: _passwordController.text.isNotEmpty
+                                      ? IconButton(
+                                          icon: Icon(
+                                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                            size: 18.0,
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _obscurePassword = !_obscurePassword;
+                                            });
+                                          },
+                                        )
+                                      : null,
                                 ),
-                                obscureText: true,
+                                obscureText: _obscurePassword,
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return 'Please enter your password';
@@ -276,29 +326,41 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                           ),
                           const SizedBox(height: 16),
                           // Confirm Password Field
-                          Center( // Wrap SizedBox with Center
+                          Center( 
                             child: SizedBox(
                               width: 298,
                               height: 57,
                               child: TextFormField(
                                 controller: _confirmPasswordController,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   labelText: 'Confirm Password',
-                                  border: OutlineInputBorder(
+                                  border: const OutlineInputBorder(
                                     borderRadius: BorderRadius.all(Radius.circular(18.0)),
                                     borderSide: BorderSide(color: Color(0xFFFFFFFF)),
                                   ),
-                                  enabledBorder: OutlineInputBorder(
+                                  enabledBorder: const OutlineInputBorder(
                                     borderRadius: BorderRadius.all(Radius.circular(18.0)),
                                     borderSide: BorderSide(color: Colors.white70),
                                   ),
-                                  focusedBorder: OutlineInputBorder(
+                                  focusedBorder: const OutlineInputBorder(
                                     borderRadius: BorderRadius.all(Radius.circular(18.0)),
                                     borderSide: BorderSide(color: Color(0xFFFFFFFF)),
                                   ),
-                                  // Removed contentPadding
+                                  suffixIcon: _confirmPasswordController.text.isNotEmpty
+                                      ? IconButton(
+                                          icon: Icon(
+                                            _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                                            size: 18.0,
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _obscureConfirmPassword = !_obscureConfirmPassword;
+                                            });
+                                          },
+                                        )
+                                      : null,
                                 ),
-                                obscureText: true,
+                                obscureText: _obscureConfirmPassword,
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
                                     return 'Please confirm your password';
