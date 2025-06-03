@@ -297,19 +297,32 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderSide: BorderSide(color: Color(0xFFFFFFFF)),
                           ),
                           suffixIcon: _passwordController.text.isNotEmpty
-                              ? IconButton(
-                                  icon: Icon(
-                                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                    size: 18.0,
-                                    color: Colors.white70, // Optional: Adjust icon color
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
-                                  },
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.clear, size: 18.0, color: Colors.white70),
+                                      onPressed: () {
+                                        setState(() {
+                                          _passwordController.clear();
+                                        });
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: Icon(
+                                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                        size: 18.0,
+                                        color: Colors.white70,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _obscurePassword = !_obscurePassword;
+                                        });
+                                      },
+                                    ),
+                                  ],
                                 )
-                              : null, // Show icon only if text is not empty
+                              : null, // Show icons only if text is not empty
                         ),
                         obscureText: _obscurePassword, // Use state variable here
                         validator: (value) {

@@ -297,16 +297,29 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                     borderSide: BorderSide(color: Color(0xFFFFFFFF)),
                                   ),
                                   suffixIcon: _passwordController.text.isNotEmpty
-                                      ? IconButton(
-                                          icon: Icon(
-                                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                            size: 18.0,
-                                          ),
-                                          onPressed: () {
-                                            setState(() {
-                                              _obscurePassword = !_obscurePassword;
-                                            });
-                                          },
+                                      ? Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.clear, size: 18.0),
+                                              onPressed: () {
+                                                setState(() {
+                                                  _passwordController.clear();
+                                                });
+                                              },
+                                            ),
+                                            IconButton(
+                                              icon: Icon(
+                                                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                                size: 18.0,
+                                              ),
+                                              onPressed: () {
+                                                setState(() {
+                                                  _obscurePassword = !_obscurePassword;
+                                                });
+                                              },
+                                            ),
+                                          ],
                                         )
                                       : null,
                                 ),
@@ -347,16 +360,29 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                     borderSide: BorderSide(color: Color(0xFFFFFFFF)),
                                   ),
                                   suffixIcon: _confirmPasswordController.text.isNotEmpty
-                                      ? IconButton(
-                                          icon: Icon(
-                                            _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
-                                            size: 18.0,
-                                          ),
-                                          onPressed: () {
-                                            setState(() {
-                                              _obscureConfirmPassword = !_obscureConfirmPassword;
-                                            });
-                                          },
+                                      ? Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              icon: const Icon(Icons.clear, size: 18.0),
+                                              onPressed: () {
+                                                setState(() {
+                                                  _confirmPasswordController.clear();
+                                                });
+                                              },
+                                            ),
+                                            IconButton(
+                                              icon: Icon(
+                                                _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                                                size: 18.0,
+                                              ),
+                                              onPressed: () {
+                                                setState(() {
+                                                  _obscureConfirmPassword = !_obscureConfirmPassword;
+                                                });
+                                              },
+                                            ),
+                                          ],
                                         )
                                       : null,
                                 ),
