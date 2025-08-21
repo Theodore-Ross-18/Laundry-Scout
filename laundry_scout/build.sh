@@ -3,10 +3,6 @@
 # Exit on error and print commands for debugging
 set -ex
 
-# Install required system dependencies for Flutter
-apt-get update -y
-apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
-
 # Download and install Flutter
 git clone https://github.com/flutter/flutter.git --depth 1 -b stable _flutter
 export PATH="$PATH:$(pwd)/_flutter/bin"
@@ -20,7 +16,7 @@ flutter config --enable-web
 # Get dependencies
 flutter pub get
 
-# Build web app with environment variables
+# Build web app with environment variables passed from Vercel
 flutter build web --release --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 
 # Copy .env file to build/web if it exists

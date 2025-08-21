@@ -11,7 +11,7 @@ Future<void> main() async {
   String supabaseAnonKey;
   
   if (kIsWeb) {
-    // For web deployment, use environment variables directly
+    // For web deployment, use compile-time environment variables
     supabaseUrl = const String.fromEnvironment('SUPABASE_URL', 
         defaultValue: 'https://aoyaedzbgollhajvrxiu.supabase.co');
     supabaseAnonKey = const String.fromEnvironment('SUPABASE_ANON_KEY', 
