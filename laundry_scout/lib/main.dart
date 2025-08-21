@@ -2,21 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:laundry_scout/screens/splash/splash_screen.dart';
+import 'package:flutter/foundation.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Load environment variables
-  await dotenv.load();
+  String supabaseUrl;
+  String supabaseAnonKey;
+  
+  if (kIsWeb) {
+    // For web deployment, use environment variables directly
+    supabaseUrl = const String.fromEnvironment('SUPABASE_URL', 
+        defaultValue: 'https://aoyaedzbgollhajvrxiu.supabase.co');
+    supabaseAnonKey = const String.fromEnvironment('SUPABASE_ANON_KEY', 
+        defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFveWFlZHpiZ29sbGhhanZyeGl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNzY1NzUsImV4cCI6MjA2Mjg1MjU3NX0.iShQfGX-jB7798jk6fLim6m_eGpupzPb8lVgEBTMd1U');
+  } else {
+    // For mobile platforms, load from .env file
+    await dotenv.load();
+    supabaseUrl = dotenv.env['SUPABASE_URL']!;
+    supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY']!;
+  }
   
   // Debug prints
-  print('SUPABASE_URL: ${dotenv.env['SUPABASE_URL']}');
-  print('SUPABASE_ANON_KEY: ${dotenv.env['SUPABASE_ANON_KEY']}');
+  print('SUPABASE_URL: $supabaseUrl');
+  print('SUPABASE_ANON_KEY: $supabaseAnonKey');
   
   // Initialize Supabase
   await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
   );
   
   runApp(const MyApp());

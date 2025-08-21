@@ -20,8 +20,8 @@ flutter config --enable-web
 # Get dependencies
 flutter pub get
 
-# Build web app
-flutter build web --release
+# Build web app with environment variables
+flutter build web --release --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 
 # Copy .env file to build/web if it exists
 if [ -f ".env" ]; then
