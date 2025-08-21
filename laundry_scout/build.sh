@@ -11,7 +11,7 @@ export PATH="$PATH:$(pwd)/_flutter/bin"
 flutter config --no-analytics
 flutter config --enable-web
 
-# Accept Android licenses and disable interactive prompts
+# Set environment variables for Flutter
 export FLUTTER_ROOT="$(pwd)/_flutter"
 export PUB_CACHE="$(pwd)/.pub-cache"
 
@@ -23,10 +23,10 @@ flutter --version
 flutter pub get
 
 # Build web app with environment variables passed from Vercel
+# Note: Removed --web-renderer canvaskit as it's not a valid option
 flutter build web --release \
   --dart-define=SUPABASE_URL=${SUPABASE_URL:-https://aoyaedzbgollhajvrxiu.supabase.co} \
-  --dart-define=SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFveWFlZHpiZ29sbGhhanZyeGl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNzY1NzUsImV4cCI6MjA2Mjg1MjU3NX0.iShQfGX-jB7798jk6fLim6m_eGpupzPb8lVgEBTMd1U} \
-  --web-renderer canvaskit
+  --dart-define=SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFveWFlZHpiZ29sbGhhanZyeGl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNzY1NzUsImV4cCI6MjA2Mjg1MjU3NX0.iShQfGX-jB7798jk6fLim6m_eGpupzPb8lVgEBTMd1U}
 
 # Verify build output
 echo "Build completed. Checking output directory:"
