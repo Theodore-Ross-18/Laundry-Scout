@@ -11,14 +11,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: npm ci
-      - run: build.sh
+      
+      # Setup Flutter instead of npm
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.7.2'
+          
+      # Install Flutter dependencies
+      - name: Install dependencies
+        run: flutter pub get
+        working-directory: ./laundry_scout
+        
+      # Build Flutter web app
+      - name: Build Flutter web
+        run: |
+          flutter build web --release \
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL || 'https://aoyaedzbgollhajvrxiu.supabase.co' }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFveWFlZHpiZ29sbGhhanZyeGl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNzY1NzUsImV4cCI6MjA2Mjg1MjU3NX0.iShQfGX-jB7798jk6fLim6m_eGpupzPb8lVgEBTMd1U' }}
+        working-directory: ./laundry_scout
+        
+      # Deploy to Firebase
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_LAUNDRY_SCOUT }}
           channelId: live
           projectId: laundry-scout
+          entryPoint: ./laundry_scout
         env:
           FIREBASE_CLI_EXPERIMENTS: webframeworks
     defaults:
