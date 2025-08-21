@@ -468,7 +468,7 @@ class HomeScreenBody extends StatelessWidget {
                                         fit: BoxFit.cover,
                                       )
                                     : const DecorationImage(
-                                        image: AssetImage('lib/assets/promo_placeholder.png'),
+                                        image: AssetImage('lib/assets/promo_example.png'),
                                         fit: BoxFit.cover,
                                       ),
                               ),
