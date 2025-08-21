@@ -35,10 +35,3 @@ jobs:
           channelId: live
           projectId: laundry-scout
           entryPoint: ./laundry_scout
-        env:
-          FIREBASE_CLI_EXPERIMENTS: webframeworks
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://aoyaedzbgollhajvrxiu.supabase.co' }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFveWFlZHpiZ29sbGhhanZyeGl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNzY1NzUsImV4cCI6MjA2Mjg1MjU3NX0.iShQfGX-jB7798jk6fLim6m_eGpupzPb8lVgEBTMd1U' }}
-    defaults:
-      run:
-        working-directory: ./
