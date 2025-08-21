@@ -20,10 +20,12 @@ jobs:
       # Get Flutter dependencies
       - name: Get dependencies
         run: flutter pub get
+        working-directory: ./laundry_scout
         
       # Build Flutter web app
       - name: Build Flutter web
         run: flutter build web --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL || 'https://aoyaedzbgollhajvrxiu.supabase.co' }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFveWFlZHpiZ29sbGhhanZyeGl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNzY1NzUsImV4cCI6MjA2Mjg1MjU3NX0.iShQfGX-jB7798jk6fLim6m_eGpupzPb8lVgEBTMd1U' }}
+        working-directory: ./laundry_scout
         
       # Deploy to Firebase
       - uses: FirebaseExtended/action-hosting-deploy@v0
@@ -32,4 +34,4 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_LAUNDRY_SCOUT }}
           channelId: live
           projectId: laundry-scout
-          entryPoint: .
+          entryPoint: ./laundry_scout
