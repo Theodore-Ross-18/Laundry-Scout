@@ -1,7 +1,11 @@
 #!/bin/bash
 
-# Exit on error
-set -e
+# Exit on error and print commands for debugging
+set -ex
+
+# Install required system dependencies for Flutter
+apt-get update -y
+apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
 
 # Download and install Flutter
 git clone https://github.com/flutter/flutter.git --depth 1 -b stable _flutter
