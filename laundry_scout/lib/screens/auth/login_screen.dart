@@ -415,14 +415,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           // TODO: Implement Google Sign-In
                         },
                       ),
-                      const SizedBox(width: 20),
-                      _buildSocialIcon(
-                        // child: Icon(Icons.apple, color: Colors.black, size: 24), // Apple Black
-                        child: Image.asset('lib/assets/apple.png', height: 24, width: 24), // Use your Apple icon asset
-                        onPressed: () {
-                          // TODO: Implement Apple Sign-In
-                        },
-                      ),
                     ],
                   ),
                   const SizedBox(height: 40),
