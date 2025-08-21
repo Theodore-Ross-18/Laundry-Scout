@@ -35,3 +35,77 @@ jobs:
           channelId: live
           projectId: laundry-scout
           entryPoint: ./laundry_scout
+
+
+## Troubleshooting Deployment Sync Issues
+
+Let's diagnose why your changes aren't syncing to the live site. Here are the steps to identify and fix the problem:
+
+### Step 1: Check GitHub Actions Status
+
+1. **Go to your GitHub repository**
+2. **Click the "Actions" tab** (next to "Pull requests")
+3. **Look for recent workflow runs** - you should see:
+   - ✅ Green checkmarks = successful deployments
+   - ❌ Red X marks = failed deployments
+   - 🟡 Yellow circles = currently running
+
+### Step 2: Common Issues to Check
+
+#### Issue 1: Workflow Path Problems
+I noticed a potential issue in your workflows. Let me check if this is the problem:
+
+**Problem**: Your workflows have inconsistent working directories:
+- Merge workflow: No working directory specified
+- PR workflow: Uses `working-directory: ./laundry_scout`
+
+**Solution**: Update your merge workflow to match the PR workflow.
+
+#### Issue 2: Branch Protection
+- Make sure you're pushing to the `main` branch (not `master`)
+- Check if your default branch is set to `main`
+
+#### Issue 3: Secrets Missing
+- Verify `FIREBASE_SERVICE_ACCOUNT_LAUNDRY_SCOUT` is properly set
+- The secret should contain the full JSON service account key
+
+### Step 3: Quick Fixes to Try
+
+#### Fix 1: Update the Merge Workflow
+The merge workflow needs to specify the correct working directory. Here's what needs to be updated:
+```yaml
+name: Deploy to Firebase Hosting on merge
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Setup Flutter
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.7.2'
+          
+      # Get Flutter dependencies
+      - name: Get dependencies
+        run: flutter pub get
+        working-directory: ./laundry_scout
+        
+      # Build Flutter web app
+      - name: Build Flutter web
+        run: flutter build web --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL || 'https://aoyaedzbgollhajvrxiu.supabase.co' }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFveWFlZHpiZ29sbGhhanZyeGl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNzY1NzUsImV4cCI6MjA2Mjg1MjU3NX0.iShQfGX-jB7798jk6fLim6m_eGpupzPb8lVgEBTMd1U' }}
+        working-directory: ./laundry_scout
+        
+      # Deploy to Firebase
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_LAUNDRY_SCOUT }}
+          channelId: live
+          projectId: laundry-scout
+          entryPoint: ./laundry_scout
+```
