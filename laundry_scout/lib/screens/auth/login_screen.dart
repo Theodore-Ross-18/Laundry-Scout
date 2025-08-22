@@ -6,6 +6,7 @@ import '../home/Owner/owner_home_screen.dart';
 // Consider importing a package for social icons like font_awesome_flutter
 // import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'forgotpassverify_screen.dart'; // Import the new screen
+import 'dart:async'; // Import the dart:async library
 
 // Helper function for creating a fade transition
 Route _createFadeRoute(Widget page) {
@@ -35,6 +36,110 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true; // Added for password visibility
+
+  // Add slide-related variables
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+  bool _showSlides = false;
+  String? _userType; // 'user' or 'business'
+  Timer? _timer; // Add a Timer variable
+
+  // Define slides for different user types
+  List<Map<String, String>> get userSlides => [
+    {
+      'image': 'lib/assets/user/slides/first.png',
+      'title': 'Welcome Back to Laundry Scout',
+      'description': 'Ready to find the perfect laundry service tailored just for you!',
+    },
+    {
+      'image': 'lib/assets/user/slides/second.png',
+      'title': 'Discover Nearby Laundry Shops',
+      'description': 'Explore services, compare prices, and find exactly what you need.',
+    },
+    {
+      'image': 'lib/assets/user/slides/third.png',
+      'title': 'Enjoy Seamless Experience',
+      'description': 'Filter, rate, and book your laundry services with ease!',
+    },
+  ];
+
+  List<Map<String, String>> get businessSlides => [
+    {
+      'image': 'lib/assets/business/slides/first.png',
+      'title': 'Welcome Back, Business Owner',
+      'description': 'Manage your laundry business and connect with more customers!',
+    },
+    {
+      'image': 'lib/assets/business/slides/second.png',
+      'title': 'Grow Your Business',
+      'description': 'Update your services, manage bookings, and track your performance.',
+    },
+    {
+      'image': 'lib/assets/business/slides/third.png',
+      'title': 'Reach More Customers',
+      'description': 'Expand your reach and build lasting relationships with clients!',
+    },
+  ];
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _timer?.cancel(); // Cancel the timer in dispose
+    super.dispose();
+  }
+
+  void _startSlideTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
+      final slides = _userType == 'business' ? businessSlides : userSlides;
+      if (_currentPage < slides.length - 1) {
+        _pageController.nextPage(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeIn,
+        );
+      } else {
+        // If on the last page, stop the timer and navigate to home
+        timer.cancel();
+        _navigateToHome();
+      }
+    });
+  }
+
+  void _nextPage() {
+    final slides = _userType == 'business' ? businessSlides : userSlides;
+    if (_currentPage < slides.length - 1) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeIn,
+      );
+    } else {
+      // If on the last page, navigate to home
+      _navigateToHome();
+    }
+  }
+
+  void _skipSlides() {
+    // Cancel the timer when skipping slides
+    _timer?.cancel();
+    _navigateToHome();
+  }
+
+  void _navigateToHome() {
+    if (mounted) {
+      if (_userType == 'business') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const OwnerHomeScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
+    }
+  }
 
   Future<void> _signIn() async {
     if (_formKey.currentState!.validate()) {
@@ -104,11 +209,6 @@ class _LoginScreenState extends State<LoginScreen> {
           );
 
           if (authResponse.user != null) {
-            // TODO: Add logic here to determine if the user is a regular user or a business owner
-            // based on the profile found (user_profiles or business_profiles)
-            // and navigate to the appropriate home screen (HomeScreen or OwnerHomeScreen).
-            // For now, it navigates to HomeScreen as before.
-
             // --- Start of added/modified logic ---
             // If the login was via username, we already know the profile type.
             // If the login was via email, we need to query the profiles table
@@ -150,19 +250,14 @@ class _LoginScreenState extends State<LoginScreen> {
                }
             }
 
-            // Navigate based on the determined profile type
+            // Show slides based on the determined profile type
             if (mounted) {
-              if (profileType == 'business') {
-                 Navigator.pushReplacement(
-                   context,
-                   MaterialPageRoute(builder: (context) => const OwnerHomeScreen()),
-                 );
-              } else { // Default to user if type is 'user' or undetermined after email login
-                 Navigator.pushReplacement(
-                   context,
-                   MaterialPageRoute(builder: (context) => const HomeScreen()),
-                 );
-              }
+              setState(() {
+                _userType = profileType;
+                _showSlides = true;
+                _isLoading = false;
+              });
+              _startSlideTimer();
             }
             // --- End of added/modified logic ---
 
@@ -206,246 +301,364 @@ class _LoginScreenState extends State<LoginScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch, // Keep or change to Center if all children are centered
-                children: [
-                  const SizedBox(height: 40),
-                  Image.asset(
-                    'lib/assets/lslogo.png',
-                    height: 76,
-                    width: 76,
+      appBar: _showSlides ? AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text(''),
+        actions: [
+          TextButton(
+            onPressed: _skipSlides,
+            child: const Text(
+              'Skip',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ) : null,
+      body: _showSlides ? _buildSlides(textTheme) : _buildLoginForm(textTheme),
+    );
+  }
+
+  Widget _buildLoginForm(TextTheme textTheme) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 40),
+                Image.asset(
+                  'lib/assets/lslogo.png',
+                  height: 76,
+                  width: 76,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Login',
+                  textAlign: TextAlign.center,
+                  style: textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 40,
+                    color: Colors.white,
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Login',
-                    textAlign: TextAlign.center,
-                    style: textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 40, // Larger title
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                  Center( // Center the input field
-                    child: SizedBox(
-                      width: 298,
-                      height: 57,
-                      child: TextFormField(
-                        controller: _emailController,
-                        decoration: InputDecoration(
-                          labelText: 'Username or email',
-                          border: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(18.0)),
-                            borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                          ),
-                          enabledBorder: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(18.0)),
-                            borderSide: BorderSide(color: Colors.white70),
-                          ),
-                          focusedBorder: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(18.0)),
-                            borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                          ),
-                          suffixIcon: _emailController.text.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear, size: 18.0), // Smaller icon
-                                  onPressed: () {
-                                    setState(() {
-                                      _emailController.clear();
-                                    });
-                                  },
-                                )
-                              : null,
+                ),
+                const SizedBox(height: 30),
+                Center(
+                  child: SizedBox(
+                    width: 298,
+                    height: 57,
+                    child: TextFormField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: 'Username or email',
+                        border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                          borderSide: BorderSide(color: Color(0xFFFFFFFF)),
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your email or username';
-                          }
-                          return null;
-                        },
-                        style: textTheme.bodyLarge,
-                        onChanged: (text) => setState(() {}), // Rebuild to show/hide clear button
+                        enabledBorder: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                          borderSide: BorderSide(color: Colors.white70),
+                        ),
+                        focusedBorder: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                          borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                        ),
+                        suffixIcon: _emailController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 18.0),
+                                onPressed: () {
+                                  setState(() {
+                                    _emailController.clear();
+                                  });
+                                },
+                              )
+                            : null,
                       ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your email or username';
+                        }
+                        return null;
+                      },
+                      style: textTheme.bodyLarge,
+                      onChanged: (text) => setState(() {}),
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  Center( // Center the input field
-                    child: SizedBox(
-                      width: 298,
-                      height: 57,
-                      child: TextFormField(
-                        controller: _passwordController,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          border: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(18.0)),
-                            borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                          ),
-                          enabledBorder: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(18.0)),
-                            borderSide: BorderSide(color: Colors.white70),
-                          ),
-                          focusedBorder: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(18.0)),
-                            borderSide: BorderSide(color: Color(0xFFFFFFFF)),
-                          ),
-                          suffixIcon: _passwordController.text.isNotEmpty
-                              ? Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.clear, size: 18.0, color: Colors.white70),
-                                      onPressed: () {
-                                        setState(() {
-                                          _passwordController.clear();
-                                        });
-                                      },
+                ),
+                const SizedBox(height: 14),
+                Center(
+                  child: SizedBox(
+                    width: 298,
+                    height: 57,
+                    child: TextFormField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                          borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                        ),
+                        enabledBorder: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                          borderSide: BorderSide(color: Colors.white70),
+                        ),
+                        focusedBorder: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(18.0)),
+                          borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+                        ),
+                        suffixIcon: _passwordController.text.isNotEmpty
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.clear, size: 18.0, color: Colors.white70),
+                                    onPressed: () {
+                                      setState(() {
+                                        _passwordController.clear();
+                                      });
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                      size: 18.0,
+                                      color: Colors.white70,
                                     ),
-                                    IconButton(
-                                      icon: Icon(
-                                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                        size: 18.0,
-                                        color: Colors.white70,
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          _obscurePassword = !_obscurePassword;
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                )
-                              : null, // Show icons only if text is not empty
-                        ),
-                        obscureText: _obscurePassword, // Use state variable here
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your password';
-                          }
-                          return null;
-                        },
-                        style: textTheme.bodyLarge,
-                        onChanged: (text) => setState(() {}), // Rebuild to show/hide suffixIcon
+                                    onPressed: () {
+                                      setState(() {
+                                        _obscurePassword = !_obscurePassword;
+                                      });
+                                    },
+                                  ),
+                                ],
+                              )
+                            : null,
                       ),
+                      obscureText: _obscurePassword,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your password';
+                        }
+                        return null;
+                      },
+                      style: textTheme.bodyLarge,
+                      onChanged: (text) => setState(() {}),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Center( // Center the SizedBox that constrains the "Forgot Password?" alignment
-                    child: SizedBox(
-                      width: 298, // Match the width of the password field above
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {
-                            // TODO: Implement Forgot Password
-                            // Navigate to the ForgotPasswordVerifyScreen
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const ForgotPasswordVerifyScreen()),
-                            );
-                          },
-                          style: TextButton.styleFrom( // Add padding to make it easier to tap
-                            padding: const EdgeInsets.symmetric(vertical: 4.0),
-                            minimumSize: Size.zero, // Allow the button to be as small as its content
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap, // Reduce tap target size
-                          ),
-                          child: Text(
-                            'Forgot Password?',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              decoration: TextDecoration.underline,
-                              fontSize: 11, // Adjusted font size
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Center( // Center the button
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _signIn,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF543CDC),
-                        foregroundColor: Colors.white,
-                        fixedSize: const Size(120, 52), // Further reduced width to 120
-                        textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(26.0), // Half of the height for a capsule shape
-                        ),
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Text('Login'),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                  Text(
-                    'Or sign in With',
-                    textAlign: TextAlign.center,
-                    style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildSocialIcon(
-                        // child: Icon(Icons.facebook, color: Color(0xFF1877F2), size: 24), // Facebook Blue
-                        child: Image.asset('lib/assets/fb.png', height: 24, width: 24), // Use your Facebook icon asset
-                        onPressed: () {
-                          // TODO: Implement Facebook Sign-In
-                        },
-                      ),
-                      const SizedBox(width: 20),
-                      _buildSocialIcon(
-                        // child: Text('G', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF4285F4))), // Google Blue
-                        child: Image.asset('lib/assets/google.png', height: 24, width: 24), // Use your Google icon asset
-                        onPressed: () {
-                          // TODO: Implement Google Sign-In
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 40),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Don't have an Account? ",
-                        style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
-                      ),
-                      TextButton(
+                ),
+                const SizedBox(height: 8),
+                Center(
+                  child: SizedBox(
+                    width: 298,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
                         onPressed: () {
                           Navigator.push(
                             context,
-                            _createFadeRoute(const SignupScreen()), // Updated navigation to use fade route
+                            MaterialPageRoute(builder: (context) => const ForgotPasswordVerifyScreen()),
                           );
                         },
-                        child: const Text(
-                          'Sign Up',
-                           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 4.0),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          'Forgot Password?',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            decoration: TextDecoration.underline,
+                            fontSize: 11,
+                          ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 20),
-                ],
-              ),
+                ),
+                const SizedBox(height: 24),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _signIn,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF543CDC),
+                      foregroundColor: Colors.white,
+                      fixedSize: const Size(120, 52),
+                      textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(26.0),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text('Login'),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                Text(
+                  'Or sign in With',
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildSocialIcon(
+                      child: Image.asset('lib/assets/fb.png', height: 24, width: 24),
+                      onPressed: () {
+                        // TODO: Implement Facebook Sign-In
+                      },
+                    ),
+                    const SizedBox(width: 20),
+                    _buildSocialIcon(
+                      child: Image.asset('lib/assets/google.png', height: 24, width: 24),
+                      onPressed: () {
+                        // TODO: Implement Google Sign-In
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 40),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Don't have an Account? ",
+                      style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          _createFadeRoute(const SignupScreen()),
+                        );
+                      },
+                      child: const Text(
+                        'Sign Up',
+                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+              ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSlides(TextTheme textTheme) {
+    final slides = _userType == 'business' ? businessSlides : userSlides;
+    
+    return Column(
+      children: [
+        Expanded(
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: slides.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentPage = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      slides[index]['image']!,
+                      height: 250,
+                    ),
+                    const SizedBox(height: 40),
+                    Text(
+                      slides[index]['title']!,
+                      textAlign: TextAlign.center,
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      slides[index]['description']!,
+                      textAlign: TextAlign.center,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 24.0, right: 24.0, bottom: 40.0),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(slides.length, (index) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                    width: _currentPage == index ? 24.0 : 8.0,
+                    height: 8.0,
+                    decoration: BoxDecoration(
+                      color: _currentPage == index ? Colors.white : Colors.white.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(4.0),
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 30),
+              if (_currentPage == slides.length - 1)
+                ElevatedButton(
+                  onPressed: _navigateToHome,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6F5ADC),
+                    foregroundColor: const Color(0xFFFFFFFF),
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                  ),
+                  child: Text(
+                    _userType == 'business' ? 'Start Managing' : 'Get Started',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                )
+              else
+                ElevatedButton(
+                   onPressed: _nextPage,
+                   style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6F5ADC),
+                    foregroundColor: const Color(0xFFFFFFFF),
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.0),
+                    ),
+                  ),
+                  child: const Text(
+                    'Next',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
