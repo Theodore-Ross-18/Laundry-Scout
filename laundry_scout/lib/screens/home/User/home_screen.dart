@@ -7,6 +7,7 @@ import 'laundry_screen.dart';
 import 'message_screen.dart'; 
 import 'notification_screen.dart';
 import 'viewall.dart'; // Add this import
+import 'business_detail_screen.dart'; 
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -614,82 +615,92 @@ class HomeScreenBody extends StatelessWidget {
                         itemCount: filteredLaundryShops.length,
                         itemBuilder: (context, index) {
                           final shop = filteredLaundryShops[index];
-                          return Container(
-                            width: 180,
-                            margin: EdgeInsets.only(left: index == 0 ? 16.0 : 8.0, right: index == filteredLaundryShops.length - 1 ? 16.0 : 0),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(15),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  spreadRadius: 2,
-                                  blurRadius: 5,
-                                  offset: const Offset(0, 3),
+                          return GestureDetector( // Wrap with GestureDetector
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => BusinessDetailScreen(businessData: shop),
                                 ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  height: 100,
-                                  decoration: BoxDecoration(
-                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                                    image: shop['cover_photo_url'] != null
-                                        ? DecorationImage(
-                                            image: NetworkImage(shop['cover_photo_url']),
-                                            fit: BoxFit.cover,
-                                          )
-                                        : const DecorationImage(
-                                            image: AssetImage('lib/assets/laundry_placeholder.png'),
-                                            fit: BoxFit.cover,
-                                          ),
+                              );
+                            },
+                            child: Container(
+                              width: 180,
+                              margin: EdgeInsets.only(left: index == 0 ? 16.0 : 8.0, right: index == filteredLaundryShops.length - 1 ? 16.0 : 0),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(15),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.2),
+                                    spreadRadius: 2,
+                                    blurRadius: 5,
+                                    offset: const Offset(0, 3),
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        shop['business_name'] ?? 'Laundry Shop',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.location_on, size: 14, color: Colors.grey),
-                                          const SizedBox(width: 4),
-                                          Expanded(
-                                            child: Text(
-                                              shop['exact_location'] ?? 'Address Placeholder',
-                                              style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                              overflow: TextOverflow.ellipsis,
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    height: 100,
+                                    decoration: BoxDecoration(
+                                      borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                                      image: shop['cover_photo_url'] != null
+                                          ? DecorationImage(
+                                              image: NetworkImage(shop['cover_photo_url']),
+                                              fit: BoxFit.cover,
+                                            )
+                                          : const DecorationImage(
+                                              image: AssetImage('lib/assets/laundry_placeholder.png'),
+                                              fit: BoxFit.cover,
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.star, size: 14, color: Colors.amber),
-                                          const SizedBox(width: 4),
-                                          const Text('4.5', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                                          const SizedBox(width: 8),
-                                          const Icon(Icons.delivery_dining, size: 14, color: Colors.grey),
-                                          const SizedBox(width: 4),
-                                          Text(shop['does_delivery'] == true ? 'Delivery' : 'No Delivery', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                                        ],
-                                      ),
-                                    ],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          shop['business_name'] ?? 'Laundry Shop',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
+                                                shop['exact_location'] ?? 'Address Placeholder',
+                                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.star, size: 14, color: Colors.amber),
+                                            const SizedBox(width: 4),
+                                            const Text('4.5', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                            const SizedBox(width: 8),
+                                            const Icon(Icons.delivery_dining, size: 14, color: Colors.grey),
+                                            const SizedBox(width: 4),
+                                            Text(shop['does_delivery'] == true ? 'Delivery' : 'No Delivery', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           );
                         },
