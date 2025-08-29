@@ -38,12 +38,12 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
           .from('feedback')
           .select('''
             *,
-            user_profiles!inner(
-              username,
-              profile_image_url
+            business_profiles!inner(
+              business_name,
+              cover_photo_url
             )
           ''')
-          .eq('business_id', user.id)
+          .eq('user_id', user.id)
           .order('created_at', ascending: false);
 
       if (mounted) {
@@ -221,7 +221,7 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
                           itemCount: _feedback.length,
                           itemBuilder: (context, index) {
                             final feedback = _feedback[index];
-                            final user = feedback['user_profiles'];
+                            final business = feedback['business_profiles'];
                             return Container(
                               margin: const EdgeInsets.only(bottom: 12),
                               padding: const EdgeInsets.all(16),
@@ -244,11 +244,11 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
                                     children: [
                                       CircleAvatar(
                                         radius: 20,
-                                        backgroundImage: user['profile_image_url'] != null
-                                            ? NetworkImage(user['profile_image_url'])
+                                        backgroundImage: business['cover_photo_url'] != null
+                                            ? NetworkImage(business['cover_photo_url'])
                                             : null,
-                                        child: user['profile_image_url'] == null
-                                            ? const Icon(Icons.person, color: Colors.white)
+                                        child: business['cover_photo_url'] == null
+                                            ? const Icon(Icons.business, color: Colors.white)
                                             : null,
                                         backgroundColor: const Color(0xFF7B61FF),
                                       ),
@@ -258,7 +258,7 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              user['username'] ?? 'Anonymous',
+                                              business['business_name'] ?? 'Anonymous',
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 16,

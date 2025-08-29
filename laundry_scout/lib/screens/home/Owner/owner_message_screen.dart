@@ -32,19 +32,17 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
 
   Future<void> _loadConversations() async {
     try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) return;
+      setState(() {
+        _isLoading = true;
+      });
 
       final response = await Supabase.instance.client
           .from('conversations')
           .select('''
             *,
-            user_profiles!conversations_user_id_fkey(
-              username,
-              profile_image_url
-            )
+            business_profiles!inner(business_name, cover_photo_url)
           ''')
-          .eq('business_id', user.id)
+          .eq('business_id', Supabase.instance.client.auth.currentUser!.id)
           .order('last_message_at', ascending: false);
 
       // Get last message for each conversation
@@ -52,7 +50,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
         final lastMessage = await Supabase.instance.client
             .from('messages')
             .select('content, created_at, sender_id')
-            .eq('business_id', user.id)
+            .eq('business_id', conversation['business_id'])
             .or('sender_id.eq.${conversation['user_id']},receiver_id.eq.${conversation['user_id']}')
             .order('created_at', ascending: false)
             .limit(1)
@@ -98,8 +96,8 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
         _filteredConversations = _conversations;
       } else {
         _filteredConversations = _conversations.where((conversation) {
-          final username = conversation['user_profiles']['username']?.toLowerCase() ?? '';
-          return username.contains(query.toLowerCase());
+          final userName = conversation['user_profiles']?['username']?.toLowerCase() ?? '';
+          return userName.contains(query.toLowerCase());
         }).toList();
       }
     });
@@ -185,19 +183,18 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
                             return ListTile(
                               leading: CircleAvatar(
                                 radius: 25,
-                                backgroundImage: user['profile_image_url'] != null
-                                    ? NetworkImage(user['profile_image_url'])
+                                backgroundImage: user?['profile_image_url'] != null
+                                    ? NetworkImage(user!['profile_image_url'])
                                     : null,
-                                child: user['profile_image_url'] == null
-                                    ? const Icon(Icons.person, color: Colors.white)
+                                child: user?['profile_image_url'] == null
+                                    ? const Icon(Icons.person)
                                     : null,
-                                backgroundColor: const Color(0xFF7B61FF),
                               ),
                               title: Text(
-                                user['username'] ?? 'User',
+                                user?['username'] ?? 'Unknown User',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black,
+                                  fontSize: 16,
                                 ),
                               ),
                               subtitle: Text(
@@ -224,8 +221,8 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
                                   MaterialPageRoute(
                                     builder: (context) => OwnerChatScreen(
                                       userId: conversation['user_id'],
-                                      userName: conversation['user_profiles']['username'],
-                                      userImage: conversation['user_profiles']['profile_image_url'],
+                                      userName: user?['username'] ?? 'Unknown User',
+                                      userImage: user?['profile_image_url'],
                                     ),
                                   ),
                                 );
@@ -360,25 +357,27 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
         'content': _messageController.text.trim(),
       });
 
-      // Update conversation timestamp
-      await Supabase.instance.client
+      // Check if conversation exists before trying to update
+      final existingConversation = await Supabase.instance.client
           .from('conversations')
-          .upsert({
-            'user_id': widget.userId,
-            'business_id': user.id,
-            'last_message_at': DateTime.now().toIso8601String(),
-          });
+          .select('id')
+          .eq('user_id', widget.userId)
+          .eq('business_id', user.id)
+          .maybeSingle();
 
-      // Create notification for the user when business replies
-      await Supabase.instance.client.from('notifications').insert({
-        'user_id': widget.userId, // User receives the notification
-        'type': 'message',
-        'title': 'New Reply from Business',
-        'message': _messageController.text.trim().length > 50 
-            ? '${_messageController.text.trim().substring(0, 50)}...'
-            : _messageController.text.trim(),
-        'is_read': false,
-      });
+      if (existingConversation != null) {
+        // Update existing conversation timestamp
+        await Supabase.instance.client
+            .from('conversations')
+            .update({
+              'last_message_at': DateTime.now().toIso8601String(),
+            })
+            .eq('user_id', widget.userId)
+            .eq('business_id', user.id);
+      }
+
+      // Remove notification creation - this should be handled by database triggers
+      // or the receiving user's side to avoid RLS policy violations
 
       _messageController.clear();
     } catch (e) {
