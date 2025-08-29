@@ -6,6 +6,7 @@ import 'location_screen.dart';
 import 'laundry_screen.dart'; 
 import 'message_screen.dart'; 
 import 'notification_screen.dart';
+import 'viewall.dart'; // Add this import
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> _filteredLaundryShops = []; 
 
   final TextEditingController _searchController = TextEditingController(); 
+  final ScrollController _scrollController = ScrollController(); // Add this line
   bool _isSearching = false; 
   int _selectedIndex = 0; 
 
@@ -37,13 +39,14 @@ class _HomeScreenState extends State<HomeScreen> {
     _widgetOptions = <Widget>[
       HomeScreenBody(
         userName: _userName,
-        isLoading: _isLoading, // Pass initial loading state
+        isLoading: _isLoading,
         searchController: _searchController,
+        scrollController: _scrollController, // Add this line
         filterLaundryShops: _filterLaundryShops,
         isSearching: _isSearching,
         promos: _promos,
         filteredLaundryShops: _filteredLaundryShops,
-        loadUserProfile: _loadUserProfile, // Pass methods if HomeScreenBody needs to trigger reloads
+        loadUserProfile: _loadUserProfile,
         loadLaundryShops: _loadLaundryShops,
         loadPromos: _loadPromos,
       ),
@@ -65,6 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
         userName: _userName,
         isLoading: _isLoading,
         searchController: _searchController,
+        scrollController: _scrollController, // Add this missing line
         filterLaundryShops: _filterLaundryShops,
         isSearching: _isSearching,
         promos: _promos,
@@ -79,6 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose(); // Add this line
     super.dispose();
   }
 
@@ -197,6 +202,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onItemTapped(int index) {
     if (!mounted) return;
+    
+    // If Home button (index 0) is pressed and we're already on Home screen
+    if (index == 0 && _selectedIndex == 0) {
+      // Scroll to top
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+      return;
+    }
+    
     setState(() {
       _selectedIndex = index;
     });
@@ -212,6 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
         userName: _userName,
         isLoading: _isLoading, // Pass current loading state
         searchController: _searchController,
+        scrollController: _scrollController, // Add this line
         filterLaundryShops: _filterLaundryShops,
         isSearching: _isSearching,
         promos: _promos,
@@ -273,6 +291,7 @@ class HomeScreenBody extends StatelessWidget {
   final String userName;
   final bool isLoading;
   final TextEditingController searchController;
+  final ScrollController scrollController; // Add this line
   final Function(String) filterLaundryShops;
   final bool isSearching;
   final List<Map<String, dynamic>> promos;
@@ -286,6 +305,7 @@ class HomeScreenBody extends StatelessWidget {
     required this.userName,
     required this.isLoading,
     required this.searchController,
+    required this.scrollController, // Add this line
     required this.filterLaundryShops,
     required this.isSearching,
     required this.promos,
@@ -309,6 +329,7 @@ class HomeScreenBody extends StatelessWidget {
           await loadPromos();
         },
         child: SingleChildScrollView(
+          controller: scrollController, // Add this line
           physics: const AlwaysScrollableScrollPhysics(), // Ensure scroll even when content is small
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -377,6 +398,7 @@ class HomeScreenBody extends StatelessWidget {
                             child: TextField(
                               controller: searchController, // Use passed controller
                               onSubmitted: filterLaundryShops, // Use passed function
+                              style: const TextStyle(color: Colors.black), // Add this line to fix text color
                               decoration: const InputDecoration(
                                 hintText: 'Search Here',
                                 hintStyle: TextStyle(color: Colors.grey),
@@ -510,21 +532,66 @@ class HomeScreenBody extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        "Nearest Laundry Shop's",
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          // TODO: Implement View All action
-                        },
-                        child: const Text(
-                          'View All',
-                          style: TextStyle(color: Color(0xFF6F5ADC)),
+                      Expanded(
+                        child: Text(
+                          "Nearest Laundry Shop's",
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
                         ),
+                      ),
+                      // Responsive View All button
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          // Check if screen width is small (mobile)
+                          bool isMobile = MediaQuery.of(context).size.width < 600;
+                          
+                          if (isMobile) {
+                            // For mobile: Use a more compact button
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF6F5ADC),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const ViewAllScreen(),
+                                    ),
+                                  );
+                                },
+                                child: const Text(
+                                  'View All',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            );
+                          } else {
+                            // For larger screens: Use the original TextButton
+                            return TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const ViewAllScreen(),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                'View All',
+                                style: TextStyle(color: Color(0xFF6F5ADC)),
+                              ),
+                            );
+                          }
+                        },
                       ),
                     ],
                   ),
