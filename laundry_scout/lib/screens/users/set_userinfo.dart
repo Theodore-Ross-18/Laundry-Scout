@@ -308,12 +308,44 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
         actions: _showForm
             ? null // No actions on the form page
             : [
-                TextButton(
-                  onPressed: _skipSlides,
-                  child: const Text(
-                    'Skip',
-                    style: TextStyle(color: Colors.white),
-                  ),
+                // Responsive Skip button with View All design
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Check if screen width is small (mobile)
+                    bool isMobile = MediaQuery.of(context).size.width < 600;
+                    
+                    if (isMobile) {
+                      // For mobile: Use a more compact button
+                      return Container(
+                        margin: const EdgeInsets.only(right: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6F5ADC),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: InkWell(
+                          onTap: _skipSlides,
+                          child: const Text(
+                            'Skip',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      );
+                    } else {
+                      // For larger screens: Use the original TextButton
+                      return TextButton(
+                        onPressed: _skipSlides,
+                        child: const Text(
+                          'Skip',
+                          style: TextStyle(color: Color(0xFF6F5ADC)),
+                        ),
+                      );
+                    }
+                  },
                 ),
               ],
       ),
