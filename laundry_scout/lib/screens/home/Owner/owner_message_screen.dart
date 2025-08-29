@@ -50,7 +50,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
         // Get user profile
         final userProfile = await Supabase.instance.client
             .from('user_profiles')
-            .select('username, profile_image_url')
+            .select('username, first_name, last_name, profile_image_url')
             .eq('id', conversation['user_id'])
             .maybeSingle();
         
@@ -61,6 +61,8 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
           // Simply use fallback username without trying to create database record
           conversation['user_profiles'] = {
             'username': 'User${conversation['user_id'].substring(0, 8)}',
+            'first_name': null,
+            'last_name': null,
             'profile_image_url': null,
           };
         } else {
