@@ -1,6 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../splash/splash_screen.dart'; // Changed import to splash screen
 import '../../auth/login_screen.dart'; // Assuming login_screen.dart is in this path
+
+// Helper function for creating a fade transition (copied from login_screen.dart)
+Route _createFadeRoute(Widget page) {
+  return PageRouteBuilder(
+    pageBuilder: (context, animation, secondaryAnimation) => page,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      // Use FadeTransition for a fade-in/fade-out effect
+      return FadeTransition(
+        opacity: animation,
+        child: child,
+      );
+    },
+    transitionDuration: const Duration(milliseconds: 300), // Adjust duration as needed
+  );
+}
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -73,7 +89,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          _createFadeRoute(const SplashScreen()), // Navigate to splash screen instead
         );
       }
     } catch (e) {
