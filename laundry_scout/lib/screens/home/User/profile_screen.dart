@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../splash/splash_screen.dart'; // Changed import to splash screen
 import '../../auth/login_screen.dart'; // Assuming login_screen.dart is in this path
 
@@ -30,7 +31,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _lastName = '';
   String _email = '';
   String _phoneNumber = '';
+  String? _profileImageUrl;
   bool _isLoading = true;
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
@@ -53,10 +56,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       // Fetch user profile from 'user_profiles' table
-      // Assuming 'user_profiles' table has 'id', 'first_name', 'last_name', 'email', and 'mobile_number' columns
+      // Assuming 'user_profiles' table has 'id', 'first_name', 'last_name', 'email', 'mobile_number', and 'profile_image_url' columns
       final response = await Supabase.instance.client
           .from('user_profiles')
-          .select('first_name, last_name, email, mobile_number') // Select required columns, changed phone_number to mobile_number
+          .select('first_name, last_name, email, mobile_number, profile_image_url') // Added profile_image_url
           .eq('id', user.id)
           .single(); // Expecting a single row for the current user
 
@@ -66,6 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _lastName = response['last_name'] ?? '';
           _email = response['email'] ?? user.email ?? ''; // Use Supabase auth email if profile email is null
           _phoneNumber = response['mobile_number'] ?? ''; // Changed phone_number to mobile_number
+          _profileImageUrl = response['profile_image_url'];
           _isLoading = false;
         });
       }
@@ -80,6 +84,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
           SnackBar(content: Text('Error loading user profile: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    try {
+      // Pick image file
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.single.bytes != null) {
+        setState(() {
+          _isUploadingImage = true;
+        });
+
+        final fileBytes = result.files.single.bytes!;
+        final user = Supabase.instance.client.auth.currentUser;
+        
+        if (user == null) return;
+
+        // Create unique filename
+        final fileExt = result.files.single.extension ?? 'jpg';
+        final fileName = '${user.id}_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+        final filePath = 'profile_images/$fileName';
+
+        // Upload to Supabase Storage using bytes instead of File
+        await Supabase.instance.client.storage
+            .from('profiles')
+            .uploadBinary(filePath, fileBytes);
+
+        // Get public URL
+        final imageUrl = Supabase.instance.client.storage
+            .from('profiles')
+            .getPublicUrl(filePath);
+
+        // Update user profile with new image URL
+        await Supabase.instance.client
+            .from('user_profiles')
+            .update({'profile_image_url': imageUrl})
+            .eq('id', user.id);
+
+        // Update local state
+        setState(() {
+          _profileImageUrl = imageUrl;
+          _isUploadingImage = false;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile picture updated successfully!')),
+          );
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _isUploadingImage = false;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error uploading image: $e')),
+        );
+      }
+      print('Error uploading image: $e');
     }
   }
 
@@ -145,11 +214,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 20),
                       Center(
-                        child: CircleAvatar(
-                          radius: 60,
-                          backgroundColor: Colors.grey[300], // Placeholder background
-                          child: Icon(Icons.camera_alt, size: 40, color: Colors.grey[600]), // Placeholder icon
-                          // TODO: Implement logic to display actual profile picture
+                        child: Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 60,
+                              backgroundColor: Colors.grey[300],
+                              backgroundImage: _profileImageUrl != null 
+                                  ? NetworkImage(_profileImageUrl!) 
+                                  : null,
+                              child: _profileImageUrl == null 
+                                  ? Icon(Icons.person, size: 60, color: Colors.grey[600])
+                                  : null,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: _isUploadingImage ? null : _pickAndUploadImage,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF6F5ADC),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                  child: _isUploadingImage
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.camera_alt,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 30),

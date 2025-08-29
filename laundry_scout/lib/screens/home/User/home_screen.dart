@@ -18,6 +18,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _userName = 'User'; 
+  String? _profileImageUrl; // Add profile image URL state
   bool _isLoading = true;
   List<Map<String, dynamic>> _laundryShops = []; 
   List<Map<String, dynamic>> _promos = []; 
@@ -40,9 +41,10 @@ class _HomeScreenState extends State<HomeScreen> {
     _widgetOptions = <Widget>[
       HomeScreenBody(
         userName: _userName,
+        profileImageUrl: _profileImageUrl, // Add profile image URL parameter
         isLoading: _isLoading,
         searchController: _searchController,
-        scrollController: _scrollController, // Add this line
+        scrollController: _scrollController,
         filterLaundryShops: _filterLaundryShops,
         isSearching: _isSearching,
         promos: _promos,
@@ -67,9 +69,10 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _widgetOptions[0] = HomeScreenBody(
         userName: _userName,
+        profileImageUrl: _profileImageUrl, // Add profile image URL parameter
         isLoading: _isLoading,
         searchController: _searchController,
-        scrollController: _scrollController, // Add this missing line
+        scrollController: _scrollController,
         filterLaundryShops: _filterLaundryShops,
         isSearching: _isSearching,
         promos: _promos,
@@ -105,12 +108,13 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       final response = await Supabase.instance.client
           .from('user_profiles')
-          .select('username')
+          .select('username, profile_image_url') // Add profile_image_url to select
           .eq('id', user.id)
           .single();
 
       if (mounted) {
         _userName = response['username'] ?? 'User';
+        _profileImageUrl = response['profile_image_url']; // Store profile image URL
         _isLoading = false;
         _updateHomeScreenBodyState(); // Update HomeScreenBody
       }
@@ -223,14 +227,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     // Rebuild _widgetOptions if _isLoading has changed to pass the latest state to HomeScreenBody
-    // This ensures HomeScreenBody gets the most up-to-date isLoading status.
-    // Note: This is a common pattern when not using a more advanced state management solution.
-    // For a more complex app, consider Riverpod, Provider, or BLoC.
     _widgetOptions[0] = HomeScreenBody(
         userName: _userName,
+        profileImageUrl: _profileImageUrl, // Add profile image URL parameter
         isLoading: _isLoading, // Pass current loading state
         searchController: _searchController,
-        scrollController: _scrollController, // Add this line
+        scrollController: _scrollController,
         filterLaundryShops: _filterLaundryShops,
         isSearching: _isSearching,
         promos: _promos,
@@ -290,23 +292,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class HomeScreenBody extends StatelessWidget {
   final String userName;
+  final String? profileImageUrl; // Add profile image URL parameter
   final bool isLoading;
   final TextEditingController searchController;
-  final ScrollController scrollController; // Add this line
+  final ScrollController scrollController;
   final Function(String) filterLaundryShops;
   final bool isSearching;
   final List<Map<String, dynamic>> promos;
   final List<Map<String, dynamic>> filteredLaundryShops;
-  final Future<void> Function() loadUserProfile; // Functions to allow refresh/reload from body
+  final Future<void> Function() loadUserProfile;
   final Future<void> Function() loadLaundryShops;
   final Future<void> Function() loadPromos;
 
   const HomeScreenBody({
     super.key,
     required this.userName,
+    this.profileImageUrl, // Add profile image URL parameter (optional)
     required this.isLoading,
     required this.searchController,
-    required this.scrollController, // Add this line
+    required this.scrollController,
     required this.filterLaundryShops,
     required this.isSearching,
     required this.promos,
@@ -381,7 +385,12 @@ class HomeScreenBody extends StatelessWidget {
                           child: CircleAvatar(
                             radius: 25,
                             backgroundColor: Colors.white,
-                            child: const Icon(Icons.person, color: Color(0xFF6F5ADC)),
+                            backgroundImage: profileImageUrl != null 
+                                ? NetworkImage(profileImageUrl!) 
+                                : null,
+                            child: profileImageUrl == null 
+                                ? const Icon(Icons.person, color: Color(0xFF6F5ADC))
+                                : null,
                           ),
                         ),
                       ],
