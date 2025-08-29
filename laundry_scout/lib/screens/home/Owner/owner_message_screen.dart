@@ -369,6 +369,17 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
             'last_message_at': DateTime.now().toIso8601String(),
           });
 
+      // Create notification for the user when business replies
+      await Supabase.instance.client.from('notifications').insert({
+        'user_id': widget.userId, // User receives the notification
+        'type': 'message',
+        'title': 'New Reply from Business',
+        'message': _messageController.text.trim().length > 50 
+            ? '${_messageController.text.trim().substring(0, 50)}...'
+            : _messageController.text.trim(),
+        'is_read': false,
+      });
+
       _messageController.clear();
     } catch (e) {
       print('Error sending message: $e');

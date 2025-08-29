@@ -39,13 +39,9 @@ class _MessageScreenState extends State<MessageScreen> {
           .from('conversations')
           .select('''
             *,
-            business_profiles!conversations_business_id_fkey(
+            business_profiles(
               business_name,
-              profile_image_url
-            ),
-            user_profiles!conversations_user_id_fkey(
-              username,
-              profile_image_url
+              cover_photo_url
             )
           ''')
           .eq('user_id', user.id)
@@ -116,7 +112,7 @@ class _MessageScreenState extends State<MessageScreen> {
         builder: (context) => ChatScreen(
           businessId: conversation['business_id'],
           businessName: conversation['business_profiles']['business_name'],
-          businessImage: conversation['business_profiles']['profile_image_url'],
+          businessImage: conversation['business_profiles']['cover_photo_url'],
         ),
       ),
     );
@@ -202,10 +198,10 @@ class _MessageScreenState extends State<MessageScreen> {
                             return ListTile(
                               leading: CircleAvatar(
                                 radius: 25,
-                                backgroundImage: business['profile_image_url'] != null
-                                    ? NetworkImage(business['profile_image_url'])
+                                backgroundImage: business['cover_photo_url'] != null
+                                    ? NetworkImage(business['cover_photo_url'])
                                     : null,
-                                child: business['profile_image_url'] == null
+                                child: business['cover_photo_url'] == null
                                     ? const Icon(Icons.business, color: Colors.white)
                                     : null,
                                 backgroundColor: const Color(0xFF7B61FF),
@@ -372,6 +368,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 _messages.add(newMessage);
               });
               _scrollToBottom();
+              
+              // Handle business reply notification
+              _handleBusinessReply(newMessage);
             }
           },
         )
@@ -385,6 +384,7 @@ class _ChatScreenState extends State<ChatScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
+      // Send the message
       await Supabase.instance.client.from('messages').insert({
         'sender_id': user.id,
         'receiver_id': widget.businessId,
@@ -392,14 +392,14 @@ class _ChatScreenState extends State<ChatScreen> {
         'content': _messageController.text.trim(),
       });
 
-      // Update conversation timestamp
+      // Update conversation timestamp with proper conflict resolution
       await Supabase.instance.client
           .from('conversations')
           .upsert({
             'user_id': user.id,
             'business_id': widget.businessId,
             'last_message_at': DateTime.now().toIso8601String(),
-          });
+          }, onConflict: 'user_id,business_id');
 
       _messageController.clear();
     } catch (e) {
@@ -541,6 +541,29 @@ class _ChatScreenState extends State<ChatScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _handleBusinessReply(Map<String, dynamic> newMessage) async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      // Check if the message is from the business (not from current user)
+      if (newMessage['sender_id'] != user.id) {
+        // Create notification for the user
+        await Supabase.instance.client.from('notifications').insert({
+          'user_id': user.id, // Current user receives the notification
+          'type': 'message',
+          'title': 'New Reply from ${widget.businessName}',
+          'message': newMessage['content'].toString().length > 50 
+              ? '${newMessage['content'].toString().substring(0, 50)}...'
+              : newMessage['content'].toString(),
+          'is_read': false,
+        });
+      }
+    } catch (e) {
+      print('Error handling business reply notification: $e');
+    }
   }
 }
 

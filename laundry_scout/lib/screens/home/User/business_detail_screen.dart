@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'message_screen.dart'; // Import the ChatScreen
 
 class BusinessDetailScreen extends StatefulWidget {
   final Map<String, dynamic> businessData;
@@ -379,7 +380,17 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                                       Expanded(
                                         child: ElevatedButton.icon(
                                           onPressed: () {
-                                            // Add message functionality
+                                            // Navigate to ChatScreen
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => ChatScreen(
+                                                  businessId: _fullBusinessData!['id'],
+                                                  businessName: _fullBusinessData!['business_name'] ?? 'Business',
+                                                  businessImage: _fullBusinessData!['profile_image_url'],
+                                                ),
+                                              ),
+                                            );
                                           },
                                           icon: const Icon(Icons.message, color: Color(0xFF6F5ADC)),
                                           label: const Text('Message', style: TextStyle(color: Color(0xFF6F5ADC))),
