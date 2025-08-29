@@ -108,6 +108,7 @@ class _ViewAllScreenState extends State<ViewAllScreen> {
               child: TextField(
                 controller: _searchController,
                 onChanged: _filterLaundryShops,
+                style: const TextStyle(color: Colors.black), // Add this line to make text visible
                 decoration: const InputDecoration(
                   hintText: 'Search laundry shops...',
                   hintStyle: TextStyle(color: Colors.grey),

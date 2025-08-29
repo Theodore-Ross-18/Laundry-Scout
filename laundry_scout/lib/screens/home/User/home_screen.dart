@@ -398,6 +398,7 @@ class HomeScreenBody extends StatelessWidget {
                             child: TextField(
                               controller: searchController, // Use passed controller
                               onSubmitted: filterLaundryShops, // Use passed function
+                              onChanged: filterLaundryShops, // Add this line to handle real-time changes
                               style: const TextStyle(color: Colors.black), // Add this line to fix text color
                               decoration: const InputDecoration(
                                 hintText: 'Search Here',
@@ -602,7 +603,12 @@ class HomeScreenBody extends StatelessWidget {
               SizedBox(
                 height: 200,
                 child: filteredLaundryShops.isEmpty // Use passed filteredLaundryShops
-                    ? Center(child: Text(isSearching ? 'No laundry shops found for this search.' : 'No laundry shops available.'))
+                    ? Center(
+                        child: Text(
+                          isSearching ? 'No laundry shops found for this search.' : 'No laundry shops available.',
+                          style: const TextStyle(color: Colors.black), // Add this line to make text black
+                        ),
+                      )
                     : ListView.builder(
                         scrollDirection: Axis.horizontal,
                         itemCount: filteredLaundryShops.length,

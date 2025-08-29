@@ -65,17 +65,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
   List<Map<String, String>> get businessSlides => [
     {
-      'image': 'lib/assets/business/slides/first.png',
+      'image': 'lib/assets/user/slides/first.png',
       'title': 'Welcome Back, Business Owner',
       'description': 'Manage your laundry business and connect with more customers!',
     },
     {
-      'image': 'lib/assets/business/slides/second.png',
-      'title': 'Grow Your Business',
+      'image': 'lib/assets/user/slides/second.png',
+      'title': 'Grow Your Business', 
       'description': 'Update your services, manage bookings, and track your performance.',
     },
     {
-      'image': 'lib/assets/business/slides/third.png',
+      'image': 'lib/assets/user/slides/third.png',
       'title': 'Reach More Customers',
       'description': 'Expand your reach and build lasting relationships with clients!',
     },
