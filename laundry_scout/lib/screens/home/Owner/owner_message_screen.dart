@@ -35,18 +35,39 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
       setState(() {
         _isLoading = true;
       });
-
-      final response = await Supabase.instance.client
+  
+      // First get conversations
+      final conversationsResponse = await Supabase.instance.client
           .from('conversations')
-          .select('''
-            *,
-            business_profiles!inner(business_name, cover_photo_url)
-          ''')
+          .select('*')
           .eq('business_id', Supabase.instance.client.auth.currentUser!.id)
           .order('last_message_at', ascending: false);
+  
+      // Then manually fetch user profiles for each conversation
+      for (var conversation in conversationsResponse) {
+        print('Conversation user_id: ${conversation['user_id']}'); // Debug print
+        
+        // Get user profile
+        final userProfile = await Supabase.instance.client
+            .from('user_profiles')
+            .select('username, profile_image_url')
+            .eq('id', conversation['user_id'])
+            .maybeSingle();
+        
+        print('User profile result: $userProfile'); // Debug print
+        
+        // Handle missing user profile gracefully
+        if (userProfile == null) {
+          // Simply use fallback username without trying to create database record
+          conversation['user_profiles'] = {
+            'username': 'User${conversation['user_id'].substring(0, 8)}',
+            'profile_image_url': null,
+          };
+        } else {
+          conversation['user_profiles'] = userProfile;
+        }
 
-      // Get last message for each conversation
-      for (var conversation in response) {
+        // Get last message for each conversation
         final lastMessage = await Supabase.instance.client
             .from('messages')
             .select('content, created_at, sender_id')
@@ -61,7 +82,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
 
       if (mounted) {
         setState(() {
-          _conversations = List<Map<String, dynamic>>.from(response);
+          _conversations = List<Map<String, dynamic>>.from(conversationsResponse);
           _filteredConversations = _conversations;
           _isLoading = false;
         });
