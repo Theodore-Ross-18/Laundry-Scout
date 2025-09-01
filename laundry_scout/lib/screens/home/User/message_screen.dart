@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
-import 'dart:convert';
 import '../../../services/connection_service.dart';
 import '../../../services/message_queue_service.dart';
+import '../../../services/realtime_message_service.dart';
 
 class MessageScreen extends StatefulWidget {
   const MessageScreen({super.key});
@@ -312,15 +312,18 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<Map<String, dynamic>> _messages = [];
-  late RealtimeChannel _messagesSubscription;
+  final RealtimeMessageService _realtimeService = RealtimeMessageService();
   final ConnectionService _connectionService = ConnectionService();
   final MessageQueueService _messageQueue = MessageQueueService();
   ConnectionQuality _connectionQuality = ConnectionQuality.good;
   late StreamSubscription _qualitySubscription;
+  late StreamSubscription _messageSubscription;
+  RealtimeChannel? _currentChannel;
 
   @override
   void initState() {
     super.initState();
+    _realtimeService.initialize();
     _connectionService.startMonitoring();
     _messageQueue.startQueue();
     _loadMessages();
@@ -330,8 +333,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
-    _messagesSubscription.unsubscribe();
+    _currentChannel?.unsubscribe();
     _qualitySubscription.cancel();
+    _messageSubscription.cancel();
     _connectionService.stopMonitoring();
     _messageQueue.stopQueue();
     _messageController.dispose();
@@ -339,111 +343,41 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  void _setupQualityListener() {
-    _qualitySubscription = _connectionService.qualityStream.listen((quality) {
+  void _setupRealtimeSubscription() {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    _currentChannel = _realtimeService.subscribeToConversation(
+      '${user.id}_${widget.businessId}',
+      userId: user.id,
+      businessId: widget.businessId,
+      onMessage: (message) {
+        if (mounted) {
+          setState(() {
+            // Remove optimistic message if it exists
+            _messages.removeWhere((msg) => msg['is_sending'] == true && 
+                msg['content'] == message['content']);
+            _messages.add(message);
+          });
+          _scrollToBottom();
+        }
+      },
+    );
+
+    // Listen to sent messages for optimistic update confirmation
+    _messageSubscription = _messageQueue.sentMessageStream.listen((sentMessage) {
       if (mounted) {
         setState(() {
-          _connectionQuality = quality;
+          // Update optimistic message to confirmed
+          final index = _messages.indexWhere((msg) => 
+              msg['tempId'] == sentMessage.tempId);
+          if (index != -1) {
+            _messages[index]['is_sending'] = false;
+            _messages[index]['id'] = sentMessage.id;
+          }
         });
-        _adjustRealtimeSubscription(quality);
       }
     });
-  }
-
-  void _adjustRealtimeSubscription(ConnectionQuality quality) {
-    // Adjust real-time subscription frequency based on connection quality
-    _messagesSubscription.unsubscribe();
-    
-    Duration throttle;
-    switch (quality) {
-      case ConnectionQuality.excellent:
-      case ConnectionQuality.good:
-        throttle = const Duration(milliseconds: 100);
-        break;
-      case ConnectionQuality.fair:
-        throttle = const Duration(milliseconds: 500);
-        break;
-      case ConnectionQuality.poor:
-        throttle = const Duration(seconds: 2);
-        break;
-      case ConnectionQuality.offline:
-        return; // Don't subscribe when offline
-    }
-    
-    _setupRealtimeSubscription(throttle: throttle);
-  }
-
-  Future<void> _loadMessages() async {
-    try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) return;
-
-      final response = await Supabase.instance.client
-          .from('messages')
-          .select('*')
-          .eq('business_id', widget.businessId)
-          .or('sender_id.eq.${user.id},receiver_id.eq.${user.id}')
-          .order('created_at', ascending: true);
-
-      if (mounted) {
-        setState(() {
-          _messages = List<Map<String, dynamic>>.from(response);
-        });
-        _scrollToBottom();
-      }
-    } catch (e) {
-      print('Error loading messages: $e');
-    }
-  }
-
-  void _setupRealtimeSubscription({Duration? throttle}) {
-    _messagesSubscription = Supabase.instance.client
-        .channel('chat_${widget.businessId}')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
-          schema: 'public',
-          table: 'messages',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'business_id',
-            value: widget.businessId,
-          ),
-          callback: (payload) {
-            if (throttle != null) {
-              // Throttle updates for poor connections
-              Future.delayed(throttle, () {
-                _handleNewMessage(payload.newRecord);
-              });
-            } else {
-              _handleNewMessage(payload.newRecord);
-            }
-          },
-        )
-        .subscribe();
-  }
-
-  void _handleNewMessage(Map<String, dynamic> newMessage) {
-    if (mounted) {
-      // Decompress message if needed
-      if (newMessage['is_compressed'] == true) {
-        newMessage['content'] = _decompressMessage(newMessage['content']);
-      }
-      
-      setState(() {
-        _messages.add(newMessage);
-      });
-      _scrollToBottom();
-      _handleBusinessReply(newMessage);
-    }
-  }
-
-  String _decompressMessage(String compressed) {
-    try {
-      final bytes = base64Decode(compressed);
-      return utf8.decode(bytes);
-    } catch (e) {
-      return compressed; // Return original if decompression fails
-    }
   }
 
   Future<void> _sendMessage() async {
@@ -452,23 +386,23 @@ class _ChatScreenState extends State<ChatScreen> {
     final content = _messageController.text.trim();
     _messageController.clear();
 
-    // Add message to queue for adaptive sending
-    _messageQueue.queueMessage(
-      content: content,
-      receiverId: widget.businessId,
-      businessId: widget.businessId,
-    );
-
-    // Show message immediately in UI (optimistic update)
+    // Optimistic update
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
+      final tempId = _messageQueue.queueMessage(
+        content: content,
+        receiverId: widget.businessId,
+        businessId: widget.businessId,
+      );
+
       final optimisticMessage = {
+        'tempId': tempId,
         'sender_id': user.id,
         'receiver_id': widget.businessId,
         'business_id': widget.businessId,
         'content': content,
         'created_at': DateTime.now().toIso8601String(),
-        'is_sending': true, // Flag to show sending status
+        'is_sending': true,
       };
       
       setState(() {
@@ -679,28 +613,39 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Future<void> _handleBusinessReply(Map<String, dynamic> newMessage) async {
+  Future<void> _loadMessages() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
-      // Check if the message is from the business (not from current user)
-      if (newMessage['sender_id'] != user.id) {
-        // Create notification for the user
-        await Supabase.instance.client.from('notifications').insert({
-          'user_id': user.id, // Current user receives the notification
-          'type': 'message',
-          'title': 'New Reply from ${widget.businessName}',
-          'message': newMessage['content'].toString().length > 50 
-              ? '${newMessage['content'].toString().substring(0, 50)}...'
-              : newMessage['content'].toString(),
-          'is_read': false,
+      final response = await Supabase.instance.client
+          .from('messages')
+          .select('*')
+          .or('sender_id.eq.${user.id},receiver_id.eq.${user.id}')
+          .eq('business_id', widget.businessId)
+          .order('created_at', ascending: true);
+
+      if (mounted) {
+        setState(() {
+          _messages = List<Map<String, dynamic>>.from(response);
         });
+        _scrollToBottom();
       }
     } catch (e) {
-      print('Error handling business reply notification: $e');
+      print('Error loading messages: $e');
     }
   }
+
+  void _setupQualityListener() {
+    _qualitySubscription = _connectionService.qualityStream.listen((quality) {
+      if (mounted) {
+        setState(() {
+          _connectionQuality = quality;
+        });
+      }
+    });
+  }
+    
 }
 
 // Feedback Modal

@@ -11,6 +11,8 @@ class QueuedMessage {
   final DateTime timestamp;
   int retryCount;
   bool isCompressed;
+  bool isSent;
+  String? tempId; // For optimistic updates
 
   QueuedMessage({
     required this.id,
@@ -20,6 +22,8 @@ class QueuedMessage {
     required this.timestamp,
     this.retryCount = 0,
     this.isCompressed = false,
+    this.isSent = false,
+    this.tempId,
   });
 }
 
@@ -30,11 +34,15 @@ class MessageQueueService {
 
   final List<QueuedMessage> _messageQueue = [];
   final ConnectionService _connectionService = ConnectionService();
+  final StreamController<QueuedMessage> _sentMessageController = StreamController.broadcast();
   Timer? _processingTimer;
   bool _isProcessing = false;
 
+  Stream<QueuedMessage> get sentMessageStream => _sentMessageController.stream;
+
   void startQueue() {
-    _processingTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+    // More aggressive processing for better performance
+    _processingTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
       _processQueue();
     });
   }
@@ -43,11 +51,12 @@ class MessageQueueService {
     _processingTimer?.cancel();
   }
 
-  void queueMessage({
+  String queueMessage({
     required String content,
     required String receiverId,
     required String businessId,
   }) {
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final message = QueuedMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       content: _shouldCompress(content) ? _compressMessage(content) : content,
@@ -55,9 +64,11 @@ class MessageQueueService {
       businessId: businessId,
       timestamp: DateTime.now(),
       isCompressed: _shouldCompress(content),
+      tempId: tempId,
     );
 
     _messageQueue.add(message);
+    return tempId; // Return temp ID for optimistic updates
   }
 
   bool _shouldCompress(String content) {
@@ -67,7 +78,6 @@ class MessageQueueService {
   }
 
   String _compressMessage(String content) {
-    // Simple compression - in production, use gzip or similar
     final bytes = utf8.encode(content);
     return base64Encode(bytes);
   }
@@ -81,14 +91,16 @@ class MessageQueueService {
     try {
       switch (quality) {
         case ConnectionQuality.excellent:
+          await _processBatch(10); // Aggressive batching for excellent connection
+          break;
         case ConnectionQuality.good:
-          await _processBatch(5); // Send up to 5 messages at once
+          await _processBatch(5);
           break;
         case ConnectionQuality.fair:
-          await _processBatch(2); // Send up to 2 messages at once
+          await _processBatch(2);
           break;
         case ConnectionQuality.poor:
-          await _processBatch(1); // Send one message at a time
+          await _processBatch(1);
           break;
         case ConnectionQuality.offline:
           // Don't process when offline
@@ -100,14 +112,11 @@ class MessageQueueService {
   }
 
   Future<void> _processBatch(int batchSize) async {
-    final batch = _messageQueue.take(batchSize).toList();
-    final futures = <Future>[];
-
-    for (final message in batch) {
-      futures.add(_sendMessage(message));
-    }
-
-    await Future.wait(futures);
+    final batch = _messageQueue.where((msg) => !msg.isSent).take(batchSize).toList();
+    
+    // Process messages concurrently for better performance
+    final futures = batch.map((message) => _sendMessage(message)).toList();
+    await Future.wait(futures, eagerError: false);
   }
 
   Future<void> _sendMessage(QueuedMessage message) async {
@@ -124,24 +133,42 @@ class MessageQueueService {
         'created_at': message.timestamp.toIso8601String(),
       });
 
-      // Update conversation timestamp
-      await Supabase.instance.client
-          .from('conversations')
-          .upsert({
-            'user_id': user.id,
-            'business_id': message.businessId,
-            'last_message_at': DateTime.now().toIso8601String(),
-          }, onConflict: 'user_id,business_id');
+      // Update conversation timestamp efficiently
+      await _updateConversationTimestamp(message, user.id);
 
+      message.isSent = true;
+      _sentMessageController.add(message);
       _messageQueue.remove(message);
+      
     } catch (e) {
       message.retryCount++;
       
-      if (message.retryCount >= 3) {
-        // Remove message after 3 failed attempts
+      if (message.retryCount >= 5) {
         _messageQueue.remove(message);
-        print('Message failed after 3 retries: ${message.content}');
+        print('❌ Message failed after 5 retries: ${message.content}');
+      } else {
+        // Exponential backoff
+        await Future.delayed(Duration(seconds: message.retryCount * 2));
       }
     }
+  }
+
+  Future<void> _updateConversationTimestamp(QueuedMessage message, String userId) async {
+    try {
+      await Supabase.instance.client
+          .from('conversations')
+          .upsert({
+            'user_id': message.receiverId == message.businessId ? userId : message.receiverId,
+            'business_id': message.businessId,
+            'last_message_at': DateTime.now().toIso8601String(),
+          }, onConflict: 'user_id,business_id');
+    } catch (e) {
+      print('⚠️ Failed to update conversation timestamp: $e');
+    }
+  }
+
+  void dispose() {
+    _processingTimer?.cancel();
+    _sentMessageController.close();
   }
 }

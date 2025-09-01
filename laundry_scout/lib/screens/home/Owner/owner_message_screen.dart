@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import '../../../services/connection_service.dart';
+import '../../../services/realtime_message_service.dart';
+import '../../../services/message_queue_service.dart';
 
 class OwnerMessageScreen extends StatefulWidget {
   const OwnerMessageScreen({super.key});
@@ -299,31 +301,34 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<Map<String, dynamic>> _messages = [];
-  late RealtimeChannel _messagesSubscription;
-  
-  // Add connection quality functionality
+  final RealtimeMessageService _realtimeService = RealtimeMessageService();
   final ConnectionService _connectionService = ConnectionService();
+  final MessageQueueService _messageQueue = MessageQueueService();
   ConnectionQuality _connectionQuality = ConnectionQuality.good;
   late StreamSubscription _qualitySubscription;
+  late StreamSubscription _messageSubscription;
+  RealtimeChannel? _currentChannel;
 
   @override
   void initState() {
     super.initState();
+    _realtimeService.initialize();
+    _connectionService.startMonitoring();
+    _messageQueue.startQueue();
     _loadMessages();
     _setupRealtimeSubscription();
-    // Start connection monitoring
-    _connectionService.startMonitoring();
     _setupConnectionQualityListener();
   }
 
   @override
   void dispose() {
+    _currentChannel?.unsubscribe();
+    _qualitySubscription.cancel();
+    _messageSubscription.cancel();
+    _connectionService.stopMonitoring();
+    _messageQueue.stopQueue();
     _messageController.dispose();
     _scrollController.dispose();
-    _messagesSubscription.unsubscribe();
-    // Clean up connection monitoring
-    _qualitySubscription.cancel();
-    _connectionService.stopMonitoring();
     super.dispose();
   }
 
@@ -335,6 +340,75 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
         });
       }
     });
+  }
+
+  void _setupRealtimeSubscription() {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    _currentChannel = _realtimeService.subscribeToConversation(
+      '${user.id}_${widget.userId}',
+      userId: user.id,
+      businessId: user.id,
+      onMessage: (message) {
+        if (mounted && (message['sender_id'] == widget.userId || message['receiver_id'] == widget.userId)) {
+          setState(() {
+            // Remove optimistic message if it exists
+            _messages.removeWhere((msg) => msg['is_sending'] == true && 
+                msg['content'] == message['content']);
+            _messages.add(message);
+          });
+          _scrollToBottom();
+        }
+      },
+    );
+
+    // Listen to sent messages for optimistic update confirmation
+    _messageSubscription = _messageQueue.sentMessageStream.listen((sentMessage) {
+      if (mounted) {
+        setState(() {
+          // Update optimistic message to confirmed
+          final index = _messages.indexWhere((msg) => 
+              msg['tempId'] == sentMessage.tempId);
+          if (index != -1) {
+            _messages[index]['is_sending'] = false;
+            _messages[index]['id'] = sentMessage.id;
+          }
+        });
+      }
+    });
+  }
+
+  Future<void> _sendMessage() async {
+    if (_messageController.text.trim().isEmpty) return;
+
+    final content = _messageController.text.trim();
+    _messageController.clear();
+
+    // Optimistic update
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      final tempId = _messageQueue.queueMessage(
+        content: content,
+        receiverId: widget.userId,
+        businessId: user.id,
+      );
+
+      final optimisticMessage = {
+        'tempId': tempId,
+        'sender_id': user.id,
+        'receiver_id': widget.userId,
+        'business_id': user.id,
+        'content': content,
+        'created_at': DateTime.now().toIso8601String(),
+        'is_sending': true,
+      };
+      
+      setState(() {
+        _messages.add(optimisticMessage);
+      });
+      _scrollToBottom();
+    }
   }
 
   Future<void> _loadMessages() async {
@@ -357,81 +431,6 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
       }
     } catch (e) {
       print('Error loading messages: $e');
-    }
-  }
-
-  void _setupRealtimeSubscription() {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return;
-
-    _messagesSubscription = Supabase.instance.client
-        .channel('owner_chat_${widget.userId}')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
-          schema: 'public',
-          table: 'messages',
-          filter: PostgresChangeFilter(
-            type: PostgresChangeFilterType.eq,
-            column: 'business_id',
-            value: user.id,
-          ),
-          callback: (payload) {
-            final newMessage = payload.newRecord;
-            if (mounted && (newMessage['sender_id'] == widget.userId || newMessage['receiver_id'] == widget.userId)) {
-              setState(() {
-                _messages.add(newMessage);
-              });
-              _scrollToBottom();
-            }
-          }
-        )
-        .subscribe();
-  }
-
-  Future<void> _sendMessage() async {
-    if (_messageController.text.trim().isEmpty) return;
-
-    try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) return;
-
-      await Supabase.instance.client.from('messages').insert({
-        'sender_id': user.id,
-        'receiver_id': widget.userId,
-        'business_id': user.id,
-        'content': _messageController.text.trim(),
-      });
-
-      // Check if conversation exists before trying to update
-      final existingConversation = await Supabase.instance.client
-          .from('conversations')
-          .select('id')
-          .eq('user_id', widget.userId)
-          .eq('business_id', user.id)
-          .maybeSingle();
-
-      if (existingConversation != null) {
-        // Update existing conversation timestamp
-        await Supabase.instance.client
-            .from('conversations')
-            .update({
-              'last_message_at': DateTime.now().toIso8601String(),
-            })
-            .eq('user_id', widget.userId)
-            .eq('business_id', user.id);
-      }
-
-      // Remove notification creation - this should be handled by database triggers
-      // or the receiving user's side to avoid RLS policy violations
-
-      _messageController.clear();
-    } catch (e) {
-      print('Error sending message: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error sending message: $e')),
-        );
-      }
     }
   }
 
