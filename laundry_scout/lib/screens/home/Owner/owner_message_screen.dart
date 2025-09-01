@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
+import '../../../services/connection_service.dart';
 
 class OwnerMessageScreen extends StatefulWidget {
   const OwnerMessageScreen({super.key});
@@ -299,12 +300,20 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
   final ScrollController _scrollController = ScrollController();
   List<Map<String, dynamic>> _messages = [];
   late RealtimeChannel _messagesSubscription;
+  
+  // Add connection quality functionality
+  final ConnectionService _connectionService = ConnectionService();
+  ConnectionQuality _connectionQuality = ConnectionQuality.good;
+  late StreamSubscription _qualitySubscription;
 
   @override
   void initState() {
     super.initState();
     _loadMessages();
     _setupRealtimeSubscription();
+    // Start connection monitoring
+    _connectionService.startMonitoring();
+    _setupConnectionQualityListener();
   }
 
   @override
@@ -312,7 +321,20 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
     _messageController.dispose();
     _scrollController.dispose();
     _messagesSubscription.unsubscribe();
+    // Clean up connection monitoring
+    _qualitySubscription.cancel();
+    _connectionService.stopMonitoring();
     super.dispose();
+  }
+
+  void _setupConnectionQualityListener() {
+    _qualitySubscription = _connectionService.qualityStream.listen((quality) {
+      if (mounted) {
+        setState(() {
+          _connectionQuality = quality;
+        });
+      }
+    });
   }
 
   Future<void> _loadMessages() async {
@@ -425,6 +447,60 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
     });
   }
 
+  Widget _buildConnectionIndicator() {
+    Color color = Colors.grey;
+    String text = 'Unknown';
+    IconData icon = Icons.signal_cellular_off;
+    
+    switch (_connectionQuality) {
+      case ConnectionQuality.excellent:
+        color = Colors.green;
+        text = 'Excellent';
+        icon = Icons.signal_cellular_4_bar;
+        break;
+      case ConnectionQuality.good:
+        color = Colors.lightGreen;
+        text = 'Good';
+        icon = Icons.signal_cellular_4_bar;
+        break;
+      case ConnectionQuality.fair:
+        color = Colors.orange;
+        text = 'Fair';
+        icon = Icons.signal_cellular_alt;
+        break;
+      case ConnectionQuality.poor:
+        color = Colors.red;
+        text = 'Poor';
+        icon = Icons.signal_cellular_connected_no_internet_0_bar;
+        break;
+      case ConnectionQuality.offline:
+        color = Colors.grey;
+        text = 'Offline';
+        icon = Icons.signal_cellular_off;
+        break;
+    }
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
@@ -446,13 +522,19 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                widget.userName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.userName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  _buildConnectionIndicator(),
+                ],
               ),
             ),
           ],
@@ -497,7 +579,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: const Color(0xFF7B61FF) ,
               boxShadow: [
                 BoxShadow(
                   color: Colors.grey.withOpacity(0.2),
@@ -512,14 +594,16 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _messageController,
+                    style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                     decoration: InputDecoration(
                       hintText: 'Type your message here...',
+                      hintStyle: TextStyle(color: const Color.fromARGB(255, 255, 255, 255)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(25),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: const Color.fromARGB(46, 255, 255, 255),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 10,
@@ -529,11 +613,19 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                CircleAvatar(
-                  backgroundColor: const Color(0xFF7B61FF),
-                  child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white),
-                    onPressed: _sendMessage,
+                GestureDetector(
+                  onTap: _sendMessage,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF7B61FF),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.send,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
               ],

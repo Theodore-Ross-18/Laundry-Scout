@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
+import 'dart:convert';
+import '../../../services/connection_service.dart';
+import '../../../services/message_queue_service.dart';
 
 class MessageScreen extends StatefulWidget {
   const MessageScreen({super.key});
@@ -310,20 +313,64 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   List<Map<String, dynamic>> _messages = [];
   late RealtimeChannel _messagesSubscription;
+  final ConnectionService _connectionService = ConnectionService();
+  final MessageQueueService _messageQueue = MessageQueueService();
+  ConnectionQuality _connectionQuality = ConnectionQuality.good;
+  late StreamSubscription _qualitySubscription;
 
   @override
   void initState() {
     super.initState();
+    _connectionService.startMonitoring();
+    _messageQueue.startQueue();
     _loadMessages();
     _setupRealtimeSubscription();
+    _setupQualityListener();
   }
 
   @override
   void dispose() {
+    _messagesSubscription.unsubscribe();
+    _qualitySubscription.cancel();
+    _connectionService.stopMonitoring();
+    _messageQueue.stopQueue();
     _messageController.dispose();
     _scrollController.dispose();
-    _messagesSubscription.unsubscribe();
     super.dispose();
+  }
+
+  void _setupQualityListener() {
+    _qualitySubscription = _connectionService.qualityStream.listen((quality) {
+      if (mounted) {
+        setState(() {
+          _connectionQuality = quality;
+        });
+        _adjustRealtimeSubscription(quality);
+      }
+    });
+  }
+
+  void _adjustRealtimeSubscription(ConnectionQuality quality) {
+    // Adjust real-time subscription frequency based on connection quality
+    _messagesSubscription.unsubscribe();
+    
+    Duration throttle;
+    switch (quality) {
+      case ConnectionQuality.excellent:
+      case ConnectionQuality.good:
+        throttle = const Duration(milliseconds: 100);
+        break;
+      case ConnectionQuality.fair:
+        throttle = const Duration(milliseconds: 500);
+        break;
+      case ConnectionQuality.poor:
+        throttle = const Duration(seconds: 2);
+        break;
+      case ConnectionQuality.offline:
+        return; // Don't subscribe when offline
+    }
+    
+    _setupRealtimeSubscription(throttle: throttle);
   }
 
   Future<void> _loadMessages() async {
@@ -349,7 +396,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _setupRealtimeSubscription() {
+  void _setupRealtimeSubscription({Duration? throttle}) {
     _messagesSubscription = Supabase.instance.client
         .channel('chat_${widget.businessId}')
         .onPostgresChanges(
@@ -362,54 +409,127 @@ class _ChatScreenState extends State<ChatScreen> {
             value: widget.businessId,
           ),
           callback: (payload) {
-            final newMessage = payload.newRecord;
-            if (mounted) {
-              setState(() {
-                _messages.add(newMessage);
+            if (throttle != null) {
+              // Throttle updates for poor connections
+              Future.delayed(throttle, () {
+                _handleNewMessage(payload.newRecord);
               });
-              _scrollToBottom();
-              
-              // Handle business reply notification
-              _handleBusinessReply(newMessage);
+            } else {
+              _handleNewMessage(payload.newRecord);
             }
           },
         )
         .subscribe();
   }
 
+  void _handleNewMessage(Map<String, dynamic> newMessage) {
+    if (mounted) {
+      // Decompress message if needed
+      if (newMessage['is_compressed'] == true) {
+        newMessage['content'] = _decompressMessage(newMessage['content']);
+      }
+      
+      setState(() {
+        _messages.add(newMessage);
+      });
+      _scrollToBottom();
+      _handleBusinessReply(newMessage);
+    }
+  }
+
+  String _decompressMessage(String compressed) {
+    try {
+      final bytes = base64Decode(compressed);
+      return utf8.decode(bytes);
+    } catch (e) {
+      return compressed; // Return original if decompression fails
+    }
+  }
+
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
 
-    try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) return;
+    final content = _messageController.text.trim();
+    _messageController.clear();
 
-      // Send the message
-      await Supabase.instance.client.from('messages').insert({
+    // Add message to queue for adaptive sending
+    _messageQueue.queueMessage(
+      content: content,
+      receiverId: widget.businessId,
+      businessId: widget.businessId,
+    );
+
+    // Show message immediately in UI (optimistic update)
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      final optimisticMessage = {
         'sender_id': user.id,
         'receiver_id': widget.businessId,
         'business_id': widget.businessId,
-        'content': _messageController.text.trim(),
+        'content': content,
+        'created_at': DateTime.now().toIso8601String(),
+        'is_sending': true, // Flag to show sending status
+      };
+      
+      setState(() {
+        _messages.add(optimisticMessage);
       });
-
-      // Update conversation timestamp with proper conflict resolution
-      await Supabase.instance.client
-          .from('conversations')
-          .upsert({
-            'user_id': user.id,
-            'business_id': widget.businessId,
-            'last_message_at': DateTime.now().toIso8601String(),
-          }, onConflict: 'user_id,business_id');
-
-      _messageController.clear();
-    } catch (e) {
-      print('Error sending message: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error sending message: $e')),
-        );
-      }
+      _scrollToBottom();
     }
+  }
+
+  Widget _buildConnectionIndicator() {
+    Color color = Colors.grey;
+    String text = 'Unknown';
+    IconData icon = Icons.signal_cellular_off;
+    
+    switch (_connectionQuality) {
+      case ConnectionQuality.excellent:
+        color = Colors.green;
+        text = 'Excellent';
+        icon = Icons.signal_cellular_4_bar;
+        break;
+      case ConnectionQuality.good:
+        color = Colors.lightGreen;
+        text = 'Good';
+        icon = Icons.signal_cellular_4_bar;
+        break;
+      case ConnectionQuality.fair:
+        color = Colors.orange;
+        text = 'Fair';
+        icon = Icons.signal_cellular_alt;
+        break;
+      case ConnectionQuality.poor:
+        color = Colors.red;
+        text = 'Poor';
+        icon = Icons.signal_cellular_connected_no_internet_0_bar;
+        break;
+      case ConnectionQuality.offline:
+        color = Colors.grey;
+        text = 'Offline';
+        icon = Icons.signal_cellular_off;
+        break;
+    }
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
   }
 
   void _scrollToBottom() {
@@ -441,17 +561,23 @@ class _ChatScreenState extends State<ChatScreen> {
               child: widget.businessImage == null
                   ? const Icon(Icons.business, color: Colors.white)
                   : null,
-              backgroundColor: Colors.white.withOpacity(0.3),
+              backgroundColor: Colors.white.withOpacity(0.2),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                widget.businessName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.businessName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  _buildConnectionIndicator(),
+                ],
               ),
             ),
           ],
@@ -496,10 +622,10 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: const Color(0xFF7B61FF),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
+                  color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.2),
                   spreadRadius: 1,
                   blurRadius: 5,
                   offset: const Offset(0, -2),
@@ -511,14 +637,16 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _messageController,
+                    style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                     decoration: InputDecoration(
-                      hintText: 'Type your thoughts here...',
+                      hintText: 'Type your message here...',
+                      hintStyle: TextStyle(color: const Color.fromARGB(255, 255, 255, 255)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(25),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: const Color.fromARGB(46, 255, 255, 255),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 10,
@@ -528,11 +656,19 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                CircleAvatar(
-                  backgroundColor: const Color(0xFF7B61FF),
-                  child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white),
-                    onPressed: _sendMessage,
+                GestureDetector(
+                  onTap: _sendMessage,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF7B61FF),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.send,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
               ],
