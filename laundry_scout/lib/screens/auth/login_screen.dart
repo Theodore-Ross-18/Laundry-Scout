@@ -338,7 +338,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: _skipSlides,
                   child: const Text(
                     'Skip',
-                    style: TextStyle(color: Color(0xFF6F5ADC)),
+                    style: TextStyle(color: Colors.white),
                   ),
                 );
               }
