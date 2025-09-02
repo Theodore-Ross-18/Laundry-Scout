@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -140,12 +139,12 @@ class ImageService {
     int? memCacheWidth;
     int? memCacheHeight;
     
-    if (width != null && width!.isFinite && width! > 0) {
-      memCacheWidth = width!.toInt();
+    if (width != null && width.isFinite && width > 0) {
+      memCacheWidth = width.toInt();
     }
     
-    if (height != null && height!.isFinite && height! > 0) {
-      memCacheHeight = height!.toInt();
+    if (height != null && height.isFinite && height > 0) {
+      memCacheHeight = height.toInt();
     }
     
     Widget imageWidget = CachedNetworkImage(
