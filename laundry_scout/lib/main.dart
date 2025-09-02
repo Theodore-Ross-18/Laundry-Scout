@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:laundry_scout/screens/splash/splash_screen.dart';
+import 'package:laundry_scout/widgets/auth_wrapper.dart';
 import 'package:flutter/foundation.dart';
 
 Future<void> main() async {
@@ -120,7 +120,7 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       debugShowCheckedModeBanner: false,
-      home: const SplashScreen(), // Replace the StreamBuilder with SplashScreen
+      home: const AuthWrapper(), // Use AuthWrapper to handle initial routing
     );
   }
 }
