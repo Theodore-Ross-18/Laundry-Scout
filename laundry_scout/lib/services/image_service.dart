@@ -125,6 +125,18 @@ class ImageService {
     return file; // Return original if compression fails
   }
 
+  // Validate image URL
+  bool _isValidImageUrl(String url) {
+    if (url.isEmpty) return false;
+    try {
+      final uri = Uri.parse(url);
+      return uri.hasScheme && (uri.scheme == 'http' || uri.scheme == 'https');
+    } catch (e) {
+      debugPrint('Invalid URL format: $url - $e');
+      return false;
+    }
+  }
+
   // Create optimized cached network image widget
   Widget buildCachedNetworkImage({
     required String imageUrl,
@@ -135,6 +147,12 @@ class ImageService {
     Widget? errorWidget,
     BorderRadius? borderRadius,
   }) {
+    // Validate URL first
+    if (!_isValidImageUrl(imageUrl)) {
+      debugPrint('Invalid image URL provided: $imageUrl');
+      return errorWidget ?? _buildDefaultErrorWidget();
+    }
+
     // Safe conversion to int, avoiding infinity values
     int? memCacheWidth;
     int? memCacheHeight;
@@ -155,6 +173,8 @@ class ImageService {
       placeholder: (context, url) => placeholder ?? _buildDefaultPlaceholder(),
       errorWidget: (context, url, error) {
         debugPrint('Image loading error for $url: $error');
+        debugPrint('Error type: ${error.runtimeType}');
+        debugPrint('Error details: ${error.toString()}');
         return errorWidget ?? _buildDefaultErrorWidget();
       },
       fadeInDuration: const Duration(milliseconds: 200),
@@ -191,7 +211,10 @@ class ImageService {
     Widget? child,
     Color? backgroundColor,
   }) {
-    if (imageUrl == null || imageUrl.isEmpty) {
+    if (imageUrl == null || imageUrl.isEmpty || !_isValidImageUrl(imageUrl)) {
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        debugPrint('Invalid avatar image URL provided: $imageUrl');
+      }
       return CircleAvatar(
         radius: radius,
         backgroundColor: backgroundColor ?? Colors.grey[300],
@@ -211,6 +234,8 @@ class ImageService {
           placeholder: (context, url) => _buildCircularPlaceholder(radius),
           errorWidget: (context, url, error) {
             debugPrint('Avatar image loading error for $url: $error');
+            debugPrint('Avatar error type: ${error.runtimeType}');
+            debugPrint('Avatar error details: ${error.toString()}');
             return child ?? Icon(
               Icons.person,
               size: radius,
