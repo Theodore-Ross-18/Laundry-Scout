@@ -651,17 +651,32 @@ class _ChatScreenState extends State<ChatScreen> {
                   alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isMe ? const Color(0xFF7B61FF) : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      message['content'],
-                      style: TextStyle(
-                        color: isMe ? Colors.white : Colors.black,
-                        fontSize: 16,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isMe ? const Color(0xFF7B61FF) : Colors.grey[200],
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            message['content'],
+                            style: TextStyle(
+                              color: isMe ? Colors.white : Colors.black,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatMessageTime(message['created_at']),
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -759,6 +774,29 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }
     });
+  }
+
+  String _formatMessageTime(String timestamp) {
+    final dateTime = DateTime.parse(timestamp);
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    // Convert to 12-hour format
+    int hour = dateTime.hour;
+    String period = hour >= 12 ? 'PM' : 'AM';
+    if (hour == 0) {
+      hour = 12;
+    } else if (hour > 12) {
+      hour = hour - 12;
+    }
+    
+    String timeString = '${hour.toString()}:${dateTime.minute.toString().padLeft(2, '0')} $period';
+
+    if (difference.inDays > 0) {
+      return '${dateTime.day}/${dateTime.month} $timeString';
+    } else {
+      return timeString;
+    }
   }
     
 }
