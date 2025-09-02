@@ -18,25 +18,89 @@ class _MessageScreenState extends State<MessageScreen> {
   late RealtimeChannel _messagesSubscription;
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredConversations = [];
+  Timer? _backgroundRefreshTimer; // Add background refresh timer
 
   @override
   void initState() {
     super.initState();
     _loadConversations();
     _setupRealtimeSubscription();
+    _startBackgroundRefresh(); // Start background refresh
   }
 
   @override
   void dispose() {
     _messagesSubscription.unsubscribe();
+    _backgroundRefreshTimer?.cancel(); // Cancel timer
     _searchController.dispose();
     super.dispose();
+  }
+
+  // Add background refresh method
+  void _startBackgroundRefresh() {
+    _backgroundRefreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (mounted) {
+        _refreshConversationsInBackground();
+      }
+    });
+  }
+
+  // Background refresh method
+  Future<void> _refreshConversationsInBackground() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final response = await Supabase.instance.client
+          .from('conversations')
+          .select('''
+            *,
+            business_profiles(
+              business_name,
+              cover_photo_url
+            )
+          ''')
+          .eq('user_id', user.id)
+          .order('last_message_at', ascending: false);
+
+      // Get last message for each conversation
+      for (var conversation in response) {
+        final lastMessage = await Supabase.instance.client
+            .from('messages')
+            .select('content, created_at, sender_id')
+            .or('sender_id.eq.${user.id},receiver_id.eq.${user.id}')
+            .eq('business_id', conversation['business_id'])
+            .order('created_at', ascending: false)
+            .limit(1)
+            .maybeSingle();
+
+        conversation['last_message'] = lastMessage;
+      }
+
+      if (mounted) {
+        setState(() {
+          _conversations = List<Map<String, dynamic>>.from(response);
+          // Preserve search filter
+          if (_searchController.text.isEmpty) {
+            _filteredConversations = _conversations;
+          } else {
+            _filterConversations(_searchController.text);
+          }
+        });
+      }
+    } catch (e) {
+      print('Background refresh error: $e');
+    }
   }
 
   Future<void> _loadConversations() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
+
+      setState(() {
+        _isLoading = true;
+      });
 
       final response = await Supabase.instance.client
           .from('conversations')
@@ -319,6 +383,7 @@ class _ChatScreenState extends State<ChatScreen> {
   late StreamSubscription _qualitySubscription;
   late StreamSubscription _messageSubscription;
   RealtimeChannel? _currentChannel;
+  Timer? _backgroundRefreshTimer; // Add background refresh timer
 
   @override
   void initState() {
@@ -329,6 +394,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _loadMessages();
     _setupRealtimeSubscription();
     _setupQualityListener();
+    _startBackgroundRefresh(); // Start background refresh
   }
 
   @override
@@ -338,9 +404,50 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageSubscription.cancel();
     _connectionService.stopMonitoring();
     _messageQueue.stopQueue();
+    _backgroundRefreshTimer?.cancel(); // Cancel timer
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // Add background refresh for messages
+  void _startBackgroundRefresh() {
+    _backgroundRefreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (mounted) {
+        _refreshMessagesInBackground();
+      }
+    });
+  }
+
+  // Background refresh method for messages
+  Future<void> _refreshMessagesInBackground() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final response = await Supabase.instance.client
+          .from('messages')
+          .select('*')
+          .or('sender_id.eq.${user.id},receiver_id.eq.${user.id}')
+          .eq('business_id', widget.businessId)
+          .order('created_at', ascending: true);
+
+      if (mounted) {
+        final newMessages = List<Map<String, dynamic>>.from(response);
+        
+        // Only update if there are new messages
+        if (newMessages.length != _messages.length || 
+            (newMessages.isNotEmpty && _messages.isNotEmpty && 
+             newMessages.last['id'] != _messages.last['id'])) {
+          setState(() {
+            _messages = newMessages;
+          });
+          _scrollToBottom();
+        }
+      }
+    } catch (e) {
+      print('Background message refresh error: $e');
+    }
   }
 
   void _setupRealtimeSubscription() {
