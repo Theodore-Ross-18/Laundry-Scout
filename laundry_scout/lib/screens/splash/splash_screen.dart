@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:laundry_scout/screens/auth/login_screen.dart';
+import 'package:laundry_scout/screens/home/User/home_screen.dart';
+import 'package:laundry_scout/screens/home/Owner/owner_home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -51,22 +54,119 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _controller.forward().then((_) {
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(
-                  opacity: animation,
-                  child: child,
-                );
-              },
-              transitionDuration: const Duration(milliseconds: 500),
-            ),
-          );
+          _checkAuthenticationState();
         }
       });
     });
+  }
+
+  Future<void> _checkAuthenticationState() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      
+      if (user == null) {
+        // No authenticated user, navigate to login
+        _navigateToLogin();
+        return;
+      }
+      
+      // User is authenticated, check their profile type
+      await _determineUserTypeAndNavigate(user.id);
+    } catch (e) {
+      print('Error checking authentication state: $e');
+      // On error, navigate to login for safety
+      _navigateToLogin();
+    }
+  }
+  
+  Future<void> _determineUserTypeAndNavigate(String userId) async {
+    try {
+      // Check if user has a business profile
+      final businessResponse = await Supabase.instance.client
+          .from('business_profiles')
+          .select('id')
+          .eq('id', userId)
+          .maybeSingle();
+      
+      if (businessResponse != null) {
+        // User is a business owner
+        _navigateToOwnerHome();
+        return;
+      }
+      
+      // Check if user has a regular user profile
+      final userResponse = await Supabase.instance.client
+          .from('user_profiles')
+          .select('id')
+          .eq('id', userId)
+          .maybeSingle();
+      
+      if (userResponse != null) {
+        // User is a regular user
+        _navigateToUserHome();
+        return;
+      }
+      
+      // No profile found, navigate to login
+      _navigateToLogin();
+    } catch (e) {
+      print('Error determining user type: $e');
+      _navigateToLogin();
+    }
+  }
+  
+  void _navigateToLogin() {
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => const LoginScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
+      );
+    }
+  }
+  
+  void _navigateToUserHome() {
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
+      );
+    }
+  }
+  
+  void _navigateToOwnerHome() {
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => const OwnerHomeScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
+      );
+    }
   }
 
   @override

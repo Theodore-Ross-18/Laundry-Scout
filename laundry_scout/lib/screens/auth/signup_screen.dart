@@ -110,6 +110,46 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
           return; // Stop the signup process if username exists
         }
 
+        // Check if email already exists in user_profiles table
+        final existingUserEmail = await Supabase.instance.client
+            .from('user_profiles')
+            .select('email')
+            .eq('email', _emailController.text.trim())
+            .limit(1)
+            .maybeSingle();
+
+        if (existingUserEmail != null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Email already registered. Please use a different email or try logging in.')),
+            );
+          }
+          setState(() {
+            _isLoading = false;
+          });
+          return; // Stop the signup process if email exists
+        }
+
+        // Check if email already exists in business_profiles table
+        final existingBusinessEmail = await Supabase.instance.client
+            .from('business_profiles')
+            .select('email')
+            .eq('email', _emailController.text.trim())
+            .limit(1)
+            .maybeSingle();
+
+        if (existingBusinessEmail != null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Email already registered as a business account. Please use a different email or try logging in.')),
+            );
+          }
+          setState(() {
+            _isLoading = false;
+          });
+          return; // Stop the signup process if email exists
+        }
+
         // Proceed with Supabase auth signup (handles email uniqueness)
         final response = await Supabase.instance.client.auth.signUp(
           email: _emailController.text.trim(),
