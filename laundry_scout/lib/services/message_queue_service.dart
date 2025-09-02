@@ -155,13 +155,46 @@ class MessageQueueService {
 
   Future<void> _updateConversationTimestamp(QueuedMessage message, String userId) async {
     try {
-      await Supabase.instance.client
+      print('🔍 Updating conversation timestamp:');
+      print('   Current User ID: $userId');
+      print('   Receiver ID: ${message.receiverId}');
+      print('   Business ID: ${message.businessId}');
+      print('   Auth User: ${Supabase.instance.client.auth.currentUser?.id}');
+      
+      // Determine the correct user_id and business_id for the conversation
+      String conversationUserId;
+      String conversationBusinessId = message.businessId;
+      
+      // If the current user is the business owner, the other party is the user
+      // If the current user is a regular user, they are the user_id
+      if (message.receiverId == message.businessId) {
+        // Current user is sending to business, so current user is the customer
+        conversationUserId = userId;
+      } else {
+        // Current user is the business responding to a customer
+        conversationUserId = message.receiverId;
+      }
+  
+      // First try to update existing conversation
+      final updateResult = await Supabase.instance.client
           .from('conversations')
-          .upsert({
-            'user_id': message.receiverId == message.businessId ? userId : message.receiverId,
-            'business_id': message.businessId,
+          .update({
             'last_message_at': DateTime.now().toIso8601String(),
-          }, onConflict: 'user_id,business_id');
+          })
+          .eq('user_id', conversationUserId)
+          .eq('business_id', conversationBusinessId)
+          .select();
+  
+      // If no rows were updated, the conversation doesn't exist, so create it
+      if (updateResult.isEmpty) {
+        await Supabase.instance.client
+            .from('conversations')
+            .insert({
+              'user_id': conversationUserId,
+              'business_id': conversationBusinessId,
+              'last_message_at': DateTime.now().toIso8601String(),
+            });
+      }
     } catch (e) {
       print('⚠️ Failed to update conversation timestamp: $e');
     }
