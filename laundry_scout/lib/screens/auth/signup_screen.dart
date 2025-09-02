@@ -114,20 +114,39 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
         final response = await Supabase.instance.client.auth.signUp(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
-          // You might want to add user_metadata here if Supabase supports it directly on signup
-          // options: AuthOptions(
-          //   data: {'username': _usernameController.text.trim()},
-          // ),
+          emailRedirectTo: 'com.yourapp.laundryscout://email-confirm', // Add your app's deep link
+          data: {
+            'username': _usernameController.text.trim(),
+            'email_confirm': true,
+          },
         );
 
         if (response.user != null) {
-          // User successfully created in Supabase Auth
-          // Now, navigate to the SelectUserScreen, passing the username
-          if (mounted) {
-             Navigator.pushReplacement(
+          // Check if email confirmation is required
+          if (response.session == null) {
+            // Email confirmation required
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please check your email and click the confirmation link to complete signup.'),
+                  duration: Duration(seconds: 5),
+                ),
+              );
+              // Optionally navigate to a "check your email" screen instead of SelectUserScreen
+              // For now, we'll still navigate but show the message
+              Navigator.pushReplacement(
                 context,
-                _createFadeRoute(SelectUserScreen(username: _usernameController.text.trim())), // Pass the username
-             );
+                _createFadeRoute(SelectUserScreen(username: _usernameController.text.trim())),
+              );
+            }
+          } else {
+            // User is immediately signed in (email confirmation disabled)
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                _createFadeRoute(SelectUserScreen(username: _usernameController.text.trim())),
+              );
+            }
           }
         } else {
            // Handle cases where auth.signUp succeeds but response.user is null (less common)
