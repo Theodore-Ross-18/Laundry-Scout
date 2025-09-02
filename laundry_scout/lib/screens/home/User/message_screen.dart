@@ -38,7 +38,7 @@ class _MessageScreenState extends State<MessageScreen> {
 
   // Add background refresh method
   void _startBackgroundRefresh() {
-    _backgroundRefreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+    _backgroundRefreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) { // Changed from 2 seconds to 10
       if (mounted) {
         _refreshConversationsInBackground();
       }
@@ -147,11 +147,19 @@ class _MessageScreenState extends State<MessageScreen> {
 
   void _setupRealtimeSubscription() {
     _messagesSubscription = Supabase.instance.client
-        .channel('messages')
+        .channel('messages_global') // Keep same channel name
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: 'messages',
+          callback: (payload) {
+            _loadConversations();
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'conversations', 
           callback: (payload) {
             _loadConversations();
           },

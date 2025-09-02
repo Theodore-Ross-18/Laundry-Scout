@@ -38,7 +38,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
 
   // Add background refresh method
   void _startBackgroundRefresh() {
-    _backgroundRefreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+    _backgroundRefreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) { // Changed from 2 seconds to 10
       if (mounted) {
         _refreshConversationsInBackground();
       }
@@ -176,11 +176,19 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
 
   void _setupRealtimeSubscription() {
     _messagesSubscription = Supabase.instance.client
-        .channel('owner_messages')
+        .channel('messages_global') // Changed from 'owner_messages'
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
           table: 'messages',
+          callback: (payload) {
+            _loadConversations();
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public', 
+          table: 'conversations',
           callback: (payload) {
             _loadConversations();
           },
