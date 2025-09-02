@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart'; // Add this import
 import 'dart:io'; // Add this import
 import 'package:flutter/foundation.dart' show kIsWeb; // Add this import
+import '../../widgets/optimized_image.dart';
 
 class BusinessProfilePreview extends StatelessWidget {
   final String businessName;
@@ -58,22 +59,37 @@ class BusinessProfilePreview extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Cover Photo
-            Container(
+            SizedBox(
               height: 200,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                image: imageProvider != null // Use the determined imageProvider
-                    ? DecorationImage(
-                        image: imageProvider,
-                        fit: BoxFit.cover,
-                      )
-                    : null,
-              ),
-              child: imageProvider == null // Show placeholder if no imageProvider
-                  ? const Center(
-                      child: Icon(Icons.business, size: 64, color: Colors.grey),
+              child: coverPhotoFile != null
+                  ? Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        image: imageProvider != null
+                            ? DecorationImage(
+                                image: imageProvider,
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                      child: imageProvider == null
+                          ? const Center(
+                              child: Icon(Icons.business, size: 64, color: Colors.grey),
+                            )
+                          : null,
                     )
-                  : null,
+                  : OptimizedImage(
+                      imageUrl: coverPhotoUrl,
+                      width: double.infinity,
+                      height: 200,
+                      fit: BoxFit.cover,
+                      errorWidget: Container(
+                        color: Colors.grey[300],
+                        child: const Center(
+                          child: Icon(Icons.business, size: 64, color: Colors.grey),
+                        ),
+                      ),
+                    ),
             ),
             Padding(
               padding: const EdgeInsets.all(16.0),

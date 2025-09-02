@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/login_screen.dart';
+import '../../../widgets/optimized_image.dart';
 import 'profile_screen.dart'; 
 import 'location_screen.dart'; 
 import 'laundry_screen.dart'; 
@@ -142,6 +143,9 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         _laundryShops = List<Map<String, dynamic>>.from(response);
         _filteredLaundryShops = _laundryShops;
+        
+
+        
         _updateHomeScreenBodyState(); // Update HomeScreenBody
       }
     } catch (e) {
@@ -385,12 +389,17 @@ class HomeScreenBody extends StatelessWidget {
                           child: CircleAvatar(
                             radius: 25,
                             backgroundColor: Colors.white,
-                            backgroundImage: profileImageUrl != null 
-                                ? NetworkImage(profileImageUrl!) 
-                                : null,
-                            child: profileImageUrl == null 
-                                ? const Icon(Icons.person, color: Color(0xFF6F5ADC))
-                                : null,
+                            child: profileImageUrl != null 
+                                ? ClipOval(
+                                    child: OptimizedImage(
+                                      imageUrl: profileImageUrl!,
+                                      width: 50,
+                                      height: 50,
+                                      fit: BoxFit.cover,
+                                      errorWidget: const Icon(Icons.person, color: Color(0xFF6F5ADC)),
+                                    ),
+                                  )
+                                : const Icon(Icons.person, color: Color(0xFF6F5ADC)),
                           ),
                         ),
                       ],
@@ -489,52 +498,54 @@ class HomeScreenBody extends StatelessWidget {
                           itemCount: promos.length,
                           itemBuilder: (context, index) {
                             final promo = promos[index];
-                            final businessName = promo['business_profiles']?['business_name'] ?? 'Unknown Business';
                             return Container(
                               width: 250,
                               margin: EdgeInsets.only(left: index == 0 ? 16.0 : 8.0, right: index == promos.length - 1 ? 16.0 : 0),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(15),
-                                image: promo['image_url'] != null
-                                    ? DecorationImage(
-                                        image: NetworkImage(promo['image_url']),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : const DecorationImage(
-                                        image: AssetImage('lib/assets/promo_example.png'),
-                                        fit: BoxFit.cover,
-                                      ),
                               ),
-                              child: Container(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(15),
+                                child: Stack(
+                                  children: [
+                                    promo['image_url'] != null
+                                        ? OptimizedImage(
+                                            imageUrl: promo['image_url'],
+                                            width: 250,
+                                            height: double.infinity,
+                                            fit: BoxFit.cover,
+                                            errorWidget: Image.asset(
+                                              'lib/assets/promo_example.png',
+                                              width: 250,
+                                              height: double.infinity,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          )
+                                        : Image.asset(
+                                            'lib/assets/promo_example.png',
+                                            width: 250,
+                                            height: double.infinity,
+                                            fit: BoxFit.cover,
+                                          ),
+                                    Container(
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(15),
-                                  gradient: LinearGradient(
-                                    begin: Alignment.bottomCenter,
-                                    end: Alignment.topCenter,
-                                    colors: [
-                                      Colors.black.withOpacity(0.7),
-                                      Colors.transparent,
-                                    ],
-                                  ),
+                                  
                                 ),
                                 padding: const EdgeInsets.all(12.0),
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'By: $businessName',
-                                      style: const TextStyle(color: Colors.white70, fontSize: 10),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
+          
+                                ),
+                              ),
                                   ],
                                 ),
                               ),
                             );
                           },
                         ),
-                ),
+                      ),
               const SizedBox(height: 20),
               // Nearest Laundry Shop's Section
               if (!isSearching)
@@ -651,20 +662,10 @@ class HomeScreenBody extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Container(
+                                  LaundryShopImageCard(
+                                    imageUrl: shop['cover_photo_url'],
                                     height: 100,
-                                    decoration: BoxDecoration(
-                                      borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                                      image: shop['cover_photo_url'] != null
-                                          ? DecorationImage(
-                                              image: NetworkImage(shop['cover_photo_url']),
-                                              fit: BoxFit.cover,
-                                            )
-                                          : const DecorationImage(
-                                              image: AssetImage('lib/assets/laundry_placeholder.png'),
-                                              fit: BoxFit.cover,
-                                            ),
-                                    ),
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),

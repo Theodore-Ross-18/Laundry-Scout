@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../widgets/optimized_image.dart';
 
 class ViewAllScreen extends StatefulWidget {
   const ViewAllScreen({super.key});
@@ -177,20 +178,10 @@ class _ViewAllScreenState extends State<ViewAllScreen> {
           // Image
           Expanded(
             flex: 3,
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                image: shop['cover_photo_url'] != null
-                    ? DecorationImage(
-                        image: NetworkImage(shop['cover_photo_url']),
-                        fit: BoxFit.cover,
-                      )
-                    : const DecorationImage(
-                        image: AssetImage('lib/assets/laundry_placeholder.png'),
-                        fit: BoxFit.cover,
-                      ),
-              ),
+            child: LaundryShopImageCard(
+              imageUrl: shop['cover_photo_url'],
+              height: double.infinity,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
             ),
           ),
           // Content

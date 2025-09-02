@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../widgets/optimized_image.dart';
 import 'business_profile_screen.dart';
 import 'add_promo_screen.dart'; // Import the new screen
 import 'owner_message_screen.dart'; // Import the new message screen
@@ -131,20 +132,22 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 24.0),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(16),
-                          child: _businessProfile!["cover_photo_url"] != null
-                              ? Image.network(
-                                  _businessProfile!["cover_photo_url"],
-                                  height: 120,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                )
-                              : Container(
-                                  height: 120,
-                                  color: Colors.grey[300],
-                                  child: Center(
-                                    child: Icon(Icons.image, size: 48, color: Colors.grey[500]),
-                                  ),
-                                ),
+                          child: OptimizedImage(
+                            imageUrl: _businessProfile!["cover_photo_url"],
+                            height: 120,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            placeholder: Container(
+                              height: 120,
+                              width: double.infinity,
+                              color: Colors.grey[300],
+                              child: const Icon(
+                                Icons.business,
+                                size: 50,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),

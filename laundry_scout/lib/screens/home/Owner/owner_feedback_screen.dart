@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
+import '../../../widgets/optimized_image.dart';
 
 class OwnerFeedbackScreen extends StatefulWidget {
   const OwnerFeedbackScreen({super.key});
@@ -244,13 +245,18 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
                                     children: [
                                       CircleAvatar(
                                         radius: 20,
-                                        backgroundImage: business['cover_photo_url'] != null
-                                            ? NetworkImage(business['cover_photo_url'])
-                                            : null,
-                                        child: business['cover_photo_url'] == null
-                                            ? const Icon(Icons.business, color: Colors.white)
-                                            : null,
                                         backgroundColor: const Color(0xFF7B61FF),
+                                        child: business['cover_photo_url'] != null
+                                            ? ClipOval(
+                                                child: OptimizedImage(
+                                                  imageUrl: business['cover_photo_url'],
+                                                  width: 40,
+                                                  height: 40,
+                                                  fit: BoxFit.cover,
+                                                  errorWidget: const Icon(Icons.business, color: Colors.white),
+                                                ),
+                                              )
+                                            : const Icon(Icons.business, color: Colors.white),
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(

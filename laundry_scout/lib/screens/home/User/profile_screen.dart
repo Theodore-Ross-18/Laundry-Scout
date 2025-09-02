@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../splash/splash_screen.dart'; // Changed import to splash screen
 import '../../auth/login_screen.dart'; // Assuming login_screen.dart is in this path
+import '../../../widgets/optimized_image.dart';
+import '../../../services/image_service.dart';
 
 // Helper function for creating a fade transition (copied from login_screen.dart)
 Route _createFadeRoute(Widget page) {
@@ -100,20 +102,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _isUploadingImage = true;
         });
 
-        final fileBytes = result.files.single.bytes!;
         final user = Supabase.instance.client.auth.currentUser;
         
         if (user == null) return;
+
+        // Compress the image using ImageService
+        final compressedBytes = await ImageService.compressImage(
+          result.files.single.bytes!,
+        );
 
         // Create unique filename
         final fileExt = result.files.single.extension ?? 'jpg';
         final fileName = '${user.id}_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
         final filePath = 'profile_images/$fileName';
 
-        // Upload to Supabase Storage using bytes instead of File
+        // Upload compressed image to Supabase Storage
         await Supabase.instance.client.storage
             .from('profiles')
-            .uploadBinary(filePath, fileBytes);
+            .uploadBinary(filePath, compressedBytes);
 
         // Get public URL
         final imageUrl = Supabase.instance.client.storage
@@ -216,15 +222,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Center(
                         child: Stack(
                           children: [
-                            CircleAvatar(
-                              radius: 60,
-                              backgroundColor: Colors.grey[300],
-                              backgroundImage: _profileImageUrl != null 
-                                  ? NetworkImage(_profileImageUrl!) 
-                                  : null,
-                              child: _profileImageUrl == null 
-                                  ? Icon(Icons.person, size: 60, color: Colors.grey[600])
-                                  : null,
+                            ProfileImageWidget(
+                              imageUrl: _profileImageUrl ?? '',
+                              radius: 50,
                             ),
                             Positioned(
                               bottom: 0,

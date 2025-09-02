@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'business_detail_screen.dart'; // Add this import
+import 'business_detail_screen.dart';
+import '../../../widgets/optimized_image.dart';
 
 class LaundryScreen extends StatefulWidget {
   const LaundryScreen({super.key});
@@ -49,129 +50,93 @@ class _LaundryScreenState extends State<LaundryScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading laundry shops: $e')),
-        );
       }
     }
   }
 
   void _filterLaundryShops(String query) {
-    if (query.isEmpty) {
-      setState(() {
+    setState(() {
+      if (query.isEmpty) {
         _filteredLaundryShops = _laundryShops;
-      });
-    } else {
-      setState(() {
-        final lowerCaseQuery = query.toLowerCase();
+      } else {
         _filteredLaundryShops = _laundryShops.where((shop) {
-          final businessName = shop['business_name']?.toLowerCase() ?? '';
-          final location = shop['exact_location']?.toLowerCase() ?? '';
-          return businessName.contains(lowerCaseQuery) || location.contains(lowerCaseQuery);
+          final businessName = shop['business_name']?.toString().toLowerCase() ?? '';
+          final location = shop['exact_location']?.toString().toLowerCase() ?? '';
+          final searchQuery = query.toLowerCase();
+          return businessName.contains(searchQuery) || location.contains(searchQuery);
         }).toList();
-      });
-    }
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header Section
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: const BoxDecoration(
-                color: Color(0xFF6F5ADC),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-              child: Column(
-                children: [
-                  const Text(
-                    'Laundry Scout',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  // Search Bar
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: TextField(
-                            controller: _searchController,
-                            onChanged: _filterLaundryShops,
-                            style: const TextStyle(color: Colors.black),
-                            decoration: const InputDecoration(
-                              hintText: 'Search Here',
-                              hintStyle: TextStyle(color: Colors.grey),
-                              border: InputBorder.none,
-                              icon: Icon(Icons.search, color: Colors.grey),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Container(
-                        padding: const EdgeInsets.all(12.0),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.filter_list, color: Color(0xFF6F5ADC)),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            // Content
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _filteredLaundryShops.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No laundry shops found.',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.black,
-                            ),
-                          ),
-                        )
-                      : RefreshIndicator(
-                          onRefresh: _loadLaundryShops,
-                          child: ListView.builder(
-                            padding: const EdgeInsets.all(16.0),
-                            itemCount: _filteredLaundryShops.length,
-                            itemBuilder: (context, index) {
-                              final shop = _filteredLaundryShops[index];
-                              return _buildLaundryShopCard(shop);
-                            },
-                          ),
-                        ),
-            ),
-          ],
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        title: const Text(
+          'Laundry Shops',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
+        backgroundColor: const Color(0xFF6F5ADC),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Column(
+        children: [
+          // Search Bar
+          Container(
+            padding: const EdgeInsets.all(16.0),
+            color: const Color(0xFF6F5ADC),
+            child: TextField(
+              controller: _searchController,
+              onChanged: _filterLaundryShops,
+              decoration: InputDecoration(
+                hintText: 'Search laundry shops...',
+                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              ),
+            ),
+          ),
+          // Content
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredLaundryShops.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No laundry shops found',
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16.0),
+                        itemCount: _filteredLaundryShops.length,
+                        itemBuilder: (context, index) {
+                          final shop = _filteredLaundryShops[index];
+                          return _buildLaundryShopCard(shop);
+                        },
+                      ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildLaundryShopCard(Map<String, dynamic> shop) {
-    return GestureDetector( // Wrap the entire card with GestureDetector
+    return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
@@ -200,55 +165,36 @@ class _LaundryScreenState extends State<LaundryScreen> {
             // Image Section
             Container(
               height: 150,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(15),
+                  topRight: Radius.circular(15),
+                ),
+              ),
+              child: ClipRRect(
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(15),
                   topRight: Radius.circular(15),
                 ),
-                image: shop['cover_photo_url'] != null
-                    ? DecorationImage(
-                        image: NetworkImage(shop['cover_photo_url']),
+                child: shop['cover_photo_url'] != null
+                    ? OptimizedImage(
+                        imageUrl: shop['cover_photo_url'],
+                        width: double.infinity,
+                        height: 150,
                         fit: BoxFit.cover,
+                        errorWidget: Image.asset(
+                          'lib/assets/laundry_placeholder.png',
+                          width: double.infinity,
+                          height: 150,
+                          fit: BoxFit.cover,
+                        ),
                       )
-                    : const DecorationImage(
-                        image: AssetImage('lib/assets/laundry_placeholder.png'),
+                    : Image.asset(
+                        'lib/assets/laundry_placeholder.png',
+                        width: double.infinity,
+                        height: 150,
                         fit: BoxFit.cover,
                       ),
-              ),
-              child: Stack(
-                children: [
-                  // Rating Badge
-                  Positioned(
-                    top: 12,
-                    left: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.star,
-                            color: Colors.yellow,
-                            size: 14,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '4.8', // You can make this dynamic based on actual ratings
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
             // Content Section

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'connection_service.dart';
+import 'notification_service.dart';
 
 class QueuedMessage {
   final String id;
@@ -34,6 +35,7 @@ class MessageQueueService {
 
   final List<QueuedMessage> _messageQueue = [];
   final ConnectionService _connectionService = ConnectionService();
+  final NotificationService _notificationService = NotificationService();
   final StreamController<QueuedMessage> _sentMessageController = StreamController.broadcast();
   Timer? _processingTimer;
   bool _isProcessing = false;
@@ -135,6 +137,14 @@ class MessageQueueService {
 
       // Update conversation timestamp efficiently
       await _updateConversationTimestamp(message, user.id);
+
+      // Create notification for the message recipient
+      await _notificationService.handleMessageNotification(
+        senderId: user.id,
+        receiverId: message.receiverId,
+        businessId: message.businessId,
+        messageContent: message.content,
+      );
 
       message.isSent = true;
       _sentMessageController.add(message);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'message_screen.dart'; // Import the ChatScreen
+import '../../../widgets/optimized_image.dart';
 
 class BusinessDetailScreen extends StatefulWidget {
   final Map<String, dynamic> businessData;
@@ -75,23 +76,35 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                         onPressed: () => Navigator.pop(context),
                       ),
                       flexibleSpace: FlexibleSpaceBar(
-                        background: Container(
-                          decoration: BoxDecoration(
-                            image: _fullBusinessData!['cover_photo_url'] != null
-                                ? DecorationImage(
-                                    image: NetworkImage(_fullBusinessData!['cover_photo_url']),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
-                            gradient: _fullBusinessData!['cover_photo_url'] == null
-                                ? const LinearGradient(
+                        background: Stack(
+                          children: [
+                            if (_fullBusinessData!['cover_photo_url'] != null)
+                              OptimizedImage(
+                                imageUrl: _fullBusinessData!['cover_photo_url'],
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                                errorWidget: Container(
+                                  decoration: const BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [Color(0xFF6F5ADC), Color(0xFF9C88FF)],
+                                    ),
+                                  ),
+                                ),
+                              )
+                            else
+                              Container(
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
                                     colors: [Color(0xFF6F5ADC), Color(0xFF9C88FF)],
-                                  )
-                                : null,
-                          ),
-                          child: Container(
+                                  ),
+                                ),
+                              ),
+                            Container(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 begin: Alignment.topCenter,
@@ -112,6 +125,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> {
                                   )
                                 : null,
                           ),
+                          ],
                         ),
                       ),
                     ),

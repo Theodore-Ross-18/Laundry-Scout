@@ -4,6 +4,7 @@ import 'dart:async';
 import '../../../services/connection_service.dart';
 import '../../../services/realtime_message_service.dart';
 import '../../../services/message_queue_service.dart';
+import '../../../widgets/optimized_image.dart';
 
 class OwnerMessageScreen extends StatefulWidget {
   const OwnerMessageScreen({super.key});
@@ -289,12 +290,17 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
                             return ListTile(
                               leading: CircleAvatar(
                                 radius: 25,
-                                backgroundImage: user?['profile_image_url'] != null
-                                    ? NetworkImage(user!['profile_image_url'])
-                                    : null,
-                                child: user?['profile_image_url'] == null
-                                    ? const Icon(Icons.person)
-                                    : null,
+                                child: user?['profile_image_url'] != null
+                                    ? ClipOval(
+                                        child: OptimizedImage(
+                                          imageUrl: user!['profile_image_url'],
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.cover,
+                                          errorWidget: const Icon(Icons.person),
+                                        ),
+                                      )
+                                    : const Icon(Icons.person),
                               ),
                               title: Text(
                                 user?['username'] ?? 'Unknown User',
@@ -634,13 +640,18 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundImage: widget.userImage != null
-                  ? NetworkImage(widget.userImage!)
-                  : null,
-              child: widget.userImage == null
-                  ? const Icon(Icons.person, color: Colors.white)
-                  : null,
               backgroundColor: Colors.white.withOpacity(0.3),
+              child: widget.userImage != null
+                  ? ClipOval(
+                      child: OptimizedImage(
+                        imageUrl: widget.userImage!,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                        errorWidget: const Icon(Icons.person, color: Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.person, color: Colors.white),
             ),
             const SizedBox(width: 12),
             Expanded(

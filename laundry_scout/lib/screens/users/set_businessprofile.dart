@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:mime/mime.dart';
 import 'package:laundry_scout/screens/home/Owner/owner_home_screen.dart';
 // Add this import at the top with other imports
 import 'package:laundry_scout/screens/users/businessprofilepreview.dart';
+import '../../services/image_service.dart';
 
 class SetBusinessProfileScreen extends StatefulWidget {
   final String username;
@@ -87,29 +89,33 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
     final String path = 'public/$fileName'; // Supabase storage path convention
 
     try {
+      late List<int> imageBytes;
+      
       if (kIsWeb) {
         if (_coverPhotoFile!.bytes == null) {
            throw Exception('File bytes are null for cover photo on web.');
         }
-        await Supabase.instance.client.storage.from('businessdocuments').uploadBinary(
-              path, // Use the path with 'public/' prefix
-              _coverPhotoFile!.bytes!,
-              fileOptions: FileOptions(
-                contentType: lookupMimeType(_coverPhotoFile!.name) ?? 'application/octet-stream',
-              ),
-            );
+        imageBytes = _coverPhotoFile!.bytes!;
       } else {
         if (_coverPhotoFile!.path == null) {
            throw Exception('File path is null for cover photo on mobile.');
         }
-        await Supabase.instance.client.storage.from('businessdocuments').upload(
-              path, // Use the path with 'public/' prefix
-              File(_coverPhotoFile!.path!),
-              fileOptions: FileOptions(
-                contentType: lookupMimeType(_coverPhotoFile!.name) ?? 'application/octet-stream',
-              ),
-            );
+        imageBytes = await File(_coverPhotoFile!.path!).readAsBytes();
       }
+      
+      // Compress the image using ImageService
+      final compressedBytes = await ImageService.compressImage(
+        Uint8List.fromList(imageBytes),
+      );
+      
+      // Upload compressed image
+      await Supabase.instance.client.storage.from('businessdocuments').uploadBinary(
+            path, // Use the path with 'public/' prefix
+            compressedBytes,
+            fileOptions: FileOptions(
+              contentType: lookupMimeType(_coverPhotoFile!.name) ?? 'application/octet-stream',
+            ),
+          );
 
       // Get the public URL after successful upload
       final String publicUrl = Supabase.instance.client.storage.from('businessdocuments').getPublicUrl(path);
@@ -291,7 +297,7 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
                                         : FileImage(File(_coverPhotoFile!.path!)) as ImageProvider<Object>,
                                     fit: BoxFit.cover,
                                   )
-                                : (_coverPhotoUrl != null // Or use _coverPhotoUrl if loading existing data
+                                : (_coverPhotoUrl != null
                                     ? DecorationImage(
                                         image: NetworkImage(_coverPhotoUrl!),
                                         fit: BoxFit.cover,

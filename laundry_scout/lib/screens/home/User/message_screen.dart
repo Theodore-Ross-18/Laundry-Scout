@@ -4,6 +4,7 @@ import 'dart:async';
 import '../../../services/connection_service.dart';
 import '../../../services/message_queue_service.dart';
 import '../../../services/realtime_message_service.dart';
+import '../../../widgets/optimized_image.dart';
 
 class MessageScreen extends StatefulWidget {
   const MessageScreen({super.key});
@@ -273,13 +274,18 @@ class _MessageScreenState extends State<MessageScreen> {
                             return ListTile(
                               leading: CircleAvatar(
                                 radius: 25,
-                                backgroundImage: business['cover_photo_url'] != null
-                                    ? NetworkImage(business['cover_photo_url'])
-                                    : null,
-                                child: business['cover_photo_url'] == null
-                                    ? const Icon(Icons.business, color: Colors.white)
-                                    : null,
                                 backgroundColor: const Color(0xFF7B61FF),
+                                child: business['cover_photo_url'] != null
+                                    ? ClipOval(
+                                        child: OptimizedImage(
+                                          imageUrl: business['cover_photo_url'],
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.cover,
+                                          placeholder: const Icon(Icons.business, color: Colors.white),
+                                        ),
+                                      )
+                                    : const Icon(Icons.business, color: Colors.white),
                               ),
                               title: Text(
                                 business['business_name'] ?? 'Business',
@@ -603,15 +609,20 @@ class _ChatScreenState extends State<ChatScreen> {
         title: Row(
           children: [
             CircleAvatar(
-              radius: 20,
-              backgroundImage: widget.businessImage != null
-                  ? NetworkImage(widget.businessImage!)
-                  : null,
-              child: widget.businessImage == null
-                  ? const Icon(Icons.business, color: Colors.white)
-                  : null,
-              backgroundColor: Colors.white.withOpacity(0.2),
-            ),
+               radius: 20,
+               backgroundColor: Colors.white.withOpacity(0.2),
+               child: widget.businessImage != null
+                   ? ClipOval(
+                       child: OptimizedImage(
+                         imageUrl: widget.businessImage!,
+                         width: 40,
+                         height: 40,
+                         fit: BoxFit.cover,
+                         placeholder: const Icon(Icons.business, color: Colors.white),
+                       ),
+                     )
+                   : const Icon(Icons.business, color: Colors.white),
+             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
