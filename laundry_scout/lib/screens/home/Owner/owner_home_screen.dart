@@ -5,6 +5,7 @@ import 'business_profile_screen.dart';
 import 'add_promo_screen.dart'; // Import the new screen
 import 'owner_message_screen.dart'; // Import the new message screen
 import 'owner_notification_screen.dart'; // Import the new notification screen
+import 'owner_feedback_screen.dart'; // Import the feedback screen
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -213,7 +214,16 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                             const SizedBox(height: 16),
                             Row(
                               children: [
-                                Expanded(child: _actionCard(Icons.reviews, 'Reviews', Colors.deepPurple)),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (context) => const OwnerFeedbackScreen()),
+                                      );
+                                    },
+                                    child: _actionCard(Icons.reviews, 'Reviews', Colors.deepPurple),
+                                  ),
+                                ),
                                 const SizedBox(width: 12),
                                 Expanded(child: _availabilityCard()),
                               ],
