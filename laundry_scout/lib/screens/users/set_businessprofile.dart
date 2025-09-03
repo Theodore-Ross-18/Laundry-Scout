@@ -9,6 +9,7 @@ import 'package:laundry_scout/screens/home/Owner/owner_home_screen.dart';
 // Add this import at the top with other imports
 import 'package:laundry_scout/screens/users/businessprofilepreview.dart';
 import '../../services/image_service.dart';
+import '../../services/form_persistence_service.dart';
 
 class SetBusinessProfileScreen extends StatefulWidget {
   final String username;
@@ -31,12 +32,18 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
   final _businessNameController = TextEditingController();
   final _aboutBusinessController = TextEditingController();
   final _exactLocationController = TextEditingController();
+  final _phoneNumberController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _openHoursController = TextEditingController();
   bool _doesDelivery = false;
   PlatformFile? _coverPhotoFile;
   String? _coverPhotoUrl; // This variable will now be used
   bool _isLoading = false;
   // Add this line to define the missing variable
-  List<String> _selectedServices = ['Wash & Fold', 'Ironing', 'Deliver'];
+  List<String> _availableServices = ['Wash & Fold', 'Ironing', 'Deliver', 'Dry Cleaning', 'Pressing'];
+  List<String> _selectedServices = [];
+  Map<String, double> _servicePrices = {};
+  Map<String, TextEditingController> _priceControllers = {};
   
   @override
   void initState() {
@@ -44,9 +51,146 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
     // Initialize controllers with values passed from the previous screen
     _businessNameController.text = widget.businessName;
     _exactLocationController.text = widget.exactLocation;
-    // You might want to fetch existing profile data here if the user
-    // is returning to this screen later, but for the initial flow
-    // from SetBusinessInfo, initializing with passed data is correct.
+    // Initialize price controllers
+    _initializePriceControllers();
+    // Fetch existing user data
+    _fetchUserData();
+    
+    // Load saved form data
+    _loadSavedFormData();
+    
+    // Load saved image
+    _loadSavedImage();
+    
+    // Add listeners to save data when user types
+    _businessNameController.addListener(_saveFormData);
+    _aboutBusinessController.addListener(_saveFormData);
+    _exactLocationController.addListener(_saveFormData);
+    _phoneNumberController.addListener(_saveFormData);
+    _emailController.addListener(_saveFormData);
+    _openHoursController.addListener(_saveFormData);
+  }
+
+  void _initializePriceControllers() {
+    for (String service in _availableServices) {
+      _priceControllers[service] = TextEditingController(
+        text: '' // Empty the price list field
+      );
+      // Add listener to save data when price changes
+      _priceControllers[service]!.addListener(() {
+        _servicePrices[service] = double.tryParse(_priceControllers[service]!.text) ?? 0.0;
+        _saveFormData();
+      });
+    }
+  }
+
+  void _ensureControllerExists(String service) {
+    if (!_priceControllers.containsKey(service)) {
+      _priceControllers[service] = TextEditingController(
+        text: '' // Empty the price list field
+      );
+      // Add listener to save data when price changes
+      _priceControllers[service]!.addListener(() {
+        _servicePrices[service] = double.tryParse(_priceControllers[service]!.text) ?? 0.0;
+        _saveFormData();
+      });
+    }
+  }
+
+  Future<void> _fetchUserData() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      try {
+        // Fetch user profile data
+        final response = await Supabase.instance.client
+            .from('profiles')
+            .select('phone_number, email')
+            .eq('id', user.id)
+            .single();
+        
+        if (mounted) {
+          setState(() {
+            _phoneNumberController.text = response['phone_number'] ?? '';
+            _emailController.text = response['email'] ?? user.email ?? '';
+          });
+        }
+      } catch (e) {
+        // If no profile data exists, use user email from auth
+        if (mounted && user.email != null) {
+          setState(() {
+            _emailController.text = user.email!;
+          });
+        }
+      }
+    }
+  }
+
+  // Load saved form data
+  Future<void> _loadSavedFormData() async {
+    final savedData = await FormPersistenceService.loadBusinessProfileData();
+    if (savedData != null && mounted) {
+      setState(() {
+        _businessNameController.text = savedData['businessName'] ?? widget.businessName;
+        _aboutBusinessController.text = savedData['aboutBusiness'] ?? '';
+        _exactLocationController.text = savedData['exactLocation'] ?? widget.exactLocation;
+        _phoneNumberController.text = savedData['phoneNumber'] ?? '';
+        _emailController.text = savedData['email'] ?? '';
+        _openHoursController.text = savedData['openHours'] ?? '';
+        _doesDelivery = savedData['doesDelivery'] ?? false;
+        
+        // Load selected services
+        if (savedData['selectedServices'] != null) {
+          _selectedServices = List<String>.from(savedData['selectedServices']);
+        }
+        
+        // Load service prices - keep fields empty
+        if (savedData['servicePrices'] != null) {
+          final Map<String, dynamic> prices = savedData['servicePrices'];
+          prices.forEach((service, price) {
+            _servicePrices[service] = double.tryParse(price.toString()) ?? 0.0;
+            // Ensure controller exists for this service
+            _ensureControllerExists(service);
+            _priceControllers[service]!.text = ''; // Keep price fields empty
+          });
+        }
+        
+        // Ensure controllers exist for all selected services
+        for (String service in _selectedServices) {
+          _ensureControllerExists(service);
+        }
+      });
+    }
+  }
+
+  // Load saved image
+  Future<void> _loadSavedImage() async {
+    final savedImage = await FormPersistenceService.loadBusinessProfileImage();
+    if (savedImage != null && mounted) {
+      setState(() {
+        _coverPhotoFile = savedImage;
+      });
+    }
+  }
+
+  // Save form data
+  Future<void> _saveFormData() async {
+    final formData = {
+      'businessName': _businessNameController.text,
+      'aboutBusiness': _aboutBusinessController.text,
+      'exactLocation': _exactLocationController.text,
+      'phoneNumber': _phoneNumberController.text,
+      'email': _emailController.text,
+      'openHours': _openHoursController.text,
+      'selectedServices': _selectedServices.toList(),
+      'servicePrices': _servicePrices,
+      'doesDelivery': _doesDelivery,
+    };
+    await FormPersistenceService.saveBusinessProfileData(formData);
+    
+    // Save image if available
+    if (_coverPhotoFile != null) {
+      await FormPersistenceService.saveBusinessProfileImage(_coverPhotoFile);
+    }
   }
 
   @override
@@ -54,6 +198,13 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
     _businessNameController.dispose();
     _aboutBusinessController.dispose();
     _exactLocationController.dispose();
+    _phoneNumberController.dispose();
+    _emailController.dispose();
+    _openHoursController.dispose();
+    // Dispose price controllers
+    for (var controller in _priceControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -68,11 +219,15 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
         _coverPhotoFile = result.files.first;
         _coverPhotoUrl = null; // Clear URL when a new file is picked
       });
+      // Save the image immediately
+      await FormPersistenceService.saveBusinessProfileImage(_coverPhotoFile);
     } else if (result != null && result.files.first.path != null) {
        setState(() {
         _coverPhotoFile = result.files.first;
         _coverPhotoUrl = null; // Clear URL when a new file is picked
       });
+      // Save the image immediately
+      await FormPersistenceService.saveBusinessProfileImage(_coverPhotoFile);
     } else {
       // User canceled the picker or file bytes are null on web
       ScaffoldMessenger.of(context).showSnackBar(
@@ -145,6 +300,50 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
   }
 
 
+  void _previewProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BusinessProfilePreview(
+          businessName: _businessNameController.text.trim().isEmpty 
+              ? widget.businessName 
+              : _businessNameController.text.trim(),
+          location: _exactLocationController.text.trim().isEmpty 
+              ? widget.exactLocation 
+              : _exactLocationController.text.trim(),
+          aboutBusiness: _aboutBusinessController.text.trim(),
+          coverPhotoUrl: _coverPhotoUrl,
+          coverPhotoFile: _coverPhotoFile,
+          doesDelivery: _doesDelivery,
+          services: _selectedServices,
+          phoneNumber: _phoneNumberController.text.trim().isEmpty ? '09204343284' : _phoneNumberController.text.trim(),
+          email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+          website: null,
+          openHours: _openHoursController.text.trim().isEmpty 
+              ? 'Monday - Saturday: 9am - 9pm\nSunday: 7am - 10pm' 
+              : _openHoursController.text.trim(),
+          servicePrices: _servicePrices,
+          rating: 4.8,
+          reviewCount: 2,
+          reviews: [
+            {
+              'name': 'Al James',
+              'rating': 4.7,
+              'comment': "I'm so impressed with the service at this laundry shop! Dropped off my clothes in the morning, and they were perfectly cleaned and folded by the afternoon. Super convenient and affordable—definitely my go-to laundry spot!",
+              'date': '1 day ago',
+            },
+            {
+              'name': 'Ricardo Milos',
+              'rating': 4.9,
+              'comment': 'Their attention to detail is amazing! My clothes came back smelling fresh and neatly folded. The staff is friendly, and the delivery option made everything even more convenient. Highly recommend this place!',
+              'date': '2 day ago',
+            },
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _showCompletionDialogAndNavigate() async {
     showDialog(
       context: context,
@@ -181,6 +380,9 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
     );
     await Future.delayed(const Duration(seconds: 1, milliseconds: 500));
     if (mounted) {
+      // Clear saved form data on successful submission
+      await FormPersistenceService.clearBusinessProfileData();
+      
       Navigator.of(context).pop(); // Close the dialog
       Navigator.pushReplacement(
         context,
@@ -223,9 +425,13 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
               'business_name': _businessNameController.text.trim(),
               'about_business': _aboutBusinessController.text.trim(),
               'exact_location': _exactLocationController.text.trim(),
+              // 'phone_number': _phoneNumberController.text.trim().isEmpty ? '09204343284' : _phoneNumberController.text.trim(), // Commented out until column is added to database
+              'email': _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+              // 'open_hours': _openHoursController.text.trim().isEmpty ? 'Monday - Saturday: 9am - 9pm\nSunday: 7am - 10pm' : _openHoursController.text.trim(), // Commented out until column is added to database
               'does_delivery': _doesDelivery,
               'cover_photo_url': _coverPhotoUrl,
               'services_offered': _selectedServices, // Changed from 'services' to 'services_offered'
+              // 'service_prices': _servicePrices, // Commented out until column is added to database
             });
 
         // Show success dialog and navigate
@@ -350,47 +556,99 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Placeholder for service icons - you'll need to implement this
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                // Example Service Icon Placeholder
-                                Column(
+                            ..._availableServices.map((service) {
+                              final isSelected = _selectedServices.contains(service);
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                child: Row(
                                   children: [
-                                    Icon(Icons.iron, size: 40, color: const Color(0xFF6F5ADC)), // Updated color
-                                    Text('Ironing', style: textTheme.bodySmall?.copyWith(color: const Color(0xFF6F5ADC))), // Updated color
+                                    Checkbox(
+                                      value: isSelected,
+                                      onChanged: (bool? value) {
+                                        setState(() {
+                                          if (value == true) {
+                                            _selectedServices.add(service);
+                                            _servicePrices[service] = 0.0;
+                                            // Ensure controller exists
+                                            _ensureControllerExists(service);
+                                          } else {
+                                            _selectedServices.remove(service);
+                                            _servicePrices.remove(service);
+                                          }
+                                        });
+                                      },
+                                      activeColor: const Color(0xFF6F5ADC),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        service,
+                                        style: textTheme.bodyMedium?.copyWith(color: Colors.black),
+                                      ),
+                                    ),
+                                    if (isSelected) ...[
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        flex: 1,
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Price',
+                                              style: TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            TextFormField(
+                                          controller: _priceControllers[service],
+                                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                          style: const TextStyle(color: Colors.black),
+                                          decoration: InputDecoration(
+                                            hintText: '',
+                                            hintStyle: const TextStyle(color: Colors.black54),
+                                            prefixText: '₱ ',
+                                            prefixStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(4.0),
+                                              borderSide: const BorderSide(color: Colors.grey, width: 1.0),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(4.0),
+                                              borderSide: const BorderSide(color: Color(0xFF6F5ADC), width: 2.0),
+                                            ),
+                                            border: OutlineInputBorder(
+                                              borderRadius: BorderRadius.circular(4.0),
+                                            ),
+                                            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          ),
+                                          validator: (value) {
+                                            if (value == null || value.isEmpty) {
+                                              return 'Required';
+                                            }
+                                            if (double.tryParse(value) == null) {
+                                              return 'Invalid';
+                                            }
+                                            return null;
+                                          },
+                                          onChanged: (value) {
+                                            _servicePrices[service] = double.tryParse(value) ?? 0.0;
+                                          },
+                                        ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
-                                Column(
-                                  children: [
-                                    Icon(Icons.delivery_dining, size: 40, color: const Color(0xFF6F5ADC)), // Updated color
-                                    Text('Deliver', style: textTheme.bodySmall?.copyWith(color: const Color(0xFF6F5ADC))), // Updated color
-                                  ],
-                                ),
-                                Column(
-                                  children: [
-                                    Icon(Icons.local_laundry_service, size: 40, color: const Color(0xFF6F5ADC)), // Updated color
-                                    Text('Wash & Fold', style: textTheme.bodySmall?.copyWith(color: const Color(0xFF6F5ADC))), // Updated color
-                                  ],
-                                ),
-                                // Add button placeholder
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.grey),
-                                    borderRadius: BorderRadius.circular(8.0),
-                                  ),
-                                  child: Icon(Icons.add, color: Colors.grey),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Text('Price and Description can be edited later', style: textTheme.bodySmall?.copyWith(color: Colors.grey[700])),
+                              );
+                            }),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 20),
+                       ),
+                       const SizedBox(height: 20),
 
                       // Delivery Options
                       Text('Delivery Options', style: textTheme.titleMedium?.copyWith(color: Colors.white)),
@@ -421,7 +679,7 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
                       const SizedBox(height: 8),
                       Text(
                         'By Checking this you will have an interface to manage your delivery needs for your costumers convenience such as tracking there order getting the information on where to drop off and pick up there order and they can select the services you offer to them.',
-                        style: textTheme.bodySmall?.copyWith(color: Colors.white.withOpacity(0.8)),
+                        style: textTheme.bodySmall?.copyWith(color: Colors.black),
                       ),
                       const SizedBox(height: 20),
 
@@ -448,6 +706,54 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
                       ),
                       const SizedBox(height: 20),
 
+                      // Contact Details
+                      Text('Contact Details', style: textTheme.titleMedium?.copyWith(color: Colors.white)),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: _phoneNumberController,
+                        style: const TextStyle(color: Colors.black),
+                        decoration: InputDecoration(
+                          hintText: 'Phone Number (e.g., 09204343284)',
+                          hintStyle: const TextStyle(color: Colors.black54),
+                          prefixIcon: Icon(Icons.phone, color: Colors.grey[700]),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: _emailController,
+                        style: const TextStyle(color: Colors.black),
+                        decoration: InputDecoration(
+                          hintText: 'Email (optional)',
+                          hintStyle: const TextStyle(color: Colors.black54),
+                          prefixIcon: Icon(Icons.email, color: Colors.grey[700]),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Open Hours
+                      Text('Open Hours', style: textTheme.titleMedium?.copyWith(color: Colors.white)),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: _openHoursController,
+                        maxLines: 3,
+                        style: const TextStyle(color: Colors.black),
+                        decoration: InputDecoration(
+                          hintText: 'Monday - Saturday: 9am - 9pm\nSunday: 7am - 10pm',
+                          hintStyle: const TextStyle(color: Colors.black54),
+                          prefixIcon: Icon(Icons.access_time, color: Colors.grey[700]),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
                       // Exact Location
                       Text('Exact Location', style: textTheme.titleMedium?.copyWith(color: Colors.white)),
                       const SizedBox(height: 10),
@@ -470,6 +776,23 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
                       ),
                       const SizedBox(height: 40),
 
+                      // Preview Button
+                      OutlinedButton(
+                        onPressed: _previewProfile,
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.white),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'Preview Profile',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
                       // Published Button
                       ElevatedButton(
                         onPressed: _saveBusinessProfile,
@@ -490,35 +813,7 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 16),
 
-                      // Preview Button
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => BusinessProfilePreview(
-                                businessName: _businessNameController.text,
-                                location: _exactLocationController.text,
-                                aboutBusiness: _aboutBusinessController.text,
-                                coverPhotoUrl: _coverPhotoUrl,
-                                coverPhotoFile: _coverPhotoFile, // Ensure this is passed
-                                doesDelivery: _doesDelivery,
-                                services: _selectedServices,
-                              ),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Preview Profile',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
                       const SizedBox(height: 20),
                     ],
                   ),

@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart' show kIsWeb; // Add this import
 // For Supabase uploadBinary, you might need mime type. Add to pubspec.yaml: mime: ^1.0.4
 import 'package:mime/mime.dart'; 
 import 'set_businessprofile.dart';
+import '../../services/form_persistence_service.dart';
 
 class SetBusinessInfoScreen extends StatefulWidget {
   final String username;
@@ -74,6 +75,18 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     if (user != null && user.email != null) {
       _emailController.text = user.email!;
     }
+    
+    // Load saved form data
+    _loadSavedFormData();
+    
+    // Add listeners to save data when user types
+    _firstNameController.addListener(_saveFormData);
+    _lastNameController.addListener(_saveFormData);
+    _phoneNumberController.addListener(_saveFormData);
+    _businessNameController.addListener(_saveFormData);
+    _businessAddressController.addListener(_saveFormData);
+    _confirmEmailController.addListener(_saveFormData);
+    
     _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
       if (_currentPage < slides.length - 1) {
         _pageController.nextPage(
@@ -89,6 +102,36 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
         }
       }
     });
+  }
+
+  // Load saved form data
+  Future<void> _loadSavedFormData() async {
+    final savedData = await FormPersistenceService.loadBusinessInfoData();
+    if (savedData != null && mounted) {
+      setState(() {
+        _firstNameController.text = savedData['firstName'] ?? '';
+        _lastNameController.text = savedData['lastName'] ?? '';
+        _phoneNumberController.text = savedData['phoneNumber'] ?? '';
+        _businessNameController.text = savedData['businessName'] ?? '';
+        _businessAddressController.text = savedData['businessAddress'] ?? '';
+        _confirmEmailController.text = savedData['confirmEmail'] ?? '';
+        _isEmailVerified = savedData['isEmailVerified'] ?? false;
+      });
+    }
+  }
+
+  // Save form data
+  Future<void> _saveFormData() async {
+    final formData = {
+      'firstName': _firstNameController.text,
+      'lastName': _lastNameController.text,
+      'phoneNumber': _phoneNumberController.text,
+      'businessName': _businessNameController.text,
+      'businessAddress': _businessAddressController.text,
+      'confirmEmail': _confirmEmailController.text,
+      'isEmailVerified': _isEmailVerified,
+    };
+    await FormPersistenceService.saveBusinessInfoData(formData);
   }
 
   @override
@@ -840,7 +883,10 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
             ),
             const SizedBox(height: 40),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                // Clear saved form data on successful submission
+                await FormPersistenceService.clearBusinessInfoData();
+                
                 // Navigate to SetBusinessProfileScreen
                 Navigator.pushReplacement(
                   context,

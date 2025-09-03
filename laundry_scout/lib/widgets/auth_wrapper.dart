@@ -3,6 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:laundry_scout/screens/splash/splash_screen.dart';
 import 'package:laundry_scout/screens/home/User/home_screen.dart';
 import 'package:laundry_scout/screens/home/Owner/owner_home_screen.dart';
+import 'package:laundry_scout/screens/users/set_userinfo.dart';
+import 'package:laundry_scout/screens/users/set_businessinfo.dart';
+import 'package:laundry_scout/screens/users/set_businessprofile.dart';
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -34,24 +37,40 @@ class _AuthWrapperState extends State<AuthWrapper> {
         return;
       }
       
-      // User is authenticated, determine their type and navigate directly
-      final userType = await _determineUserType(user.id);
+      // User is authenticated, determine their profile state and navigate accordingly
+      final profileState = await _determineProfileState(user.id);
       
-      Widget homeScreen;
-      switch (userType) {
-        case 'business':
-          homeScreen = const OwnerHomeScreen();
+      Widget targetScreen;
+      switch (profileState['type']) {
+        case 'complete_business':
+          targetScreen = const OwnerHomeScreen();
           break;
-        case 'user':
-          homeScreen = const HomeScreen();
+        case 'complete_user':
+          targetScreen = const HomeScreen();
+          break;
+        case 'incomplete_business_info':
+          // User has started business setup but hasn't completed business info
+          targetScreen = SetBusinessInfoScreen(username: profileState['username'] ?? 'User');
+          break;
+        case 'incomplete_business_profile':
+          // User has completed business info but hasn't set up business profile
+          targetScreen = SetBusinessProfileScreen(
+            username: profileState['username'] ?? 'User',
+            businessName: profileState['business_name'] ?? '',
+            exactLocation: profileState['exact_location'] ?? '',
+          );
+          break;
+        case 'incomplete_user_info':
+          // User has started user setup but hasn't completed user info
+          targetScreen = SetUserInfoScreen(username: profileState['username'] ?? 'User');
           break;
         default:
-          // No profile found, show splash screen to handle login
-          homeScreen = const SplashScreen();
+          // No profile found or unknown state, show splash screen
+          targetScreen = const SplashScreen();
       }
       
       setState(() {
-        _targetScreen = homeScreen;
+        _targetScreen = targetScreen;
         _isLoading = false;
       });
     } catch (e) {
@@ -64,34 +83,105 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
   }
   
-  Future<String?> _determineUserType(String userId) async {
+  Future<Map<String, dynamic>> _determineProfileState(String userId) async {
     try {
+      // Get user data from auth
+      final user = Supabase.instance.client.auth.currentUser;
+      final username = user?.userMetadata?['username'] ?? 'User';
+      
       // Check if user has a business profile
       final businessResponse = await Supabase.instance.client
           .from('business_profiles')
-          .select('id')
+          .select('id, business_name, exact_location, owner_first_name, owner_last_name, business_address')
           .eq('id', userId)
           .maybeSingle();
       
       if (businessResponse != null) {
-        return 'business';
+        // Check if business profile is complete (has required fields for business profile screen)
+        final hasBusinessName = businessResponse['business_name'] != null && businessResponse['business_name'].toString().isNotEmpty;
+        final hasOwnerInfo = businessResponse['owner_first_name'] != null && businessResponse['owner_last_name'] != null;
+        final hasBusinessAddress = businessResponse['business_address'] != null && businessResponse['business_address'].toString().isNotEmpty;
+        
+        if (hasBusinessName && hasOwnerInfo && hasBusinessAddress) {
+          // Business info is complete, check if business profile setup is complete
+          final hasExactLocation = businessResponse['exact_location'] != null && businessResponse['exact_location'].toString().isNotEmpty;
+          
+          if (hasExactLocation) {
+            return {
+              'type': 'complete_business',
+              'username': username,
+            };
+          } else {
+            // Business info exists but profile setup is incomplete
+            return {
+              'type': 'incomplete_business_profile',
+              'username': username,
+              'business_name': businessResponse['business_name'] ?? '',
+              'exact_location': businessResponse['business_address'] ?? '',
+            };
+          }
+        } else {
+          // Business profile exists but basic info is incomplete
+          return {
+            'type': 'incomplete_business_info',
+            'username': username,
+          };
+        }
       }
       
-      // Check if user has a regular user profile
+      // Check if user has a user profile
       final userResponse = await Supabase.instance.client
           .from('user_profiles')
-          .select('id')
+          .select('id, first_name, last_name, mobile_number, email')
           .eq('id', userId)
           .maybeSingle();
       
       if (userResponse != null) {
-        return 'user';
+        // Check if user profile is complete
+        final hasFirstName = userResponse['first_name'] != null && userResponse['first_name'].toString().isNotEmpty;
+        final hasLastName = userResponse['last_name'] != null && userResponse['last_name'].toString().isNotEmpty;
+        final hasMobileNumber = userResponse['mobile_number'] != null && userResponse['mobile_number'].toString().isNotEmpty;
+        final hasEmail = userResponse['email'] != null && userResponse['email'].toString().isNotEmpty;
+        
+        if (hasFirstName && hasLastName && hasMobileNumber && hasEmail) {
+          return {
+            'type': 'complete_user',
+            'username': username,
+          };
+        } else {
+          // User profile exists but is incomplete
+          return {
+            'type': 'incomplete_user_info',
+            'username': username,
+          };
+        }
       }
       
-      return null; // No profile found
+      // No profile found, check user metadata to determine intended user type
+      final userType = user?.userMetadata?['user_type'];
+      if (userType == 'business') {
+        return {
+          'type': 'incomplete_business_info',
+          'username': username,
+        };
+      } else if (userType == 'user') {
+        return {
+          'type': 'incomplete_user_info',
+          'username': username,
+        };
+      }
+      
+      // No profile found and no clear indication of user type
+      return {
+        'type': 'unknown',
+        'username': username,
+      };
     } catch (e) {
-      print('Error determining user type: $e');
-      return null;
+      print('Error determining profile state: $e');
+      return {
+        'type': 'error',
+        'username': 'User',
+      };
     }
   }
 

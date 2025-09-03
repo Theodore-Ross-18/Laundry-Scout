@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../home/User/home_screen.dart'; // Import HomeScreen
 import 'dart:async'; // Import the dart:async library
+import '../../services/form_persistence_service.dart';
 
 class SetUserInfoScreen extends StatefulWidget {
   // Add a field to receive the username
@@ -65,6 +66,15 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
       // For simplicity, we'll assume verification is needed here regardless
     }
 
+    // Load saved form data
+    _loadSavedFormData();
+
+    // Add listeners to save data when user types
+    _firstNameController.addListener(_saveFormData);
+    _lastNameController.addListener(_saveFormData);
+    _mobileNumberController.addListener(_saveFormData);
+    _confirmEmailController.addListener(_saveFormData);
+
     // Start the auto-slide timer
     _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
       if (_currentPage < slides.length - 1) {
@@ -82,6 +92,32 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
         }
       }
     });
+  }
+
+  // Load saved form data
+  Future<void> _loadSavedFormData() async {
+    final savedData = await FormPersistenceService.loadUserInfoData();
+    if (savedData != null && mounted) {
+      setState(() {
+        _firstNameController.text = savedData['firstName'] ?? '';
+        _lastNameController.text = savedData['lastName'] ?? '';
+        _mobileNumberController.text = savedData['mobileNumber'] ?? '';
+        _confirmEmailController.text = savedData['confirmEmail'] ?? '';
+        _isEmailVerified = savedData['isEmailVerified'] ?? false;
+      });
+    }
+  }
+
+  // Save form data
+  Future<void> _saveFormData() async {
+    final formData = {
+      'firstName': _firstNameController.text,
+      'lastName': _lastNameController.text,
+      'mobileNumber': _mobileNumberController.text,
+      'confirmEmail': _confirmEmailController.text,
+      'isEmailVerified': _isEmailVerified,
+    };
+    await FormPersistenceService.saveUserInfoData(formData);
   }
 
   @override
@@ -278,6 +314,9 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
             });
 
         if (mounted) {
+          // Clear saved form data on successful submission
+          await FormPersistenceService.clearUserInfoData();
+          
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile updated successfully!')),
           );
