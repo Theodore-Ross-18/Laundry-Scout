@@ -198,149 +198,198 @@ class _MessageScreenState extends State<MessageScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF7B61FF),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF7B61FF),
-        elevation: 0,
-        title: const Text(
-          'Messages',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              // Mark all as read functionality
-            },
-            child: const Text(
-              'Mark all as Read',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Search bar
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: const Color(0xFF7B61FF),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _filterConversations,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Search conversations...',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-                prefixIcon: Icon(Icons.search, color: Colors.white.withOpacity(0.7)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(25),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: Colors.white.withOpacity(0.2),
-              ),
-            ),
-          ),
-          // Messages list
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(25),
-                  topRight: Radius.circular(25),
-                ),
-              ),
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _filteredConversations.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No conversations yet',
-                            style: TextStyle(color: Colors.grey, fontSize: 16),
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.only(top: 20),
-                          itemCount: _filteredConversations.length,
-                          itemBuilder: (context, index) {
-                            final conversation = _filteredConversations[index];
-                            final business = conversation['business_profiles'];
-                            final lastMessage = conversation['last_message'];
-                            
-                            return ListTile(
-                              leading: CircleAvatar(
-                                radius: 25,
-                                backgroundColor: const Color(0xFF7B61FF),
-                                child: business['cover_photo_url'] != null
-                                    ? ClipOval(
-                                        child: OptimizedImage(
-                                          imageUrl: business['cover_photo_url'],
-                                          width: 50,
-                                          height: 50,
-                                          fit: BoxFit.cover,
-                                          placeholder: const Icon(Icons.business, color: Colors.white),
-                                        ),
-                                      )
-                                    : const Icon(Icons.business, color: Colors.white),
-                              ),
-                              title: Text(
-                                business['business_name'] ?? 'Business',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              subtitle: Text(
-                                lastMessage?['content'] ?? 'No messages yet',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              trailing: lastMessage != null
-                                  ? Text(
-                                      _formatTime(lastMessage['created_at']),
-                                      style: TextStyle(
-                                        color: Colors.grey[500],
-                                        fontSize: 12,
-                                      ),
-                                    )
-                                  : null,
-                              onTap: () => _navigateToChat(conversation),
-                            );
-                          },
-                        ),
-            ),
-          ),
-          // Feedback button
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: ElevatedButton(
-              onPressed: () => _showFeedbackModal(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7B61FF),
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-              ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header with title
+            Container(
+              padding: const EdgeInsets.all(20),
               child: const Text(
-                'Feedback',
+                'Laundry Scout',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-          ),
-        ],
+            // Messages section header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Messages',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      // Mark all as read functionality
+                    },
+                    child: const Text(
+                      'Mark all as Read',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Messages list
+            Expanded(
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(25),
+                    topRight: Radius.circular(25),
+                  ),
+                ),
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _filteredConversations.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No conversations yet',
+                              style: TextStyle(color: Colors.grey, fontSize: 16),
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            itemCount: _filteredConversations.length,
+                            itemBuilder: (context, index) {
+                              final conversation = _filteredConversations[index];
+                              final business = conversation['business_profiles'];
+                              final lastMessage = conversation['last_message'];
+                              
+                              return Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                child: InkWell(
+                                  onTap: () => _navigateToChat(conversation),
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Row(
+                                      children: [
+                                        // Avatar with online indicator
+                                        Stack(
+                                          children: [
+                                            CircleAvatar(
+                                              radius: 28,
+                                              backgroundColor: Colors.grey[200],
+                                              child: business['cover_photo_url'] != null
+                                                  ? ClipOval(
+                                                      child: OptimizedImage(
+                                                        imageUrl: business['cover_photo_url'],
+                                                        width: 56,
+                                                        height: 56,
+                                                        fit: BoxFit.cover,
+                                                        placeholder: const Icon(Icons.business, color: Colors.grey),
+                                                      ),
+                                                    )
+                                                  : const Icon(Icons.business, color: Colors.grey, size: 30),
+                                            ),
+                                            // Online indicator (green dot)
+                                            Positioned(
+                                              bottom: 2,
+                                              right: 2,
+                                              child: Container(
+                                                width: 12,
+                                                height: 12,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.green,
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(color: Colors.white, width: 2),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(width: 16),
+                                        // Message content
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    business['business_name'] ?? 'Business',
+                                                    style: const TextStyle(
+                                                      fontWeight: FontWeight.w600,
+                                                      fontSize: 16,
+                                                      color: Colors.black,
+                                                    ),
+                                                  ),
+                                                  if (lastMessage != null)
+                                                    Text(
+                                                      _formatTime(lastMessage['created_at']),
+                                                      style: TextStyle(
+                                                        color: Colors.grey[500],
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                lastMessage?['content'] ?? 'No messages yet',
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 14,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+              ),
+            ),
+            // Feedback button
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.all(20),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _showFeedbackModal(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF7B61FF),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Feedback',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -45,7 +45,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
         });
       }
     } catch (e) {
-      print('Error loading laundry shops: $e');
+      // Error loading laundry shops: $e
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -72,42 +72,66 @@ class _LaundryScreenState extends State<LaundryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text(
-          'Laundry Shops',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: const Color(0xFF6F5ADC),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Search Bar
+          // Header Section
           Container(
-            padding: const EdgeInsets.all(16.0),
-            color: const Color(0xFF6F5ADC),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _filterLaundryShops,
-              decoration: InputDecoration(
-                hintText: 'Search laundry shops...',
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(25),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            padding: const EdgeInsets.only(top: 50, left: 16, right: 16, bottom: 20),
+            decoration: const BoxDecoration(
+              color: Color(0xFF7B61FF),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(25),
+                bottomRight: Radius.circular(25),
               ),
+            ),
+            child: Column(
+              children: [
+                // Header with title
+                const Text(
+                  'Laundry Scout',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Search Bar
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: _filterLaundryShops,
+                        style: const TextStyle(color: Colors.black),
+                        decoration: InputDecoration(
+                          hintText: 'Search Here',
+                          hintStyle: const TextStyle(color: Colors.grey),
+                          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(25),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.all(12.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.tune, color: Color(0xFF7B61FF)),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
           // Content
@@ -118,7 +142,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
                     ? const Center(
                         child: Text(
                           'No laundry shops found',
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                          style: TextStyle(fontSize: 16, color: Colors.black),
                         ),
                       )
                     : ListView.builder(
@@ -152,50 +176,85 @@ class _LaundryScreenState extends State<LaundryScreen> {
           borderRadius: BorderRadius.circular(15),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               spreadRadius: 1,
-              blurRadius: 5,
-              offset: const Offset(0, 2),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Section
-            Container(
-              height: 150,
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(15),
-                  topRight: Radius.circular(15),
+            // Image Section with Rating Badge
+            Stack(
+              children: [
+                Container(
+                  height: 150,
+                  decoration: const BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(15),
+                      topRight: Radius.circular(15),
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(15),
+                      topRight: Radius.circular(15),
+                    ),
+                    child: shop['cover_photo_url'] != null
+                        ? OptimizedImage(
+                            imageUrl: shop['cover_photo_url'],
+                            width: double.infinity,
+                            height: 150,
+                            fit: BoxFit.cover,
+                            errorWidget: Image.asset(
+                              'lib/assets/laundry_placeholder.png',
+                              width: double.infinity,
+                              height: 150,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : Image.asset(
+                            'lib/assets/laundry_placeholder.png',
+                            width: double.infinity,
+                            height: 150,
+                            fit: BoxFit.cover,
+                          ),
+                  ),
                 ),
-              ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(15),
-                  topRight: Radius.circular(15),
-                ),
-                child: shop['cover_photo_url'] != null
-                    ? OptimizedImage(
-                        imageUrl: shop['cover_photo_url'],
-                        width: double.infinity,
-                        height: 150,
-                        fit: BoxFit.cover,
-                        errorWidget: Image.asset(
-                          'lib/assets/laundry_placeholder.png',
-                          width: double.infinity,
-                          height: 150,
-                          fit: BoxFit.cover,
+                // Rating Badge
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.star,
+                          color: Colors.orange,
+                          size: 14,
                         ),
-                      )
-                    : Image.asset(
-                        'lib/assets/laundry_placeholder.png',
-                        width: double.infinity,
-                        height: 150,
-                        fit: BoxFit.cover,
-                      ),
-              ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '4.5', // You can make this dynamic based on shop data
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
             // Content Section
             Padding(
@@ -208,25 +267,25 @@ class _LaundryScreenState extends State<LaundryScreen> {
                     shop['business_name'] ?? 'Laundry Shop',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      fontSize: 16,
                       color: Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(width: 8),
                   // Location
                   Row(
                     children: [
                       const Icon(
                         Icons.location_on,
                         color: Colors.grey,
-                        size: 16,
+                        size: 14,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           shop['exact_location'] ?? 'Location not available',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 12,
                             color: Colors.grey[600],
                           ),
                           maxLines: 1,
@@ -241,52 +300,55 @@ class _LaundryScreenState extends State<LaundryScreen> {
                     children: [
                       // Status Badge
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
+                          color: Colors.orange.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: const BoxDecoration(
-                                color: Colors.green,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Open',
-                              style: TextStyle(
-                                color: Colors.green[700],
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          'Open Slots',
+                          style: TextStyle(
+                            color: Colors.orange[700],
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      // Delivery Badge
-                      if (shop['does_delivery'] == true)
+                      const SizedBox(width: 6),
+                      // Service Type Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF7B61FF).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          shop['does_delivery'] == true ? 'Wash & Fold' : 'Drop Off',
+                          style: const TextStyle(
+                            color: Color(0xFF7B61FF),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      if (shop['does_delivery'] == true) ...[
+                        const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6F5ADC).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
+                            color: Colors.green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             'Delivery',
                             style: TextStyle(
-                              color: const Color(0xFF6F5ADC),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
+                              color: Colors.green[700],
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
+                      ],
                     ],
                   ),
                 ],

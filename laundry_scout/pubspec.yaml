@@ -33,8 +33,6 @@ flutter:
     - lib/assets/lslogo.png
     - lib/assets/fb.png
     - lib/assets/google.png
-    - lib/assets/apple.png
-    - lib/assets/laundry_placeholder.png
     - .env
     - lib/assets/user/
     - lib/assets/user/owner.png

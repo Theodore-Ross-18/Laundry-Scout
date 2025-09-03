@@ -492,7 +492,7 @@ class HomeScreenBody extends StatelessWidget {
                 SizedBox(
                   height: 150,
                   child: promos.isEmpty // Use passed promos
-                      ? const Center(child: Text('No promos available.'))
+                      ? const Center(child: Text('No promos available.', style: TextStyle(color: Colors.black)))
                       : ListView.builder(
                           scrollDirection: Axis.horizontal,
                           itemCount: promos.length,
@@ -560,6 +560,7 @@ class HomeScreenBody extends StatelessWidget {
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black87,
+                                fontSize: 11,
                               ),
                         ),
                       ),
