@@ -5,7 +5,6 @@ import 'business_profile_screen.dart';
 import 'add_promo_screen.dart'; // Import the new screen
 import 'owner_message_screen.dart'; // Import the new message screen
 import 'owner_notification_screen.dart'; // Import the new notification screen
-import 'owner_feedback_screen.dart'; // Import the new feedback screen
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -68,8 +67,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
         return const OwnerMessageScreen();
       case 2:
         return const OwnerNotificationScreen();
-      case 3:
-        return const OwnerFeedbackScreen();
       default:
         return _buildHomeScreenContent();
     }
@@ -251,10 +248,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
             icon: Icon(Icons.notifications_none),
             label: 'Notification',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.star_outline),
-            label: 'Feedback',
-          ),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Color(0xFF7B61FF), // Purple color for selected item
@@ -272,7 +265,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       width: 80,
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
