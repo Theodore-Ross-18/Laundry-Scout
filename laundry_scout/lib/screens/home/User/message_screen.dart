@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
+import 'dart:developer';
 import '../../../services/connection_service.dart';
 import '../../../services/message_queue_service.dart';
 import '../../../services/realtime_message_service.dart';
@@ -90,7 +91,7 @@ class _MessageScreenState extends State<MessageScreen> {
         });
       }
     } catch (e) {
-      print('Background refresh error: $e');
+      log('Background refresh error: $e');
     }
   }
 
@@ -137,7 +138,7 @@ class _MessageScreenState extends State<MessageScreen> {
         });
       }
     } catch (e) {
-      print('Error loading conversations: $e');
+      log('Error loading conversations: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -509,7 +510,7 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       }
     } catch (e) {
-      print('Background message refresh error: $e');
+      log('Background message refresh error: $e');
     }
   }
 
@@ -618,9 +619,9 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -659,7 +660,7 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             CircleAvatar(
                radius: 20,
-               backgroundColor: Colors.white.withOpacity(0.2),
+               backgroundColor: const Color.fromRGBO(255, 255, 255, 0.2),
                child: widget.businessImage != null
                    ? ClipOval(
                        child: OptimizedImage(
@@ -706,36 +707,120 @@ class _ChatScreenState extends State<ChatScreen> {
               itemBuilder: (context, index) {
                 final message = _messages[index];
                 final isMe = message['sender_id'] == user?.id;
+                final isSending = message['is_sending'] == true;
                 
                 return Align(
                   alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: Column(
-                      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isMe ? const Color(0xFF7B61FF) : Colors.grey[200],
-                            borderRadius: BorderRadius.circular(20),
+                        // Business/Owner avatar (left side for incoming messages)
+                        if (!isMe) ...[
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: Colors.grey[300],
+                            child: widget.businessImage != null
+                                ? ClipOval(
+                                    child: OptimizedImage(
+                                      imageUrl: widget.businessImage!,
+                                      width: 32,
+                                      height: 32,
+                                      fit: BoxFit.cover,
+                                      placeholder: const Icon(Icons.business, size: 16, color: Colors.grey),
+                                    ),
+                                  )
+                                : const Icon(Icons.business, size: 16, color: Colors.grey),
                           ),
-                          child: Text(
-                            message['content'],
-                            style: TextStyle(
-                              color: isMe ? Colors.white : Colors.black,
-                              fontSize: 16,
+                          const SizedBox(width: 8),
+                        ],
+                        
+                        // Message content
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                            children: [
+                              // Sender name
+                              if (!isMe)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 4, left: 8),
+                                  child: Text(
+                                    widget.businessName,
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              
+                              // Message bubble
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: isMe ? const Color(0xFF7B61FF) : Colors.grey[200],
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: const Radius.circular(20),
+                                    topRight: const Radius.circular(20),
+                                    bottomLeft: Radius.circular(isMe ? 20 : 4),
+                                    bottomRight: Radius.circular(isMe ? 4 : 20),
+                                  ),
+                                ),
+                                child: Text(
+                                  message['content'],
+                                  style: TextStyle(
+                                    color: isMe ? Colors.white : Colors.black,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              
+                              // Time and delivery status
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      _formatMessageTime(message['created_at']),
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    if (isMe) ...[
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        isSending ? Icons.access_time : Icons.done,
+                                        size: 14,
+                                        color: isSending ? Colors.orange : Colors.green,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        // User avatar (right side for outgoing messages)
+                        if (isMe) ...[
+                          const SizedBox(width: 8),
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: const Color(0xFF7B61FF),
+                            child: Text(
+                              user?.userMetadata?['full_name']?.substring(0, 1).toUpperCase() ?? 'U',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _formatMessageTime(message['created_at']),
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 12,
-                          ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
@@ -749,7 +834,7 @@ class _ChatScreenState extends State<ChatScreen> {
               color: const Color(0xFF7B61FF),
               boxShadow: [
                 BoxShadow(
-                  color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.2),
+                  color: const Color.fromARGB(51, 0, 0, 0),
                   spreadRadius: 1,
                   blurRadius: 5,
                   offset: const Offset(0, -2),
@@ -822,7 +907,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _scrollToBottom();
       }
     } catch (e) {
-      print('Error loading messages: $e');
+      log('Error loading messages: $e');
     }
   }
 
@@ -895,7 +980,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
         });
       }
     } catch (e) {
-      print('Error loading businesses: $e');
+      log('Error loading businesses: $e');
     }
   }
 
@@ -929,7 +1014,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
         );
       }
     } catch (e) {
-      print('Error submitting feedback: $e');
+      log('Error submitting feedback: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error submitting feedback: $e')),
