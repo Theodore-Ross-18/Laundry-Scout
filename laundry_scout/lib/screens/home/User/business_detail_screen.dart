@@ -323,6 +323,83 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 1. Open Hours
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Open Hours',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Monday - Sunday: 8:00 AM - 8:00 PM',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // 2. Yes we do delivery
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Delivery Service',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Yes, we do delivery!',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Free delivery within 5km radius',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // 3. About Us
           if (_fullBusinessData!['about_business'] != null && _fullBusinessData!['about_business'].toString().isNotEmpty)
             Container(
               padding: const EdgeInsets.all(16),
@@ -353,7 +430,9 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                 ],
               ),
             ),
-          const SizedBox(height: 16),
+          if (_fullBusinessData!['about_business'] != null && _fullBusinessData!['about_business'].toString().isNotEmpty)
+            const SizedBox(height: 16),
+          // 4. Contact Details
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -422,44 +501,8 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDeliverTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Delivery Services',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _buildServiceIcon('Washing', Icons.local_laundry_service),
-                const SizedBox(height: 12),
-                _buildServiceIcon('Delivery', Icons.local_shipping),
-                const SizedBox(height: 12),
-                _buildServiceIcon('Wash & Fold', Icons.checkroom),
-              ],
-            ),
-          ),
           const SizedBox(height: 16),
+          // 5. Address
           if (_fullBusinessData!['exact_location'] != null)
             Container(
               padding: const EdgeInsets.all(16),
@@ -515,6 +558,43 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeliverTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Delivery Services',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildServiceIcon('Washing', Icons.local_laundry_service),
+                const SizedBox(height: 12),
+                _buildServiceIcon('Delivery', Icons.local_shipping),
+                const SizedBox(height: 12),
+                _buildServiceIcon('Wash & Fold', Icons.checkroom),
+              ],
+            ),
+          ),
         ],
       ),
     );
