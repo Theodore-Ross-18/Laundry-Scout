@@ -138,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final response = await Supabase.instance.client
           .from('business_profiles')
-          .select('id, business_name, exact_location, cover_photo_url, does_delivery');
+          .select('id, business_name, exact_location, cover_photo_url, does_delivery, availability_status');
 
       if (mounted) {
         _laundryShops = List<Map<String, dynamic>>.from(response);
@@ -323,6 +323,60 @@ class HomeScreenBody extends StatelessWidget {
     required this.loadLaundryShops,
     required this.loadPromos,
   });
+
+  Widget _buildAvailabilityStatus(String? availabilityStatus) {
+    String status = availabilityStatus ?? 'Unavailable';
+    Color statusColor;
+    IconData statusIcon;
+
+    switch (status) {
+      case 'Open Slots':
+        statusColor = Colors.green;
+        statusIcon = Icons.check_circle;
+        break;
+      case 'Filling Up':
+        statusColor = Colors.orange;
+        statusIcon = Icons.schedule;
+        break;
+      case 'Full':
+        statusColor = Colors.red;
+        statusIcon = Icons.cancel;
+        break;
+      case 'Unavailable':
+      default:
+        statusColor = Colors.grey;
+        statusIcon = Icons.block;
+        status = 'Unavailable';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: statusColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            statusIcon,
+            size: 10,
+            color: statusColor,
+          ),
+          const SizedBox(width: 2),
+          Text(
+            status,
+            style: TextStyle(
+              fontSize: 10,
+              color: statusColor,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -707,6 +761,8 @@ class HomeScreenBody extends StatelessWidget {
                                             Text(shop['does_delivery'] == true ? 'Delivery' : 'No Delivery', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                                           ],
                                         ),
+                                        const SizedBox(height: 4),
+                                        _buildAvailabilityStatus(shop['availability_status']),
                                       ],
                                     ),
                                   ),

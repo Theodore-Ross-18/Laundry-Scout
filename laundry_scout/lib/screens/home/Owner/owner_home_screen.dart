@@ -7,6 +7,7 @@ import 'owner_message_screen.dart'; // Import the new message screen
 import 'owner_notification_screen.dart'; // Import the new notification screen
 import 'owner_feedback_screen.dart'; // Import the feedback screen
 import 'edit_profile_screen.dart'; // Import the edit profile screen
+import 'availability_screen.dart'; // Import the availability screen
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -235,7 +236,20 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                Expanded(child: _availabilityCard()),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      final result = await Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (context) => const AvailabilityScreen()),
+                                      );
+                                      // If availability was updated, refresh the business profile
+                                      if (result == true) {
+                                        _loadBusinessProfile();
+                                      }
+                                    },
+                                    child: _availabilityCard(),
+                                  ),
+                                ),
                               ],
                             ),
                           ],
@@ -319,6 +333,55 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       ),
     );
   }
+
+  // Helper method for availability card
+  Widget _availabilityCard() {
+    // Get current availability status from business profile
+    final availabilityStatus = _businessProfile?['availability_status'] ?? 'Open Slots';
+    
+    // Define status colors and icons
+    final statusConfig = {
+      'Open Slots': {'color': Colors.green, 'icon': Icons.check_circle},
+      'Filling Up': {'color': Colors.orange, 'icon': Icons.schedule},
+      'Full': {'color': Colors.red, 'icon': Icons.cancel},
+      'Unavailable': {'color': Colors.grey, 'icon': Icons.block},
+    };
+    
+    final config = statusConfig[availabilityStatus] ?? statusConfig['Open Slots']!;
+    
+    return Container(
+      height: 70,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(config['icon'] as IconData, color: config['color'] as Color, size: 14),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    availabilityStatus,
+                    style: TextStyle(color: Colors.black, fontSize: 12),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text('Set Availability', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 12)),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // Helper widgets:
@@ -337,35 +400,6 @@ Widget _actionCard(IconData icon, String label, Color iconColor) {
         const SizedBox(width: 10),
         Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
       ],
-    ),
-  );
-}
-
-Widget _availabilityCard() {
-  return Container(
-    height: 70,
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey[200]!),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.circle, color: Colors.green, size: 14),
-              const SizedBox(width: 6),
-              Text('Open Slots', style: TextStyle(color: Colors.black)),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text('Set Availability', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
-        ],
-      ),
     ),
   );
 }

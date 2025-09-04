@@ -1,7 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../users/set_businessprofile.dart';
-import '../../auth/login_screen.dart';
+import '../../splash/splash_screen.dart';
+
+// Helper function for creating a fade transition (copied from profile_screen.dart)
+Route _createFadeRoute(Widget page) {
+  return PageRouteBuilder(
+    pageBuilder: (context, animation, secondaryAnimation) => page,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      // Use FadeTransition for a fade-in/fade-out effect
+      return FadeTransition(
+        opacity: animation,
+        child: child,
+      );
+    },
+    transitionDuration: const Duration(milliseconds: 300), // Adjust duration as needed
+  );
+}
 
 class BusinessProfileScreen extends StatefulWidget {
   const BusinessProfileScreen({super.key});
@@ -41,7 +56,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading profile: \$e')),
+          SnackBar(content: Text('Error loading profile: $e')),
         );
       }
     }
@@ -51,7 +66,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
     await Supabase.instance.client.auth.signOut();
     if (mounted) {
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        _createFadeRoute(const SplashScreen()),
         (route) => false,
       );
     }
@@ -99,7 +114,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                                   ),
                                 ),
                               ),
-                              SizedBox(width: 40),
+                              const SizedBox(width: 40),
                             ],
                           ),
                         ),
@@ -131,7 +146,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                               : Icon(Icons.person, size: 60, color: Colors.white),
                         ),
                         
-                        SizedBox(height: 32),
+                        const SizedBox(height: 32),
                         
                         // Profile Name
                         RichText(
@@ -157,7 +172,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                           ),
                         ),
                         
-                        SizedBox(height: 24),
+                        const SizedBox(height: 24),
                         
                         // Edit Profile Button
                          GestureDetector(
@@ -175,7 +190,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                            },
                            child: Container(
                              width: double.infinity,
-                             padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                              decoration: BoxDecoration(
                                color: Color(0xFFF8F9FA),
                                borderRadius: BorderRadius.circular(12),
@@ -192,7 +207,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                            ),
                          ),
                         
-                        SizedBox(height: 40),
+                        const SizedBox(height: 40),
                         
                         // Settings Section
                         Align(
@@ -207,14 +222,14 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                           ),
                         ),
                         
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         
                         // Settings Items
                         _modernSettingsTile('Change Email & Password', Icons.email_outlined),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         _modernSettingsTile('Push Notifications', Icons.notifications_none, hasTrailing: true),
                         
-                        Spacer(),
+                        const Spacer(),
                         
                         // Sign Out Button
                         Padding(
@@ -230,7 +245,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                padding: EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
                               ),
                               child: Text(
                                 'Sign Out',
@@ -251,7 +266,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
 
   Widget _modernSettingsTile(String title, IconData icon, {bool hasTrailing = false}) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: BoxDecoration(
         color: Color(0xFFF8F9FA),
         borderRadius: BorderRadius.circular(12),
@@ -260,7 +275,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
       child: Row(
         children: [
           Icon(icon, color: Color(0xFF6C757D), size: 20),
-          SizedBox(width: 16),
+          const SizedBox(width: 16),
           Text(
             title,
             style: TextStyle(

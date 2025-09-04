@@ -31,6 +31,60 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     _loadPricelist();
   }
 
+  Widget _buildAvailabilityStatusBadge(String? availabilityStatus) {
+    String status = availabilityStatus ?? 'Unavailable';
+    Color statusColor;
+    IconData statusIcon;
+
+    switch (status) {
+      case 'Open Slots':
+        statusColor = Colors.green;
+        statusIcon = Icons.check_circle;
+        break;
+      case 'Filling Up':
+        statusColor = Colors.orange;
+        statusIcon = Icons.schedule;
+        break;
+      case 'Full':
+        statusColor = Colors.red;
+        statusIcon = Icons.cancel;
+        break;
+      case 'Unavailable':
+      default:
+        statusColor = Colors.grey;
+        statusIcon = Icons.block;
+        status = 'Unavailable';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: statusColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            statusIcon,
+            size: 12,
+            color: statusColor,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            status,
+            style: TextStyle(
+              color: statusColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -41,7 +95,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     try {
       final response = await Supabase.instance.client
           .from('business_profiles')
-          .select('*')
+          .select('*, availability_status')
           .eq('id', widget.businessData['id'])
           .single();
       
@@ -172,35 +226,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                                           ),
                                         ),
                                       ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.green.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Container(
-                                              width: 6,
-                                              height: 6,
-                                              decoration: const BoxDecoration(
-                                                color: Colors.green,
-                                                shape: BoxShape.circle,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 4),
-                                            const Text(
-                                              'Open Now',
-                                              style: TextStyle(
-                                                color: Colors.green,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                                      _buildAvailabilityStatusBadge(_fullBusinessData!['availability_status']),
                                     ],
                                   ),
                                   const SizedBox(height: 8),
