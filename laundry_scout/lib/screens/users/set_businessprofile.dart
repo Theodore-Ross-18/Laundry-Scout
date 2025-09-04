@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:mime/mime.dart';
 import 'package:laundry_scout/screens/home/Owner/owner_home_screen.dart';
 // Add this import at the top with other imports
-import 'package:laundry_scout/screens/users/businessprofilepreview.dart';
+import 'package:laundry_scout/screens/home/User/business_detail_screen.dart';
 import '../../services/image_service.dart';
 import '../../services/form_persistence_service.dart';
 
@@ -301,44 +301,30 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
 
 
   void _previewProfile() {
+    // Create mock business data for preview
+    Map<String, dynamic> mockBusinessData = {
+      'id': 'preview-id',
+      'business_name': _businessNameController.text,
+      'exact_location': _exactLocationController.text,
+      'about_business': _aboutBusinessController.text,
+      'cover_photo_url': _coverPhotoUrl, // Use the actual cover photo URL if available
+      'profile_image_url': null,
+      'availability_status': 'Open Slots',
+      'phone_number': _phoneNumberController.text,
+      'email': _emailController.text,
+      'open_hours': _openHoursController.text,
+      'does_delivery': _doesDelivery,
+      'selected_services': _selectedServices,
+      'service_prices': _servicePrices,
+      // Add cover photo file for preview if URL is not available
+      '_coverPhotoFile': _coverPhotoFile,
+    };
+    
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => BusinessProfilePreview(
-          businessName: _businessNameController.text.trim().isEmpty 
-              ? widget.businessName 
-              : _businessNameController.text.trim(),
-          location: _exactLocationController.text.trim().isEmpty 
-              ? widget.exactLocation 
-              : _exactLocationController.text.trim(),
-          aboutBusiness: _aboutBusinessController.text.trim(),
-          coverPhotoUrl: _coverPhotoUrl,
-          coverPhotoFile: _coverPhotoFile,
-          doesDelivery: _doesDelivery,
-          services: _selectedServices,
-          phoneNumber: _phoneNumberController.text.trim().isEmpty ? '09204343284' : _phoneNumberController.text.trim(),
-          email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-          website: null,
-          openHours: _openHoursController.text.trim().isEmpty 
-              ? 'Monday - Saturday: 9am - 9pm\nSunday: 7am - 10pm' 
-              : _openHoursController.text.trim(),
-          servicePrices: _servicePrices,
-          rating: 4.8,
-          reviewCount: 2,
-          reviews: [
-            {
-              'name': 'Al James',
-              'rating': 4.7,
-              'comment': "I'm so impressed with the service at this laundry shop! Dropped off my clothes in the morning, and they were perfectly cleaned and folded by the afternoon. Super convenient and affordable—definitely my go-to laundry spot!",
-              'date': '1 day ago',
-            },
-            {
-              'name': 'Ricardo Milos',
-              'rating': 4.9,
-              'comment': 'Their attention to detail is amazing! My clothes came back smelling fresh and neatly folded. The staff is friendly, and the delivery option made everything even more convenient. Highly recommend this place!',
-              'date': '2 day ago',
-            },
-          ],
+        builder: (context) => BusinessDetailScreen(
+          businessData: mockBusinessData,
         ),
       ),
     );

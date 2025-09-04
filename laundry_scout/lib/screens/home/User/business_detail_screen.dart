@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'message_screen.dart'; // Import the ChatScreen
 import '../../../widgets/optimized_image.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class BusinessDetailScreen extends StatefulWidget {
   final Map<String, dynamic> businessData;
@@ -91,6 +94,47 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     super.dispose();
   }
 
+  Widget _buildCoverImage() {
+    // Check if we have a cover photo file for preview mode
+    final coverPhotoFile = _fullBusinessData!['_coverPhotoFile'] as PlatformFile?;
+    final coverPhotoUrl = _fullBusinessData!['cover_photo_url'] as String?;
+    
+    if (coverPhotoFile != null) {
+      // Display image from file (preview mode)
+      if (kIsWeb) {
+        return Image.memory(
+          coverPhotoFile.bytes!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+        );
+      } else {
+        return Image.file(
+          File(coverPhotoFile.path!),
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+        );
+      }
+    } else if (coverPhotoUrl != null) {
+      // Display image from URL (normal mode)
+      return OptimizedImage(
+        imageUrl: coverPhotoUrl,
+        fit: BoxFit.cover,
+      );
+    } else {
+      // Display placeholder
+      return Container(
+        color: Colors.grey[300],
+        child: const Icon(
+          Icons.business,
+          size: 80,
+          color: Colors.grey,
+        ),
+      );
+    }
+  }
+
   Future<void> _loadFullBusinessData() async {
     try {
       final response = await Supabase.instance.client
@@ -168,19 +212,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                           Container(
                             height: 200,
                             width: double.infinity,
-                            child: _fullBusinessData!['cover_photo_url'] != null
-                                ? OptimizedImage(
-                                    imageUrl: _fullBusinessData!['cover_photo_url'],
-                                    fit: BoxFit.cover,
-                                  )
-                                : Container(
-                                    color: Colors.grey[300],
-                                    child: const Icon(
-                                      Icons.business,
-                                      size: 80,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
+                            child: _buildCoverImage(),
                           ),
                           // Back button
                           Positioned(
