@@ -6,6 +6,7 @@ import 'add_promo_screen.dart'; // Import the new screen
 import 'owner_message_screen.dart'; // Import the new message screen
 import 'owner_notification_screen.dart'; // Import the new notification screen
 import 'owner_feedback_screen.dart'; // Import the feedback screen
+import 'edit_profile_screen.dart'; // Import the edit profile screen
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -208,7 +209,16 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                Expanded(child: _actionCard(Icons.edit, 'Edit Profile', Colors.deepPurple)),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+                                      );
+                                    },
+                                    child: _actionCard(Icons.edit, 'Edit Profile', Colors.deepPurple),
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 16),
