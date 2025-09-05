@@ -280,65 +280,111 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
                           ),
                         )
                       : ListView.builder(
-                          padding: const EdgeInsets.only(top: 20),
+                          padding: const EdgeInsets.symmetric(vertical: 20),
                           itemCount: _filteredConversations.length,
                           itemBuilder: (context, index) {
                             final conversation = _filteredConversations[index];
                             final user = conversation['user_profiles'];
                             final lastMessage = conversation['last_message'];
                             
-                            return ListTile(
-                              leading: CircleAvatar(
-                                radius: 25,
-                                child: user?['profile_image_url'] != null
-                                    ? ClipOval(
-                                        child: OptimizedImage(
-                                          imageUrl: user!['profile_image_url'],
-                                          width: 50,
-                                          height: 50,
-                                          fit: BoxFit.cover,
-                                          errorWidget: const Icon(Icons.person),
-                                        ),
-                                      )
-                                    : const Icon(Icons.person),
-                              ),
-                              title: Text(
-                                user?['username'] ?? 'Unknown User',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              subtitle: Text(
-                                lastMessage?['content'] ?? 'No messages yet',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              trailing: lastMessage != null
-                                  ? Text(
-                                      _formatTime(lastMessage['created_at']),
-                                      style: TextStyle(
-                                        color: Colors.grey[500],
-                                        fontSize: 12,
+                            return Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => OwnerChatScreen(
+                                        userId: conversation['user_id'],
+                                        userName: user?['username'] ?? 'Unknown User',
+                                        userImage: user?['profile_image_url'],
                                       ),
-                                    )
-                                  : null,
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => OwnerChatScreen(
-                                      userId: conversation['user_id'],
-                                      userName: user?['username'] ?? 'Unknown User',
-                                      userImage: user?['profile_image_url'],
                                     ),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Row(
+                                    children: [
+                                      // Avatar with online indicator
+                                      Stack(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 28,
+                                            backgroundColor: Colors.grey[200],
+                                            child: user?['profile_image_url'] != null
+                                                ? ClipOval(
+                                                    child: OptimizedImage(
+                                                      imageUrl: user!['profile_image_url'],
+                                                      width: 56,
+                                                      height: 56,
+                                                      fit: BoxFit.cover,
+                                                      placeholder: const Icon(Icons.person, color: Colors.grey),
+                                                    ),
+                                                  )
+                                                : const Icon(Icons.person, color: Colors.grey, size: 30),
+                                          ),
+                                          // Online indicator (green dot)
+                                          Positioned(
+                                            bottom: 2,
+                                            right: 2,
+                                            child: Container(
+                                              width: 12,
+                                              height: 12,
+                                              decoration: BoxDecoration(
+                                                color: Colors.green,
+                                                shape: BoxShape.circle,
+                                                border: Border.all(color: Colors.white, width: 2),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(width: 16),
+                                      // Message content
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Text(
+                                                  user?['username'] ?? 'Unknown User',
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 16,
+                                                    color: Colors.black,
+                                                  ),
+                                                ),
+                                                if (lastMessage != null)
+                                                  Text(
+                                                    _formatTime(lastMessage['created_at']),
+                                                    style: TextStyle(
+                                                      color: Colors.grey[500],
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              lastMessage?['content'] ?? 'No messages yet',
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 14,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                );
-                              },
+                                ),
+                              ),
                             );
                           },
                         ),
@@ -691,32 +737,118 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                 return Align(
                   alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: Column(
-                      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isMe ? const Color(0xFF7B61FF) : Colors.grey[200],
-                            borderRadius: BorderRadius.circular(20),
+                        // User avatar (left side for incoming messages)
+                        if (!isMe) ...[
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: Colors.grey[300],
+                            child: widget.userImage != null
+                                ? ClipOval(
+                                    child: OptimizedImage(
+                                      imageUrl: widget.userImage!,
+                                      width: 32,
+                                      height: 32,
+                                      fit: BoxFit.cover,
+                                      placeholder: const Icon(Icons.person, size: 16, color: Colors.grey),
+                                    ),
+                                  )
+                                : const Icon(Icons.person, size: 16, color: Colors.grey),
                           ),
-                          child: Text(
-                            message['content'],
-                            style: TextStyle(
-                              color: isMe ? Colors.white : Colors.black,
-                              fontSize: 16,
+                          const SizedBox(width: 8),
+                        ],
+                        
+                        // Message content
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                            children: [
+                              // Sender name for both incoming and outgoing messages
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: 4,
+                                  left: isMe ? 0 : 8,
+                                  right: isMe ? 8 : 0,
+                                ),
+                                child: Text(
+                                  isMe ? (user?.userMetadata?['full_name'] ?? 'You') : widget.userName,
+                                  style: const TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              
+                              // Message bubble
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: isMe ? const Color(0xFF7B61FF) : Colors.grey[200],
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: const Radius.circular(20),
+                                    topRight: const Radius.circular(20),
+                                    bottomLeft: Radius.circular(isMe ? 20 : 4),
+                                    bottomRight: Radius.circular(isMe ? 4 : 20),
+                                  ),
+                                ),
+                                child: Text(
+                                  message['content'],
+                                  style: TextStyle(
+                                    color: isMe ? Colors.white : Colors.black,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                              
+                              // Time and delivery status
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      _formatMessageTime(message['created_at']),
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    if (isMe) ...[
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        Icons.done,
+                                        size: 14,
+                                        color: Colors.green,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        // Owner avatar (right side for outgoing messages)
+                        if (isMe) ...[
+                          const SizedBox(width: 8),
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: const Color(0xFF7B61FF),
+                            child: Text(
+                              user?.userMetadata?['full_name']?.substring(0, 1).toUpperCase() ?? 'O',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _formatMessageTime(message['created_at']),
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 12,
-                          ),
-                        ),
+                        ],
                       ],
                     ),
                   ),

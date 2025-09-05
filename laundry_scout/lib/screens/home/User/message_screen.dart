@@ -742,19 +742,22 @@ class _ChatScreenState extends State<ChatScreen> {
                           child: Column(
                             crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                             children: [
-                              // Sender name
-                              if (!isMe)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 4, left: 8),
-                                  child: Text(
-                                    widget.businessName,
-                                    style: const TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                              // Sender name for both incoming and outgoing messages
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: 4,
+                                  left: isMe ? 0 : 8,
+                                  right: isMe ? 8 : 0,
+                                ),
+                                child: Text(
+                                  isMe ? (user?.userMetadata?['full_name'] ?? 'You') : widget.businessName,
+                                  style: const TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
+                              ),
                               
                               // Message bubble
                               Container(
