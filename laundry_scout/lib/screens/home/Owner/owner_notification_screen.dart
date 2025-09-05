@@ -13,6 +13,8 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
   late RealtimeChannel _notificationsSubscription;
+  Map<String, String> _userNames = {}; // Cache for user names
+
   @override
   void initState() {
     super.initState();
@@ -37,9 +39,14 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
           .eq('user_id', user.id)
           .order('created_at', ascending: false);
 
+      final notifications = List<Map<String, dynamic>>.from(response);
+      
+      // Fetch user names for message notifications
+      await _fetchUserNamesForNotifications(notifications);
+
       if (mounted) {
         setState(() {
-          _notifications = List<Map<String, dynamic>>.from(response);
+          _notifications = notifications;
           _isLoading = false;
         });
       }
@@ -53,7 +60,48 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
     }
   }
 
-
+  Future<void> _fetchUserNamesForNotifications(List<Map<String, dynamic>> notifications) async {
+    final senderIds = <String>{};
+    
+    print('🔍 [OWNER] Fetching user names for ${notifications.length} notifications');
+    
+    for (final notification in notifications) {
+      print('📋 [OWNER] Notification: ${notification['type']}, data: ${notification['data']}');
+      if (notification['type'] == 'message' && notification['data'] != null) {
+        final data = notification['data'] as Map<String, dynamic>;
+        final senderId = data['customer_id'] as String? ?? data['sender_id'] as String?;
+        print('👤 [OWNER] Found sender ID: $senderId');
+        print('👤 [OWNER] Data keys: ${data.keys.toList()}');
+        if (senderId != null) {
+          senderIds.add(senderId);
+        }
+      }
+    }
+    
+    print('🔍 [OWNER] Total sender IDs to fetch: ${senderIds.length}');
+    
+    // Fetch user profiles for all sender IDs
+    for (final senderId in senderIds) {
+      if (!_userNames.containsKey(senderId)) {
+        try {
+          print('🔍 [OWNER] Fetching profile for sender: $senderId');
+          final response = await Supabase.instance.client
+              .from('user_profiles')
+              .select('full_name')
+              .eq('id', senderId)
+              .single();
+          final fullName = response['full_name'] ?? 'Unknown User';
+          _userNames[senderId] = fullName;
+          print('✅ [OWNER] Found user: $fullName for ID: $senderId');
+        } catch (e) {
+          print('❌ [OWNER] Failed to fetch user profile for $senderId: $e');
+          _userNames[senderId] = 'Unknown User';
+        }
+      }
+    }
+    
+    print('📝 [OWNER] Final user names cache: $_userNames');
+  }
 
   String _getDisplayTitle(Map<String, dynamic> notification) {
     // Use the original title from the database since it already contains the correct sender name
