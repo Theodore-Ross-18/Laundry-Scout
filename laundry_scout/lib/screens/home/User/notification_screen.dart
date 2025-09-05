@@ -55,9 +55,65 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
 
 
-  String _getDisplayTitle(Map<String, dynamic> notification) {
-    // Use the original title from the database since it already contains the correct sender name
-    return notification['title'] ?? 'Notification';
+  Future<String> _getDisplayTitle(Map<String, dynamic> notification) async {
+    String title = notification['title'] ?? 'Notification';
+    
+    // Check if title contains a User ID pattern and try to replace with business name
+    if (title.contains('User') && title.contains('New Message from User')) {
+      try {
+        // Extract the sender ID from notification data
+        final data = notification['data'] as Map<String, dynamic>?;
+        final senderId = data?['sender_id'];
+        final businessId = data?['business_id'];
+        
+        if (senderId != null && businessId != null) {
+          // Try to get business information
+          final businessResponse = await Supabase.instance.client
+              .from('business_profiles')
+              .select('business_name, owner_id')
+              .eq('id', businessId)
+              .maybeSingle();
+          
+          if (businessResponse != null && businessResponse['owner_id'] == senderId) {
+            // This is a business owner, use business name
+            final businessName = businessResponse['business_name'] ?? 'Business';
+            return title.replaceAll(RegExp(r'User[a-zA-Z0-9-]+'), businessName);
+          }
+        }
+        
+        // If not a business owner, try to get user profile
+        if (senderId != null) {
+          final userResponse = await Supabase.instance.client
+              .from('user_profiles')
+              .select('first_name, last_name, username, email')
+              .eq('id', senderId)
+              .maybeSingle();
+          
+          if (userResponse != null) {
+            String displayName = '';
+            final firstName = userResponse['first_name'] ?? '';
+            final lastName = userResponse['last_name'] ?? '';
+            final fullName = '$firstName $lastName'.trim();
+            
+            if (fullName.isNotEmpty) {
+              displayName = fullName;
+            } else if (userResponse['username'] != null && userResponse['username'].toString().isNotEmpty) {
+              displayName = userResponse['username'];
+            } else if (userResponse['email'] != null && userResponse['email'].toString().isNotEmpty) {
+              displayName = userResponse['email'].toString().split('@').first;
+            }
+            
+            if (displayName.isNotEmpty) {
+              return title.replaceAll(RegExp(r'User[a-zA-Z0-9-]+'), displayName);
+            }
+          }
+        }
+      } catch (e) {
+        print('Error improving notification title: $e');
+      }
+    }
+    
+    return title;
   }
 
   void _setupRealtimeSubscription() {
@@ -257,13 +313,18 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               size: 20,
                             ),
                           ),
-                          title: Text(
-                            _getDisplayTitle(notification),
-                            style: TextStyle(
-                              fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-                              color: Colors.black,
-                              fontSize: 16,
-                            ),
+                          title: FutureBuilder<String>(
+                            future: _getDisplayTitle(notification),
+                            builder: (context, snapshot) {
+                              return Text(
+                                snapshot.data ?? (notification['title'] ?? 'Notification'),
+                                style: TextStyle(
+                                  fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                ),
+                              );
+                            },
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,

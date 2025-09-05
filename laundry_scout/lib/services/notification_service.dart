@@ -144,7 +144,7 @@ class NotificationService {
         final email = response['email'].toString();
         displayName = email.split('@').first;
       } else {
-        displayName = 'User$userId';
+        displayName = 'User${userId.substring(0, 8)}';
       }
       
       // Add full_name to the response for consistency
@@ -164,7 +164,7 @@ class NotificationService {
       print('🔍 Fetching business profile for ID: $businessId');
       final response = await Supabase.instance.client
           .from('business_profiles')
-          .select('business_name, owner_id')
+          .select('business_name, id, owner_first_name, owner_last_name, username, email')
           .eq('id', businessId)
           .single();
       print('✅ Business profile found: $response');
@@ -198,12 +198,13 @@ class NotificationService {
       // Get sender profile - this should always work for any user
       final senderProfile = await _getUserProfile(senderId);
       final senderName = senderProfile?['full_name'] ?? senderProfile?['username'] ?? 
-          (senderProfile?['email']?.toString().split('@').first) ?? 'User$senderId';
+          (senderProfile?['email']?.toString().split('@').first) ?? 
+          'User${senderId.substring(0, 8)}';
       print('👤 Sender profile: $senderProfile, name: $senderName');
 
       // Get business profile - this might fail if businessId doesn't exist
       final businessProfile = await _getBusinessProfile(businessId);
-      final businessOwnerId = businessProfile?['owner_id'];
+      final businessOwnerId = businessProfile?['id']; // Changed from 'owner_id' to 'id'
       final businessName = businessProfile?['business_name'] ?? 'Business';
       print('🏢 Business profile: $businessProfile, owner: $businessOwnerId, name: $businessName');
 
@@ -223,11 +224,11 @@ class NotificationService {
       // Determine notification type based on sender and receiver
       if (senderId == businessOwnerId) {
         // Business owner is sending to customer
-        print('📤 Business owner sending to customer');
+        print('📤 Business owner sending to customer, business name: $businessName');
         await createMessageNotification(
           receiverId: receiverId,
           senderId: senderId,
-          senderName: businessName,
+          senderName: businessName,  // This should use business name
           messageContent: messageContent,
           businessId: businessId,
         );
@@ -236,7 +237,7 @@ class NotificationService {
         print('📥 Customer sending to business owner');
         await createBusinessMessageNotification(
           businessOwnerId: businessOwnerId,
-          customerName: senderName,
+          customerName: senderName,  // This correctly uses customer name
           messageContent: messageContent,
           customerId: senderId,
         );
