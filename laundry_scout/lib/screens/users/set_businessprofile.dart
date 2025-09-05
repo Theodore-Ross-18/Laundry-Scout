@@ -10,6 +10,7 @@ import 'package:laundry_scout/screens/home/Owner/owner_home_screen.dart';
 import 'package:laundry_scout/screens/home/User/business_detail_screen.dart';
 import '../../services/image_service.dart';
 import '../../services/form_persistence_service.dart';
+import '../../services/location_service.dart';
 
 class SetBusinessProfileScreen extends StatefulWidget {
   final String username;
@@ -44,6 +45,9 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
   List<String> _selectedServices = [];
   Map<String, double> _servicePrices = {};
   Map<String, TextEditingController> _priceControllers = {};
+  double? _latitude;
+  double? _longitude;
+  bool _isLocationLoading = false;
   
   @override
   void initState() {
@@ -377,6 +381,54 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
     }
   }
 
+  Future<void> _getCurrentLocation() async {
+    setState(() {
+      _isLocationLoading = true;
+    });
+
+    try {
+      final position = await LocationService.getCurrentLocation();
+      if (position != null) {
+        setState(() {
+          _latitude = position.latitude;
+          _longitude = position.longitude;
+        });
+        
+        // Get address from coordinates
+        final address = await LocationService.getAddressFromCoordinates(
+          position.latitude, 
+          position.longitude
+        );
+        
+        setState(() {
+          _exactLocationController.text = address;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location updated successfully')),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to get location. Please check permissions.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error getting location: $e')),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLocationLoading = false;
+      });
+    }
+  }
+
   Future<void> _saveBusinessProfile() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -411,6 +463,8 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
               'business_name': _businessNameController.text.trim(),
               'about_business': _aboutBusinessController.text.trim(),
               'exact_location': _exactLocationController.text.trim(),
+              'latitude': _latitude,
+              'longitude': _longitude,
               // 'phone_number': _phoneNumberController.text.trim().isEmpty ? '09204343284' : _phoneNumberController.text.trim(), // Commented out until column is added to database
               'email': _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
               // 'open_hours': _openHoursController.text.trim().isEmpty ? 'Monday - Saturday: 9am - 9pm\nSunday: 7am - 10pm' : _openHoursController.text.trim(), // Commented out until column is added to database
@@ -743,23 +797,60 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
                       // Exact Location
                       Text('Exact Location', style: textTheme.titleMedium?.copyWith(color: Colors.white)),
                       const SizedBox(height: 10),
-                      TextFormField(
-                        controller: _exactLocationController,
-                        style: const TextStyle(color: Colors.black),
-                        decoration: InputDecoration(
-                          labelStyle: const TextStyle(color: Colors.black54),
-                          prefixIcon: Icon(Icons.location_on, color: Colors.grey[700]),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
-                          filled: true,
-                          fillColor: Colors.white,
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your business location';
-                          }
-                          return null;
-                        },
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _exactLocationController,
+                              style: const TextStyle(color: Colors.black),
+                              decoration: InputDecoration(
+                                hintText: 'Enter your business location',
+                                hintStyle: const TextStyle(color: Colors.black54),
+                                prefixIcon: Icon(Icons.location_on, color: Colors.grey[700]),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your business location';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          ElevatedButton(
+                            onPressed: _isLocationLoading ? null : _getCurrentLocation,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF6F5ADC),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                            ),
+                            child: _isLocationLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Icon(Icons.my_location, size: 20),
+                          ),
+                        ],
                       ),
+                      if (_latitude != null && _longitude != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'Coordinates: ${_latitude!.toStringAsFixed(6)}, ${_longitude!.toStringAsFixed(6)}',
+                            style: textTheme.bodySmall?.copyWith(color: Colors.white70),
+                          ),
+                        ),
                       const SizedBox(height: 40),
 
                       // Preview Button
