@@ -511,7 +511,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                               builder: (context) => ChatScreen(
                                 businessId: _fullBusinessData!['id'],
                                 businessName: _fullBusinessData!['business_name'] ?? 'Business',
-                                businessImage: _fullBusinessData!['profile_image_url'],
+                                businessImage: _fullBusinessData!['cover_photo_url'],
                               ),
                             ),
                           );
