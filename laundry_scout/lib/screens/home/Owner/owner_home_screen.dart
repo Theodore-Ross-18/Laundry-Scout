@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../widgets/optimized_image.dart';
+import '../../../widgets/notification_badge.dart'; // Add this import
 import 'business_profile_screen.dart';
 import 'add_promo_screen.dart'; // Import the new screen
 import 'owner_message_screen.dart'; // Import the new message screen
@@ -265,31 +266,38 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = Supabase.instance.client.auth.currentUser;
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF8F8F8),
-      body: _buildBody(), // Use the new _buildBody method
+      body: _buildBody(),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
+        items: <BottomNavigationBarItem>[
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.message_outlined),
             label: 'Messages',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_none),
+            icon: user != null 
+                ? NotificationBadge(
+                    userId: user.id,
+                    child: const Icon(Icons.notifications_none),
+                  )
+                : const Icon(Icons.notifications_none),
             label: 'Notification',
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Color(0xFF7B61FF), // Purple color for selected item
-        unselectedItemColor: Colors.grey, // Grey for unselected
+        selectedItemColor: Color(0xFF7B61FF),
+        unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed, // To show all labels
+        type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
-        elevation: 8.0, // Add some elevation like in the image
+        elevation: 8.0,
       ),
     );
   }

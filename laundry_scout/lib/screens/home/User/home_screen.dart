@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/login_screen.dart';
 import '../../../widgets/optimized_image.dart';
+import '../../../widgets/notification_badge.dart'; // Add this import
 import 'profile_screen.dart'; 
 import 'location_screen.dart'; 
 import 'laundry_screen.dart'; 
@@ -233,8 +234,8 @@ class _HomeScreenState extends State<HomeScreen> {
     // Rebuild _widgetOptions if _isLoading has changed to pass the latest state to HomeScreenBody
     _widgetOptions[0] = HomeScreenBody(
         userName: _userName,
-        profileImageUrl: _profileImageUrl, // Add profile image URL parameter
-        isLoading: _isLoading, // Pass current loading state
+        profileImageUrl: _profileImageUrl,
+        isLoading: _isLoading,
         searchController: _searchController,
         scrollController: _scrollController,
         filterLaundryShops: _filterLaundryShops,
@@ -246,6 +247,8 @@ class _HomeScreenState extends State<HomeScreen> {
         loadPromos: _loadPromos,
       );
 
+    final user = Supabase.instance.client.auth.currentUser;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F8F8),
       body: IndexedStack(
@@ -254,41 +257,51 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
+        items: <BottomNavigationBarItem>[
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             activeIcon: Icon(Icons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.location_on_outlined),
             activeIcon: Icon(Icons.location_on),
             label: 'Location',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.local_laundry_service_outlined),
             activeIcon: Icon(Icons.local_laundry_service),
             label: 'Laundry',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.chat_bubble_outline),
             activeIcon: Icon(Icons.chat_bubble),
             label: 'Messages',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_none_outlined),
-            activeIcon: Icon(Icons.notifications),
+            icon: user != null 
+                ? NotificationBadge(
+                    userId: user.id,
+                    child: const Icon(Icons.notifications_none_outlined),
+                  )
+                : const Icon(Icons.notifications_none_outlined),
+            activeIcon: user != null 
+                ? NotificationBadge(
+                    userId: user.id,
+                    child: const Icon(Icons.notifications),
+                  )
+                : const Icon(Icons.notifications),
             label: 'Notification',
           ),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: const Color(0xFF6F5ADC),
-        unselectedItemColor: Colors.grey[600], // Slightly darker grey for better visibility
+        unselectedItemColor: Colors.grey[600],
         onTap: _onItemTapped,
         showSelectedLabels: true,
         showUnselectedLabels: true,
-        selectedFontSize: 12, // Explicitly set font size
-        unselectedFontSize: 12, // Explicitly set font size
+        selectedFontSize: 12,
+        unselectedFontSize: 12,
       ),
     );
   }
