@@ -13,7 +13,6 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
   late RealtimeChannel _notificationsSubscription;
-
   @override
   void initState() {
     super.initState();
@@ -52,6 +51,13 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
         });
       }
     }
+  }
+
+
+
+  String _getDisplayTitle(Map<String, dynamic> notification) {
+    // Use the original title from the database since it already contains the correct sender name
+    return notification['title'] ?? 'Notification';
   }
 
   void _setupRealtimeSubscription() {
@@ -251,7 +257,7 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
                             ),
                           ),
                           title: Text(
-                            notification['title'] ?? 'Notification',
+                            _getDisplayTitle(notification),
                             style: TextStyle(
                               fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
                               color: Colors.black,

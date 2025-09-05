@@ -106,6 +106,30 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
     }
   }
 
+  /// Helper function to generate better display names with fallback logic
+  String _getDisplayName(Map<String, dynamic>? user, String userId) {
+    if (user == null) {
+      return 'User${userId.substring(0, 8)}';
+    }
+    
+    // Try to construct full name
+    final firstName = user['first_name']?.toString() ?? '';
+    final lastName = user['last_name']?.toString() ?? '';
+    final fullName = '$firstName $lastName'.trim();
+    
+    // Use fallback hierarchy: full name -> username -> email prefix -> fallback
+    if (fullName.isNotEmpty) {
+      return fullName;
+    } else if (user['username'] != null && user['username'].toString().isNotEmpty) {
+      return user['username'];
+    } else if (user['email'] != null && user['email'].toString().isNotEmpty) {
+      final email = user['email'].toString();
+      return email.split('@').first;
+    } else {
+      return 'User${userId.substring(0, 8)}';
+    }
+  }
+
   Future<void> _loadConversations() async {
     try {
       setState(() {
@@ -123,10 +147,10 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
       for (var conversation in conversationsResponse) {
         print('Conversation user_id: ${conversation['user_id']}'); // Debug print
         
-        // Get user profile
+        // Get user profile with email for better fallback
         final userProfile = await Supabase.instance.client
             .from('user_profiles')
-            .select('username, first_name, last_name, profile_image_url')
+            .select('username, first_name, last_name, profile_image_url, email')
             .eq('id', conversation['user_id'])
             .maybeSingle();
         
@@ -140,6 +164,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
             'first_name': null,
             'last_name': null,
             'profile_image_url': null,
+            'email': null,
           };
         } else {
           conversation['user_profiles'] = userProfile;
@@ -295,10 +320,10 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => OwnerChatScreen(
-                                        userId: conversation['user_id'],
-                                        userName: user?['username'] ?? 'Unknown User',
-                                        userImage: user?['profile_image_url'],
-                                      ),
+                        userId: conversation['user_id'],
+                        userName: _getDisplayName(user, conversation['user_id']),
+                        userImage: user?['profile_image_url'],
+                      ),
                                     ),
                                   );
                                 },
@@ -351,13 +376,13 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                               children: [
                                                 Text(
-                                                  user?['username'] ?? 'Unknown User',
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize: 16,
-                                                    color: Colors.black,
-                                                  ),
-                                                ),
+                                  _getDisplayName(user, conversation['user_id']),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                    color: Colors.black,
+                                  ),
+                                ),
                                                 if (lastMessage != null)
                                                   Text(
                                                     _formatTime(lastMessage['created_at']),

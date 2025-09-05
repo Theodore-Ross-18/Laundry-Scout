@@ -5,6 +5,46 @@ class NotificationService {
   factory NotificationService() => _instance;
   NotificationService._internal();
 
+  /// Test method to verify notifications table exists and works
+  Future<void> testNotificationCreation() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) {
+        print('❌ No authenticated user for notification test');
+        return;
+      }
+
+      print('🔍 Testing notifications table with user ID: ${user.id}');
+      
+      // First, try to read from the table to see if it exists
+      await Supabase.instance.client
+          .from('notifications')
+          .select('*')
+          .limit(1);
+      
+      print('✅ Notifications table exists and is readable');
+      
+      // Now try to insert a test notification
+      await Supabase.instance.client.from('notifications').insert({
+        'user_id': user.id,
+        'title': 'Test Notification',
+        'message': 'This is a test notification to verify the system works',
+        'type': 'system',
+        'is_read': false,
+        'created_at': DateTime.now().toIso8601String(),
+        'data': {'test': true},
+      });
+
+      print('✅ Test notification created successfully');
+    } catch (e) {
+      print('❌ Test notification failed: $e');
+      print('❌ Error type: ${e.runtimeType}');
+      if (e.toString().contains('relation') && e.toString().contains('does not exist')) {
+        print('❌ The notifications table does not exist in the database!');
+      }
+    }
+  }
+
   /// Creates a notification when a new message is received
   Future<void> createMessageNotification({
     required String receiverId,
@@ -29,7 +69,7 @@ class NotificationService {
         'type': 'message',
         'is_read': false,
         'created_at': DateTime.now().toIso8601String(),
-        'metadata': {
+        'data': {
           'sender_id': senderId,
           'business_id': businessId,
           'message_preview': notificationMessage,
@@ -65,7 +105,7 @@ class NotificationService {
         'type': 'message',
         'is_read': false,
         'created_at': DateTime.now().toIso8601String(),
-        'metadata': {
+        'data': {
           'customer_id': customerId,
           'customer_name': customerName,
           'message_preview': notificationMessage,
@@ -81,14 +121,39 @@ class NotificationService {
   /// Gets user profile information for notification purposes
   Future<Map<String, dynamic>?> _getUserProfile(String userId) async {
     try {
+      print('🔍 Fetching user profile for ID: $userId');
       final response = await Supabase.instance.client
-          .from('profiles')
-          .select('full_name, email')
+          .from('user_profiles')
+          .select('first_name, last_name, email, username')
           .eq('id', userId)
           .single();
+      
+      // Construct full name from first_name and last_name
+      final firstName = response['first_name'] ?? '';
+      final lastName = response['last_name'] ?? '';
+      final fullName = '$firstName $lastName'.trim();
+      
+      // Create a better fallback system
+      String displayName;
+      if (fullName.isNotEmpty) {
+        displayName = fullName;
+      } else if (response['username'] != null && response['username'].toString().isNotEmpty) {
+        displayName = response['username'];
+      } else if (response['email'] != null && response['email'].toString().isNotEmpty) {
+        // Use the part before @ in email as fallback
+        final email = response['email'].toString();
+        displayName = email.split('@').first;
+      } else {
+        displayName = 'User$userId';
+      }
+      
+      // Add full_name to the response for consistency
+      response['full_name'] = displayName;
+      
+      print('✅ User profile found: $response');
       return response;
     } catch (e) {
-      print('Failed to get user profile: $e');
+      print('❌ Failed to get user profile for $userId: $e');
       return null;
     }
   }
@@ -96,14 +161,26 @@ class NotificationService {
   /// Gets business profile information for notification purposes
   Future<Map<String, dynamic>?> _getBusinessProfile(String businessId) async {
     try {
+      print('🔍 Fetching business profile for ID: $businessId');
       final response = await Supabase.instance.client
-          .from('businesses')
+          .from('business_profiles')
           .select('business_name, owner_id')
           .eq('id', businessId)
           .single();
+      print('✅ Business profile found: $response');
       return response;
     } catch (e) {
-      print('Failed to get business profile: $e');
+      print('❌ Failed to get business profile for $businessId: $e');
+      // Let's also try to check if there are any business profiles at all
+      try {
+        final allBusinesses = await Supabase.instance.client
+            .from('business_profiles')
+            .select('id, business_name, owner_id')
+            .limit(5);
+        print('📋 Available business profiles: $allBusinesses');
+      } catch (listError) {
+        print('❌ Could not list business profiles: $listError');
+      }
       return null;
     }
   }
@@ -116,18 +193,37 @@ class NotificationService {
     required String messageContent,
   }) async {
     try {
-      // Get sender profile
+      print('🔔 Creating notification: sender=$senderId, receiver=$receiverId, business=$businessId');
+      
+      // Get sender profile - this should always work for any user
       final senderProfile = await _getUserProfile(senderId);
-      final senderName = senderProfile?['full_name'] ?? 'Unknown User';
+      final senderName = senderProfile?['full_name'] ?? senderProfile?['username'] ?? 
+          (senderProfile?['email']?.toString().split('@').first) ?? 'User$senderId';
+      print('👤 Sender profile: $senderProfile, name: $senderName');
 
-      // Get business profile
+      // Get business profile - this might fail if businessId doesn't exist
       final businessProfile = await _getBusinessProfile(businessId);
       final businessOwnerId = businessProfile?['owner_id'];
       final businessName = businessProfile?['business_name'] ?? 'Business';
+      print('🏢 Business profile: $businessProfile, owner: $businessOwnerId, name: $businessName');
+
+      // If we couldn't get business profile, treat as regular user message
+      if (businessProfile == null || businessOwnerId == null) {
+        print('⚠️ No business profile found, treating as regular user message');
+        await createMessageNotification(
+          receiverId: receiverId,
+          senderId: senderId,
+          senderName: senderName,
+          messageContent: messageContent,
+          businessId: businessId,
+        );
+        return;
+      }
 
       // Determine notification type based on sender and receiver
       if (senderId == businessOwnerId) {
         // Business owner is sending to customer
+        print('📤 Business owner sending to customer');
         await createMessageNotification(
           receiverId: receiverId,
           senderId: senderId,
@@ -137,6 +233,7 @@ class NotificationService {
         );
       } else if (receiverId == businessOwnerId) {
         // Customer is sending to business owner
+        print('📥 Customer sending to business owner');
         await createBusinessMessageNotification(
           businessOwnerId: businessOwnerId,
           customerName: senderName,
@@ -145,6 +242,7 @@ class NotificationService {
         );
       } else {
         // Regular user-to-user message
+        print('💬 Regular user-to-user message');
         await createMessageNotification(
           receiverId: receiverId,
           senderId: senderId,

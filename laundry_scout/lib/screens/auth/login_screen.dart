@@ -7,6 +7,7 @@ import '../home/Owner/owner_home_screen.dart';
 // import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'forgotpassverify_screen.dart'; // Import the new screen
 import 'dart:async'; // Import the dart:async library
+import '../../services/notification_service.dart';
 
 // Helper function for creating a fade transition
 Route _createFadeRoute(Widget page) {
@@ -250,6 +251,9 @@ class _LoginScreenState extends State<LoginScreen> {
                }
             }
 
+            // Test notification system after successful login
+            NotificationService().testNotificationCreation();
+            
             // Show slides based on the determined profile type
             if (mounted) {
               setState(() {
