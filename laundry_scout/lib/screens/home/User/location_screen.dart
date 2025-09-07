@@ -613,6 +613,7 @@ class _LocationScreenState extends State<LocationScreen> {
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
+                  color: Colors.black,
                 ),
               ),
               const SizedBox(height: 8),
@@ -682,7 +683,7 @@ class _LocationScreenState extends State<LocationScreen> {
                     ),
                     child: const Text(
                       'Contact Laundry',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
+                      style: TextStyle(color: Color.fromARGB(255, 0, 0, 0), fontSize: 16),
                     ),
                   ),
                 ),
@@ -706,6 +707,7 @@ class _LocationScreenState extends State<LocationScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
+                              color: Colors.black
                             ),
                           ),
                         ],
@@ -987,7 +989,7 @@ class _LocationScreenState extends State<LocationScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 4),
-                                      const Text('You', style: TextStyle(fontSize: 10)),
+                                      const Text('You', style: TextStyle(fontSize: 10, color: Colors.black)),
                                     ],
                                   ),
                                   const SizedBox(height: 4),
@@ -1003,7 +1005,7 @@ class _LocationScreenState extends State<LocationScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 4),
-                                      const Text('Registered', style: TextStyle(fontSize: 10)),
+                                      const Text('Registered', style: TextStyle(fontSize: 10, color: Colors.black)),
                                     ],
                                   ),
                                   const SizedBox(height: 4),
@@ -1019,7 +1021,7 @@ class _LocationScreenState extends State<LocationScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 4),
-                                      const Text('Unregistered', style: TextStyle(fontSize: 10)),
+                                      const Text('Unregistered', style: TextStyle(fontSize: 10, color: Colors.black)),
                                     ],
                                   ),
                                 ],
