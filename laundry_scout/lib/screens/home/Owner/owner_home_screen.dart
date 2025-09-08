@@ -9,6 +9,7 @@ import 'owner_notification_screen.dart'; // Import the new notification screen
 import 'owner_feedback_screen.dart'; // Import the feedback screen
 import 'edit_profile_screen.dart'; // Import the edit profile screen
 import 'availability_screen.dart'; // Import the availability screen
+import 'orders_screen.dart'; // Import the orders screen
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -21,11 +22,18 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   Map<String, dynamic>? _businessProfile;
   bool _isLoading = true;
   int _selectedIndex = 0;
+  Map<String, int> _orderStats = {
+    'total': 0,
+    'pending': 0,
+    'in_progress': 0,
+    'completed': 0,
+  };
 
   @override
   void initState() {
     super.initState();
     _loadBusinessProfile();
+    _loadOrderStats();
   }
 
   Future<void> _loadBusinessProfile() async {
@@ -54,6 +62,34 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
           SnackBar(content: Text('Error loading profile: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _loadOrderStats() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final response = await Supabase.instance.client
+          .from('orders')
+          .select('status')
+          .eq('business_id', user.id);
+
+      final orders = List<Map<String, dynamic>>.from(response);
+      final stats = {
+        'total': orders.length,
+        'pending': orders.where((o) => o['status'] == 'pending').length,
+        'in_progress': orders.where((o) => o['status'] == 'in_progress').length,
+        'completed': orders.where((o) => o['status'] == 'completed').length,
+      };
+
+      if (mounted) {
+        setState(() {
+          _orderStats = stats;
+        });
+      }
+    } catch (e) {
+      print('Error loading order stats: $e');
     }
   }
 
@@ -174,8 +210,8 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    _statBox(Icons.shopping_bag, '12', 'Orders', Color(0xFF4BE1AB)),
-                                    _statBox(Icons.timer, '5', 'Pending', Color(0xFFFF8A71)),
+                                    _statBox(Icons.shopping_bag, '${_orderStats['total']}', 'Orders', Color(0xFF4BE1AB)),
+                                    _statBox(Icons.timer, '${_orderStats['pending']}', 'Pending', Color(0xFFFF8A71)),
                                     _viewOrdersButton(),
                                   ],
                                 ),
@@ -183,8 +219,8 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    _statBox(Icons.sync, '12', 'On Progress', Color(0xFFFFC542)),
-                                    _statBox(Icons.local_shipping, '36', 'Delivered', Color(0xFF3ECFFF)),
+                                    _statBox(Icons.sync, '${_orderStats['in_progress']}', 'On Progress', Color(0xFFFFC542)),
+                                    _statBox(Icons.local_shipping, '${_orderStats['completed']}', 'Delivered', Color(0xFF3ECFFF)),
                                     SizedBox(width: 80), // To align with View Orders button
                                   ],
                                 ),
@@ -322,21 +358,28 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   }
 
   Widget _viewOrdersButton() {
-    return Container(
-      width: 80,
-      height: 64,
-      decoration: BoxDecoration(
-        color: Color(0xFF7B61FF),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.shopping_cart_checkout, color: Colors.white, size: 28),
-            const SizedBox(height: 4),
-            Text('View Orders', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-          ],
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const OrdersScreen()),
+        );
+      },
+      child: Container(
+        width: 80,
+        height: 64,
+        decoration: BoxDecoration(
+          color: Color(0xFF7B61FF),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.shopping_cart_checkout, color: Colors.white, size: 28),
+              const SizedBox(height: 4),
+              Text('View Orders', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            ],
+          ),
         ),
       ),
     );

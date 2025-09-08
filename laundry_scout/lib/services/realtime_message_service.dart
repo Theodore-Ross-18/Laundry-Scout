@@ -69,9 +69,9 @@ class RealtimeMessageService {
     
     channel.subscribe((status, error) {
       if (status == RealtimeSubscribeStatus.subscribed) {
-        print('✅ Subscribed to $channelKey');
+        // Successfully subscribed to $channelKey
       } else if (error != null) {
-        print('❌ Subscription error for $channelKey: $error');
+        // Subscription error for $channelKey: $error
         _handleSubscriptionError(channelKey, onMessage);
       }
     });

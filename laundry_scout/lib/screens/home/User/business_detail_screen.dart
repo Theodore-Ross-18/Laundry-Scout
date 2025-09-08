@@ -5,14 +5,15 @@ import '../../../widgets/optimized_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'order_placement_screen.dart';
 
 class BusinessDetailScreen extends StatefulWidget {
   final Map<String, dynamic> businessData;
 
   const BusinessDetailScreen({
-    Key? key,
+    super.key,
     required this.businessData,
-  }) : super(key: key);
+  });
 
   @override
   State<BusinessDetailScreen> createState() => _BusinessDetailScreenState();
@@ -63,7 +64,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1),
+        color: statusColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -148,7 +149,6 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading business data: $e');
       setState(() {
         _fullBusinessData = widget.businessData;
         _isLoading = false;
@@ -168,25 +168,125 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
         _reviews = List<Map<String, dynamic>>.from(response);
       });
     } catch (e) {
-      print('Error loading reviews: $e');
+      // Error loading reviews
     }
   }
 
   Future<void> _loadPricelist() async {
     try {
+      // Get service prices from business_profiles table
       final response = await Supabase.instance.client
-          .from('pricelist')
-          .select('*')
-          .eq('business_id', widget.businessData['id'])
-          .order('service_name');
+          .from('business_profiles')
+          .select('services_offered, service_prices')
+          .eq('id', widget.businessData['id'])
+          .single();
+      
+      final servicesOffered = response['services_offered'] as List<dynamic>? ?? [];
+      final servicePrices = response['service_prices'] as Map<String, dynamic>? ?? {};
+      
+      // Convert to pricelist format
+      List<Map<String, dynamic>> pricelist = [];
+      for (String service in servicesOffered) {
+        final price = servicePrices[service]?.toDouble() ?? 0.0;
+        pricelist.add({
+          'service_name': service,
+          'price': price.toStringAsFixed(2),
+          'description': _getServiceDescription(service),
+        });
+      }
       
       setState(() {
-        _pricelist = List<Map<String, dynamic>>.from(response);
+        _pricelist = pricelist;
       });
     } catch (e) {
-      print('Error loading pricelist: $e');
+      // Fallback: try to load from old pricelist table if it exists
+      try {
+        final fallbackResponse = await Supabase.instance.client
+            .from('pricelist')
+            .select('*')
+            .eq('business_id', widget.businessData['id'])
+            .order('service_name');
+        
+        setState(() {
+          _pricelist = List<Map<String, dynamic>>.from(fallbackResponse);
+        });
+      } catch (fallbackError) {
+        // Error loading fallback pricelist
+      }
     }
   }
+
+  String _getServiceDescription(String service) {
+    switch (service) {
+      case 'Wash & Fold':
+        return 'Complete washing and folding service';
+      case 'Ironing':
+        return 'Professional ironing service';
+      case 'Deliver':
+        return 'Pickup and delivery service';
+      case 'Dry Cleaning':
+        return 'Professional dry cleaning';
+      case 'Pressing':
+        return 'Professional pressing service';
+      default:
+        return 'Professional laundry service';
+    }
+  }
+
+  double _calculateAverageRating() {
+    if (_reviews.isEmpty) return 0.0;
+    
+    double totalRating = 0.0;
+    for (var review in _reviews) {
+      totalRating += (review['rating'] ?? 0).toDouble();
+    }
+    
+    return totalRating / _reviews.length;
+  }
+
+  String _formatTimeAgo(String? createdAt) {
+    if (createdAt == null) return 'Unknown';
+    
+    try {
+      final DateTime reviewDate = DateTime.parse(createdAt);
+      final DateTime now = DateTime.now();
+      final Duration difference = now.difference(reviewDate);
+      
+      if (difference.inDays > 0) {
+        return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
+      } else if (difference.inHours > 0) {
+        return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
+      } else if (difference.inMinutes > 0) {
+        return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
+      } else {
+        return 'Just now';
+      }
+    } catch (e) {
+      return 'Unknown';
+    }
+  }
+
+  Future<void> _placeOrder() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please login to place an order')),
+      );
+      return;
+    }
+
+    // Navigate to order placement flow
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OrderPlacementScreen(
+          businessData: _fullBusinessData!,
+        ),
+      ),
+    );
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -204,12 +304,12 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
               : Column(
                   children: [
                     // Header with cover image and business info
-                    Container(
+                    SizedBox(
                       height: 280,
                       child: Stack(
                         children: [
                           // Cover Image
-                          Container(
+                          SizedBox(
                             height: 200,
                             width: double.infinity,
                             child: _buildCoverImage(),
@@ -235,7 +335,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                                 borderRadius: BorderRadius.circular(15),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     spreadRadius: 1,
                                     blurRadius: 10,
                                     offset: const Offset(0, 2),
@@ -313,34 +413,6 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                             _buildPricelistTab(),
                             _buildReviewsTab(),
                           ],
-                        ),
-                      ),
-                    ),
-                    // Bottom Action Button
-                    Container(
-                      color: Colors.white,
-                      padding: const EdgeInsets.all(16),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // Place Order functionality
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6F5ADC),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            'Place Order',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
                         ),
                       ),
                     ),
@@ -627,6 +699,29 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
               ],
             ),
           ),
+          const SizedBox(height: 24),
+          // Place Order Button - Only in Deliver tab
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _placeOrder,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6F5ADC),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Place Order',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -716,7 +811,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   }
 
   Widget _buildReviewsTab() {
-    double averageRating = 4.8; // This should be calculated from actual reviews
+    double averageRating = _calculateAverageRating();
     int totalReviews = _reviews.length;
 
     return SingleChildScrollView(
@@ -851,7 +946,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                         ),
                       ),
                       Text(
-                        '1 day ago', // This should be calculated from created_at
+                        _formatTimeAgo(review['created_at']),
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
@@ -907,7 +1002,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFF6F5ADC).withOpacity(0.1),
+            color: const Color(0xFF6F5ADC).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(

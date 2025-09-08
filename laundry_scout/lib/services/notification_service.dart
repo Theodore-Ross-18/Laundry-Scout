@@ -6,6 +6,7 @@ class NotificationService {
   NotificationService._internal();
 
   /// Test method to verify notifications table exists and works
+  /// Prevents spam by checking if test was already done for this user
   Future<void> testNotificationCreation() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
@@ -15,6 +16,20 @@ class NotificationService {
       }
 
       print('🔍 Testing notifications table with user ID: ${user.id}');
+      
+      // Check if test notification already exists for this user
+      final existingTest = await Supabase.instance.client
+          .from('notifications')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('type', 'system')
+          .eq('title', 'Test Notification')
+          .maybeSingle();
+      
+      if (existingTest != null) {
+        print('✅ Test notification already exists for this user, skipping spam');
+        return;
+      }
       
       // First, try to read from the table to see if it exists
       await Supabase.instance.client

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
-import '../../../widgets/optimized_image.dart';
 
 class OwnerFeedbackScreen extends StatefulWidget {
   const OwnerFeedbackScreen({super.key});
@@ -35,16 +34,26 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
+      // First get the business profile for the current user
+      final businessResponse = await Supabase.instance.client
+          .from('business_profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+      final businessId = businessResponse['id'];
+
+      // Then get reviews for this business
       final response = await Supabase.instance.client
-          .from('feedback')
+          .from('reviews')
           .select('''
             *,
-            business_profiles!inner(
-              business_name,
-              cover_photo_url
+            user_profiles(
+              first_name,
+              last_name
             )
           ''')
-          .eq('user_id', user.id)
+          .eq('business_id', businessId)
           .order('created_at', ascending: false);
 
       if (mounted) {
@@ -55,7 +64,7 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
         });
       }
     } catch (e) {
-      print('Error loading feedback: $e');
+      // Error loading feedback
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -81,9 +90,8 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
     if (user == null) return;
 
     _feedbackSubscription = Supabase.instance.client
-        .from('feedback')
+        .from('reviews')
         .stream(primaryKey: ['id'])
-        .eq('business_id', user.id)
         .listen((data) {
           _loadFeedback();
         });
@@ -225,7 +233,7 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
                           itemCount: _feedback.length,
                           itemBuilder: (context, index) {
                             final feedback = _feedback[index];
-                            final business = feedback['business_profiles'];
+                            final userProfile = feedback['user_profiles'];
                             return Container(
                               margin: const EdgeInsets.only(bottom: 12),
                               padding: const EdgeInsets.all(16),
@@ -249,17 +257,13 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
                                       CircleAvatar(
                                         radius: 20,
                                         backgroundColor: const Color(0xFF7B61FF),
-                                        child: business['cover_photo_url'] != null
-                                            ? ClipOval(
-                                                child: OptimizedImage(
-                                                  imageUrl: business['cover_photo_url'],
-                                                  width: 40,
-                                                  height: 40,
-                                                  fit: BoxFit.cover,
-                                                  errorWidget: const Icon(Icons.business, color: Colors.white),
-                                                ),
-                                              )
-                                            : const Icon(Icons.business, color: Colors.white),
+                                        child: Text(
+                                          (userProfile?['first_name']?[0] ?? 'U').toUpperCase(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
@@ -267,7 +271,7 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              business['business_name'] ?? 'Anonymous',
+                                              '${userProfile?['first_name'] ?? 'Anonymous'} ${userProfile?['last_name'] ?? ''}',
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 16,

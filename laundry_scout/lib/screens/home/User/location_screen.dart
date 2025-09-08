@@ -8,6 +8,8 @@ import 'package:geocoding/geocoding.dart';
 import 'dart:async';
 import '../../../utils/network_speed_detector.dart';
 import '../../../utils/location_cache.dart';
+import '../../../services/places_service.dart';
+import '../../../utils/distance_calculator.dart' as utils;
 
 class LocationScreen extends StatefulWidget {
   const LocationScreen({super.key});
@@ -122,12 +124,14 @@ class _LocationScreenState extends State<LocationScreen> {
 
   Future<void> _getCurrentLocation() async {
     try {
+      print('DEBUG: _getCurrentLocation called');
       setState(() {
         _loadingStatus = 'Checking cached location...';
       });
       
       // Try to get cached location first
       Position? position = await LocationCache.instance.getCachedUserLocation();
+      print('DEBUG: Cached position: $position');
       
       if (position != null) {
         setState(() {
@@ -153,6 +157,7 @@ class _LocationScreenState extends State<LocationScreen> {
         _loadingStatus = 'Getting GPS location...';
       });
       
+      print('DEBUG: Attempting to get GPS location');
       // Get GPS accuracy based on network speed
       LocationAccuracy accuracy = LocationAccuracy.medium;
       if (_loadingStrategy != null) {
@@ -203,6 +208,7 @@ class _LocationScreenState extends State<LocationScreen> {
       
       await _loadNearbyLaundryShops();
     } catch (e) {
+      print('DEBUG: Error in _getCurrentLocation: $e');
       setState(() {
         _isLoading = false;
         _currentLocationText = 'Unable to get location';
@@ -216,6 +222,131 @@ class _LocationScreenState extends State<LocationScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _fetchNearbyLaundryShops() async {
+    if (_currentPosition == null) {
+      print('DEBUG: No current position available');
+      return;
+    }
+
+    try {
+      print('DEBUG: Starting search at lat: ${_currentPosition!.latitude}, lon: ${_currentPosition!.longitude}');
+      setState(() {
+        _loadingStatus = 'Searching for nearby laundry shops...';
+      });
+      
+      const double radiusMeters = 5000; // 5km radius
+      
+      // Fetch registered shops from database
+      setState(() {
+        _loadingStatus = 'Loading registered shops...';
+      });
+      
+      final registeredShopsResponse = await Supabase.instance.client
+          .from('registered_shops')
+          .select('*')
+          .eq('is_active', true)
+          .eq('is_verified', true);
+      
+      List<Map<String, dynamic>> registeredShops = List<Map<String, dynamic>>.from(registeredShopsResponse);
+      
+      // Filter registered shops by distance
+        registeredShops = utils.LaundryDistanceUtils.filterShopsWithinRadius(
+          registeredShops,
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+          radiusMeters,
+        );
+      
+      print('DEBUG: Found ${registeredShops.length} registered shops within radius');
+      
+      // Fetch unregistered shops using OpenStreetMap
+      setState(() {
+        _loadingStatus = 'Searching for unregistered shops...';
+      });
+      
+      final nearbyShops = await PlacesService.searchLaundryShops(
+         latitude: _currentPosition!.latitude,
+         longitude: _currentPosition!.longitude,
+         radiusMeters: radiusMeters,
+       );
+       
+       // If no shops found with Overpass API, try text search as fallback
+       List<Map<String, dynamic>> unregisteredShops = List.from(nearbyShops);
+       if (unregisteredShops.isEmpty) {
+         print('DEBUG: No shops found with Overpass API, trying text search fallback');
+         final textSearchResults = await PlacesService.searchByText(
+           query: 'laundromat laundry dry cleaning',
+           latitude: _currentPosition!.latitude,
+           longitude: _currentPosition!.longitude,
+           radiusKm: radiusMeters / 1000,
+         );
+         unregisteredShops.addAll(textSearchResults);
+         print('DEBUG: Text search found ${textSearchResults.length} additional shops');
+       }
+       
+       // Apply distance filtering to unregistered shops
+        unregisteredShops = utils.LaundryDistanceUtils.filterShopsWithinRadius(
+          unregisteredShops,
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+          radiusMeters,
+        );
+      
+      print('DEBUG: Found ${unregisteredShops.length} unregistered shops within radius (${nearbyShops.length} from Overpass, ${unregisteredShops.length - nearbyShops.length} from text search)');
+      print('DEBUG: Total shops: ${registeredShops.length + unregisteredShops.length} (${registeredShops.length} registered, ${unregisteredShops.length} unregistered)');
+      
+      setState(() {
+        _registeredShops = registeredShops;
+        _unregisteredShops = unregisteredShops;
+        _loadingStatus = 'Found ${registeredShops.length + unregisteredShops.length} laundry shops nearby';
+      });
+      
+      // Update markers to show the new shops
+      _createMarkers();
+      
+      // Store fetched unregistered shops in database for future reference
+      await _storeUnregisteredShops(unregisteredShops);
+      
+    } catch (e) {
+       print('DEBUG: Error in _fetchNearbyLaundryShops: $e');
+       setState(() {
+         _loadingStatus = 'Error finding laundry shops: $e';
+       });
+     }
+   }
+
+   Future<void> _storeUnregisteredShops(List<Map<String, dynamic>> shops) async {
+    try {
+      final supabase = Supabase.instance.client;
+      
+      for (var shop in shops) {
+        // Check if shop already exists to prevent duplicates based on location
+        final existingShop = await supabase
+            .from('unregistered_shops')
+            .select('id')
+            .eq('business_name', shop['business_name'])
+            .eq('latitude', shop['latitude'])
+            .eq('longitude', shop['longitude'])
+            .maybeSingle();
+        
+        if (existingShop == null) {
+          // Insert new unregistered shop with updated schema
+          await supabase.from('unregistered_shops').insert({
+            'business_name': shop['business_name'],
+            'latitude': shop['latitude'],
+            'longitude': shop['longitude'],
+            'exact_location': shop['exact_location'],
+            'phone_number': shop['phone'],
+            'description': shop['description'] ?? 'Laundry service discovered via map search',
+          });
+        }
+      }
+    } catch (e) {
+      // Error storing shops, but don't show to user as it's not critical
+      print('Error storing unregistered shops: $e');
     }
   }
 
@@ -344,32 +475,8 @@ class _LocationScreenState extends State<LocationScreen> {
   }
   
   void _addMockUnregisteredShops() {
-    _unregisteredShops = [
-      {
-        'id': 'unreg_1',
-        'business_name': 'Quick Wash Laundromat',
-        'latitude': _currentPosition!.latitude + 0.002,
-        'longitude': _currentPosition!.longitude + 0.001,
-        'exact_location': 'Ka Inato Main Branch',
-        'is_registered': false,
-      },
-      {
-        'id': 'unreg_2',
-        'business_name': 'Clean & Fresh Laundry',
-        'latitude': _currentPosition!.latitude - 0.001,
-        'longitude': _currentPosition!.longitude + 0.002,
-        'exact_location': 'Pablico Rd 2',
-        'is_registered': false,
-      },
-      {
-        'id': 'unreg_3',
-        'business_name': 'Sparkle Laundry Service',
-        'latitude': _currentPosition!.latitude + 0.001,
-        'longitude': _currentPosition!.longitude - 0.001,
-        'exact_location': 'Pablico Rd 1',
-        'is_registered': false,
-      },
-    ];
+    // Removed static mock data - only show real OpenStreetMap results
+    _unregisteredShops = [];
   }
 
   void _createMarkers() {
@@ -940,6 +1047,21 @@ class _LocationScreenState extends State<LocationScreen> {
                                       urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                                       userAgentPackageName: 'com.example.laundry_scout',
                                     ),
+                                    CircleLayer(
+                                      circles: [
+                                        CircleMarker(
+                                          point: LatLng(
+                                            _currentPosition!.latitude,
+                                            _currentPosition!.longitude,
+                                          ),
+                                          radius: 1000, // 1km radius for testing
+                                          useRadiusInMeter: true,
+                                          color: const Color(0xFF6C63FF).withValues(alpha: 0.2),
+                                          borderColor: const Color(0xFF6C63FF),
+                                          borderStrokeWidth: 2,
+                                        ),
+                                      ],
+                                    ),
                                     MarkerLayer(
                                       markers: _markers,
                                     ),
@@ -1024,6 +1146,22 @@ class _LocationScreenState extends State<LocationScreen> {
                                       const Text('Unregistered', style: TextStyle(fontSize: 10, color: Colors.black)),
                                     ],
                                   ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 12,
+                                        height: 2,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF6C63FF),
+                                          borderRadius: BorderRadius.circular(1),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Text('1km Range', style: TextStyle(fontSize: 10, color: Colors.black)),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
@@ -1034,8 +1172,14 @@ class _LocationScreenState extends State<LocationScreen> {
                             left: 20,
                             right: 20,
                             child: ElevatedButton(
-                              onPressed: () {
+                              onPressed: () async {
+                                print('DEBUG: Locate button pressed');
+                                print('DEBUG: _currentPosition = $_currentPosition');
+                                print('DEBUG: _mapController = $_mapController');
+                                
                                 if (_currentPosition != null && _mapController != null) {
+                                  print('DEBUG: Moving map and fetching shops');
+                                  // Move map to current location
                                   _mapController!.move(
                                     LatLng(
                                       _currentPosition!.latitude,
@@ -1043,6 +1187,44 @@ class _LocationScreenState extends State<LocationScreen> {
                                     ),
                                     16,
                                   );
+                                  
+                                  // Fetch and display nearby laundry shops
+                                  await _fetchNearbyLaundryShops();
+                                } else {
+                                  print('DEBUG: Cannot locate - missing position or map controller');
+                                  // Try to get location if not available
+                                  await _getCurrentLocation();
+                                  
+                                  // If still no location (common on web), use a test location
+                                  if (_currentPosition == null) {
+                                    print('DEBUG: Using fallback test location');
+                                    setState(() {
+                                      // Using New York City as test location
+                                      _currentPosition = Position(
+                                        latitude: 40.7128,
+                                        longitude: -74.0060,
+                                        timestamp: DateTime.now(),
+                                        accuracy: 0,
+                                        altitude: 0,
+                                        altitudeAccuracy: 0,
+                                        heading: 0,
+                                        headingAccuracy: 0,
+                                        speed: 0,
+                                        speedAccuracy: 0,
+                                      );
+                                      _currentLocationText = 'Test Location (NYC)';
+                                    });
+                                    
+                                    if (_mapController != null) {
+                                      _mapController!.move(
+                                        LatLng(40.7128, -74.0060),
+                                        16,
+                                      );
+                                    }
+                                    
+                                    // Now fetch laundry shops
+                                    await _fetchNearbyLaundryShops();
+                                  }
                                 }
                               },
                               style: ElevatedButton.styleFrom(

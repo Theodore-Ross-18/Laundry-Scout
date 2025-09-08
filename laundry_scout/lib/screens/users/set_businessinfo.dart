@@ -530,7 +530,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                     Text(
                       slides[index]['description']!,
                       textAlign: TextAlign.center,
-                      style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
+                      style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.8)),
                     ),
                   ],
                 ),
@@ -550,7 +550,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                     width: _currentPage == index ? 24.0 : 8.0,
                     height: 8.0,
                     decoration: BoxDecoration(
-                      color: _currentPage == index ? Colors.white : Colors.white.withOpacity(0.5),
+                      color: _currentPage == index ? Colors.white : Colors.white.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(4.0),
                     ),
                   );
@@ -777,9 +777,9 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
       controller: controller,
       decoration: InputDecoration(
         labelText: labelText,
-        labelStyle: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.7)),
+        labelStyle: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.7)),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
+        fillColor: Colors.white.withValues(alpha: 0.1),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Colors.white)),
@@ -808,7 +808,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
       children: [
         Text(
           label,
-          style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.9), fontWeight: FontWeight.bold),
+          style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.9), fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         GestureDetector(
@@ -816,9 +816,9 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
           child: Container(
             height: 120,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12.0),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
               image: isImage && file != null
                   ? DecorationImage(
                       image: kIsWeb
@@ -833,9 +833,9 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.cloud_upload, size: 40, color: Colors.white.withOpacity(0.7)),
+                        Icon(Icons.cloud_upload, size: 40, color: Colors.white.withValues(alpha: 0.7)),
                         const SizedBox(height: 8),
-                        Text('Click to upload', style: textTheme.bodySmall?.copyWith(color: Colors.white.withOpacity(0.7))),
+                        Text('Click to upload', style: textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.7))),
                       ],
                     ),
                   )
@@ -854,7 +854,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
         if (file != null && !isImage)
           Text(
             file.name,
-            style: textTheme.bodySmall?.copyWith(color: Colors.white.withOpacity(0.7)),
+            style: textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.7)),
           ),
       ],
     );
@@ -879,7 +879,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
             Text(
               'Your business information has been successfully submitted. You can now proceed to set up your business profile.',
               textAlign: TextAlign.center,
-              style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
+              style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.8)),
             ),
             const SizedBox(height: 40),
             ElevatedButton(

@@ -74,7 +74,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error checking initial auth state: $e');
+      // Error checking initial auth state: $e
       // On error, show splash screen for safety
       setState(() {
         _targetScreen = const SplashScreen();
@@ -177,7 +177,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         'username': username,
       };
     } catch (e) {
-      print('Error determining profile state: $e');
+      // Error determining profile state: $e
       return {
         'type': 'error',
         'username': 'User',

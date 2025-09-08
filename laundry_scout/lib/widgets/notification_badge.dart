@@ -49,7 +49,7 @@ class _NotificationBadgeState extends State<NotificationBadge> {
         });
       }
     } catch (e) {
-      print('Error loading unread notification count: $e');
+      // Error loading notification count
     }
   }
 

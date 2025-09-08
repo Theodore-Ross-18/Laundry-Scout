@@ -251,10 +251,10 @@ class ProfileImageWidget extends StatelessWidget {
   final double radius;
 
   const ProfileImageWidget({
-    Key? key,
+    super.key,
     required this.imageUrl,
     required this.radius,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
