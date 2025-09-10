@@ -10,6 +10,8 @@ import '../../../utils/network_speed_detector.dart';
 import '../../../utils/location_cache.dart';
 import '../../../services/places_service.dart';
 import '../../../utils/distance_calculator.dart' as utils;
+// Remove url_launcher import as it's not needed
+// import 'package:url_launcher/url_launcher.dart';
 
 class LocationScreen extends StatefulWidget {
   const LocationScreen({super.key});
@@ -27,6 +29,10 @@ class _LocationScreenState extends State<LocationScreen> {
   List<Map<String, dynamic>> _registeredShops = [];
   List<Map<String, dynamic>> _unregisteredShops = [];
   String _currentLocationText = 'Getting location...';
+  
+  // Error handling variables
+  bool _hasError = false;
+  String _errorMessage = '';
   
   // Network optimization variables
   NetworkSpeed _networkSpeed = NetworkSpeed.unknown;
@@ -60,7 +66,44 @@ class _LocationScreenState extends State<LocationScreen> {
       _loadingStatus = 'Network: ${_networkSpeed.name.toUpperCase()}';
     });
     
+    // Pre-cache location data if network allows
+    await _preCacheLocationData();
+    
     await _checkLocationPermission();
+  }
+
+  Future<void> _preCacheLocationData() async {
+    if (_loadingStrategy?.enableCaching != true) return;
+    
+    try {
+      // Pre-load basic business data in background
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('''
+            id,
+            business_name,
+            latitude,
+            longitude,
+            address,
+            phone_number,
+            services_offered,
+            service_prices,
+            rating
+          ''')
+          .eq('is_laundry_service', true)
+          .limit(50)
+          .timeout(const Duration(seconds: 3));
+          
+      final businesses = List<Map<String, dynamic>>.from(response);
+      
+      // Cache for future use
+      if (_currentPosition != null) {
+        await LocationCache.instance.cacheBusinessProfiles(businesses, _currentPosition!);
+      }
+      
+    } catch (e) {
+      debugPrint('Pre-caching failed: $e');
+    }
   }
 
   Future<void> _checkLocationPermission() async {
@@ -97,7 +140,7 @@ class _LocationScreenState extends State<LocationScreen> {
         return address.isNotEmpty ? address : 'Location found';
       }
     } catch (e) {
-      print('Error getting address: $e');
+      debugPrint('Error getting address: $e');
     }
     return 'Location found';
   }
@@ -122,16 +165,29 @@ class _LocationScreenState extends State<LocationScreen> {
     }
   }
 
+  Future<void> _retryLoading() async {
+    setState(() {
+      _hasError = false;
+      _errorMessage = '';
+      _isLoading = true;
+      _loadingStatus = 'Retrying...';
+    });
+    
+    await _initializeWithNetworkDetection();
+  }
+
   Future<void> _getCurrentLocation() async {
     try {
-      print('DEBUG: _getCurrentLocation called');
+      debugPrint('_getCurrentLocation called');
       setState(() {
         _loadingStatus = 'Checking cached location...';
+        _hasError = false;
+        _errorMessage = '';
       });
       
       // Try to get cached location first
       Position? position = await LocationCache.instance.getCachedUserLocation();
-      print('DEBUG: Cached position: $position');
+      debugPrint('Cached position: $position');
       
       if (position != null) {
         setState(() {
@@ -147,8 +203,9 @@ class _LocationScreenState extends State<LocationScreen> {
         
         setState(() {
           _currentLocationText = address;
-          _loadingStatus = 'Using cached location';
+          _loadingStatus = 'Loading nearby shops...';
         });
+        
         await _loadNearbyLaundryShops();
         return;
       }
@@ -157,87 +214,75 @@ class _LocationScreenState extends State<LocationScreen> {
         _loadingStatus = 'Getting GPS location...';
       });
       
-      print('DEBUG: Attempting to get GPS location');
+      debugPrint('Attempting to get GPS location');
       // Get GPS accuracy based on network speed
       LocationAccuracy accuracy = LocationAccuracy.medium;
       if (_loadingStrategy != null) {
-        switch (_loadingStrategy!.gpsAccuracy) {
-          case 'low':
-            accuracy = LocationAccuracy.low;
-            break;
-          case 'medium':
-            accuracy = LocationAccuracy.medium;
-            break;
-          case 'high':
-            accuracy = LocationAccuracy.high;
-            break;
-        }
+        accuracy = _loadingStrategy!.gpsAccuracy == 'high' 
+            ? LocationAccuracy.high 
+            : _loadingStrategy!.gpsAccuracy == 'low'
+                ? LocationAccuracy.low
+                : LocationAccuracy.medium;
       }
       
-      position = await Geolocator.getCurrentPosition(
+      Position newPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: accuracy,
-      ).timeout(
-        Duration(milliseconds: _loadingStrategy?.timeoutMs ?? 10000),
-        onTimeout: () async {
-          // Fallback to lower accuracy on timeout
-          return await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.low,
-          );
-        },
+        timeLimit: const Duration(seconds: 10),
       );
       
-      // Cache the new location
-      await LocationCache.instance.cacheUserLocation(position);
+      debugPrint('Got GPS position: ${newPosition.latitude}, ${newPosition.longitude}');
       
       setState(() {
-        _currentPosition = position;
+        _currentPosition = newPosition;
         _loadingStatus = 'Getting address...';
       });
       
-      // Get actual address from GPS coordinates
+      // Cache the location
+      await LocationCache.instance.cacheUserLocation(newPosition);
+      
       String address = await _getAddressFromCoordinates(
-        position.latitude, 
-        position.longitude
+        newPosition.latitude, 
+        newPosition.longitude
       );
       
       setState(() {
         _currentLocationText = address;
-        _loadingStatus = 'Location acquired';
+        _loadingStatus = 'Location updated';
         _isLoading = false;
       });
       
       await _loadNearbyLaundryShops();
-    } catch (e) {
-      print('DEBUG: Error in _getCurrentLocation: $e');
+      
+    } on TimeoutException catch (e) {
+      debugPrint('Location timeout: $e');
       setState(() {
+        _hasError = true;
+        _errorMessage = 'Location request timed out. Please check your location settings.';
         _isLoading = false;
-        _currentLocationText = 'Unable to get location';
-        _loadingStatus = 'Location error';
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error getting location: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    } catch (e) {
+      debugPrint('Error getting location: $e');
+      setState(() {
+        _hasError = true;
+        _errorMessage = 'Unable to get your location. Please check your location settings or try again.';
+        _isLoading = false;
+      });
     }
   }
 
   Future<void> _fetchNearbyLaundryShops() async {
     if (_currentPosition == null) {
-      print('DEBUG: No current position available');
+      debugPrint('No current position available');
       return;
     }
 
     try {
-      print('DEBUG: Starting search at lat: ${_currentPosition!.latitude}, lon: ${_currentPosition!.longitude}');
+      debugPrint('Starting search at lat: ${_currentPosition!.latitude}, lon: ${_currentPosition!.longitude}');
       setState(() {
         _loadingStatus = 'Searching for nearby laundry shops...';
       });
       
-      const double radiusMeters = 5000; // 5km radius
+      const double radiusMeters = 1000; // 1km radius as requested
       
       // Fetch registered shops from database
       setState(() {
@@ -252,66 +297,66 @@ class _LocationScreenState extends State<LocationScreen> {
       
       List<Map<String, dynamic>> registeredShops = List<Map<String, dynamic>>.from(registeredShopsResponse);
       
-      // Filter registered shops by distance
-        registeredShops = utils.LaundryDistanceUtils.filterShopsWithinRadius(
-          registeredShops,
-          _currentPosition!.latitude,
-          _currentPosition!.longitude,
-          radiusMeters,
-        );
+      // Filter registered shops by 1km distance
+      registeredShops = utils.LaundryDistanceUtils.filterShopsWithinRadius(
+        registeredShops,
+        _currentPosition!.latitude,
+        _currentPosition!.longitude,
+        radiusMeters,
+      );
       
-      print('DEBUG: Found ${registeredShops.length} registered shops within radius');
+      debugPrint('Found ${registeredShops.length} registered shops within 1km');
       
-      // Fetch unregistered shops using OpenStreetMap
+      // Fetch unregistered shops using OpenStreetMap with 1km radius
       setState(() {
         _loadingStatus = 'Searching for unregistered shops...';
       });
       
       final nearbyShops = await PlacesService.searchLaundryShops(
-         latitude: _currentPosition!.latitude,
-         longitude: _currentPosition!.longitude,
-         radiusMeters: radiusMeters,
-       );
-       
-       // If no shops found with Overpass API, try text search as fallback
-       List<Map<String, dynamic>> unregisteredShops = List.from(nearbyShops);
-       if (unregisteredShops.isEmpty) {
-         print('DEBUG: No shops found with Overpass API, trying text search fallback');
-         final textSearchResults = await PlacesService.searchByText(
-           query: 'laundromat laundry dry cleaning',
-           latitude: _currentPosition!.latitude,
-           longitude: _currentPosition!.longitude,
-           radiusKm: radiusMeters / 1000,
-         );
-         unregisteredShops.addAll(textSearchResults);
-         print('DEBUG: Text search found ${textSearchResults.length} additional shops');
-       }
-       
-       // Apply distance filtering to unregistered shops
-        unregisteredShops = utils.LaundryDistanceUtils.filterShopsWithinRadius(
-          unregisteredShops,
-          _currentPosition!.latitude,
-          _currentPosition!.longitude,
-          radiusMeters,
-        );
+        latitude: _currentPosition!.latitude,
+        longitude: _currentPosition!.longitude,
+        radiusMeters: radiusMeters,
+      );
       
-      print('DEBUG: Found ${unregisteredShops.length} unregistered shops within radius (${nearbyShops.length} from Overpass, ${unregisteredShops.length - nearbyShops.length} from text search)');
-      print('DEBUG: Total shops: ${registeredShops.length + unregisteredShops.length} (${registeredShops.length} registered, ${unregisteredShops.length} unregistered)');
+      // If no shops found with Overpass API, try text search as fallback
+      List<Map<String, dynamic>> unregisteredShops = List.from(nearbyShops);
+      if (unregisteredShops.isEmpty) {
+        debugPrint('No shops found with Overpass API, trying text search fallback');
+        final textSearchResults = await PlacesService.searchByText(
+          query: 'laundromat laundry dry cleaning',
+          latitude: _currentPosition!.latitude,
+          longitude: _currentPosition!.longitude,
+          radiusKm: radiusMeters / 1000, // Convert to km
+        );
+        unregisteredShops.addAll(textSearchResults);
+        debugPrint('Text search found ${textSearchResults.length} additional shops');
+      }
+      
+      // Apply distance filtering to unregistered shops within 1km
+      unregisteredShops = utils.LaundryDistanceUtils.filterShopsWithinRadius(
+        unregisteredShops,
+        _currentPosition!.latitude,
+        _currentPosition!.longitude,
+        radiusMeters,
+      );
+      
+      debugPrint('Found ${unregisteredShops.length} unregistered shops within 1km');
+      debugPrint('Total shops: ${registeredShops.length + unregisteredShops.length} (${registeredShops.length} registered, ${unregisteredShops.length} unregistered)');
       
       setState(() {
         _registeredShops = registeredShops;
         _unregisteredShops = unregisteredShops;
-        _loadingStatus = 'Found ${registeredShops.length + unregisteredShops.length} laundry shops nearby';
+        _loadingStatus = 'Found ${registeredShops.length + unregisteredShops.length} laundry shops within 1km';
       });
       
       // Update markers to show the new shops
-      _createMarkers();
+      await _createMarkersProgressively();
       
       // Store fetched unregistered shops in database for future reference
       await _storeUnregisteredShops(unregisteredShops);
       
     } catch (e) {
-       print('DEBUG: Error in _fetchNearbyLaundryShops: $e');
+       debugPrint('Error in _fetchNearbyLaundryShops: $e');
        setState(() {
          _loadingStatus = 'Error finding laundry shops: $e';
        });
@@ -346,7 +391,7 @@ class _LocationScreenState extends State<LocationScreen> {
       }
     } catch (e) {
       // Error storing shops, but don't show to user as it's not critical
-      print('Error storing unregistered shops: $e');
+      debugPrint('Error storing unregistered shops: $e');
     }
   }
 
@@ -355,283 +400,542 @@ class _LocationScreenState extends State<LocationScreen> {
 
     try {
       setState(() {
-        _loadingStatus = 'Checking cached businesses...';
+        _loadingStatus = 'Loading shops...';
+        _hasError = false;
+        _errorMessage = '';
       });
-      
-      // Try to get cached business data first
-      List<Map<String, dynamic>>? cachedBusinesses = await LocationCache.instance
-          .getCachedBusinessProfiles(_currentPosition!);
-      
-      if (cachedBusinesses != null && _loadingStrategy?.enableCaching == true) {
+
+      // Try cached data first
+      final cachedShops = await LocationCache.instance.getCachedBusinessProfiles(_currentPosition!);
+      if (cachedShops != null && cachedShops.isNotEmpty) {
         setState(() {
-          _registeredShops = cachedBusinesses;
-          _loadingStatus = 'Using cached data';
+          _registeredShops = cachedShops;
+          _loadingStatus = 'Using cached data...';
         });
         
-        // Add mock unregistered shops
-        _addMockUnregisteredShops();
+        // Load basic markers from cached data
+        await _createMarkersProgressively();
         
-        if (_loadingStrategy?.enableProgressiveLoading == true) {
-          await _createMarkersProgressively();
-        } else {
-          _createMarkers();
-        }
+        // Background refresh
+        await _loadFreshDataInBackground();
         return;
       }
-      
+
+      // Network-optimized loading
+      await _loadBusinessesNetworkOptimized();
+
+    } catch (e) {
+      debugPrint('Error loading laundry shops: $e');
       setState(() {
-        _loadingStatus = 'Loading businesses...';
+        _hasError = true;
+        _errorMessage = 'Unable to load nearby laundry shops. Please check your internet connection.';
+        _isLoading = false;
       });
       
-      // Load registered laundry shops with fallback strategy
-      final double radiusKm = _networkSpeed == NetworkSpeed.slow ? 2.0 : 
-                             _networkSpeed == NetworkSpeed.medium ? 5.0 : 10.0;
-      
-      List<Map<String, dynamic>> allBusinesses;
-      
+      // Try to load from cache even if old
       try {
-        // Try optimized spatial query first
-        // Ensure limit is valid (PostgreSQL requires limit >= 0)
-        final limitCount = _loadingStrategy?.maxMarkersInitial ?? 50;
-        final validLimit = limitCount < 0 ? 1000 : limitCount; // Use 1000 for "load all"
+        final fallbackShops = await LocationCache.instance.getCachedBusinessProfiles(_currentPosition!);
+        if (fallbackShops != null && fallbackShops.isNotEmpty) {
+          setState(() {
+            _registeredShops = fallbackShops;
+            _hasError = false;
+            _isLoading = false;
+          });
+          await _createMarkersProgressively();
+        }
+      } catch (fallbackError) {
+        debugPrint('Fallback cache loading also failed: $fallbackError');
+      }
+    }
+  }
+
+  Future<void> _loadBusinessesNetworkOptimized() async {
+    const double radiusKm = 1.0; // Fixed to 1km as requested
+    
+    try {
+      // Use lightweight query for initial load with 1km radius
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('''
+            id,
+            business_name,
+            latitude,
+            longitude,
+            address,
+            phone_number,
+            is_laundry_service,
+            services_offered,
+            service_prices,
+            operating_hours,
+            rating,
+            total_reviews
+          ''')
+          .eq('is_laundry_service', true)
+          .limit(_loadingStrategy?.maxMarkersInitial ?? 20)
+          .timeout(Duration(milliseconds: _loadingStrategy?.timeoutMs ?? 8000));
+          
+      List<Map<String, dynamic>> businesses = List<Map<String, dynamic>>.from(response);
+      
+      // Filter by 1km distance efficiently
+      businesses = businesses.where((business) {
+        if (business['latitude'] == null || business['longitude'] == null) return false;
         
-        final registeredResponse = await Supabase.instance.client
-            .rpc('get_nearby_businesses', params: {
-              'user_lat': _currentPosition!.latitude,
-              'user_lng': _currentPosition!.longitude,
-              'radius_km': radiusKm,
-              'limit_count': validLimit
-            })
-            .timeout(
-              Duration(milliseconds: _loadingStrategy?.timeoutMs ?? 10000),
-            );
+        final distance = utils.LaundryDistanceUtils.calculateDistance(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+          business['latitude'],
+          business['longitude'],
+        );
         
-        allBusinesses = List<Map<String, dynamic>>.from(registeredResponse);
-      } catch (e) {
-        // Fallback to basic query if RPC function doesn't exist
-        print('RPC function not available, using fallback query: $e');
+        return distance <= radiusKm;
+      }).toList();
+      
+      // Sort by distance
+      businesses.sort((a, b) {
+        final distanceA = utils.LaundryDistanceUtils.calculateDistance(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+          a['latitude'],
+          a['longitude'],
+        );
+        
+        final distanceB = utils.LaundryDistanceUtils.calculateDistance(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+          b['latitude'],
+          b['longitude'],
+        );
+        
+        return distanceA.compareTo(distanceB);
+      });
+      
+      setState(() {
+        _registeredShops = businesses;
+        _loadingStatus = 'Found ${businesses.length} businesses within 1km';
+      });
+      
+      // Cache the results
+      if (_loadingStrategy?.enableCaching == true) {
+        await LocationCache.instance.cacheBusinessProfiles(
+          businesses,
+          _currentPosition!,
+        );
+      }
+      
+      // Create markers progressively
+      await _createMarkersProgressively();
+      
+      // Load additional data in background
+      _loadFreshDataInBackground();
+      
+    } catch (e) {
+      debugPrint('Network optimized loading failed: $e');
+      
+      // Fallback to basic query with 1km radius
+      await _loadBusinessesBasic();
+    }
+  }
+
+  Future<void> _loadBusinessesBasic() async {
+    try {
+      const double radiusKm = 1.0; // Fixed to 1km
+      
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('*')
+          .eq('is_laundry_service', true)
+          .limit(25); // Increased limit for 1km radius
+          
+      List<Map<String, dynamic>> businesses = List<Map<String, dynamic>>.from(response);
+      
+      // Apply 1km distance filtering
+      businesses = businesses.where((business) {
+        if (business['latitude'] == null || business['longitude'] == null) return false;
+        
+        final distance = utils.LaundryDistanceUtils.calculateDistance(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+          business['latitude'],
+          business['longitude'],
+        );
+        
+        return distance <= radiusKm;
+      }).toList();
+      
+      setState(() {
+        _registeredShops = businesses;
+        _loadingStatus = 'Loaded ${businesses.length} businesses within 1km';
+      });
+      
+      await _createMarkersProgressively();
+      
+    } catch (e) {
+      debugPrint('Basic loading failed: $e');
+      setState(() {
+        _registeredShops = [];
+        _loadingStatus = 'No businesses found within 1km';
+      });
+    }
+  }
+
+  Future<void> _loadFreshDataInBackground() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('laundry_businesses')
+          .select('''
+            id, business_name, latitude, longitude, address, phone_number, 
+            rating, total_reviews, services_offered, registered_shops
+          ''')
+          .eq('is_laundry_service', true);
+
+      final freshShops = List<Map<String, dynamic>>.from(response);
+      
+      // Filter by 1km distance
+      final filteredShops = freshShops.where((shop) {
+        if (shop['latitude'] == null || shop['longitude'] == null) return false;
+        
+        final distance = utils.LaundryDistanceUtils.calculateDistance(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+          shop['latitude'],
+          shop['longitude'],
+        );
+        
+        return distance <= 1.0; // 1km radius
+      }).toList();
+      
+      if (mounted) {
         setState(() {
-          _loadingStatus = 'Using fallback query...';
+          _registeredShops = filteredShops;
+          _loadingStatus = 'Found ${filteredShops.length} registered shops in 1km radius';
         });
         
-        // Ensure limit is valid for fallback query too
-        final fallbackLimit = _loadingStrategy?.maxMarkersInitial ?? 50;
-        final validFallbackLimit = fallbackLimit < 0 ? 1000 : fallbackLimit;
-        
-        final response = await Supabase.instance.client
-            .from('business_profiles')
-            .select('id, business_name, exact_location, latitude, longitude, cover_photo_url, does_delivery, availability_status')
-            .not('latitude', 'is', null)
-            .not('longitude', 'is', null)
-            .limit(validFallbackLimit);
-            
-        allBusinesses = List<Map<String, dynamic>>.from(response);
-      }
-      
-      // Cache the business data
-      if (_loadingStrategy?.enableCaching == true) {
-        await LocationCache.instance.cacheBusinessProfiles(allBusinesses, _currentPosition!);
-      }
-      
-      setState(() {
-        _registeredShops = allBusinesses;
-        _loadingStatus = 'Businesses loaded';
-      });
-
-      // Add mock unregistered shops
-      _addMockUnregisteredShops();
-
-      // Create markers based on loading strategy
-      if (_loadingStrategy?.enableProgressiveLoading == true) {
-        await _createMarkersProgressively();
-      } else {
-        _createMarkers();
+        _createMarkersProgressively();
       }
     } catch (e) {
-      setState(() {
-        _loadingStatus = 'Error loading data';
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading laundry shops: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-      
-      // Fallback: try to show any cached data even if expired
-      final fallbackData = await LocationCache.instance
-          .getCachedBusinessProfiles(_currentPosition!, maxDistanceKm: 10.0);
-      if (fallbackData != null) {
-        setState(() {
-          _registeredShops = fallbackData;
-          _loadingStatus = 'Using offline data';
-        });
-        _addMockUnregisteredShops();
-        _createMarkers();
-      }
+      debugPrint('Background fresh data loading failed: $e');
     }
   }
-  
-  void _addMockUnregisteredShops() {
-    // Removed static mock data - only show real OpenStreetMap results
-    _unregisteredShops = [];
-  }
 
-  void _createMarkers() {
-    List<Marker> markers = [];
-
-    // Add current location marker
-    if (_currentPosition != null) {
-      markers.add(
-        Marker(
-          point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-          child: const Icon(
-            Icons.my_location,
-            color: Colors.blue,
-            size: 30,
-          ),
-        ),
-      );
-    }
-
-    // Limit markers based on loading strategy
-    int maxMarkers = _loadingStrategy?.maxMarkersInitial ?? -1;
-    List<Map<String, dynamic>> limitedRegisteredShops = maxMarkers > 0 
-        ? _registeredShops.take(maxMarkers).toList() 
-        : _registeredShops;
-
-    // Add registered laundry shop markers (green)
-    for (var shop in limitedRegisteredShops) {
-      if (shop['latitude'] != null && shop['longitude'] != null) {
-        markers.add(
-          Marker(
-            point: LatLng(shop['latitude'], shop['longitude']),
-            child: GestureDetector(
-              onTap: () => _showShopDetails(shop, true),
-              child: const Icon(
-                Icons.local_laundry_service,
-                color: Colors.green,
-                size: 30,
-              ),
-            ),
-          ),
-        );
-      }
-    }
-
-    // Add unregistered laundry shop markers (red) - limit for slow connections
-    List<Map<String, dynamic>> limitedUnregisteredShops = _networkSpeed == NetworkSpeed.slow 
-        ? _unregisteredShops.take(2).toList() 
-        : _unregisteredShops;
-        
-    for (var shop in limitedUnregisteredShops) {
-      markers.add(
-        Marker(
-          point: LatLng(shop['latitude'], shop['longitude']),
-          child: GestureDetector(
-            onTap: () => _showShopDetails(shop, false),
-            child: const Icon(
-              Icons.local_laundry_service,
-              color: Colors.red,
-              size: 30,
-            ),
-          ),
-        ),
-      );
-    }
-
-    setState(() {
-      _markers = markers;
-    });
-  }
-  
   Future<void> _createMarkersProgressively() async {
     if (_currentPosition == null) return;
+
+    // Clear existing markers except current location
+    List<Marker> newMarkers = [];
     
-    setState(() {
-      _isLoadingProgressively = true;
-      _loadingStatus = 'Loading markers progressively...';
-    });
-    
-    List<Marker> markers = [];
-    
-    // Always add current location marker first
-    markers.add(
+    // Add user location marker ("you") with blue color
+    newMarkers.add(
       Marker(
         point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-        child: const Icon(
-          Icons.my_location,
-          color: Colors.blue,
-          size: 30,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.blue,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 3),
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.my_location,
+              color: Colors.white,
+              size: 16,
+            ),
+          ),
         ),
       ),
     );
-    
+
     setState(() {
-      _markers = markers;
+      _isLoadingProgressively = true;
+      _markers = newMarkers;
     });
+
+    // Network-aware batching
+    final batchSize = _networkSpeed == NetworkSpeed.slow ? 3 :
+                     _networkSpeed == NetworkSpeed.medium ? 5 : 8;
+    final delayMs = _networkSpeed == NetworkSpeed.slow ? 1000 :
+                   _networkSpeed == NetworkSpeed.medium ? 500 : 200;
     
-    // Progressive loading delay based on network speed
-    int delayMs = _networkSpeed == NetworkSpeed.slow ? 800 : 
-                  _networkSpeed == NetworkSpeed.medium ? 400 : 200;
+    // Limit registered shops based on network speed
+    int registeredLimit = _networkSpeed == NetworkSpeed.slow ? 10 :
+                         _networkSpeed == NetworkSpeed.medium ? 20 : 30;
     
-    // Add registered shops progressively
-    for (int i = 0; i < _registeredShops.length; i++) {
-      final shop = _registeredShops[i];
-      if (shop['latitude'] != null && shop['longitude'] != null) {
-        markers.add(
-          Marker(
-            point: LatLng(shop['latitude'], shop['longitude']),
-            child: GestureDetector(
-              onTap: () => _showShopDetails(shop, true),
-              child: const Icon(
-                Icons.local_laundry_service,
+    List<Map<String, dynamic>> limitedRegistered = _registeredShops.take(registeredLimit).toList();
+    
+    // Add registered shops in batches (green markers)
+    for (int i = 0; i < limitedRegistered.length; i += batchSize) {
+      if (!mounted) return;
+      
+      final batch = limitedRegistered.skip(i).take(batchSize);
+      final batchMarkers = batch.map((shop) => 
+        Marker(
+          point: LatLng(
+            (shop['latitude'] as double? ?? 0.0),
+            (shop['longitude'] as double? ?? 0.0),
+          ),
+          child: GestureDetector(
+            onTap: () => _showShopDetails(shop, isRegistered: true),
+            child: Container(
+              decoration: BoxDecoration(
                 color: Colors.green,
-                size: 30,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.local_laundry_service,
+                  color: Colors.white,
+                  size: 16,
+                ),
               ),
             ),
           ),
-        );
-        
-        setState(() {
-          _markers = List.from(markers);
-          _loadingStatus = 'Loaded ${markers.length - 1} businesses...';
-        });
-        
-        await Future.delayed(Duration(milliseconds: delayMs));
-      }
-    }
-    
-    // Add unregistered shops progressively
-    for (var shop in _unregisteredShops) {
-      markers.add(
-        Marker(
-          point: LatLng(shop['latitude'], shop['longitude']),
-          child: GestureDetector(
-            onTap: () => _showShopDetails(shop, false),
-            child: const Icon(
-              Icons.local_laundry_service,
-              color: Colors.red,
-              size: 30,
-            ),
-          ),
-        ),
-      );
+        )
+      ).toList();
       
       setState(() {
-        _markers = List.from(markers);
-        _loadingStatus = 'Loaded ${markers.length - 1} businesses...';
+        _markers.addAll(batchMarkers);
+        _loadingStatus = 'Loading registered shops... ${i + batch.length}/${limitedRegistered.length}';
       });
       
       await Future.delayed(Duration(milliseconds: delayMs));
     }
+
+    // Limit unregistered shops more strictly for mobile
+    int unregisteredLimit = _networkSpeed == NetworkSpeed.slow ? 5 :
+                          _networkSpeed == NetworkSpeed.medium ? 10 : 15;
     
-    setState(() {
-      _isLoadingProgressively = false;
-      _loadingStatus = 'All markers loaded';
-    });
+    List<Map<String, dynamic>> limitedUnregistered = _unregisteredShops.take(unregisteredLimit).toList();
+    
+    // Add unregistered shops in smaller batches (orange markers)
+    for (int i = 0; i < limitedUnregistered.length; i += (batchSize ~/ 2).clamp(1, 3)) {
+      if (!mounted) return;
+      
+      final batch = limitedUnregistered.skip(i).take((batchSize ~/ 2).clamp(1, 3));
+      final batchMarkers = batch.map((shop) => 
+        Marker(
+          point: LatLng(
+            (shop['lat'] as double? ?? 0.0),
+            (shop['lon'] as double? ?? 0.0),
+          ),
+          child: GestureDetector(
+            onTap: () => _showShopDetails(shop, isRegistered: false),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.local_laundry_service,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            ),
+          ),
+        )
+      ).toList();
+      
+      setState(() {
+        _markers.addAll(batchMarkers);
+        _loadingStatus = 'Loading nearby shops... ${i + batch.length}/${limitedUnregistered.length}';
+      });
+      
+      await Future.delayed(Duration(milliseconds: delayMs * 2));
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoadingProgressively = false;
+        _loadingStatus = '''
+Found ${_markers.length} locations within 1km:
+• You (blue marker)
+• ${_registeredShops.length} registered shops (green)
+• ${_unregisteredShops.length} unregistered shops (orange)
+        '''.trim();
+      });
+    }
+  }
+
+  void _showShopDetails(Map<String, dynamic> shop, {bool isRegistered = false}) {
+    final shopName = isRegistered 
+        ? shop['business_name'] ?? 'Laundry Shop'
+        : shop['name'] ?? 'Laundry Service';
+        
+    final distance = utils.LaundryDistanceUtils.calculateDistance(
+      _currentPosition!.latitude,
+      _currentPosition!.longitude,
+      isRegistered ? shop['latitude'] : shop['lat'],
+      isRegistered ? shop['longitude'] : shop['lon'],
+    );
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            top: 20,
+            left: 20,
+            right: 20,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with status indicator
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isRegistered ? Colors.green : Colors.orange,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        isRegistered ? '✓ REGISTERED' : '○ UNREGISTERED',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        shopName,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Distance
+                Row(
+                  children: [
+                    const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${distance.toStringAsFixed(1)} km from you',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 8),
+                
+                // Address
+                if (isRegistered ? shop['address'] != null : shop['address'] != null) ...[
+                  Row(
+                    children: [
+                      const Icon(Icons.home, size: 16, color: Colors.grey),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          isRegistered ? shop['address'] : shop['address'],
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                
+                // Phone for registered shops
+                if (isRegistered && shop['phone_number'] != null) ...[
+                  Row(
+                    children: [
+                      const Icon(Icons.phone, size: 16, color: Colors.grey),
+                      const SizedBox(width: 8),
+                      Text(
+                        shop['phone_number'],
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                
+                // Rating for registered shops
+                if (isRegistered && shop['rating'] != null) ...[
+                  Row(
+                    children: [
+                      const Icon(Icons.star, size: 16, color: Colors.amber),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${shop['rating']?.toStringAsFixed(1)} ★ (${shop['total_reviews'] ?? 0} reviews)',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                
+                // Services for registered shops
+                if (isRegistered && shop['services_offered'] != null) ...[
+                  const Text('Services:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(shop['services_offered']),
+                  const SizedBox(height: 8),
+                ],
+                
+                // Contact button
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (isRegistered && shop['phone_number'] != null) {
+                        _launchPhoneCall(shop['phone_number']);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Contact information not available for unregistered shops'),
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isRegistered ? Colors.green : Colors.orange,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      isRegistered ? 'Call Shop' : 'Contact Not Available',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _launchPhoneCall(String phoneNumber) {
+    // This method will be implemented to handle phone calls
+    // For now, show a snackbar indicating the action
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Would call: $phoneNumber'),
+      ),
+    );
   }
 
   // Helper methods for network status display
@@ -674,162 +978,124 @@ class _LocationScreenState extends State<LocationScreen> {
     }
   }
 
-  void _showShopDetails(Map<String, dynamic> shop, bool isRegistered) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.4,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isRegistered ? Colors.green : Colors.red,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      isRegistered ? 'REGISTERED' : 'UNREGISTERED',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
-                  ),
-                ]
+  Widget _buildLoadingWidget() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(
+              width: 60,
+              height: 60,
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6C63FF)),
               ),
-              const SizedBox(height: 16),
-              Text(
-                shop['business_name'] ?? 'Unknown Laundry',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              _loadingStatus,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF6C63FF),
               ),
-              const SizedBox(height: 8),
-              Row(
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Finding nearby laundry shops...',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            // Network status indicator
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.location_on, color: Colors.grey, size: 16),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      shop['exact_location'] ?? 'Location not available',
-                      style: const TextStyle(color: Colors.grey),
+                  Icon(
+                    _getNetworkIcon(),
+                    color: _getNetworkColor(),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _getNetworkSpeedText(),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _getNetworkColor(),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              if (isRegistered) ...[
-                const Text(
-                  'Features:',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.message, color: Colors.blue, size: 16),
-                    const SizedBox(width: 8),
-                    const Text('Can communicate through app'),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.local_shipping, color: Colors.blue, size: 16),
-                    const SizedBox(width: 8),
-                    Text(shop['does_delivery'] == true ? 'Delivery available' : 'No delivery'),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      shop['availability_status'] == 'open' ? Icons.check_circle : Icons.cancel,
-                      color: shop['availability_status'] == 'open' ? Colors.green : Colors.red,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(shop['availability_status'] == 'open' ? 'Currently open' : 'Currently closed'),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      // Navigate to business detail or message screen
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6C63FF),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Contact Laundry',
-                      style: TextStyle(color: Color.fromARGB(255, 0, 0, 0), fontSize: 16),
-                    ),
-                  ),
-                ),
-              ] else ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorWidget(String title, String message, VoidCallback onRetry) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 80,
+              color: Colors.red,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: 200,
+              child: ElevatedButton(
+                onPressed: onRetry,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6C63FF),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.orange.shade200),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.info, color: Colors.orange.shade700, size: 20),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Unregistered Laundry',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.black
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'This laundry shop is not registered with our app. You can view their location but cannot communicate through the app.',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
                   ),
                 ),
-              ],
-            ],
-          ),
+                child: const Text(
+                  'Try Again',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -840,70 +1106,65 @@ class _LocationScreenState extends State<LocationScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: _isLoading
-          ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    color: Color(0xFF6C63FF),
-                  ),
-                  SizedBox(height: 16),
-                  Text('Getting your location...'),
-                ],
-              ),
-            )
-          : !_locationPermissionGranted
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.location_off,
-                          size: 80,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          'Location Permission Required',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'We need access to your location to show nearby laundry shops and provide better service.',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 30),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _requestLocationPermission,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF6C63FF),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+          ? _buildLoadingWidget()
+          : _hasError
+              ? _buildErrorWidget(
+                  'Unable to Load Location',
+                  _errorMessage,
+                  _retryLoading,
+                )
+              : !_locationPermissionGranted
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.location_off,
+                              size: 80,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(height: 20),
+                            const Text(
+                              'Location Permission Required',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'We need access to your location to show nearby laundry shops and provide better service.',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 30),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _requestLocationPermission,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF6C63FF),
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Allow Location Access',
+                                  style: TextStyle(color: Colors.white, fontSize: 16),
+                                ),
                               ),
                             ),
-                            child: const Text(
-                              'Allow Location Access',
-                              style: TextStyle(color: Colors.white, fontSize: 16),
-                            ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                )
+                      ),
+                    )
               : Column(
                   children: [
                     // Header with location info
@@ -1173,12 +1434,12 @@ class _LocationScreenState extends State<LocationScreen> {
                             right: 20,
                             child: ElevatedButton(
                               onPressed: () async {
-                                print('DEBUG: Locate button pressed');
-                                print('DEBUG: _currentPosition = $_currentPosition');
-                                print('DEBUG: _mapController = $_mapController');
+                                debugPrint('DEBUG: Locate button pressed');
+                                debugPrint('DEBUG: _currentPosition = $_currentPosition');
+                                debugPrint('DEBUG: _mapController = $_mapController');
                                 
                                 if (_currentPosition != null && _mapController != null) {
-                                  print('DEBUG: Moving map and fetching shops');
+                                  debugPrint('DEBUG: Moving map and fetching shops');
                                   // Move map to current location
                                   _mapController!.move(
                                     LatLng(
@@ -1191,13 +1452,13 @@ class _LocationScreenState extends State<LocationScreen> {
                                   // Fetch and display nearby laundry shops
                                   await _fetchNearbyLaundryShops();
                                 } else {
-                                  print('DEBUG: Cannot locate - missing position or map controller');
+                                  debugPrint('DEBUG: Cannot locate - missing position or map controller');
                                   // Try to get location if not available
                                   await _getCurrentLocation();
                                   
                                   // If still no location (common on web), use a test location
                                   if (_currentPosition == null) {
-                                    print('DEBUG: Using fallback test location');
+                                    debugPrint('DEBUG: Using fallback test location');
                                     setState(() {
                                       // Using New York City as test location
                                       _currentPosition = Position(
