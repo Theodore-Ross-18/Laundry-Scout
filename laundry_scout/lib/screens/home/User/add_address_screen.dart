@@ -114,9 +114,10 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         ),
                         child: TextField(
                           controller: _apartmentController,
+                          style: const TextStyle(color: Colors.black),
                           decoration: InputDecoration(
                             hintText: 'Apt, suite, unit, building, floor, etc.',
-                            hintStyle: TextStyle(color: Colors.grey[500]),
+                            hintStyle: TextStyle(color: Colors.black),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.all(16),
                           ),
@@ -141,9 +142,10 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         ),
                         child: TextField(
                           controller: _landmarkController,
+                          style: const TextStyle(color: Colors.black),
                           decoration: InputDecoration(
                             hintText: 'Nearby landmark or reference point',
-                            hintStyle: TextStyle(color: Colors.grey[500]),
+                            hintStyle: TextStyle(color: Colors.black),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.all(16),
                           ),

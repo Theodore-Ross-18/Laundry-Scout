@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'address_selection_screen.dart';
 import 'service_selection_screen.dart';
 import 'schedule_selection_screen.dart';
@@ -19,6 +20,14 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
   Map<String, String>? _selectedSchedule;
   String _specialInstructions = '';
   bool _isExpanded = false;
+  List<Map<String, dynamic>> _pricelist = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBusinessData();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -154,7 +163,64 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
     );
   }
 
+  Future<void> _loadBusinessData() async {
+    try {
+      final businessId = widget.businessData['id'];
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('services_offered, service_prices')
+          .eq('id', businessId)
+          .single();
+
+      final servicesOffered = response['services_offered'] as List<dynamic>? ?? [];
+      final servicePrices = response['service_prices'] as Map<String, dynamic>? ?? {};
+
+      setState(() {
+        _pricelist = [];
+        for (String service in servicesOffered) {
+          final price = servicePrices[service]?.toDouble() ?? 0.0;
+          _pricelist.add({
+            'service_name': service,
+            'price': price.toStringAsFixed(2),
+          });
+        }
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading business data: $e');
+      setState(() {
+        // Fallback to widget.businessData if Supabase fails
+        final servicesOffered = widget.businessData['services_offered'] as List<dynamic>? ?? [];
+        final servicePrices = widget.businessData['service_prices'] as Map<String, dynamic>? ?? {};
+        
+        _pricelist = [];
+        for (String service in servicesOffered) {
+          final price = servicePrices[service]?.toDouble() ?? 0.0;
+          _pricelist.add({
+            'service_name': service,
+            'price': price.toStringAsFixed(2),
+          });
+        }
+        _isLoading = false;
+      });
+    }
+  }
+
   Widget _buildServicesSection() {
+    if (_isLoading) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return GestureDetector(
       onTap: () async {
         final result = await Navigator.push(
@@ -162,6 +228,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
           MaterialPageRoute(
             builder: (context) => ServiceSelectionScreen(
               selectedServices: _selectedServices,
+              pricelist: _pricelist,
             ),
           ),
         );
@@ -341,13 +408,13 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: Colors.black,
                     ),
                   ),
                 ),
                 Icon(
                   _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                  color: Colors.grey[400],
+                  color: const Color.fromARGB(255, 0, 0, 0),
                   size: 20,
                 ),
               ],
@@ -356,11 +423,13 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
               const SizedBox(height: 16),
               TextField(
                 maxLines: 3,
+                style: const TextStyle(color: Colors.black),
                 decoration: InputDecoration(
                   hintText: 'Add any special instructions...',
+                  hintStyle: const TextStyle(color: Colors.grey),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
+                    borderSide: const BorderSide(color: Colors.black),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),

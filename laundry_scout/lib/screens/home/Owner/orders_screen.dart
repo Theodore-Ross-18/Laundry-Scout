@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -191,6 +194,24 @@ class _OrdersScreenState extends State<OrdersScreen> {
         statusColor = Colors.grey;
     }
 
+    Color statusBgColor;
+    switch (status) {
+      case 'pending':
+        statusBgColor = Colors.orange.withOpacity(0.15);
+        break;
+      case 'in_progress':
+        statusBgColor = Colors.blue.withOpacity(0.15);
+        break;
+      case 'completed':
+        statusBgColor = Colors.green.withOpacity(0.15);
+        break;
+      case 'cancelled':
+        statusBgColor = Colors.red.withOpacity(0.15);
+        break;
+      default:
+        statusBgColor = Colors.grey.withOpacity(0.15);
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -211,7 +232,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
+                    color: statusBgColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -285,6 +306,53 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 ),
               ),
             ],
+            if (status == 'completed') ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final pdf = pw.Document();
+                    pdf.addPage(
+                      pw.Page(
+                        build: (pw.Context context) {
+                          return pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text('Order Receipt', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                              pw.SizedBox(height: 16),
+                              pw.Text('Order #: $orderNumber'),
+                              pw.Text('Customer: $customerName'),
+                              pw.Text('Date: ${DateFormat('MMM dd, yyyy - hh:mm a').format(createdAt)}'),
+                              pw.Text('Total: ₱${totalAmount.toStringAsFixed(2)}'),
+                              pw.Text('Payment Method: ${order['payment_method'] ?? 'N/A'}'),
+                              pw.Text('Payment Balance: ₱${order['payment_balance']?.toStringAsFixed(2) ?? '0.00'}'),
+                            ],
+                          );
+                        },
+                      ),
+                    );
+                    await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
+                  },
+                  icon: const Icon(Icons.download, size: 18),
+                  label: const Text('Download Receipt'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[800],
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 4),
+            Text(
+              'Payment Method: ${order['payment_method'] ?? 'N/A'}',
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Payment Balance: ₱${order['payment_balance']?.toStringAsFixed(2) ?? '0.00'}',
+              style: const TextStyle(fontSize: 14),
+            ),
           ],
         ),
       ),

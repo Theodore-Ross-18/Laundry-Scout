@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 
 class ServiceSelectionScreen extends StatefulWidget {
   final List<String> selectedServices;
+  final List<Map<String, dynamic>> pricelist;
 
-  const ServiceSelectionScreen({super.key, required this.selectedServices});
+  const ServiceSelectionScreen({
+    super.key, 
+    required this.selectedServices,
+    required this.pricelist,
+  });
 
   @override
   State<ServiceSelectionScreen> createState() => _ServiceSelectionScreenState();
@@ -12,37 +17,69 @@ class ServiceSelectionScreen extends StatefulWidget {
 class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
   late List<String> _selectedServices;
 
-  final List<Map<String, dynamic>> _services = [
-    {
-      'name': 'Iron Only',
-      'icon': Icons.iron,
-      'color': Colors.red,
-      'price': 50,
-    },
-    {
-      'name': 'Clean & Iron',
-      'icon': Icons.local_laundry_service,
-      'color': Colors.orange,
-      'price': 120,
-    },
-    {
-      'name': 'Wash & Fold',
-      'icon': Icons.checkroom,
-      'color': Colors.blue,
-      'price': 180,
-    },
-    {
-      'name': 'Carpets',
-      'icon': Icons.cleaning_services,
-      'color': Colors.purple,
-      'price': 200,
-    },
-  ];
+  List<Map<String, dynamic>> get _services => widget.pricelist.map((item) => {
+    'name': item['service_name'] ?? 'Unknown Service',
+    'icon': _getServiceIcon(item['service_name']),
+    'color': _getServiceColor(item['service_name']),
+    'price': double.tryParse(item['price']?.toString() ?? '0') ?? 0,
+  }).toList();
 
   @override
   void initState() {
     super.initState();
     _selectedServices = List.from(widget.selectedServices);
+  }
+
+  IconData _getServiceIcon(String? serviceName) {
+    switch (serviceName?.toLowerCase()) {
+      case 'iron only':
+      case 'ironing':
+        return Icons.iron;
+      case 'clean & iron':
+      case 'clean and iron':
+        return Icons.local_laundry_service;
+      case 'wash & fold':
+      case 'wash and fold':
+        return Icons.checkroom;
+      case 'carpets':
+      case 'carpet cleaning':
+        return Icons.cleaning_services;
+      case 'dry cleaning':
+        return Icons.dry_cleaning;
+      case 'pressing':
+        return Icons.content_cut;
+      case 'deliver':
+      case 'delivery':
+        return Icons.delivery_dining;
+      default:
+        return Icons.local_laundry_service;
+    }
+  }
+
+  Color _getServiceColor(String? serviceName) {
+    switch (serviceName?.toLowerCase()) {
+      case 'iron only':
+      case 'ironing':
+        return Colors.red;
+      case 'clean & iron':
+      case 'clean and iron':
+        return Colors.orange;
+      case 'wash & fold':
+      case 'wash and fold':
+        return Colors.blue;
+      case 'carpets':
+      case 'carpet cleaning':
+        return Colors.purple;
+      case 'dry cleaning':
+        return Colors.green;
+      case 'pressing':
+        return Colors.teal;
+      case 'deliver':
+      case 'delivery':
+        return Colors.brown;
+      default:
+        return Colors.indigo;
+    }
   }
 
   @override

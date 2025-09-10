@@ -26,6 +26,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   bool _isPlacingOrder = false;
   String _paymentMethod = 'Cash on Delivery';
 
+  final List<String> _paymentMethods = ['Cash on Delivery', 'GCash', 'PayMaya'];
+
   final Map<String, double> _servicePrices = {
     'Iron Only': 50.0,
     'Clean & Iron': 120.0,
@@ -376,16 +378,26 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                     color: Colors.black87,
                                   ),
                                 ),
-                                Text(
-                                  _paymentMethod,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
+                                DropdownButton<String>(
+                                  value: _paymentMethod,
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      _paymentMethod = newValue!;
+                                    });
+                                  },
+                                  items: _paymentMethods
+                                      .map<DropdownMenuItem<String>>((String value) {
+                                    return DropdownMenuItem<String>(
+                                      value: value,
+                                      child: Text(value),
+                                    );
+                                  }).toList(),
                                 ),
                               ],
                             ),
+                            const SizedBox(height: 24),
+
+                            // Place Order Button
                           ],
                         ),
                       ),
