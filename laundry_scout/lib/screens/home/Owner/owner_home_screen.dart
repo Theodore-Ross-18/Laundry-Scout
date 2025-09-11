@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../widgets/optimized_image.dart';
-import '../../../widgets/notification_badge.dart'; // Add this import
+import '../../../widgets/message_badge.dart';
 import 'business_profile_screen.dart';
 import 'add_promo_screen.dart'; // Import the new screen
 import 'owner_message_screen.dart'; // Import the new message screen
@@ -313,17 +313,17 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
             icon: Icon(Icons.home),
             label: 'Home',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.message_outlined),
-            label: 'Messages',
-          ),
           BottomNavigationBarItem(
             icon: user != null 
-                ? NotificationBadge(
+                ? MessageBadge(
                     userId: user.id,
-                    child: const Icon(Icons.notifications_none),
+                    child: const Icon(Icons.message_outlined),
                   )
-                : const Icon(Icons.notifications_none),
+                : const Icon(Icons.message_outlined),
+            label: 'Messages',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.notifications_none),
             label: 'Notification',
           ),
         ],

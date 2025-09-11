@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/login_screen.dart';
 import '../../../widgets/optimized_image.dart';
-import '../../../widgets/notification_badge.dart'; // Add this import
+import '../../../widgets/message_badge.dart';
 import 'profile_screen.dart'; 
 import 'location_screen.dart'; 
 import 'laundry_screen.dart'; 
@@ -273,24 +273,24 @@ class _HomeScreenState extends State<HomeScreen> {
             activeIcon: Icon(Icons.local_laundry_service),
             label: 'Laundry',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            activeIcon: Icon(Icons.chat_bubble),
-            label: 'Messages',
-          ),
           BottomNavigationBarItem(
             icon: user != null 
-                ? NotificationBadge(
+                ? MessageBadge(
                     userId: user.id,
-                    child: const Icon(Icons.notifications_none_outlined),
+                    child: const Icon(Icons.chat_bubble_outline),
                   )
-                : const Icon(Icons.notifications_none_outlined),
+                : const Icon(Icons.chat_bubble_outline),
             activeIcon: user != null 
-                ? NotificationBadge(
+                ? MessageBadge(
                     userId: user.id,
-                    child: const Icon(Icons.notifications),
+                    child: const Icon(Icons.chat_bubble),
                   )
-                : const Icon(Icons.notifications),
+                : const Icon(Icons.chat_bubble),
+            label: 'Messages',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.notifications_none_outlined),
+            activeIcon: Icon(Icons.notifications),
             label: 'Notification',
           ),
         ],
