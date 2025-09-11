@@ -1,0 +1,340 @@
+/* ===== Root Layout ===== */
+.dashboard-root {
+  display: flex;
+  min-height: 100vh;
+  background: #f7f7fa;
+  font-family: "Inter", sans-serif;
+}
+
+/* ===== Title Container (always visible) ===== */
+.title-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 220px;
+  background: #fff;
+  border-bottom: 1px solid #ececec;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  z-index: 100;
+}
+
+.sidebar-title {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #6a5ae0;
+  margin-bottom: 10px;
+}
+
+.sidebar-toggle {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: #6a5ae0;
+  transition: transform 0.2s;
+  z-index: 101; /* Ensure toggle is above other elements */
+}
+.sidebar-toggle:hover {
+  transform: scale(1.1);
+}
+
+/* ===== Sidebar ===== */
+.sidebar {
+  width: 240px;
+  background: #fff;
+  border-right: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px 0;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  transition: transform 0.5s ease-in-out, visibility 0.5s ease-in-out;
+}
+
+.sidebar.closed {
+  transform: translateX(-100%);
+  visibility: hidden;
+}
+
+.dashboard-main {
+  margin-left: 240px;
+  transition: margin-left 0.5s ease-in-out;
+}
+
+.dashboard-main.full {
+  margin-left: 0;
+}
+.sidebar-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #6b4eff;
+  padding: 0px;
+  margin-bottom: 20px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar li {
+  margin: 10px 0;
+}
+
+.sidebar li a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  color: #333;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.sidebar li.active a,
+.sidebar li a:hover {
+  background: #f3f0ff;
+  color: #6b4eff;
+}
+
+.logout {
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #d9534f;
+  cursor: pointer;
+  font-weight: 600;
+}
+.sidebar.open {
+  transform: translateX(0);
+}
+
+.sidebar-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.sidebar-menu ul li {
+  padding: 14px 24px;
+  margin: 6px 0;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: 0.2s;
+}
+.sidebar-menu ul li:hover {
+  background: #f3f1ff;
+}
+.sidebar-menu ul li.active {
+  background: #6a5ae0;
+  color: #fff;
+  font-weight: 600;
+}
+.sidebar-menu ul li a {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logout {
+  margin-top: auto;
+  padding: 14px 24px;
+  color: #b0b0b0;
+  font-size: 0.95rem;
+  border-top: 1px solid #f1f1f1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ===== Main Layout ===== */
+.dashboard-main {
+  flex: 1;
+  padding: 36px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px; /* space for title */
+  margin-left: 220px; /* Ensure proper spacing from sidebar */
+  transition: margin-left 0.3s ease-in-out;
+}
+.dashboard-main.shifted {
+  margin-left: 220px;
+}
+.dashboard-main.full {
+  margin-left: 0;
+}
+
+/* ===== Header ===== */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header-left h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.dashboard-date {
+  font-size: 0.9rem;
+  color: #888;
+}
+.dashboard-header-icons {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 1000; /* Ensure icons are above other elements */
+}
+.dashboard-header-icons .icon {
+  font-size: 1.3rem;
+  color: #666;
+  cursor: pointer;
+}
+.profile-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+  border: 2px solid #e5e7eb;
+  transition: border 0.2s;
+}
+
+.profile-avatar:hover {
+  border-color: #6a5ae0;
+}
+
+/* ===== History Filters ===== */
+.history-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.filter-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
+}
+.filter-label {
+  font-weight: 600;
+}
+.filter-count {
+  background: #6a5ae0;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+.filter-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  max-width: 320px;
+}
+.search-icon {
+  font-size: 1rem;
+  color: #888;
+  margin-right: 6px;
+}
+.search-input {
+  border: none;
+  outline: none;
+  flex: 1;
+  font-size: 0.9rem;
+  background: transparent;
+}
+.filter-right {
+  display: flex;
+  gap: 10px;
+}
+.date-btn,
+.all-btn {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #444;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.date-btn:hover,
+.all-btn:hover {
+  background: #f3f4f6;
+}
+
+/* ===== History Table ===== */
+.history-table {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+.table-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 14px;
+}
+.history-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.history-table th {
+  text-align: left;
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f1f1f1;
+}
+.history-table td {
+  padding: 14px 8px;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #f9f9f9;
+  vertical-align: top;
+}
+.record-time {
+  font-size: 0.8rem;
+  color: #888;
+}
+.status {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: capitalize;
+}
+.status.approved {
+  color: #10b981;
+}
+.status.rejected,
+.status.denied {
+  color: #ef4444;
+}
+.status.pending {
+  color: #f59e0b;
+}
