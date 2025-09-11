@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'business_detail_screen.dart';
 import '../../../widgets/optimized_image.dart';
+import '../../../widgets/filter_modal.dart';
 
 class LaundryScreen extends StatefulWidget {
   const LaundryScreen({super.key});
@@ -14,6 +15,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _laundryShops = [];
   List<Map<String, dynamic>> _filteredLaundryShops = [];
+  Map<String, dynamic> _currentFilters = {};
   bool _isLoading = true;
 
   @override
@@ -56,17 +58,79 @@ class _LaundryScreenState extends State<LaundryScreen> {
 
   void _filterLaundryShops(String query) {
     setState(() {
-      if (query.isEmpty) {
-        _filteredLaundryShops = _laundryShops;
-      } else {
-        _filteredLaundryShops = _laundryShops.where((shop) {
-          final businessName = shop['business_name']?.toString().toLowerCase() ?? '';
-          final location = shop['exact_location']?.toString().toLowerCase() ?? '';
-          final searchQuery = query.toLowerCase();
-          return businessName.contains(searchQuery) || location.contains(searchQuery);
-        }).toList();
-      }
+      _applyFilters(searchQuery: query);
     });
+  }
+
+  void _applyFilters({String? searchQuery}) {
+    List<Map<String, dynamic>> filtered = List.from(_laundryShops);
+    
+    // Apply search filter
+    if (searchQuery != null && searchQuery.isNotEmpty) {
+      final lowerCaseQuery = searchQuery.toLowerCase();
+      filtered = filtered.where((shop) {
+        final businessName = shop['business_name']?.toString().toLowerCase() ?? '';
+        final location = shop['exact_location']?.toString().toLowerCase() ?? '';
+        return businessName.contains(lowerCaseQuery) || location.contains(lowerCaseQuery);
+      }).toList();
+    }
+    
+    // Apply service filters
+    if (_currentFilters['selectedServices'] != null && 
+        (_currentFilters['selectedServices'] as List).isNotEmpty) {
+      filtered = filtered.where((shop) {
+        List<String> selectedServices = List<String>.from(_currentFilters['selectedServices']);
+        
+        // Check if shop offers any of the selected services
+        bool hasService = false;
+        
+        for (String service in selectedServices) {
+          switch (service) {
+            case 'Delivery':
+              if (shop['does_delivery'] == true) hasService = true;
+              break;
+            case 'Drop Off':
+            case 'Pick Up':
+            case 'Wash & Fold':
+            case 'Self Service':
+            case 'Dry Clean':
+            case 'Ironing':
+              // For now, assume all shops offer these basic services
+              hasService = true;
+              break;
+          }
+          if (hasService) break;
+        }
+        
+        return hasService;
+      }).toList();
+    }
+    
+    // Apply rating filter (placeholder - you can implement actual rating logic)
+    if (_currentFilters['minimumRating'] != null && 
+        _currentFilters['minimumRating'] > 0) {
+      // For now, we'll keep all shops since we don't have rating data
+      // In a real app, you would filter based on actual ratings
+    }
+    
+    _filteredLaundryShops = filtered;
+  }
+
+  void _showFilterModal() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return FilterModal(
+          currentFilters: _currentFilters,
+          onApplyFilters: (Map<String, dynamic> filters) {
+            setState(() {
+              _currentFilters = filters;
+              _applyFilters(searchQuery: _searchController.text);
+            });
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -121,13 +185,16 @@ class _LaundryScreenState extends State<LaundryScreen> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Container(
-                      padding: const EdgeInsets.all(12.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
+                    GestureDetector(
+                      onTap: _showFilterModal,
+                      child: Container(
+                        padding: const EdgeInsets.all(12.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.tune, color: Color(0xFF7B61FF)),
                       ),
-                      child: const Icon(Icons.tune, color: Color(0xFF7B61FF)),
                     ),
                   ],
                 ),

@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/login_screen.dart';
 import '../../../widgets/optimized_image.dart';
 import '../../../widgets/message_badge.dart';
+import '../../../widgets/filter_modal.dart';
 import 'profile_screen.dart'; 
 import 'location_screen.dart'; 
 import 'laundry_screen.dart'; 
@@ -25,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> _laundryShops = []; 
   List<Map<String, dynamic>> _promos = []; 
   List<Map<String, dynamic>> _filteredLaundryShops = []; 
+  Map<String, dynamic> _currentFilters = {};
 
   final TextEditingController _searchController = TextEditingController(); 
   final ScrollController _scrollController = ScrollController(); // Add this line
@@ -48,6 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
         searchController: _searchController,
         scrollController: _scrollController,
         filterLaundryShops: _filterLaundryShops,
+        showFilterModal: _showFilterModal,
         isSearching: _isSearching,
         promos: _promos,
         filteredLaundryShops: _filteredLaundryShops,
@@ -76,6 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
         searchController: _searchController,
         scrollController: _scrollController,
         filterLaundryShops: _filterLaundryShops,
+        showFilterModal: _showFilterModal,
         isSearching: _isSearching,
         promos: _promos,
         filteredLaundryShops: _filteredLaundryShops,
@@ -166,22 +170,89 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       setState(() {
         _isSearching = false;
-        _filteredLaundryShops = _laundryShops;
+        _applyFilters();
         _updateHomeScreenBodyState(); // Update HomeScreenBody
       });
     } else {
       if (!mounted) return;
       setState(() {
         _isSearching = true;
-        final lowerCaseQuery = query.toLowerCase();
-        _filteredLaundryShops = _laundryShops.where((shop) {
-          final businessName = shop['business_name']?.toLowerCase() ?? '';
-          final location = shop['exact_location']?.toLowerCase() ?? '';
-          return businessName.contains(lowerCaseQuery) || location.contains(lowerCaseQuery);
-        }).toList();
+        _applyFilters(searchQuery: query);
         _updateHomeScreenBodyState(); // Update HomeScreenBody
       });
     }
+  }
+
+  void _applyFilters({String? searchQuery}) {
+    List<Map<String, dynamic>> filtered = List.from(_laundryShops);
+    
+    // Apply search filter
+    if (searchQuery != null && searchQuery.isNotEmpty) {
+      final lowerCaseQuery = searchQuery.toLowerCase();
+      filtered = filtered.where((shop) {
+        final businessName = shop['business_name']?.toLowerCase() ?? '';
+        final location = shop['exact_location']?.toLowerCase() ?? '';
+        return businessName.contains(lowerCaseQuery) || location.contains(lowerCaseQuery);
+      }).toList();
+    }
+    
+    // Apply service filters
+    if (_currentFilters['selectedServices'] != null && 
+        (_currentFilters['selectedServices'] as List).isNotEmpty) {
+      filtered = filtered.where((shop) {
+        List<String> selectedServices = List<String>.from(_currentFilters['selectedServices']);
+        
+        // Check if shop offers any of the selected services
+        bool hasService = false;
+        
+        for (String service in selectedServices) {
+          switch (service) {
+            case 'Delivery':
+              if (shop['does_delivery'] == true) hasService = true;
+              break;
+            case 'Drop Off':
+            case 'Pick Up':
+            case 'Wash & Fold':
+            case 'Self Service':
+            case 'Dry Clean':
+            case 'Ironing':
+              // For now, assume all shops offer these basic services
+              hasService = true;
+              break;
+          }
+          if (hasService) break;
+        }
+        
+        return hasService;
+      }).toList();
+    }
+    
+    // Apply rating filter (placeholder - you can implement actual rating logic)
+    if (_currentFilters['minimumRating'] != null && 
+        _currentFilters['minimumRating'] > 0) {
+      // For now, we'll keep all shops since we don't have rating data
+      // In a real app, you would filter based on actual ratings
+    }
+    
+    _filteredLaundryShops = filtered;
+  }
+
+  void _showFilterModal() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return FilterModal(
+          currentFilters: _currentFilters,
+          onApplyFilters: (Map<String, dynamic> filters) {
+            setState(() {
+              _currentFilters = filters;
+              _applyFilters(searchQuery: _searchController.text);
+              _updateHomeScreenBodyState();
+            });
+          },
+        );
+      },
+    );
   }
 
   Future<void> _loadPromos() async {
@@ -239,6 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
         searchController: _searchController,
         scrollController: _scrollController,
         filterLaundryShops: _filterLaundryShops,
+        showFilterModal: _showFilterModal,
         isSearching: _isSearching,
         promos: _promos,
         filteredLaundryShops: _filteredLaundryShops,
@@ -314,6 +386,7 @@ class HomeScreenBody extends StatelessWidget {
   final TextEditingController searchController;
   final ScrollController scrollController;
   final Function(String) filterLaundryShops;
+  final VoidCallback showFilterModal;
   final bool isSearching;
   final List<Map<String, dynamic>> promos;
   final List<Map<String, dynamic>> filteredLaundryShops;
@@ -329,6 +402,7 @@ class HomeScreenBody extends StatelessWidget {
     required this.searchController,
     required this.scrollController,
     required this.filterLaundryShops,
+    required this.showFilterModal,
     required this.isSearching,
     required this.promos,
     required this.filteredLaundryShops,
@@ -496,13 +570,16 @@ class HomeScreenBody extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Container(
-                          padding: const EdgeInsets.all(12.0),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
+                        GestureDetector(
+                          onTap: showFilterModal,
+                          child: Container(
+                            padding: const EdgeInsets.all(12.0),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.filter_list, color: Color(0xFF6F5ADC)),
                           ),
-                          child: const Icon(Icons.filter_list, color: Color(0xFF6F5ADC)),
                         ),
                       ],
                     ),
