@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'order_placement_screen.dart';
+import '../../../services/feedback_service.dart';
 
 class BusinessDetailScreen extends StatefulWidget {
   final Map<String, dynamic> businessData;
@@ -25,6 +26,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   late TabController _tabController;
   List<Map<String, dynamic>> _reviews = [];
   List<Map<String, dynamic>> _pricelist = [];
+  final FeedbackService _feedbackService = FeedbackService();
 
   @override
   void initState() {
@@ -92,6 +94,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   @override
   void dispose() {
     _tabController.dispose();
+    _feedbackService.unsubscribeFromFeedback(widget.businessData['id']);
     super.dispose();
   }
 
@@ -158,17 +161,21 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
 
   Future<void> _loadReviews() async {
     try {
-      final response = await Supabase.instance.client
-          .from('reviews')
-          .select('*, user_profiles(first_name, last_name)')
-          .eq('business_id', widget.businessData['id'])
-          .order('created_at', ascending: false);
-      
+      final feedback = await _feedbackService.getFeedback(widget.businessData['id']);
       setState(() {
-        _reviews = List<Map<String, dynamic>>.from(response);
+        _reviews = feedback;
+      });
+      
+      // Setup real-time subscription for reviews
+      _feedbackService.subscribeToFeedback(widget.businessData['id'], (feedback) {
+        if (mounted) {
+          setState(() {
+            _reviews = feedback;
+          });
+        }
       });
     } catch (e) {
-      // Error loading reviews
+      // Error handled by service
     }
   }
 
@@ -234,18 +241,109 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   }
 
   double _calculateAverageRating() {
-    if (_reviews.isEmpty) return 0.0;
-    
-    double totalRating = 0.0;
-    for (var review in _reviews) {
-      totalRating += (review['rating'] ?? 0).toDouble();
+    final stats = _feedbackService.getFeedbackStats(_reviews);
+    return stats['averageRating'];
+  }
+
+  Future<void> _showReviewDialog(BuildContext context) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please login to leave a review', style: TextStyle(color: Colors.white))),
+      );
+      return;
     }
-    
-    return totalRating / _reviews.length;
+
+    int selectedRating = 5;
+    final commentController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Write a Review', style: TextStyle(color: Colors.black)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Rate your experience:', style: TextStyle(color: Colors.black)),
+              const SizedBox(height: 16),
+              StatefulBuilder(
+                builder: (context, setState) => Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    return IconButton(
+                      icon: Icon(
+                        index < selectedRating ? Icons.star : Icons.star_border,
+                        color: Colors.amber,
+                        size: 32,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          selectedRating = index + 1;
+                        });
+                      },
+                    );
+                  }),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: commentController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Comment (optional)',
+                  labelStyle: TextStyle(color: Colors.black),
+                  border: OutlineInputBorder(),
+                  hintText: 'Tell us about your experience...',
+                  hintStyle: TextStyle(color: Colors.black54),
+                ),
+                style: const TextStyle(color: Colors.black),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.black)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                await _feedbackService.addReview(
+                  businessId: widget.businessData['id'],
+                  userId: user.id,
+                  rating: selectedRating,
+                  comment: commentController.text.trim(),
+                );
+                
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Review submitted successfully', style: TextStyle(color: Colors.white))),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to submit review: $e', style: const TextStyle(color: Colors.white))),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6F5ADC),
+            ),
+            child: const Text('Submit', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   String _formatTimeAgo(String? createdAt) {
-    if (createdAt == null) return 'Unknown';
+      if (createdAt == null) return 'Unknown';
     
     try {
       final DateTime reviewDate = DateTime.parse(createdAt);
@@ -832,7 +930,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Colors.black,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -841,7 +939,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                   style: const TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Colors.black,
                   ),
                 ),
                 Row(
@@ -859,7 +957,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                   'Based on $totalReviews reviews',
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Colors.grey,
+                    color: Colors.black,
                   ),
                 ),
               ],
@@ -878,7 +976,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                   'No reviews yet',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey,
+                    color: Colors.black,
                   ),
                 ),
               ),
@@ -918,7 +1016,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                                color: Colors.black,
                               ),
                             ),
                             Row(
@@ -937,7 +1035,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                                   review['rating']?.toString() ?? '0',
                                   style: const TextStyle(
                                     fontSize: 12,
-                                    color: Colors.grey,
+                                    color: Colors.black,
                                   ),
                                 ),
                               ],
@@ -949,7 +1047,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                         _formatTimeAgo(review['created_at']),
                         style: const TextStyle(
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: Colors.black,
                         ),
                       ),
                     ],
@@ -960,7 +1058,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                       review['comment'],
                       style: const TextStyle(
                         fontSize: 14,
-                        color: Colors.black87,
+                        color: Colors.black,
                         height: 1.4,
                       ),
                     ),
@@ -971,9 +1069,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                // Make a Review functionality
-              },
+              onPressed: () => _showReviewDialog(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6F5ADC),
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -984,7 +1080,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
               child: const Text(
                 'Make a Review',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color.fromARGB(255, 255, 255, 255),
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
