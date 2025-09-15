@@ -143,7 +143,8 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final response = await Supabase.instance.client
           .from('business_profiles')
-          .select('id, business_name, exact_location, cover_photo_url, does_delivery, availability_status');
+          .select('id, business_name, exact_location, cover_photo_url, does_delivery, availability_status')
+          .eq('status', 'approved'); // Only fetch approved businesses
 
       if (mounted) {
         _laundryShops = List<Map<String, dynamic>>.from(response);

@@ -111,16 +111,43 @@ function Applications() {
   // Approve action
   const handleApprove = async () => {
     if (!selectedBiz) return;
-    const { error } = await supabase
-      .from("business_profiles")
-      .update({ status: "approved" })
-      .eq("id", selectedBiz.id);
+    
+    try {
+      console.log("Attempting to approve business with ID:", selectedBiz.id);
 
-    if (error) {
-      console.error("Error approving:", error.message);
-    } else {
-      fetchBusinesses();
-      setSelectedBiz(null);
+      const { data, error } = await supabase
+        .from("business_profiles")
+        .update({ status: "approved" })
+        .eq("id", selectedBiz.id)
+        .select();
+
+      if (error) {
+        console.error("Error updating business_profiles:", error);
+        alert(`Error approving business: ${error.message}`);
+        return;
+      }
+
+      console.log("Supabase update response data:", data);
+
+      if (data && data.length > 0) {
+        console.log("Business approved successfully in database:", data);
+        alert("Business approved successfully!");
+
+        // Update local state
+        setBusinesses(prevBusinesses =>
+          prevBusinesses.map(biz =>
+            biz.id === selectedBiz.id ? { ...biz, status: "approved" } : biz
+          )
+        );
+
+        setSelectedBiz(null);
+      } else {
+        console.warn("Update operation did not return any data. This might be due to RLS policies.");
+        alert("Approval might not have been saved. Please check database permissions (RLS).");
+      }
+    } catch (err) {
+      console.error("An exception occurred during the approval process:", err);
+      alert("An unexpected error occurred: " + err.message);
     }
   };
 
