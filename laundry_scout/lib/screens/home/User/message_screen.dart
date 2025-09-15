@@ -968,7 +968,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
     super.dispose();
   }
 
-  void _submitFeedback() {
+  Future<void> _submitFeedback() async {
     if (_feedbackController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -993,8 +993,28 @@ class _FeedbackModalState extends State<FeedbackModal> {
       _isSubmitted = true;
     });
 
-    // Simulate submission delay
-    Future.delayed(const Duration(seconds: 2), () {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please login to submit feedback'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // SQL query to insert user feedback
+      await Supabase.instance.client.from('feedback').insert({
+        'user_id': user.id,
+        'rating': _rating,
+        'comment': _feedbackController.text.trim(),
+        'feedback_type': 'user', // Specify this is user feedback
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1005,7 +1025,22 @@ class _FeedbackModalState extends State<FeedbackModal> {
           ),
         );
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error submitting feedback: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitted = false;
+        });
+      }
+    }
   }
 
   @override

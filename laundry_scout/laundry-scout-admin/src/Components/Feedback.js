@@ -17,9 +17,12 @@ import "../Style/Feedback.css";
 function Feedback() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [feedbacks, setFeedbacks] = useState([]);
+  const [userFeedbacks, setUserFeedbacks] = useState([]);
+  const [businessFeedbacks, setBusinessFeedbacks] = useState([]);
   const [users, setUsers] = useState([]);
+  const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('users'); // 'users' or 'businesses'
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,16 +37,25 @@ function Feedback() {
         if (userError) throw userError;
         setUsers(userData || []);
 
-        // Fetch feedback
-        const { data: feedbackData, error: feedbackError } = await supabase
+        // Fetch business profiles
+        const { data: businessData, error: businessError } = await supabase
+          .from("business_profiles")
+          .select("id, business_name, cover_photo_url");
+
+        if (businessError) throw businessError;
+        setBusinesses(businessData || []);
+
+        // Fetch user feedback
+        const { data: userFeedbackData, error: userFeedbackError } = await supabase
           .from("feedback")
           .select("*")
+          .eq("feedback_type", "user")
           .order("created_at", { ascending: false });
 
-        if (feedbackError) throw feedbackError;
+        if (userFeedbackError) throw userFeedbackError;
 
-        // Merge feedback with user info
-        const merged = (feedbackData || []).map((fb) => {
+        // Merge user feedback with user info
+        const mergedUserFeedbacks = (userFeedbackData || []).map((fb) => {
           const user = userData?.find((u) => u.id === fb.user_id);
           return {
             ...fb,
@@ -56,7 +68,28 @@ function Feedback() {
           };
         });
 
-        setFeedbacks(merged);
+        // Fetch business feedback with business_profiles join
+        const { data: businessFeedbackData, error: businessFeedbackError } = await supabase
+          .from("feedback")
+          .select(`*, business_profiles!inner(business_name, cover_photo_url)`)
+          .eq("feedback_type", "business")
+          .order("created_at", { ascending: false });
+
+        if (businessFeedbackError) throw businessFeedbackError;
+
+        // Merge business feedback with business info
+        const mergedBusinessFeedbacks = (businessFeedbackData || []).map((fb) => {
+          const user = userData?.find((u) => u.id === fb.user_id);
+          return {
+            ...fb,
+            business_name: fb.business_profiles?.business_name || (user ? `${user.first_name} ${user.last_name}` : "Business Owner"),
+            business_avatar: fb.business_profiles?.cover_photo_url || user?.profile_image_url || "https://via.placeholder.com/48",
+            reviewer_name: user ? `${user.first_name} ${user.last_name}` : "Anonymous",
+          };
+        });
+
+        setUserFeedbacks(mergedUserFeedbacks);
+        setBusinessFeedbacks(mergedBusinessFeedbacks);
       } catch (err) {
         console.error("Error fetching data:", err);
       } finally {
@@ -136,43 +169,96 @@ function Feedback() {
           </div>
         </header>
 
+        {/* Tab Navigation */}
+        <div className="feedback-tabs">
+          <button 
+            className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
+            onClick={() => setActiveTab('users')}
+          >
+            User Feedback
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'businesses' ? 'active' : ''}`}
+            onClick={() => setActiveTab('businesses')}
+          >
+            Business Feedback
+          </button>
+        </div>
+
         {/* Feedback List */}
         <div className="feedback-list">
           {loading ? (
             <p>Loading...</p>
-          ) : feedbacks.length > 0 ? (
-            feedbacks.map((fb) => (
-              <div key={fb.id} className="feedback-card">
-                <div className="feedback-top">
-                  <div className="feedback-user">
-                    <img
-                      src={fb.user_avatar}
-                      alt={fb.user_fullname}
-                      className="feedback-avatar"
-                    />
-                    <div>
-                      <h3 className="feedback-name">{fb.user_fullname}</h3>
-                      <span className="feedback-username">
-                        @{fb.user_username}
-                      </span>
-                      <br />
-                      <span className="feedback-date">
-                        {new Date(fb.created_at).toLocaleDateString()}
+          ) : activeTab === 'users' ? (
+            userFeedbacks.length > 0 ? (
+              userFeedbacks.map((fb) => (
+                <div key={fb.id} className="feedback-card">
+                  <div className="feedback-top">
+                    <div className="feedback-user">
+                      <img
+                        src={fb.user_avatar}
+                        alt={fb.user_fullname}
+                        className="feedback-avatar"
+                      />
+                      <div>
+                        <h3 className="feedback-name">{fb.user_fullname}</h3>
+                        <span className="feedback-username">
+                          @{fb.user_username}
+                        </span>
+                        <br />
+                        <span className="feedback-date">
+                          {new Date(fb.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="feedback-rating">
+                      {"⭐".repeat(Math.min(Math.floor(fb.rating || 0), 5))}
+                      <span className="rating-value">
+                        {fb.rating ? fb.rating.toFixed(1) : ""}
                       </span>
                     </div>
                   </div>
-                  <div className="feedback-rating">
-                    {"⭐".repeat(Math.min(Math.floor(fb.rating || 0), 5))}
-                    <span className="rating-value">
-                      {fb.rating ? fb.rating.toFixed(1) : ""}
-                    </span>
-                  </div>
+                  <p className="feedback-message">{fb.comment}</p>
                 </div>
-                <p className="feedback-message">{fb.comment}</p>
-              </div>
-            ))
+              ))
+            ) : (
+              <p>No user feedback available.</p>
+            )
           ) : (
-            <p>No feedback available.</p>
+            businessFeedbacks.length > 0 ? (
+              businessFeedbacks.map((fb) => (
+                <div key={fb.id} className="feedback-card">
+                  <div className="feedback-top">
+                    <div className="feedback-user">
+                      <img
+                        src={fb.business_avatar}
+                        alt={fb.business_name}
+                        className="feedback-avatar"
+                      />
+                      <div>
+                        <h3 className="feedback-name">{fb.business_name}</h3>
+                        <span className="feedback-username">
+                          Reviewed by: {fb.reviewer_name}
+                        </span>
+                        <br />
+                        <span className="feedback-date">
+                          {new Date(fb.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="feedback-rating">
+                      {"⭐".repeat(Math.min(Math.floor(fb.rating || 0), 5))}
+                      <span className="rating-value">
+                        {fb.rating ? fb.rating.toFixed(1) : ""}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="feedback-message">{fb.comment}</p>
+                </div>
+              ))
+            ) : (
+              <p>No business feedback available.</p>
+            )
           )}
         </div>
       </main>
