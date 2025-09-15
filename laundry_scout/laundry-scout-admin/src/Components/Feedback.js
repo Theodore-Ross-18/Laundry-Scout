@@ -19,10 +19,11 @@ function Feedback() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userFeedbacks, setUserFeedbacks] = useState([]);
   const [businessFeedbacks, setBusinessFeedbacks] = useState([]);
+  const [adminFeedbacks, setAdminFeedbacks] = useState([]);
   const [users, setUsers] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('users'); // 'users' or 'businesses'
+  const [activeTab, setActiveTab] = useState('users'); // 'users', 'businesses', or 'admin'
 
   useEffect(() => {
     const fetchData = async () => {
@@ -88,8 +89,32 @@ function Feedback() {
           };
         });
 
+        // Fetch admin feedback (from message screen)
+        const { data: adminFeedbackData, error: adminFeedbackError } = await supabase
+          .from("feedback")
+          .select("*")
+          .eq("feedback_type", "admin")
+          .order("created_at", { ascending: false });
+
+        if (adminFeedbackError) throw adminFeedbackError;
+
+        // Merge admin feedback with user info
+        const mergedAdminFeedbacks = (adminFeedbackData || []).map((fb) => {
+          const user = userData?.find((u) => u.id === fb.user_id);
+          return {
+            ...fb,
+            user_fullname: user
+              ? `${user.first_name} ${user.last_name}`
+              : "Unknown User",
+            user_avatar:
+              user?.profile_image_url || "https://via.placeholder.com/48",
+            user_username: user?.username || "",
+          };
+        });
+
         setUserFeedbacks(mergedUserFeedbacks);
         setBusinessFeedbacks(mergedBusinessFeedbacks);
+        setAdminFeedbacks(mergedAdminFeedbacks);
       } catch (err) {
         console.error("Error fetching data:", err);
       } finally {
@@ -156,7 +181,7 @@ function Feedback() {
         <header className="page-header">
           <div>
             <h1>Feedback</h1>
-            <p>Showing all feedback from users</p>
+            <p>Showing all feedback from users, businesses, and admin</p>
           </div>
           <div className="dashboard-header-icons">
             <FiSettings className="icon" />
@@ -182,6 +207,12 @@ function Feedback() {
             onClick={() => setActiveTab('businesses')}
           >
             Business Feedback
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'admin' ? 'active' : ''}`}
+            onClick={() => setActiveTab('admin')}
+          >
+            Admin Feedback
           </button>
         </div>
 
@@ -224,7 +255,7 @@ function Feedback() {
             ) : (
               <p>No user feedback available.</p>
             )
-          ) : (
+          ) : activeTab === 'businesses' ? (
             businessFeedbacks.length > 0 ? (
               businessFeedbacks.map((fb) => (
                 <div key={fb.id} className="feedback-card">
@@ -258,6 +289,41 @@ function Feedback() {
               ))
             ) : (
               <p>No business feedback available.</p>
+            )
+          ) : (
+            adminFeedbacks.length > 0 ? (
+              adminFeedbacks.map((fb) => (
+                <div key={fb.id} className="feedback-card">
+                  <div className="feedback-top">
+                    <div className="feedback-user">
+                      <img
+                        src={fb.user_avatar}
+                        alt={fb.user_fullname}
+                        className="feedback-avatar"
+                      />
+                      <div>
+                        <h3 className="feedback-name">{fb.user_fullname}</h3>
+                        <span className="feedback-username">
+                          @{fb.user_username}
+                        </span>
+                        <br />
+                        <span className="feedback-date">
+                          {new Date(fb.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="feedback-rating">
+                      {"⭐".repeat(Math.min(Math.floor(fb.rating || 0), 5))}
+                      <span className="rating-value">
+                        {fb.rating ? fb.rating.toFixed(1) : ""}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="feedback-message">{fb.comment}</p>
+                </div>
+              ))
+            ) : (
+              <p>No admin feedback available.</p>
             )
           )}
         </div>

@@ -1005,12 +1005,12 @@ class _FeedbackModalState extends State<FeedbackModal> {
         return;
       }
 
-      // SQL query to insert user feedback
+      // SQL query to insert admin feedback from message screen
       await Supabase.instance.client.from('feedback').insert({
         'user_id': user.id,
         'rating': _rating,
         'comment': _feedbackController.text.trim(),
-        'feedback_type': 'user', // Specify this is user feedback
+        'feedback_type': 'admin', // Identify as admin feedback for message screen
         'created_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       });

@@ -63,7 +63,7 @@ class _BusinessFeedbackModalState extends State<BusinessFeedbackModal> {
       final businessResponse = await Supabase.instance.client
           .from('business_profiles')
           .select('id')
-          .eq('user_id', user.id)
+          .eq('id', user.id)
           .single();
 
       final businessId = businessResponse['id'];
