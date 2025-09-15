@@ -29,7 +29,7 @@ function Applications() {
   const [preview, setPreview] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-    // 🔧 Settings / Notifications
+  // 🔧 Settings / Notifications
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -40,8 +40,152 @@ function Applications() {
   const [reason, setReason] = useState("");
   const [specificReason, setSpecificReason] = useState("");
 
+  // Image handling states
+  const [imageErrors, setImageErrors] = useState({});
+  const [imageLoading, setImageLoading] = useState({});
+
   const navigate = useNavigate();
   const searchRef = useRef(null);
+
+  // Enhanced helper to get public storage url with proper bucket handling
+  const getFileUrl = (path, bucketName = 'businessdocuments') => {
+    if (!path) {
+      console.log('No path provided for image');
+      return null;
+    }
+    
+    // Check if the path already contains the full URL (like the ones you provided)
+    if (path.startsWith('http')) {
+      console.log('URL already complete:', path);
+      return path;
+    }
+    
+    // Check if the path is just a filename without the full URL structure
+    if (!path.includes('supabase.co')) {
+      const bucket = bucketName || 'businessdocuments';
+      const cleanPath = path.replace(/^\/+|\/+$/g, '');
+      
+      try {
+        const { data } = supabase.storage
+          .from(bucket)
+          .getPublicUrl(cleanPath);
+        
+        if (!data || !data.publicUrl) {
+          console.error('No public URL returned from Supabase storage');
+          return null;
+        }
+        
+        console.log('Generated URL from path:', data.publicUrl);
+        return data.publicUrl;
+      } catch (error) {
+        console.error('Error generating Supabase storage URL:', error);
+        return null;
+      }
+    }
+    
+    // If it's already a complete URL but doesn't start with http (edge case)
+    return path;
+  };
+
+  // Handle image loading states
+  const handleImageLoad = (imageKey) => {
+    setImageLoading(prev => ({ ...prev, [imageKey]: false }));
+  };
+
+  const handleImageLoadStart = (imageKey) => {
+    setImageLoading(prev => ({ ...prev, [imageKey]: true }));
+  };
+
+  // Handle image loading errors with detailed logging
+  const handleImageError = (imageKey, url) => {
+    console.error(`Failed to load image: ${imageKey}, URL: ${url}`);
+    setImageErrors(prev => ({ ...prev, [imageKey]: true }));
+  };
+
+  // Helper to render document images with proper loading states
+  const renderDocumentImage = (url, alt, imageKey) => {
+    const imageUrl = getFileUrl(url);
+    const isLoading = imageLoading[imageKey];
+    const hasError = imageErrors[imageKey];
+    
+    console.log(`Rendering image for ${imageKey}:`, {
+      originalUrl: url,
+      processedUrl: imageUrl,
+      isLoading,
+      hasError
+    });
+    
+    if (!url) {
+      return <span>No file uploaded</span>;
+    }
+    
+    if (!imageUrl) {
+      return <span className="error-text">Invalid image URL</span>;
+    }
+    
+    if (hasError) {
+      return (
+        <div className="error-text">
+          <span>Failed to load image</span>
+          <br />
+          <small style={{ fontSize: '10px', wordBreak: 'break-all' }}>
+            {imageUrl}
+          </small>
+        </div>
+      );
+    }
+    
+    return (
+      <>
+        {isLoading && <div className="image-loading">Loading...</div>}
+        <img
+          src={imageUrl}
+          alt={alt}
+          className="doc-img"
+          style={{ display: isLoading ? 'none' : 'block' }}
+          onClick={() => setPreview(imageUrl)}
+          onLoad={() => handleImageLoad(imageKey)}
+          onLoadStart={() => handleImageLoadStart(imageKey)}
+          onError={() => handleImageError(imageKey, imageUrl)}
+        />
+      </>
+    );
+  };
+
+  // Add a function to verify bucket access
+  const verifyBucketAccess = async () => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('businessdocuments')
+        .list('', { limit: 1 });
+      
+      if (error) {
+        console.error('Cannot access businessdocuments bucket:', error);
+      } else {
+        console.log('Successfully accessed businessdocuments bucket');
+      }
+    } catch (error) {
+      console.error('Error verifying bucket access:', error);
+    }
+  };
+
+  // Reset states when selecting new business
+  useEffect(() => {
+    if (selectedBiz) {
+      setImageErrors({});
+      setImageLoading({});
+      console.log('Selected business documents:', {
+        bir: selectedBiz.bir_registration_url,
+        certificate: selectedBiz.business_certificate_url,
+        mayor: selectedBiz.mayors_permit_url
+      });
+    }
+  }, [selectedBiz]);
+
+  // Call verify bucket access on component mount
+  useEffect(() => {
+    verifyBucketAccess();
+  }, []);
 
   useEffect(() => {
     fetchBusinesses();
@@ -56,18 +200,18 @@ function Applications() {
     if (error) {
       console.error("Error fetching businesses:", error.message);
     } else {
+      console.log("Fetched businesses data:", data);
+      // Log the first business's URLs to see the format
+      if (data && data.length > 0) {
+        console.log("Sample business URLs:", {
+          bir: data[0].bir_registration_url,
+          certificate: data[0].business_certificate_url,
+          mayor: data[0].mayors_permit_url
+        });
+      }
       setBusinesses(data);
     }
     setLoading(false);
-  };
-
-  // helper to get public storage url
-  const getFileUrl = (path) => {
-    if (!path) return null;
-    const { data } = supabase.storage
-      .from("businessdocuments")
-      .getPublicUrl(path);
-    return data.publicUrl;
   };
 
   // Save search to history
@@ -425,50 +569,17 @@ function Applications() {
               <div className="review-docs">
                 <div className="doc-box">
                   <p>Attach BIR Registration</p>
-                  {selectedBiz.bir_registration_url ? (
-                    <img
-                      src={getFileUrl(selectedBiz.bir_registration_url)}
-                      alt="BIR Registration"
-                      className="doc-img"
-                      onClick={() =>
-                        setPreview(getFileUrl(selectedBiz.bir_registration_url))
-                      }
-                    />
-                  ) : (
-                    <span>No file uploaded</span>
-                  )}
+                  {renderDocumentImage(selectedBiz.bir_registration_url, "BIR Registration", "bir")}
                 </div>
 
                 <div className="doc-box">
                   <p>Business Certificate</p>
-                  {selectedBiz.business_certificate_url ? (
-                    <img
-                      src={getFileUrl(selectedBiz.business_certificate_url)}
-                      alt="Business Certificate"
-                      className="doc-img"
-                      onClick={() =>
-                        setPreview(getFileUrl(selectedBiz.business_certificate_url))
-                      }
-                    />
-                  ) : (
-                    <span>No file uploaded</span>
-                  )}
+                  {renderDocumentImage(selectedBiz.business_certificate_url, "Business Certificate", "certificate")}
                 </div>
 
                 <div className="doc-box">
                   <p>Business Mayor Permit</p>
-                  {selectedBiz.mayors_permit_url ? (
-                    <img
-                      src={getFileUrl(selectedBiz.mayors_permit_url)}
-                      alt="Business Mayor Permit"
-                      className="doc-img"
-                      onClick={() =>
-                        setPreview(getFileUrl(selectedBiz.mayors_permit_url))
-                      }
-                    />
-                  ) : (
-                    <span>No file uploaded</span>
-                  )}
+                  {renderDocumentImage(selectedBiz.mayors_permit_url, "Business Mayor Permit", "mayor")}
                 </div>
               </div>
 

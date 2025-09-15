@@ -380,17 +380,16 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                   File(file.path!),
                 );
           }
-          return Supabase.instance.client.storage.from('business_documents').getPublicUrl(fileName);
+          return Supabase.instance.client.storage.from('businessdocuments').getPublicUrl(fileName);
         }
 
         birUrl = await uploadDocument(_birFile, 'bir');
         certificateUrl = await uploadDocument(_certificateFile, 'certificate');
         permitUrl = await uploadDocument(_permitFile, 'permit');
-
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error uploading files: ${e.toString()}')),
+            SnackBar(content: Text('Error uploading files: ${e.toString()})')),
           );
         }
         setState(() { _isSubmitting = false; });
