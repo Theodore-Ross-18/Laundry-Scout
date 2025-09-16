@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'business_detail_screen.dart';
 import '../../../widgets/optimized_image.dart';
 import '../../../widgets/filter_modal.dart';
+import '../../../services/feedback_service.dart';
 
 class LaundryScreen extends StatefulWidget {
   const LaundryScreen({super.key});
@@ -17,6 +18,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
   List<Map<String, dynamic>> _filteredLaundryShops = [];
   Map<String, dynamic> _currentFilters = {};
   bool _isLoading = true;
+  final FeedbackService _feedbackService = FeedbackService();
 
   @override
   void initState() {
@@ -290,35 +292,45 @@ class _LaundryScreenState extends State<LaundryScreen> {
                           ),
                   ),
                 ),
-                // Rating Badge
+                // Rating Badge with FutureBuilder
                 Positioned(
                   top: 12,
                   left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.star,
-                          color: Colors.orange,
-                          size: 14,
+                  child: FutureBuilder<Map<String, dynamic>>(
+                    future: _getBusinessRating(shop['id']),
+                    builder: (context, snapshot) {
+                      double rating = 0.0;
+                      if (snapshot.hasData) {
+                        rating = snapshot.data!['averageRating'] ?? 0.0;
+                      }
+                      
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '4.5', // You can make this dynamic based on shop data
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              color: Colors.orange,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              rating.toStringAsFixed(1),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -425,5 +437,17 @@ class _LaundryScreenState extends State<LaundryScreen> {
         ),
       ),
     );
+  }
+
+  Future<Map<String, dynamic>> _getBusinessRating(String businessId) async {
+    try {
+      final feedback = await _feedbackService.getFeedback(businessId);
+      return _feedbackService.getFeedbackStats(feedback);
+    } catch (e) {
+      return {
+        'averageRating': 0.0,
+        'totalReviews': 0,
+      };
+    }
   }
 }

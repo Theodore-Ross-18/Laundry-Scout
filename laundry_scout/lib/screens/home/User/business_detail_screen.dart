@@ -247,8 +247,16 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   }
 
   double _calculateAverageRating() {
-    final stats = _feedbackService.getFeedbackStats(_reviews);
-    return stats['averageRating'];
+    // Filter reviews to only include user feedback
+    final userReviews = _reviews.where((review) => 
+      review['user_profiles'] != null && 
+      review['user_profiles']['first_name'] != null
+    ).toList();
+    
+    if (userReviews.isEmpty) return 0.0;
+    
+    final totalRating = userReviews.fold(0.0, (sum, review) => sum + (review['rating'] ?? 0));
+    return totalRating / userReviews.length;
   }
 
   Future<void> _showReviewDialog(BuildContext context) async {
@@ -895,8 +903,14 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   }
 
   Widget _buildReviewsTab() {
+    // Filter reviews to only show user feedback (those with user_profiles)
+    final userReviews = _reviews.where((review) => 
+      review['user_profiles'] != null && 
+      review['user_profiles']['first_name'] != null
+    ).toList();
+    
     double averageRating = _calculateAverageRating();
-    int totalReviews = _reviews.length;
+    int totalReviews = userReviews.length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -911,9 +925,9 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
             ),
             child: Column(
               children: [
-                const Text(
-                  'Review',
-                  style: TextStyle(
+                Text(
+                  totalReviews == 1 ? 'Review' : 'Reviews',
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
@@ -921,7 +935,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  averageRating.toString(),
+                  totalReviews > 0 ? averageRating.toStringAsFixed(1) : '0.0',
                   style: const TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
@@ -940,7 +954,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Based on $totalReviews reviews',
+                  'Based on $totalReviews ${totalReviews == 1 ? 'Review' : 'Reviews'}',
                   style: const TextStyle(
                     fontSize: 14,
                     color: Colors.black,
@@ -950,7 +964,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
             ),
           ),
           const SizedBox(height: 20),
-          if (_reviews.isEmpty)
+          if (userReviews.isEmpty)
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -959,7 +973,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
               ),
               child: const Center(
                 child: Text(
-                  'No reviews yet',
+                  'No user reviews yet',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.black,
@@ -968,7 +982,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
               ),
             )
           else
-            ...(_reviews.map((review) => Container(
+            ...(userReviews.map((review) => Container(
               margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -1039,7 +1053,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                     ],
                   ),
                   const SizedBox(height: 12),
-                  if (review['comment'] != null)
+                  if (review['comment'] != null && review['comment'].toString().isNotEmpty)
                     Text(
                       review['comment'],
                       style: const TextStyle(

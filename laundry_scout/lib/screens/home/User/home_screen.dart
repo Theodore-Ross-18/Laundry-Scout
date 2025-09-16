@@ -142,14 +142,47 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final response = await Supabase.instance.client
           .from('business_profiles')
-          .select('id, business_name, exact_location, cover_photo_url, does_delivery, availability_status')
+          .select('''
+            id, 
+            business_name, 
+            exact_location, 
+            cover_photo_url, 
+            does_delivery, 
+            availability_status,
+            feedback(rating)
+          ''')
           .eq('status', 'approved'); // Only fetch approved businesses
 
       if (mounted) {
-        _laundryShops = List<Map<String, dynamic>>.from(response);
-        _filteredLaundryShops = _laundryShops;
-        
+        // Process the response to include average rating
+        final processedShops = response.map((shop) {
+          final feedbackList = shop['feedback'] as List<dynamic>? ?? [];
+          double averageRating = 0.0;
+          int totalReviews = 0;
+          
+          if (feedbackList.isNotEmpty) {
+            double totalRating = 0.0;
+            for (var feedback in feedbackList) {
+              if (feedback['rating'] != null) {
+                totalRating += (feedback['rating'] as num).toDouble();
+                totalReviews++;
+              }
+            }
+            if (totalReviews > 0) {
+              averageRating = totalRating / totalReviews;
+            }
+          }
+          
+          return {
+            ...shop,
+            'average_rating': averageRating,
+            'total_reviews': totalReviews,
+            'feedback': null, // Remove the raw feedback data to avoid confusion
+          };
+        }).toList();
 
+        _laundryShops = List<Map<String, dynamic>>.from(processedShops);
+        _filteredLaundryShops = _laundryShops;
         
         _updateHomeScreenBodyState(); // Update HomeScreenBody
       }
@@ -227,11 +260,13 @@ class _HomeScreenState extends State<HomeScreen> {
       }).toList();
     }
     
-    // Apply rating filter (placeholder - you can implement actual rating logic)
+    // Apply rating filter using actual average rating
     if (_currentFilters['minimumRating'] != null && 
         _currentFilters['minimumRating'] > 0) {
-      // For now, we'll keep all shops since we don't have rating data
-      // In a real app, you would filter based on actual ratings
+      filtered = filtered.where((shop) {
+        double shopRating = (shop['average_rating'] as num?)?.toDouble() ?? 0.0;
+        return shopRating >= _currentFilters['minimumRating'];
+      }).toList();
     }
     
     _filteredLaundryShops = filtered;
@@ -844,7 +879,10 @@ class HomeScreenBody extends StatelessWidget {
                                           children: [
                                             const Icon(Icons.star, size: 12, color: Colors.amber),
                                             const SizedBox(width: 2),
-                                            const Text('4.5', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                            Text(
+                                              shop['average_rating']?.toStringAsFixed(1) ?? '0.0', 
+                                              style: const TextStyle(fontSize: 11, color: Colors.grey)
+                                            ),
                                             const SizedBox(width: 4),
                                             const Icon(Icons.delivery_dining, size: 12, color: Colors.grey),
                                             const SizedBox(width: 2),
