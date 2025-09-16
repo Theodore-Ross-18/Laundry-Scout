@@ -480,28 +480,6 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                             )
                           : const Text('Sign Up'),
                     ),
-                    // Social Login Buttons (Optional)
-                    const SizedBox(height: 20),
-                    Text('Or sign up with', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70)),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildSocialIcon(
-                          child: Image.asset('lib/assets/fb.png', height: 24, width: 24), // Use your Facebook icon asset
-                          onPressed: () {
-                            // TODO: Implement Facebook Sign-Up
-                          },
-                        ),
-                        const SizedBox(width: 20),
-                        _buildSocialIcon(
-                          child: Image.asset('lib/assets/google.png', height: 24, width: 24), // Use your Google icon asset
-                          onPressed: () {
-                            // TODO: Implement Google Sign-Up
-                          },
-                        ),
-                      ],
-                    ),
                     const SizedBox(height: 20), // Added SizedBox for spacing
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -525,29 +503,6 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  // Helper widget for social icons (can be extracted to a common file later)
-  Widget _buildSocialIcon({required Widget child, required VoidCallback onPressed}) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(25),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 3,
-            )
-          ]
-        ),
-        child: child,
       ),
     );
   }

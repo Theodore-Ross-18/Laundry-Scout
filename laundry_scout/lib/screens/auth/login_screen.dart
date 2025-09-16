@@ -537,31 +537,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         : const Text('Login'),
                   ),
                 ),
-                const SizedBox(height: 30),
-                Text(
-                  'Or sign in With',
-                  textAlign: TextAlign.center,
-                  style: textTheme.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildSocialIcon(
-                      child: Image.asset('lib/assets/fb.png', height: 24, width: 24),
-                      onPressed: () {
-                        // TODO: Implement Facebook Sign-In
-                      },
-                    ),
-                    const SizedBox(width: 20),
-                    _buildSocialIcon(
-                      child: Image.asset('lib/assets/google.png', height: 24, width: 24),
-                      onPressed: () {
-                        // TODO: Implement Google Sign-In
-                      },
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 40),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -695,28 +670,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSocialIcon({required Widget child, required VoidCallback onPressed}) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(25),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 3,
-            )
-          ]
-        ),
-        child: child,
-      ),
     );
   }
 }
