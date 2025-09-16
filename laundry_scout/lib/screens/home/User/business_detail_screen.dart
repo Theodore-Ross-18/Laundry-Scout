@@ -125,15 +125,21 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
       return OptimizedImage(
         imageUrl: coverPhotoUrl,
         fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
       );
     } else {
-      // Display placeholder
+      // Display placeholder - make it fill the space
       return Container(
+        width: double.infinity,
+        height: double.infinity,
         color: Colors.grey[300],
-        child: const Icon(
-          Icons.business,
-          size: 80,
-          color: Colors.grey,
+        child: const Center(
+          child: Icon(
+            Icons.business,
+            size: 80,
+            color: Colors.grey,
+          ),
         ),
       );
     }
@@ -406,31 +412,54 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                       height: 280,
                       child: Stack(
                         children: [
-                          // Cover Image
-                          SizedBox(
-                            height: 200,
-                            width: double.infinity,
+                          // Cover Image - now fills entire header space
+                          Positioned.fill(
                             child: _buildCoverImage(),
                           ),
-                          // Back button
+                          // Dark overlay for better text visibility
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withValues(alpha: 0.7),
+                                  ],
+                                  stops: const [0.5, 1.0],
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Back button with background
                           Positioned(
                             top: 40,
                             left: 16,
-                            child: IconButton(
-                              icon: const Icon(Icons.arrow_back, color: Colors.white),
-                              onPressed: () => Navigator.pop(context),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                                onPressed: () => Navigator.pop(context),
+                              ),
                             ),
                           ),
-                          // Business info card
+                          // Business info card - extended to fill sides
                           Positioned(
                             bottom: 0,
-                            left: 16,
-                            right: 16,
+                            left: 0,
+                            right: 0,
                             child: Container(
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(15),
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(20),
+                                  topRight: Radius.circular(20),
+                                ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withValues(alpha: 0.1),
@@ -450,7 +479,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                                         child: Text(
                                           _fullBusinessData!['business_name'] ?? 'Business Name',
                                           style: const TextStyle(
-                                            fontSize: 20,
+                                            fontSize: 22,
                                             fontWeight: FontWeight.bold,
                                             color: Colors.black87,
                                           ),

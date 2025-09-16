@@ -80,18 +80,11 @@ class _FilterModalState extends State<FilterModal> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (isSelected)
-              const Icon(
-                Icons.add,
-                size: 16,
-                color: Colors.white,
-              )
-            else
-              const Icon(
-                Icons.add,
-                size: 16,
-                color: Colors.grey,
-              ),
+            Icon(
+              isSelected ? Icons.remove : Icons.add,
+              size: 16,
+              color: isSelected ? Colors.white : Colors.grey,
+            ),
             const SizedBox(width: 4),
             Text(
               service,
@@ -354,21 +347,12 @@ class _FilterModalState extends State<FilterModal> {
                         onChanged: (value) {
                           _filters['customLocation'] = value;
                         },
-                        decoration: InputDecoration(
+                        style: const TextStyle(color: Colors.black), // Make text black
+                        decoration: const InputDecoration(
                           hintText: 'Enter location',
-                          hintStyle: TextStyle(color: Colors.grey[500]),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFF7B61FF)),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
+                          hintStyle: TextStyle(color: Colors.grey),
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         ),
                       ),
                     ],

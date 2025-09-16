@@ -290,42 +290,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
-      // Bottom Navigation Bar (Copied from Home Screen)
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed, // Ensures all items are visible
-        selectedItemColor: const Color(0xFF6F5ADC), // Purple selected color
-        unselectedItemColor: Colors.grey, // Grey unselected color
-        backgroundColor: Colors.white, // White background
-        currentIndex: 0, // You might want to manage the selected index state
-        onTap: (index) {
-          // TODO: Implement navigation logic for other tabs
-          // This will require a navigation system (e.g., GoRouter, Navigator)
-          // For now, this is just a placeholder.
-          print('Tapped item $index');
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.location_on),
-            label: 'Location',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_laundry_service),
-            label: 'Laundry',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.message),
-            label: 'Messages',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notification',
-          ),
-        ],
-      ),
+      // Bottom Navigation Bar removed as requested
     );
   }
 
