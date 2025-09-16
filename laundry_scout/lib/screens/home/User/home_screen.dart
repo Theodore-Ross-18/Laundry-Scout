@@ -439,24 +439,24 @@ class HomeScreenBody extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       decoration: BoxDecoration(
         color: statusColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             statusIcon,
-            size: 10,
+            size: 8,
             color: statusColor,
           ),
-          const SizedBox(width: 2),
+          const SizedBox(width: 1),
           Text(
             status,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 9,
               color: statusColor,
               fontWeight: FontWeight.w500,
             ),
@@ -810,7 +810,7 @@ class HomeScreenBody extends StatelessWidget {
                                 children: [
                                   LaundryShopImageCard(
                                     imageUrl: shop['cover_photo_url'],
-                                    height: 100,
+                                    height: 90,
                                     borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
                                   ),
                                   Padding(
@@ -822,37 +822,39 @@ class HomeScreenBody extends StatelessWidget {
                                           shop['business_name'] ?? 'Laundry Shop',
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 16,
+                                            fontSize: 14,
                                             color: Colors.black87,
                                           ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        const SizedBox(height: 4),
+                                        const SizedBox(height: 2),
                                         Row(
                                           children: [
-                                            const Icon(Icons.location_on, size: 14, color: Colors.grey),
-                                            const SizedBox(width: 4),
+                                            const Icon(Icons.location_on, size: 12, color: Colors.grey),
+                                            const SizedBox(width: 2),
                                             Expanded(
                                               child: Text(
-                                                shop['exact_location'] ?? 'Address Placeholder',
-                                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                                shop['exact_location'] ?? 'Address',
+                                                style: const TextStyle(fontSize: 11, color: Colors.grey),
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 4),
+                                        const SizedBox(height: 2),
                                         Row(
                                           children: [
-                                            const Icon(Icons.star, size: 14, color: Colors.amber),
+                                            const Icon(Icons.star, size: 12, color: Colors.amber),
+                                            const SizedBox(width: 2),
+                                            const Text('4.5', style: TextStyle(fontSize: 11, color: Colors.grey)),
                                             const SizedBox(width: 4),
-                                            const Text('4.5', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                                            const SizedBox(width: 8),
-                                            const Icon(Icons.delivery_dining, size: 14, color: Colors.grey),
-                                            const SizedBox(width: 4),
-                                            Text(shop['does_delivery'] == true ? 'Delivery' : 'No Delivery', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                            const Icon(Icons.delivery_dining, size: 12, color: Colors.grey),
+                                            const SizedBox(width: 2),
+                                            Text(shop['does_delivery'] == true ? 'Delivery' : 'No', style: const TextStyle(fontSize: 11, color: Colors.grey)),
                                           ],
                                         ),
-                                        const SizedBox(height: 4),
+                                        const SizedBox(height: 2),
                                         _buildAvailabilityStatus(shop['availability_status']),
                                       ],
                                     ),
