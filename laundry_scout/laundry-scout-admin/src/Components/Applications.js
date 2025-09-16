@@ -275,6 +275,19 @@ function Applications() {
 
       if (data && data.length > 0) {
         console.log("Business approved successfully in database:", data);
+
+        // 🔹 Insert into history table
+        try {
+          await supabase.from("application_history").insert({
+            business_name: data[0].business_name,
+            owner_name: `${data[0].owner_first_name || ""} ${data[0].owner_last_name || ""}`.trim(),
+            action: "Approval",
+            status: "approved",
+          });
+        } catch (histErr) {
+          console.error("Error inserting approval history:", histErr);
+        }
+
         alert("Business approved successfully!");
 
         // Update local state
@@ -310,6 +323,19 @@ function Applications() {
     if (error) {
       console.error("Error rejecting:", error.message);
     } else {
+      // 🔹 Insert into history table for rejection
+      try {
+        await supabase.from("application_history").insert({
+          business_name: selectedBiz.business_name,
+          owner_name: `${selectedBiz.owner_first_name || ""} ${selectedBiz.owner_last_name || ""}`.trim(),
+          action: "Rejection",
+          status: "rejected",
+          rejection_reason: reason,
+        });
+      } catch (histErr) {
+        console.error("Error inserting rejection history:", histErr);
+      }
+
       fetchBusinesses();
       setSelectedBiz(null);
       setShowRejectModal(false);

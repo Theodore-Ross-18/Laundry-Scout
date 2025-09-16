@@ -42,14 +42,24 @@ function History() {
   const fetchHistory = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from("application_history")
-      .select("*")
+      .from("business_profiles")
+      .select("id,business_name,owner_first_name,owner_last_name,status,rejection_reason,created_at")
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching history:", error.message);
     } else {
-      setRecords(data || []);
+      // Transform data to match previous structure (owner_name, action)
+      const transformed = (data || []).map((row) => ({
+        id: row.id,
+        business_name: row.business_name,
+        owner_name: `${row.owner_first_name || ""} ${row.owner_last_name || ""}`.trim(),
+        action: row.status && row.status.toLowerCase() === "approved" ? "Approval" : row.status && row.status.toLowerCase() === "rejected" ? "Rejection" : "-",
+        status: row.status,
+        rejection_reason: row.rejection_reason,
+        created_at: row.created_at,
+      }));
+      setRecords(transformed);
     }
     setLoading(false);
   };
@@ -299,9 +309,21 @@ function History() {
                     <td>{rec.owner_name}</td>
                     <td>{rec.action || "-"}</td>
                     <td className={`status ${rec.status}`}>
-                      {rec.status || "Pending"}
+                      {rec.status && rec.status.toLowerCase() === "approved" && (
+                        <span style={{ color: "green", fontWeight: "bold" }}>✔ Approved</span>
+                      )}
+                      {rec.status && rec.status.toLowerCase() === "rejected" && (
+                        <span style={{ color: "red", fontWeight: "bold" }}>✖ Rejected</span>
+                      )}
+                      {!rec.status || (rec.status.toLowerCase() !== "approved" && rec.status.toLowerCase() !== "rejected") ? (
+                        <span>{rec.status || "Pending"}</span>
+                      ) : null}
                     </td>
-                    <td>{rec.rejection_reason || "-"}</td>
+                    <td>
+                      {rec.status && rec.status.toLowerCase() === "rejected"
+                        ? rec.rejection_reason || "N/A"
+                        : "N/A"}
+                    </td>
                     <td className="record-time">
                       {rec.created_at
                         ? new Date(rec.created_at).toLocaleString()

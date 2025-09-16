@@ -62,7 +62,8 @@ function Dashboard({ users }) {
 
       const { count: feedbackCount } = await supabase
         .from("feedback")
-        .select("*", { count: "exact", head: true });
+        .select("*", { count: "exact", head: true })
+        .in("feedback_type", ["admin", "business"]);
 
       setCustomers(customerCount || 0);
       setOwners(ownerCount || 0);
