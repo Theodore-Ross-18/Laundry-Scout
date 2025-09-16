@@ -9,7 +9,6 @@ import 'location_screen.dart';
 import 'laundry_screen.dart'; 
 import 'message_screen.dart'; 
 import 'notification_screen.dart';
-import 'viewall.dart'; // Add this import
 import 'business_detail_screen.dart'; 
 
 class HomeScreen extends StatefulWidget {
@@ -74,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _widgetOptions[0] = HomeScreenBody(
         userName: _userName,
-        profileImageUrl: _profileImageUrl, // Add profile image URL parameter
+        profileImageUrl: _profileImageUrl,
         isLoading: _isLoading,
         searchController: _searchController,
         scrollController: _scrollController,
@@ -368,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF6F5ADC),
+        selectedItemColor: const Color(0xFF7B61FF),
         unselectedItemColor: Colors.grey[600],
         onTap: _onItemTapped,
         showSelectedLabels: true,
@@ -489,7 +488,7 @@ class HomeScreenBody extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF6F5ADC), // Purple background
+                  color: Color(0xFF7B61FF), // Purple background
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(30),
                     bottomRight: Radius.circular(30),
@@ -538,7 +537,7 @@ class HomeScreenBody extends StatelessWidget {
                                       width: 50,
                                       height: 50,
                                       fit: BoxFit.cover,
-                                      errorWidget: const Icon(Icons.person, color: Color(0xFF6F5ADC)),
+                                      errorWidget: const Icon(Icons.person, color: Color(0xFF7B61FF)),
                                     ),
                                   )
                                 : const Icon(Icons.person, color: Color(0xFF6F5ADC)),
@@ -579,7 +578,7 @@ class HomeScreenBody extends StatelessWidget {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(Icons.filter_list, color: Color(0xFF6F5ADC)),
+                            child: const Icon(Icons.tune, color: Color(0xFF7B61FF)),
                           ),
                         ),
                       ],
@@ -725,37 +724,35 @@ class HomeScreenBody extends StatelessWidget {
                               ),
                               child: InkWell(
                                 onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const ViewAllScreen(),
-                                    ),
-                                  );
-                                },
-                                child: const Text(
-                                  'View All',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                // Switch to Laundry tab (index 2)
+                                final homeScreenState = context.findAncestorStateOfType<_HomeScreenState>();
+                                if (homeScreenState != null && homeScreenState.mounted) {
+                                  homeScreenState._onItemTapped(2);
+                                }
+                              },
+                              child: const Text(
+                                'View All',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
                                 ),
+                              ),
                               ),
                             );
                           } else {
                             // For larger screens: Use the original TextButton
                             return TextButton(
                               onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const ViewAllScreen(),
-                                  ),
-                                );
+                                // Switch to Laundry tab (index 2)
+                                final homeScreenState = context.findAncestorStateOfType<_HomeScreenState>();
+                                if (homeScreenState != null && homeScreenState.mounted) {
+                                  homeScreenState._onItemTapped(2);
+                                }
                               },
                               child: const Text(
                                 'View All',
-                                style: TextStyle(color: Color(0xFF6F5ADC)),
+                                style: TextStyle(color: Color(0xFF7B61FF)),
                               ),
                             );
                           }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'message_screen.dart'; // Import the ChatScreen
+import 'message_screen.dart'; // Import for ChatScreen
 import '../../../widgets/optimized_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
@@ -149,7 +149,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     try {
       final response = await Supabase.instance.client
           .from('business_profiles')
-          .select('*, availability_status')
+          .select('*, availability_status, business_phone_number')
           .eq('id', widget.businessData['id'])
           .single();
       
@@ -554,8 +554,9 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Open Hours
+          // 1. Open Hours - extended to sides
           Container(
+            width: double.infinity, // Extend to sides
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.grey[50],
@@ -585,8 +586,9 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
             ),
           ),
           const SizedBox(height: 16),
-          // 2. Yes we do delivery
+          // 2. Delivery Service - extended to sides
           Container(
+            width: double.infinity, // Extend to sides
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.grey[50],
@@ -606,65 +608,60 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                    Icon(
+                      _fullBusinessData!['does_delivery'] == true ? Icons.check_circle : Icons.cancel,
+                      color: _fullBusinessData!['does_delivery'] == true ? Colors.green : Colors.red,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
-                    const Text(
-                      'Yes, we do delivery!',
-                      style: TextStyle(
+                    Text(
+                      _fullBusinessData!['does_delivery'] == true ? 'Available' : 'Not Available',
+                      style: const TextStyle(
                         fontSize: 14,
                         color: Colors.black87,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // 3. About Us - extended to sides
+          Container(
+            width: double.infinity, // Extend to sides
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 const Text(
-                  'Free delivery within 5km radius',
+                  'About Us',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                     color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _fullBusinessData!['about_us'] ?? 'Welcome to our laundry service! We provide professional laundry services with care and attention to detail.',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    height: 1.5,
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          // 3. About Us
-          if (_fullBusinessData!['about_business'] != null && _fullBusinessData!['about_business'].toString().isNotEmpty)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'About Us',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _fullBusinessData!['about_business'],
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          if (_fullBusinessData!['about_business'] != null && _fullBusinessData!['about_business'].toString().isNotEmpty)
-            const SizedBox(height: 16),
-          // 4. Contact Details
+          // 4. Contact Details - extended to sides
           Container(
+            width: double.infinity, // Extend to sides
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.grey[50],
@@ -681,26 +678,45 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                     color: Colors.black87,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          // Add call functionality
+                          final phoneNumber = _fullBusinessData!['business_phone_number'] ?? 
+                                        _fullBusinessData!['contact_number'] ?? 
+                                        'No phone number available';
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text('Contact Number', style: TextStyle(color: Colors.black)),
+                                content: Text(
+                                  phoneNumber.toString(),
+                                  style: const TextStyle(color: Colors.black, fontSize: 16),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Close', style: TextStyle(color: Colors.black)),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
                         },
                         icon: const Icon(Icons.phone, color: Colors.white),
                         label: const Text('Call', style: TextStyle(color: Colors.white)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF6F5ADC),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
@@ -708,21 +724,19 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                             context,
                             MaterialPageRoute(
                               builder: (context) => ChatScreen(
-                                businessId: _fullBusinessData!['id'],
+                                businessId: widget.businessData['id'],
                                 businessName: _fullBusinessData!['business_name'] ?? 'Business',
                                 businessImage: _fullBusinessData!['cover_photo_url'],
                               ),
                             ),
                           );
                         },
-                        icon: const Icon(Icons.message, color: Color(0xFF6F5ADC)),
-                        label: const Text('Message', style: TextStyle(color: Color(0xFF6F5ADC))),
+                        icon: const Icon(Icons.message, color: Colors.white),
+                        label: const Text('Message', style: TextStyle(color: Colors.white)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          side: const BorderSide(color: Color(0xFF6F5ADC)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          backgroundColor: const Color(0xFF6F5ADC),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
@@ -732,63 +746,6 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          // 5. Address
-          if (_fullBusinessData!['exact_location'] != null)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Address',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Icon(Icons.location_on, color: Color(0xFF6F5ADC)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _fullBusinessData!['exact_location'],
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        // Get Direction functionality
-                      },
-                      icon: const Icon(Icons.directions, color: Colors.white),
-                      label: const Text('Get Direction', style: TextStyle(color: Colors.white)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6F5ADC),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );
