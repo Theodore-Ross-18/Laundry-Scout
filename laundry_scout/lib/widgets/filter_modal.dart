@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FilterModal extends StatefulWidget {
   final Map<String, dynamic> currentFilters;
@@ -16,6 +17,8 @@ class FilterModal extends StatefulWidget {
 
 class _FilterModalState extends State<FilterModal> {
   late Map<String, dynamic> _filters;
+  List<Map<String, dynamic>> _ratings = [];
+  bool _isLoadingRatings = true;
   
   final List<String> _services = [
     'Drop Off',
@@ -25,14 +28,6 @@ class _FilterModalState extends State<FilterModal> {
     'Self Service',
     'Dry Clean',
     'Ironing',
-  ];
-  
-  final List<Map<String, dynamic>> _ratings = [
-    {'stars': 5, 'count': 25},
-    {'stars': 4, 'count': 14},
-    {'stars': 3, 'count': 12},
-    {'stars': 2, 'count': 7},
-    {'stars': 1, 'count': 2},
   ];
 
   @override
@@ -45,6 +40,57 @@ class _FilterModalState extends State<FilterModal> {
     _filters['useCurrentLocation'] ??= true;
     _filters['customLocation'] ??= '';
     _filters['minimumRating'] ??= 0;
+    
+    // Load actual rating data
+    _loadRatingData();
+  }
+
+  Future<void> _loadRatingData() async {
+    try {
+      final supabase = Supabase.instance.client;
+      
+      // Get all feedback to calculate rating distribution
+      final response = await supabase
+          .from('feedback')
+          .select('rating')
+          .not('business_id', 'is', null);
+
+      final feedback = List<Map<String, dynamic>>.from(response);
+      
+      // Calculate rating distribution
+      final ratingCounts = [0, 0, 0, 0, 0]; // Index 0 = 1-star, Index 4 = 5-star
+      
+      for (var review in feedback) {
+        final rating = (review['rating'] ?? 0).toInt();
+        if (rating >= 1 && rating <= 5) {
+          ratingCounts[rating - 1]++;
+        }
+      }
+
+      setState(() {
+        _ratings = [
+          {'stars': 5, 'count': ratingCounts[4]},
+          {'stars': 4, 'count': ratingCounts[3]},
+          {'stars': 3, 'count': ratingCounts[2]},
+          {'stars': 2, 'count': ratingCounts[1]},
+          {'stars': 1, 'count': ratingCounts[0]},
+        ];
+        _isLoadingRatings = false;
+      });
+    } catch (e) {
+      print('Error loading rating data: $e');
+      setState(() {
+        // Fallback to zeros if there's an error
+        _ratings = [
+          {'stars': 5, 'count': 0},
+          {'stars': 4, 'count': 0},
+          {'stars': 3, 'count': 0},
+          {'stars': 2, 'count': 0},
+          {'stars': 1, 'count': 0},
+        ];
+        _isLoadingRatings = false;
+      });
+    }
   }
 
   void _toggleService(String service) {
@@ -370,9 +416,28 @@ class _FilterModalState extends State<FilterModal> {
                     ),
                     const SizedBox(height: 12),
                     
-                    Column(
-                      children: _ratings.map((rating) => _buildRatingOption(rating)).toList(),
-                    ),
+                    _isLoadingRatings
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        : _ratings.isEmpty
+                            ? const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 20),
+                                child: Text(
+                                  'No ratings available',
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 14,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              )
+                            : Column(
+                                children: _ratings.map((rating) => _buildRatingOption(rating)).toList(),
+                              ),
                   ],
                 ),
               ),

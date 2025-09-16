@@ -235,6 +235,12 @@ class _HomeScreenState extends State<HomeScreen> {
       filtered = filtered.where((shop) {
         List<String> selectedServices = List<String>.from(_currentFilters['selectedServices']);
         
+        // Get the services offered by this shop
+        List<String> shopServices = [];
+        if (shop['services_offered'] != null) {
+          shopServices = List<String>.from(shop['services_offered']);
+        }
+        
         // Check if shop offers any of the selected services
         bool hasService = false;
         
@@ -249,8 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
             case 'Self Service':
             case 'Dry Clean':
             case 'Ironing':
-              // For now, assume all shops offer these basic services
-              hasService = true;
+              if (shopServices.contains(service)) hasService = true;
               break;
           }
           if (hasService) break;
