@@ -23,7 +23,7 @@ function Feedback() {
   const [users, setUsers] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('users'); // 'users', 'businesses', or 'admin'
+  const [activeTab, setActiveTab] = useState('admin'); // 'admin' or 'businesses'
 
   useEffect(() => {
     const fetchData = async () => {
@@ -181,7 +181,7 @@ function Feedback() {
         <header className="page-header">
           <div>
             <h1>Feedback</h1>
-            <p>Showing all feedback from users, businesses, and admin</p>
+            <p>Showing all feedback from users and businesses</p>
           </div>
           <div className="dashboard-header-icons">
             <FiSettings className="icon" />
@@ -197,8 +197,8 @@ function Feedback() {
         {/* Tab Navigation */}
         <div className="feedback-tabs">
           <button 
-            className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
-            onClick={() => setActiveTab('users')}
+            className={`tab-button ${activeTab === 'admin' ? 'active' : ''}`}
+            onClick={() => setActiveTab('admin')}
           >
             User Feedback
           </button>
@@ -208,21 +208,15 @@ function Feedback() {
           >
             Business Feedback
           </button>
-          <button 
-            className={`tab-button ${activeTab === 'admin' ? 'active' : ''}`}
-            onClick={() => setActiveTab('admin')}
-          >
-            Admin Feedback
-          </button>
         </div>
 
         {/* Feedback List */}
         <div className="feedback-list">
           {loading ? (
             <p>Loading...</p>
-          ) : activeTab === 'users' ? (
-            userFeedbacks.length > 0 ? (
-              userFeedbacks.map((fb) => (
+          ) : activeTab === 'admin' ? (
+            adminFeedbacks.length > 0 ? (
+              adminFeedbacks.map((fb) => (
                 <div key={fb.id} className="feedback-card">
                   <div className="feedback-top">
                     <div className="feedback-user">
@@ -255,7 +249,7 @@ function Feedback() {
             ) : (
               <p>No user feedback available.</p>
             )
-          ) : activeTab === 'businesses' ? (
+          ) : (
             businessFeedbacks.length > 0 ? (
               businessFeedbacks.map((fb) => (
                 <div key={fb.id} className="feedback-card">
@@ -289,41 +283,6 @@ function Feedback() {
               ))
             ) : (
               <p>No business feedback available.</p>
-            )
-          ) : (
-            adminFeedbacks.length > 0 ? (
-              adminFeedbacks.map((fb) => (
-                <div key={fb.id} className="feedback-card">
-                  <div className="feedback-top">
-                    <div className="feedback-user">
-                      <img
-                        src={fb.user_avatar}
-                        alt={fb.user_fullname}
-                        className="feedback-avatar"
-                      />
-                      <div>
-                        <h3 className="feedback-name">{fb.user_fullname}</h3>
-                        <span className="feedback-username">
-                          @{fb.user_username}
-                        </span>
-                        <br />
-                        <span className="feedback-date">
-                          {new Date(fb.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="feedback-rating">
-                      {"⭐".repeat(Math.min(Math.floor(fb.rating || 0), 5))}
-                      <span className="rating-value">
-                        {fb.rating ? fb.rating.toFixed(1) : ""}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="feedback-message">{fb.comment}</p>
-                </div>
-              ))
-            ) : (
-              <p>No admin feedback available.</p>
             )
           )}
         </div>
