@@ -39,7 +39,8 @@ class _LaundryScreenState extends State<LaundryScreen> {
     try {
       final response = await Supabase.instance.client
           .from('business_profiles')
-          .select('id, business_name, exact_location, cover_photo_url, does_delivery');
+          .select('id, business_name, exact_location, cover_photo_url, does_delivery')
+          .eq('status', 'approved'); // Only fetch approved businesses
 
       if (mounted) {
         setState(() {
