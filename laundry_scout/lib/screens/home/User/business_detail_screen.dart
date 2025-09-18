@@ -66,7 +66,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: statusColor.withValues(alpha: 0.1),
+        color: statusColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -433,7 +433,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                                   end: Alignment.bottomCenter,
                                   colors: [
                                     Colors.transparent,
-                                    Colors.black.withValues(alpha: 0.7),
+                                    Colors.black.withOpacity(0.7),
                                   ],
                                   stops: const [0.5, 1.0],
                                 ),
@@ -446,7 +446,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                             left: 16,
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.3),
+                                color: Colors.black.withOpacity(0.3),
                                 shape: BoxShape.circle,
                               ),
                               child: IconButton(
@@ -470,7 +470,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
+                                    color: Colors.black.withOpacity(0.1),
                                     spreadRadius: 1,
                                     blurRadius: 10,
                                     offset: const Offset(0, 2),
@@ -562,9 +562,41 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Open Hours - extended to sides
+          // About Us
           Container(
-            width: double.infinity, // Extend to sides
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'About Us',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _fullBusinessData!['about_us'] ?? 'Welcome to our laundry service! We provide professional laundry services with care and attention to detail.',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Open Hours
+          Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.grey[50],
@@ -582,21 +614,20 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Monday - Sunday: 8:00 AM - 8:00 PM',
-                  style: TextStyle(
+                Text(
+                  _fullBusinessData!['open_hours'] ?? 'Open hours not available.',
+                  style: const TextStyle(
                     fontSize: 14,
                     color: Colors.black87,
-                    height: 1.5,
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          // 2. Delivery Service - extended to sides
+          // Delivery Service
           Container(
-            width: double.infinity, // Extend to sides
+            width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.grey[50],
@@ -635,41 +666,9 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
             ),
           ),
           const SizedBox(height: 16),
-          // 3. About Us - extended to sides
+          // Contact Details
           Container(
-            width: double.infinity, // Extend to sides
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'About Us',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  _fullBusinessData!['about_us'] ?? 'Welcome to our laundry service! We provide professional laundry services with care and attention to detail.',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          // 4. Contact Details - extended to sides
-          Container(
-            width: double.infinity, // Extend to sides
+            width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.grey[50],
@@ -692,8 +691,8 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          final phoneNumber = _fullBusinessData!['business_phone_number'] ?? 
-                                        _fullBusinessData!['contact_number'] ?? 
+                          final phoneNumber = _fullBusinessData!['business_phone_number'] ??
+                                        _fullBusinessData!['contact_number'] ??
                                         'No phone number available';
                           showDialog(
                             context: context,
@@ -754,6 +753,81 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          // Address with Map
+          /*
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Address',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _fullBusinessData!['address'] ?? 'Address not available.',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 200,
+                  child: _fullBusinessData!['latitude'] != null && _fullBusinessData!['longitude'] != null
+                      ? FlutterMap(
+                          options: MapOptions(
+                            center: LatLng(
+                              _fullBusinessData!['latitude'],
+                              _fullBusinessData!['longitude'],
+                            ),
+                            zoom: 15.0,
+                          ),
+                          layers: [
+                            TileLayerOptions(
+                              urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              subdomains: ['a', 'b', 'c'],
+                            ),
+                            MarkerLayerOptions(
+                              markers: [
+                                Marker(
+                                  width: 80.0,
+                                  height: 80.0,
+                                  point: LatLng(
+                                    _fullBusinessData!['latitude'],
+                                    _fullBusinessData!['longitude'],
+                                  ),
+                                  builder: (ctx) => const Icon(
+                                    Icons.location_pin,
+                                    color: Colors.red,
+                                    size: 40,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        )
+                      : const Center(
+                          child: Text(
+                            'Map not available.',
+                            style: TextStyle(color: Colors.black54),
+                          ),
+                        ),
+              ),
+            ],
+          ),
+          */
         ],
       ),
     );

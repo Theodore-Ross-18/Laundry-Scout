@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../users/set_businessprofile.dart';
 import '../../splash/splash_screen.dart';
 
 // Business Feedback Modal for admin feedback
@@ -496,41 +495,6 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                             ],
                           ),
                         ),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Edit Profile Button
-                         GestureDetector(
-                           onTap: () {
-                             Navigator.push(
-                               context,
-                               MaterialPageRoute(
-                                 builder: (context) => SetBusinessProfileScreen(
-                                   username: _businessProfile!["business_name"] ?? "Business",
-                                   businessName: _businessProfile!["business_name"] ?? "",
-                                   exactLocation: _businessProfile!["exact_location"] ?? "",
-                                 ),
-                               ),
-                             );
-                           },
-                           child: Container(
-                             width: double.infinity,
-                             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                             decoration: BoxDecoration(
-                               color: Color(0xFFF8F9FA),
-                               borderRadius: BorderRadius.circular(12),
-                               border: Border.all(color: Color(0xFFE9ECEF), width: 1),
-                             ),
-                             child: Text(
-                               'Edit Business Profile',
-                               style: TextStyle(
-                                 color: Color(0xFF6C757D),
-                                 fontSize: 16,
-                                 fontWeight: FontWeight.w500,
-                               ),
-                             ),
-                           ),
-                         ),
                         
                         const SizedBox(height: 40),
                         

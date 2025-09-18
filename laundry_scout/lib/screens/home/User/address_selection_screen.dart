@@ -14,7 +14,6 @@ class AddressSelectionScreen extends StatefulWidget {
 }
 
 class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
-  final TextEditingController _searchController = TextEditingController();
   String _currentAddress = 'Fetching location...';
   bool _isLoading = true;
   
@@ -33,12 +32,6 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
     super.initState();
     _mapController = MapController();
     _initializeLocation();
-  }
-  
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 
   Future<void> _initializeLocation() async {
@@ -84,16 +77,33 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
         Placemark place = placemarks[0];
         String address = '';
         
+        // Build comprehensive address with barangay information
         if (place.street != null && place.street!.isNotEmpty) {
           address += place.street!;
         }
+        
+        // Add barangay/sub-locality if available
+        if (place.subLocality != null && place.subLocality!.isNotEmpty) {
+          if (address.isNotEmpty) address += ', ';
+          address += place.subLocality!;
+        }
+        
+        // Add locality (city/municipality)
         if (place.locality != null && place.locality!.isNotEmpty) {
           if (address.isNotEmpty) address += ', ';
           address += place.locality!;
         }
+        
+        // Add administrative area (province/state)
         if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) {
           if (address.isNotEmpty) address += ', ';
           address += place.administrativeArea!;
+        }
+        
+        // Add postal code if available
+        if (place.postalCode != null && place.postalCode!.isNotEmpty) {
+          if (address.isNotEmpty) address += ' ';
+          address += place.postalCode!;
         }
         
         return address.isNotEmpty ? address : 'Location selected';
@@ -434,32 +444,38 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
                       ),
                     ),
                   ),
-                  // Search and confirm section
+                  // Confirm section
                   Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
-                        // Search bar
+                        // Current address display
                         Container(
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: Colors.grey[50],
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[200]!),
+                            border: Border.all(color: Colors.grey[300]!),
                           ),
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: InputDecoration(
-                              hintText: 'Search your location',
-                              prefixIcon: const Icon(
+                          child: Row(
+                            children: [
+                              const Icon(
                                 Icons.location_on,
                                 color: Color(0xFF6F5ADC),
+                                size: 20,
                               ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 16,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _currentAddress,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black87,
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 16),

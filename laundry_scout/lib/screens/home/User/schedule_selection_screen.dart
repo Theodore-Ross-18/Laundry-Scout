@@ -104,21 +104,6 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
                                 color: Colors.black87,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'Choose your area...',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ),
                             const SizedBox(height: 16),
                             ..._dropoffTimes.map((time) => _buildTimeSlot(
                               time,
