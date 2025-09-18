@@ -10,6 +10,9 @@ import Clients from "./Components/Clients";
 import History from "./Components/History";
 import Feedback from "./Components/Feedback";
 import { supabase } from "./Supabase/supabaseClient";
+import ClientDetails from "./Components/Details/ClientDetails";
+import Profile from "./Components/settings/Profile";
+import Settings from "./Components/settings/Settings";
 
 // Splash screen
 function SplashScreen() {
@@ -17,14 +20,7 @@ function SplashScreen() {
     <div className="app-bg">
       <div className="splash-screen">
       <div className="splash-logo">
-        <svg width="80" height="80" viewBox="0 0 64 64" fill="none">
-          <path
-            d="M16 8L32 16L48 8M16 8V56H48V8"
-            stroke="#fff"
-            strokeWidth="3"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <img src="/lslogo.png" alt="Laundry Scout Logo" width="250" height="250" />
       </div>
         <h1 className="splash-title">Laundry Scout</h1>
       </div>
@@ -53,14 +49,7 @@ function AdminLogin({ onLogin }) {
     <div className="app-bg">
       <div className="login-container">
         <div className="login-logo">
-          <svg width="60" height="60" viewBox="0 0 64 64" fill="none">
-            <path
-              d="M16 8L32 16L48 8M16 8V56H48V8"
-              stroke="#fff"
-              strokeWidth="3"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <img src="/lslogo.png" alt="Laundry Scout Logo" width="60" height="60" />
         </div>
         <h2 className="login-title">Welcome Admin</h2>
         <form className="login-form" onSubmit={handleSubmit}>
@@ -133,8 +122,11 @@ function App() {
         <Route path="/users" element={<Users />} />
         <Route path="/applications" element={<Applications />} />
         <Route path="/clients" element={<Clients />} />
+        <Route path="/clients/:id" element={<ClientDetails />} />
         <Route path="/history" element={<History />} />
         <Route path="/feedback" element={<Feedback />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/profile" element={<Profile />} />
         {/* catch-all route */}
         <Route path="*" element={<h2>Page Not Found</h2>} />
       </Routes>
