@@ -27,7 +27,7 @@ function Dashboard({ users }) {
   const [applicants, setApplicants] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // 🔧 Settings / Notifications
+  // 🔔 Notifications & Profile
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -46,6 +46,7 @@ function Dashboard({ users }) {
   });
   const [totalRatings, setTotalRatings] = useState(0);
 
+  // 📊 Fetch stats
   useEffect(() => {
     const fetchStats = async () => {
       const { count: customerCount } = await supabase
@@ -109,42 +110,107 @@ function Dashboard({ users }) {
     fetchRatings();
   }, []);
 
-  // 🔔 Notifications (Supabase real-time)
+  // 🔔 Notifications (initial fetch + real-time)
   useEffect(() => {
     const addNotification = (title, message) => {
       setNotifications((prev) => [
-        { id: Date.now(), title, message, time: new Date().toLocaleTimeString(), read: false },
+        {
+          id: Date.now(),
+          title,
+          message,
+          time: new Date().toLocaleTimeString(),
+          read: false,
+        },
         ...prev,
       ]);
       setUnreadCount((prev) => prev + 1);
     };
 
+    // Initial fetch of last 3 users & applicants
+    const fetchNotifications = async () => {
+      const { data: recentUsers } = await supabase
+        .from("user_profiles")
+        .select("id, email, username, created_at")
+        .order("created_at", { ascending: false })
+        .limit(3);
+
+      const { data: recentApplicants } = await supabase
+        .from("business_profiles")
+        .select("id, business_name, created_at")
+        .order("created_at", { ascending: false })
+        .limit(3);
+
+      let initial = [];
+
+      if (recentUsers) {
+        initial = [
+          ...initial,
+          ...recentUsers.map((u) => ({
+            id: `user-${u.id}`,
+            title: "New user registered",
+            message: `User ${u.username || u.email} just signed up.`,
+            time: new Date(u.created_at).toLocaleTimeString(),
+            read: false,
+          })),
+        ];
+      }
+
+      if (recentApplicants) {
+        initial = [
+          ...initial,
+          ...recentApplicants.map((a) => ({
+            id: `applicant-${a.id}`,
+            title: "New business application",
+            message: `${a.business_name} submitted a new application.`,
+            time: new Date(a.created_at).toLocaleTimeString(),
+            read: false,
+          })),
+        ];
+      }
+
+      // Sort newest first
+      initial.sort((a, b) => new Date(b.time) - new Date(a.time));
+      setNotifications(initial);
+      setUnreadCount(initial.length);
+    };
+
+    fetchNotifications();
+
+    // Real-time listeners
     const userSub = supabase
       .channel("user-changes")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "user_profiles" }, (payload) => {
-        addNotification("New user registered", `User ${payload.new.username || payload.new.email} just signed up.`);
+        addNotification(
+          "New user registered",
+          `User ${payload.new.username || payload.new.email} just signed up.`
+        );
       })
       .subscribe();
 
     const appSub = supabase
       .channel("business-changes")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "business_profiles" }, (payload) => {
-        addNotification("New business application", `${payload.new.business_name} submitted a new application.`);
-      })
-      .subscribe();
-
-    const feedbackSub = supabase
-      .channel("feedback-changes")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "feedback" }, (payload) => {
-        addNotification("New feedback received", `A user left a rating of ${payload.new.rating}★`);
+        addNotification(
+          "New business application",
+          `${payload.new.business_name} submitted a new application.`
+        );
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(userSub);
       supabase.removeChannel(appSub);
-      supabase.removeChannel(feedbackSub);
     };
+  }, []);
+
+  // ✅ Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowSettings(false);
+      setShowNotifications(false);
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   return (
@@ -192,7 +258,10 @@ function Dashboard({ users }) {
             </li>
           </ul>
         </nav>
-        <div className="logout" onClick={() => navigate("/logout")}>
+        <div className="logout" onClick={async () => {
+          await supabase.auth.signOut();
+          navigate("/login");
+        }}>
           <FiLogOut className="menu-icon" />
           <span>Log Out</span>
         </div>
@@ -216,21 +285,24 @@ function Dashboard({ users }) {
             <div className="dropdown-wrapper">
               <FiBell
                 className="icon"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setShowNotifications(!showNotifications);
                   setShowSettings(false);
                   setUnreadCount(0);
                 }}
               />
-              {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+              {unreadCount > 0 && (
+                <span className="notification-badge">{unreadCount}</span>
+              )}
 
               {showNotifications && (
-                <div className="dropdown-panel">
+                <div className="dropdown-panel" onClick={(e) => e.stopPropagation()}>
                   {notifications.length === 0 ? (
                     <div className="dropdown-item">No notifications</div>
                   ) : (
                     notifications.slice(0, 5).map((n) => (
-                      <div key={n.uid} className="dropdown-item">
+                      <div key={n.id} className="dropdown-item">
                         <strong>{n.title}</strong>
                         <p>{n.message}</p>
                         <span className="notif-time">{n.time}</span>
@@ -247,26 +319,37 @@ function Dashboard({ users }) {
               )}
             </div>
 
-            {/* Profile */}
+            {/* Profile Dropdown */}
             <div className="dropdown-wrapper">
               <img
                 src="https://via.placeholder.com/32"
                 alt="profile"
                 className="profile-avatar"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setShowSettings(!showSettings);
                   setShowNotifications(false);
                 }}
               />
               {showSettings && (
-                <div className="dropdown-panel">
-                  <div className="dropdown-item" onClick={() => navigate("/profile")}>
+                <div className="dropdown-panel" onClick={(e) => e.stopPropagation()}>
+                  <div className="dropdown-item" onClick={() => {
+                    setShowSettings(false);
+                    navigate("/profile");
+                  }}>
                     My Profile
                   </div>
-                  <div className="dropdown-item" onClick={() => navigate("/settings")}>
+                  <div className="dropdown-item" onClick={() => {
+                    setShowSettings(false);
+                    navigate("/settings");
+                  }}>
                     Settings
                   </div>
-                  <div className="dropdown-item" onClick={() => alert("Logging out...")}>
+                  <div className="dropdown-item" onClick={async () => {
+                    setShowSettings(false);
+                    await supabase.auth.signOut();
+                    navigate("/login");
+                  }}>
                     Logout
                   </div>
                 </div>
@@ -297,7 +380,9 @@ function Dashboard({ users }) {
             <div className="rating-bars">
               {[5, 4, 3, 2, 1].map((star) => {
                 const percent =
-                  totalRatings > 0 ? (ratingCounts[star] / totalRatings) * 100 : 0;
+                  totalRatings > 0
+                    ? (ratingCounts[star] / totalRatings) * 100
+                    : 0;
                 return (
                   <div className="rating-bar-row" key={star}>
                     <span>{star}★</span>
@@ -316,30 +401,22 @@ function Dashboard({ users }) {
 
           <div className="overview-stats">
             <div className="stat-box">
-              <div className="stat-icon">
-                <FiUserCheck />
-              </div>
+              <div className="stat-icon"><FiUserCheck /></div>
               <div className="stat-label">Customers</div>
               <div className="stat-value">{customers}</div>
             </div>
             <div className="stat-box">
-              <div className="stat-icon">
-                <FiUserPlus />
-              </div>
+              <div className="stat-icon"><FiUserPlus /></div>
               <div className="stat-label">Owners</div>
               <div className="stat-value">{owners}</div>
             </div>
             <div className="stat-box">
-              <div className="stat-icon">
-                <FiGrid />
-              </div>
+              <div className="stat-icon"><FiGrid /></div>
               <div className="stat-label">QR Scans</div>
               <div className="stat-value">{scans}</div>
             </div>
             <div className="stat-box">
-              <div className="stat-icon">
-                <FiMail />
-              </div>
+              <div className="stat-icon"><FiMail /></div>
               <div className="stat-label">Private Feedback</div>
               <div className="stat-value">{feedback}</div>
             </div>
@@ -350,10 +427,7 @@ function Dashboard({ users }) {
         <section className="dashboard-applicants">
           <div className="applicants-header">
             <div className="applicants-title">Applicants</div>
-            <button
-              className="view-all-btn"
-              onClick={() => navigate("/applications")}
-            >
+            <button className="view-all-btn" onClick={() => navigate("/applications")}>
               View All
             </button>
           </div>
@@ -370,9 +444,7 @@ function Dashboard({ users }) {
               {applicants.map((app, idx) => (
                 <tr key={idx}>
                   <td>{app.business_name}</td>
-                  <td>
-                    {app.owner_first_name || ""} {app.owner_last_name || ""}
-                  </td>
+                  <td>{app.owner_first_name || ""} {app.owner_last_name || ""}</td>
                   <td>
                     {app.created_at
                       ? new Date(app.created_at).toLocaleDateString("en-US", {

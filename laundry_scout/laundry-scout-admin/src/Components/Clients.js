@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../Supabase/supabaseClient";
-import "../Style/Clients.css"; // ✅ custom CSS file
+import "../Style/Clients.css";
 import {
   FiSettings,
   FiBell,
@@ -12,22 +12,16 @@ import {
   FiClock,
   FiMessageSquare,
   FiLogOut,
-  FiUserCheck,
-  FiUserPlus,
-  FiGrid,
-  FiMail,
 } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 
-function Clients({ onNavigate }) {
+function Clients() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [searchHistory, setSearchHistory] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-    // 🔧 Settings / Notifications
+  // 🔧 Settings / Notifications
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -35,13 +29,14 @@ function Clients({ onNavigate }) {
 
   const navigate = useNavigate();
 
-  // 🔹 Fetch data from Supabase
+  // 🔹 Fetch APPROVED clients from Supabase
   useEffect(() => {
     const fetchClients = async () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("business_profiles")
-        .select("*");
+        .select("*")
+        .eq("status", "approved"); // ✅ only approved
 
       if (error) {
         console.error("Error fetching clients:", error.message);
@@ -54,33 +49,11 @@ function Clients({ onNavigate }) {
     fetchClients();
   }, []);
 
-  // 🔹 Filter clients based on search
+  // 🔹 Filter clients
   const filteredClients = clients.filter((client) => {
     const name = client?.business_name || client?.name || "";
     return name.toLowerCase().includes(search.toLowerCase());
   });
-
-  // 🔹 Save search history when pressing Enter
-  const handleSearchKey = (e) => {
-    if (e.key === "Enter" && search.trim() !== "") {
-      setSearchHistory((prev) => {
-        if (prev.includes(search)) return prev;
-        return [search, ...prev].slice(0, 5); // ✅ max 5 items
-      });
-      setShowHistory(false);
-    }
-  };
-
-  // 🔹 Select from history
-  const handleSelectHistory = (item) => {
-    setSearch(item);
-    setShowHistory(false);
-  };
-
-  // 🔹 Remove from history
-  const handleRemoveHistory = (item) => {
-    setSearchHistory((prev) => prev.filter((entry) => entry !== item));
-  };
 
   return (
     <div className="dashboard-root">
@@ -143,7 +116,7 @@ function Clients({ onNavigate }) {
             />
             <div>
               <h1>CLIENTS</h1>
-              <p>All the Laundry Businesses Approved</p>
+              <p>All Approved Laundry Businesses</p>
             </div>
           </div>
           <div className="client-header-icons">
@@ -157,7 +130,9 @@ function Clients({ onNavigate }) {
                   setUnreadCount(0);
                 }}
               />
-              {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+              {unreadCount > 0 && (
+                <span className="notification-badge">{unreadCount}</span>
+              )}
 
               {showNotifications && (
                 <div className="dropdown-panel">
@@ -195,29 +170,47 @@ function Clients({ onNavigate }) {
               />
               {showSettings && (
                 <div className="dropdown-panel">
-                  <div className="dropdown-item" onClick={() => navigate("/profile")}>
+                  <div
+                    className="dropdown-item"
+                    onClick={() => navigate("/profile")}
+                  >
                     My Profile
                   </div>
-                  <div className="dropdown-item" onClick={() => navigate("/settings")}>
+                  <div
+                    className="dropdown-item"
+                    onClick={() => navigate("/settings")}
+                  >
                     Settings
                   </div>
-                  <div className="dropdown-item" onClick={() => alert("Logging out...")}>
+                  <div
+                    className="dropdown-item"
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      navigate("/login");
+                    }}
+                  >
                     Logout
                   </div>
                 </div>
               )}
             </div>
           </div>
-          
         </header>
 
         {/* Client Cards */}
         {loading ? (
           <p>Loading clients...</p>
+        ) : filteredClients.length === 0 ? (
+          <p>No approved clients found.</p>
         ) : (
           <div className="grid">
             {filteredClients.map((client) => (
-              <div key={client.id} className="client-card">
+              <div
+                key={client.id}
+                className="client-card"
+                onClick={() => navigate(`/clients/${client.id}`)} // ✅ go to detail
+                style={{ cursor: "pointer" }}
+              >
                 <img
                   src={
                     client?.cover_photo_url ||
