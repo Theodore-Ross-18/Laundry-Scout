@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
+import { handleLogout } from "./Components/Services/Logout";
 
 // Import your components
 import Dashboard from "./Components/Dashboard";
@@ -10,6 +11,9 @@ import Clients from "./Components/Clients";
 import History from "./Components/History";
 import Feedback from "./Components/Feedback";
 import { supabase } from "./Supabase/supabaseClient";
+import ClientDetails from "./Components/Details/ClientDetails";
+import Profile from "./Components/settings/Profile";
+import Settings from "./Components/settings/Settings";
 
 // Splash screen
 function SplashScreen() {
@@ -17,7 +21,7 @@ function SplashScreen() {
     <div className="app-bg">
       <div className="splash-screen">
       <div className="splash-logo">
-        <img src="/lslogo.png" alt="Laundry Scout Logo" width="250" height="250" />
+        <img src="/lslogo.png" alt="Laundry Scout Logo" width="100" height="100" />
       </div>
         <h1 className="splash-title">Laundry Scout</h1>
       </div>
@@ -103,6 +107,10 @@ function App() {
     }
   }
 
+  const handleUserLogout = async () => {
+    await handleLogout(() => setLoggedIn(false));
+  };
+
   if (showSplash) {
     return <SplashScreen />;
   }
@@ -115,12 +123,15 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard users={users} />} />
+        <Route path="/dashboard" element={<Dashboard users={users} onLogout={handleUserLogout} />} />
         <Route path="/users" element={<Users />} />
         <Route path="/applications" element={<Applications />} />
         <Route path="/clients" element={<Clients />} />
+        <Route path="/clients/:id" element={<ClientDetails />} />
         <Route path="/history" element={<History />} />
         <Route path="/feedback" element={<Feedback />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/profile" element={<Profile />} />
         {/* catch-all route */}
         <Route path="*" element={<h2>Page Not Found</h2>} />
       </Routes>

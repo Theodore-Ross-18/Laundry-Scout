@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "../Supabase/supabaseClient";
 import {
   FiSettings,
-  FiBell,
   FiMenu,
   FiHome,
   FiFileText,
@@ -18,22 +17,15 @@ import {
 } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import "../Style/Dashboard.css";
+import Notifications from "./Notifications";
 
-function Dashboard({ users }) {
+function Dashboard({ onLogout }) {
   const [customers, setCustomers] = useState(0);
   const [owners, setOwners] = useState(0);
   const [scans, setScans] = useState(0);
   const [feedback, setFeedback] = useState(0);
   const [applicants, setApplicants] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  // 🔧 Settings / Notifications
-  const [showSettings, setShowSettings] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  const navigate = useNavigate();
 
   // ⭐ Ratings
   const [averageRating, setAverageRating] = useState(0);
@@ -46,6 +38,11 @@ function Dashboard({ users }) {
   });
   const [totalRatings, setTotalRatings] = useState(0);
 
+  // Profile dropdown
+  const [showSettings, setShowSettings] = useState(false);
+  const navigate = useNavigate();
+
+  // 📊 Fetch stats
   useEffect(() => {
     const fetchStats = async () => {
       const { count: customerCount } = await supabase
@@ -109,42 +106,13 @@ function Dashboard({ users }) {
     fetchRatings();
   }, []);
 
-  // 🔔 Notifications (Supabase real-time)
+  // ✅ Close dropdown when clicking outside
   useEffect(() => {
-    const addNotification = (title, message) => {
-      setNotifications((prev) => [
-        { id: Date.now(), title, message, time: new Date().toLocaleTimeString(), read: false },
-        ...prev,
-      ]);
-      setUnreadCount((prev) => prev + 1);
+    const handleClickOutside = () => {
+      setShowSettings(false);
     };
-
-    const userSub = supabase
-      .channel("user-changes")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "user_profiles" }, (payload) => {
-        addNotification("New user registered", `User ${payload.new.username || payload.new.email} just signed up.`);
-      })
-      .subscribe();
-
-    const appSub = supabase
-      .channel("business-changes")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "business_profiles" }, (payload) => {
-        addNotification("New business application", `${payload.new.business_name} submitted a new application.`);
-      })
-      .subscribe();
-
-    const feedbackSub = supabase
-      .channel("feedback-changes")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "feedback" }, (payload) => {
-        addNotification("New feedback received", `A user left a rating of ${payload.new.rating}★`);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(userSub);
-      supabase.removeChannel(appSub);
-      supabase.removeChannel(feedbackSub);
-    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   return (
@@ -192,7 +160,7 @@ function Dashboard({ users }) {
             </li>
           </ul>
         </nav>
-        <div className="logout" onClick={() => navigate("/logout")}>
+        <div className="logout" onClick={onLogout}>
           <FiLogOut className="menu-icon" />
           <span>Log Out</span>
         </div>
@@ -211,62 +179,49 @@ function Dashboard({ users }) {
               <div className="dashboard-date">{new Date().toDateString()}</div>
             </div>
           </div>
+
           <div className="dashboard-header-icons">
             {/* Notifications */}
-            <div className="dropdown-wrapper">
-              <FiBell
-                className="icon"
-                onClick={() => {
-                  setShowNotifications(!showNotifications);
-                  setShowSettings(false);
-                  setUnreadCount(0);
-                }}
-              />
-              {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+            <Notifications />
 
-              {showNotifications && (
-                <div className="dropdown-panel">
-                  {notifications.length === 0 ? (
-                    <div className="dropdown-item">No notifications</div>
-                  ) : (
-                    notifications.slice(0, 5).map((n) => (
-                      <div key={n.uid} className="dropdown-item">
-                        <strong>{n.title}</strong>
-                        <p>{n.message}</p>
-                        <span className="notif-time">{n.time}</span>
-                      </div>
-                    ))
-                  )}
-                  <div
-                    className="dropdown-item"
-                    onClick={() => navigate("/notifications")}
-                  >
-                    View All
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Profile */}
+            {/* Profile Dropdown */}
             <div className="dropdown-wrapper">
               <img
                 src="https://via.placeholder.com/32"
                 alt="profile"
                 className="profile-avatar"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setShowSettings(!showSettings);
-                  setShowNotifications(false);
                 }}
               />
               {showSettings && (
-                <div className="dropdown-panel">
-                  <div className="dropdown-item" onClick={() => navigate("/profile")}>
+                <div
+                  className="dropdown-panel"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div
+                    className="dropdown-item"
+                    onClick={() => {
+                      setShowSettings(false);
+                      navigate("/profile");
+                    }}
+                  >
                     My Profile
                   </div>
-                  <div className="dropdown-item" onClick={() => navigate("/settings")}>
+                  <div
+                    className="dropdown-item"
+                    onClick={() => {
+                      setShowSettings(false);
+                      navigate("/settings");
+                    }}
+                  >
                     Settings
                   </div>
-                  <div className="dropdown-item" onClick={() => alert("Logging out...")}>
+                  <div
+                    className="dropdown-item"
+                    onClick={onLogout}
+                  >
                     Logout
                   </div>
                 </div>
@@ -297,7 +252,9 @@ function Dashboard({ users }) {
             <div className="rating-bars">
               {[5, 4, 3, 2, 1].map((star) => {
                 const percent =
-                  totalRatings > 0 ? (ratingCounts[star] / totalRatings) * 100 : 0;
+                  totalRatings > 0
+                    ? (ratingCounts[star] / totalRatings) * 100
+                    : 0;
                 return (
                   <div className="rating-bar-row" key={star}>
                     <span>{star}★</span>
