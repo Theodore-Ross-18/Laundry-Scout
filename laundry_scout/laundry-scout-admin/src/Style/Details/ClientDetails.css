@@ -1,0 +1,114 @@
+/* ================================
+   Client Details Page Styling
+   ================================ */
+
+.client-detail {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  transition: 0.3s ease;
+}
+
+/* Back Button */
+.back-btn {
+  background: #f7f9fc;
+  border: 1px solid #ddd;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: 0.2s;
+  margin-bottom: 1rem;
+  color: #333;
+}
+.back-btn:hover {
+  background: #eaf1fb;
+  border-color: #c3dafd;
+  color: #1a73e8;
+}
+
+/* Header Section */
+.client-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.cover-photo {
+  width: 100%;
+  max-height: 280px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.client-header h1 {
+  font-size: 2rem;
+  color: #2c3e50;
+  margin-bottom: 0.3rem;
+}
+.address {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 0.5rem;
+}
+.since {
+  font-size: 0.9rem;
+  color: #777;
+}
+
+/* Body Section */
+.client-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Section Titles */
+.client-body h2 {
+  font-size: 1.25rem;
+  color: #2c3e50;
+  border-left: 5px solid #3498db;
+  padding-left: 0.6rem;
+  margin-bottom: 0.8rem;
+  font-weight: 600;
+}
+
+/* Paragraphs */
+.client-body p {
+  margin: 0.4rem 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #444;
+}
+
+/* Highlight important labels */
+.client-body strong {
+  color: #1a73e8;
+  font-weight: 600;
+}
+
+/* Extra polish for sections */
+.client-body section {
+  background: #f9fbfd;
+  padding: 1rem 1.2rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .client-detail {
+    padding: 1rem;
+  }
+  .client-header h1 {
+    font-size: 1.6rem;
+  }
+  .client-body h2 {
+    font-size: 1.1rem;
+  }
+}
