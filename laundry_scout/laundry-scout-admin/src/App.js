@@ -17,14 +17,7 @@ function SplashScreen() {
     <div className="app-bg">
       <div className="splash-screen">
       <div className="splash-logo">
-        <svg width="80" height="80" viewBox="0 0 64 64" fill="none">
-          <path
-            d="M16 8L32 16L48 8M16 8V56H48V8"
-            stroke="#fff"
-            strokeWidth="3"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <img src="/lslogo.png" alt="Laundry Scout Logo" width="250" height="250" />
       </div>
         <h1 className="splash-title">Laundry Scout</h1>
       </div>
@@ -53,14 +46,7 @@ function AdminLogin({ onLogin }) {
     <div className="app-bg">
       <div className="login-container">
         <div className="login-logo">
-          <svg width="60" height="60" viewBox="0 0 64 64" fill="none">
-            <path
-              d="M16 8L32 16L48 8M16 8V56H48V8"
-              stroke="#fff"
-              strokeWidth="3"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <img src="/lslogo.png" alt="Laundry Scout Logo" width="60" height="60" />
         </div>
         <h2 className="login-title">Welcome Admin</h2>
         <form className="login-form" onSubmit={handleSubmit}>
