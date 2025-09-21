@@ -19,7 +19,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   // Laundry Information controllers
   final _aboutUsController = TextEditingController();
   final _openHoursController = TextEditingController();
-  final _contactDetailsController = TextEditingController();
   
   // Services Offered
   final List<String> _availableServices = [
@@ -62,7 +61,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _phoneController.dispose();
     _aboutUsController.dispose();
     _openHoursController.dispose();
-    _contactDetailsController.dispose();
     _serviceNameController.dispose();
     _priceController.dispose();
     
@@ -95,10 +93,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _phoneController.text = _businessProfile!['business_phone_number'] ?? '';
           
           // Load laundry information
-          _aboutUsController.text = _businessProfile!['about_us'] ?? '';
+          _aboutUsController.text = _businessProfile!['about_business'] ?? '';
           _openHoursController.text = _businessProfile!['open_hours'] ?? '';
-          _deliveryAvailable = _businessProfile!['delivery_available'] ?? false;
-          _contactDetailsController.text = _businessProfile!['contact_details'] ?? '';
+          _deliveryAvailable = _businessProfile!['does_delivery'] ?? false;
           
           // Load services offered
           final servicesOffered = _businessProfile!['services_offered'];
@@ -109,7 +106,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           }
           
           // Load pricelist
-          final pricelistData = _businessProfile!['pricelist'];
+          final pricelistData = _businessProfile!['service_prices'];
           if (pricelistData is List) {
             _pricelist.clear();
             for (var item in pricelistData) {
@@ -130,6 +127,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             };
           }
           
+          // Sync services with pricelist to ensure all selected services have prices
+          _syncServicesWithPricelist();
+          
           _isLoading = false;
         });
       }
@@ -148,9 +148,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void _toggleService(String service) {
     setState(() {
       if (_selectedServices.contains(service)) {
+        // Remove service from selected services
         _selectedServices.remove(service);
+        
+        // Also remove from pricelist if it exists
+        _pricelist.removeWhere((item) => item['service'] == service);
       } else {
+        // Add service to selected services
         _selectedServices.add(service);
+        
+        // Check if service already exists in pricelist
+        bool serviceExists = _pricelist.any((item) => item['service'] == service);
+        
+        // If not exists, add it with default price of 0.00
+        if (!serviceExists) {
+          _pricelist.add({
+            'service': service,
+            'price': '0.00',
+          });
+        }
       }
     });
   }
@@ -210,6 +226,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
   }
 
+  void _syncServicesWithPricelist() {
+    setState(() {
+      // Create a set of services that already have prices
+      Set<String> existingServices = _pricelist.map((item) => item['service'] as String).toSet();
+      
+      // Add any missing selected services to pricelist with default price
+      for (String service in _selectedServices) {
+        if (!existingServices.contains(service)) {
+          _pricelist.add({
+            'service': service,
+            'price': '0.00',
+          });
+        }
+      }
+      
+      // Remove any services from pricelist that are no longer selected
+      _pricelist.removeWhere((item) => !_selectedServices.contains(item['service']));
+    });
+  }
+
   Future<void> _selectSchedule() async {
     final result = await Navigator.push(
       context,
@@ -243,12 +279,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'business_name': _businessNameController.text.trim(),
         'email': _emailController.text.trim(),
         'business_phone_number': _phoneController.text.trim(),
-        'about_us': _aboutUsController.text.trim(),
+        'about_business': _aboutUsController.text.trim(),
         'open_hours': _openHoursController.text.trim(),
-        'delivery_available': _deliveryAvailable,
-        'contact_details': _contactDetailsController.text.trim(),
+        'does_delivery': _deliveryAvailable,
         'services_offered': _selectedServices,
-        'pricelist': _pricelist,
+        'service_prices': _pricelist,
       };
 
       // Add schedule if selected
@@ -445,8 +480,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }) {
     return TextFormField(
       controller: controller,
+      style: const TextStyle(color: Colors.black87),
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: const TextStyle(color: Colors.black87),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -466,7 +503,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       keyboardType: keyboardType,
       maxLines: maxLines ?? 1,
       validator: validator,
-      style: const TextStyle(color: Colors.black87),
     );
   }
 
@@ -616,6 +652,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
+                            color: Colors.black,
                           ),
                         ),
                         const Spacer(),
@@ -630,17 +667,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: _contactDetailsController,
-                      label: 'Contact Details',
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return null; // Not required anymore
-                        }
-                        return null;
-                      },
-                    ),
+
                     const SizedBox(height: 32),
                     
                     // 3. Services Offered Section
@@ -693,11 +720,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 ),
                               ),
                             ),
-                            Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.grey[400],
-                              size: 16,
-                            ),
+                            const Icon(Icons.edit, color: Colors.blue),
                           ],
                         ),
                       ),
@@ -716,6 +739,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             controller: _serviceNameController,
                             decoration: InputDecoration(
                               hintText: 'Service name',
+                              hintStyle: const TextStyle(color: Colors.black),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(color: Colors.grey[300]!),
@@ -734,6 +758,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             controller: _priceController,
                             decoration: InputDecoration(
                               hintText: 'Price',
+                              hintStyle: const TextStyle(color: Colors.black),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(color: Colors.grey[300]!),
@@ -751,6 +776,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         IconButton(
                           icon: const Icon(Icons.add, color: Color(0xFF7B61FF)),
                           onPressed: _addPricelistItem,
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.sync, color: Colors.blue),
+                          onPressed: _syncServicesWithPricelist,
+                          tooltip: 'Sync services with pricelist',
                         ),
                       ],
                     ),

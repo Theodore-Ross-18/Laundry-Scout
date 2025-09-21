@@ -21,7 +21,7 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
     'name': item['service_name'] ?? 'Unknown Service',
     'icon': _getServiceIcon(item['service_name']),
     'color': _getServiceColor(item['service_name']),
-    'price': double.tryParse(item['price']?.toString() ?? '0') ?? 0,
+    'price': (double.tryParse(item['price']?.toString() ?? '0') ?? 0).toStringAsFixed(2),
   }).toList();
 
   @override

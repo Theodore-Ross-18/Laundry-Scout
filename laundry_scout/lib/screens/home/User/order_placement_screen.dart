@@ -168,39 +168,101 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
       final businessId = widget.businessData['id'];
       final response = await Supabase.instance.client
           .from('business_profiles')
-          .select('services_offered, service_prices')
+          .select('services_offered')
           .eq('id', businessId)
           .single();
 
-      final servicesOffered = response['services_offered'] as List<dynamic>? ?? [];
-      final servicePrices = response['service_prices'] as Map<String, dynamic>? ?? {};
+      final servicesOffered = response['services_offered'];
+
+      print('DEBUG ORDER: servicesOffered = $servicesOffered');
+      print('DEBUG ORDER: servicesOffered type = ${servicesOffered.runtimeType}');
+      print('DEBUG ORDER: servicesOffered is null? = ${servicesOffered == null}');
 
       setState(() {
         _pricelist = [];
-        for (String service in servicesOffered) {
-          final price = servicePrices[service]?.toDouble() ?? 0.0;
-          _pricelist.add({
-            'service_name': service,
-            'price': price.toStringAsFixed(2),
+        
+        if (servicesOffered is List) {
+          print('DEBUG ORDER: Processing as List format');
+          // Handle JSONB array format with objects containing 'service' and 'price' fields
+          for (var item in servicesOffered) {
+            print('DEBUG ORDER: Processing item = $item');
+            if (item is Map<String, dynamic>) {
+              String priceStr = '';
+              if (item['price'] != null) {
+                // Ensure price is formatted as a string with 2 decimal places
+                double price = double.tryParse(item['price'].toString()) ?? 0.0;
+                priceStr = price.toStringAsFixed(2);
+              } else {
+                priceStr = '0.00';
+              }
+              
+              _pricelist.add({
+                'service_name': item['service'] ?? '',
+                'price': priceStr,
+              });
+            }
+          }
+        } else if (servicesOffered is Map<String, dynamic>) {
+          print('DEBUG ORDER: Processing as Map format');
+          // Handle JSONB object format where keys are service names and values are prices
+          servicesOffered.forEach((service, price) {
+            String priceStr = '';
+            if (price != null) {
+              // Ensure price is formatted as a string with 2 decimal places
+              double priceValue = double.tryParse(price.toString()) ?? 0.0;
+              priceStr = priceValue.toStringAsFixed(2);
+            } else {
+              priceStr = '0.00';
+            }
+            
+            _pricelist.add({
+              'service_name': service,
+              'price': priceStr,
+            });
           });
         }
+        
+        print('DEBUG ORDER: Final _pricelist = $_pricelist');
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading business data: $e');
+      print('DEBUG ORDER: Error loading business data: $e');
       setState(() {
         // Fallback to widget.businessData if Supabase fails
         final servicesOffered = widget.businessData['services_offered'] as List<dynamic>? ?? [];
-        final servicePrices = widget.businessData['service_prices'] as Map<String, dynamic>? ?? {};
+        final servicePrices = widget.businessData['service_prices'];
+        
+        print('DEBUG ORDER FALLBACK: servicesOffered = $servicesOffered');
+        print('DEBUG ORDER FALLBACK: servicePrices = $servicePrices');
+        print('DEBUG ORDER FALLBACK: servicePrices type = ${servicePrices.runtimeType}');
         
         _pricelist = [];
-        for (String service in servicesOffered) {
-          final price = servicePrices[service]?.toDouble() ?? 0.0;
-          _pricelist.add({
-            'service_name': service,
-            'price': price.toStringAsFixed(2),
-          });
+        
+        if (servicePrices is List) {
+          print('DEBUG ORDER FALLBACK: Processing as List format');
+          // Handle JSONB array format with objects containing 'service' and 'price' fields
+          for (var item in servicePrices) {
+            print('DEBUG ORDER FALLBACK: Processing item = $item');
+            if (item is Map<String, dynamic>) {
+              _pricelist.add({
+                'service_name': item['service'] ?? '',
+                'price': (item['price']?.toDouble() ?? 0.0).toStringAsFixed(2),
+              });
+            }
+          }
+        } else if (servicePrices is Map<String, dynamic>) {
+          print('DEBUG ORDER FALLBACK: Processing as Map format');
+          // Handle JSONB object format where keys are service names and values are prices
+          for (String service in servicesOffered) {
+            final price = servicePrices[service]?.toDouble() ?? 0.0;
+            _pricelist.add({
+              'service_name': service,
+              'price': price.toStringAsFixed(2),
+            });
+          }
         }
+        
+        print('DEBUG ORDER FALLBACK: Final _pricelist = $_pricelist');
         _isLoading = false;
       });
     }
@@ -250,7 +312,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF6F5ADC).withValues(alpha: 0.1),
+                color: const Color(0xFF6F5ADC).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
@@ -392,7 +454,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6F5ADC).withValues(alpha: 0.1),
+                    color: const Color(0xFF6F5ADC).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
