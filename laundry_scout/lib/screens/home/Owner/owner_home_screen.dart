@@ -111,6 +111,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
         setState(() {
           _promoCount = response.length;
         });
+        print('Promo count: $_promoCount'); // Add this line for debugging
       }
     } catch (e) {
       print('Error loading promo stats: $e');
@@ -131,6 +132,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
         setState(() {
           _reviewCount = response.length;
         });
+        print('Review count: $_reviewCount'); // Add this line for debugging
       }
     } catch (e) {
       print('Error loading review stats: $e');
