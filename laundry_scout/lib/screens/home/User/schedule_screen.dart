@@ -161,7 +161,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF6F5ADC).withValues(alpha: 0.1) : Colors.grey[50],
+            color: isSelected ? const Color(0xFF6F5ADC).withOpacity(0.1) : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected ? const Color(0xFF6F5ADC) : Colors.grey[200]!,

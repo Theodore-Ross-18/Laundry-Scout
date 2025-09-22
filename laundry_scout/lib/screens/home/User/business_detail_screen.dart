@@ -32,9 +32,58 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _loadFullBusinessData();
-    _loadReviews();
-    _loadPricelist();
+    _loadFullBusinessData().then((_) {
+      // Load pricelist and reviews only after business data is loaded
+      _loadPricelist();
+      _loadReviews();
+      _debugBusinessData(); // Add debug call
+    });
+  }
+
+  Future<void> _debugBusinessData() async {
+    try {
+      // Query the current business to see the actual data format
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('id, business_name, services_offered, service_prices')
+          .eq('id', widget.businessData['id'])
+          .single();
+      
+      print('=== DEBUG CURRENT BUSINESS DATA ===');
+      print('Business ID: ${response['id']}');
+      print('Business Name: ${response['business_name']}');
+      print('Services Offered: ${response['services_offered']}');
+      print('Services Offered Type: ${response['services_offered'].runtimeType}');
+      print('Service Prices: ${response['service_prices']}');
+      print('Service Prices Type: ${response['service_prices'].runtimeType}');
+      
+      if (response['service_prices'] is List) {
+        print('Service Prices as List:');
+        for (var item in response['service_prices']) {
+          print('  Item: $item');
+          print('  Item Type: ${item.runtimeType}');
+          if (item is Map) {
+            print('  Service: ${item['service']}');
+            print('  Price: ${item['price']}');
+          }
+        }
+      } else if (response['service_prices'] is Map) {
+        print('Service Prices as Map:');
+        response['service_prices'].forEach((key, value) {
+          print('  $key: $value');
+        });
+      }
+      
+      // Also debug the loaded pricelist
+      print('=== LOADED PRICELIST ===');
+      print('Pricelist length: ${_pricelist.length}');
+      for (var item in _pricelist) {
+        print('  Service: ${item['service_name']}, Price: ${item['price']}');
+      }
+      print('=== END DEBUG ===');
+    } catch (e) {
+      print('Error debugging business data: $e');
+    }
   }
 
   Widget _buildAvailabilityStatusBadge(String? availabilityStatus) {
@@ -66,7 +115,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: statusColor.withValues(alpha: 0.1),
+        color: statusColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -149,7 +198,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     try {
       final response = await Supabase.instance.client
           .from('business_profiles')
-          .select('*, availability_status, business_phone_number')
+          .select('*, availability_status, business_phone_number, services_offered, service_prices')
           .eq('id', widget.businessData['id'])
           .single();
       
@@ -187,45 +236,122 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
 
   Future<void> _loadPricelist() async {
     try {
-      // Get service prices from business_profiles table
-      final response = await Supabase.instance.client
-          .from('business_profiles')
-          .select('services_offered, service_prices')
-          .eq('id', widget.businessData['id'])
-          .single();
+      // First, check if we have service_prices in the business profile
+      final servicePricesData = _fullBusinessData?['service_prices'];
+      print('DEBUG: service_prices from business profile = $servicePricesData');
       
-      final servicesOffered = response['services_offered'] as List<dynamic>? ?? [];
-      final servicePrices = response['service_prices'] as Map<String, dynamic>? ?? {};
-      
-      // Convert to pricelist format
-      List<Map<String, dynamic>> pricelist = [];
-      for (String service in servicesOffered) {
-        final price = servicePrices[service]?.toDouble() ?? 0.0;
-        pricelist.add({
-          'service_name': service,
-          'price': price.toStringAsFixed(2),
-          'description': _getServiceDescription(service),
+      if (servicePricesData != null && servicePricesData is List && servicePricesData.isNotEmpty) {
+        // Format the service_prices data from business profile
+        List<Map<String, dynamic>> pricelist = [];
+        
+        for (var item in servicePricesData) {
+          if (item is Map<String, dynamic>) {
+            String serviceName = item['service'] ?? item['service_name'] ?? '';
+            String priceStr = '';
+            
+            if (item['price'] != null) {
+              double price = double.tryParse(item['price'].toString()) ?? 0.0;
+              priceStr = price.toStringAsFixed(2);
+            } else {
+              priceStr = '0.00';
+            }
+            
+            if (serviceName.isNotEmpty) {
+              pricelist.add({
+                'service_name': serviceName,
+                'price': priceStr,
+                'description': _getServiceDescription(serviceName),
+              });
+            }
+          }
+        }
+        
+        print('DEBUG: Formatted pricelist from service_prices = $pricelist');
+        
+        setState(() {
+          _pricelist = pricelist;
         });
+        print('DEBUG: Business detail _pricelist set from service_prices: $_pricelist');
+        return;
       }
+      
+      // Fallback: Try to load from the dedicated pricelist table
+      final pricelistResponse = await Supabase.instance.client
+          .from('pricelist')
+          .select('*')
+          .eq('business_id', widget.businessData['id'])
+          .order('service_name');
+      
+      print('DEBUG: Pricelist from database = $pricelistResponse');
+      
+      if (pricelistResponse.isNotEmpty) {
+        // Format the pricelist data
+        List<Map<String, dynamic>> pricelist = pricelistResponse.map((item) {
+          String priceStr = '';
+          if (item['price'] != null) {
+            double price = double.tryParse(item['price'].toString()) ?? 0.0;
+            priceStr = price.toStringAsFixed(2);
+          } else {
+            priceStr = '0.00';
+          }
+          
+          return {
+            'service_name': item['service_name'] ?? item['service'] ?? '',
+            'price': priceStr,
+            'description': _getServiceDescription(item['service_name'] ?? item['service'] ?? ''),
+          };
+        }).toList();
+        
+        print('DEBUG: Formatted pricelist = $pricelist');
       
       setState(() {
         _pricelist = pricelist;
       });
-    } catch (e) {
-      // Fallback: try to load from old pricelist table if it exists
-      try {
-        final fallbackResponse = await Supabase.instance.client
-            .from('pricelist')
-            .select('*')
-            .eq('business_id', widget.businessData['id'])
-            .order('service_name');
+      print('DEBUG: Business detail _pricelist set to: $_pricelist');
+      return;
+      }
+      
+      // Last fallback: Create default prices for services offered
+      final servicesOfferedData = _fullBusinessData?['services_offered'];
+      print('DEBUG: No service_prices found, using services_offered = $servicesOfferedData');
+      
+      if (servicesOfferedData is List) {
+        List<Map<String, dynamic>> pricelist = [];
+        print('DEBUG: services_offered is List, processing ${servicesOfferedData.length} items');
+        
+        for (var serviceName in servicesOfferedData) {
+          print('DEBUG: Processing service: $serviceName (type: ${serviceName.runtimeType})');
+          if (serviceName is String) {
+            // Create default pricing for each service
+            String defaultPrice = _getDefaultPrice(serviceName);
+            String description = _getServiceDescription(serviceName);
+            
+            print('DEBUG: Created service - name: $serviceName, price: $defaultPrice, desc: $description');
+            
+            pricelist.add({
+              'service_name': serviceName,
+              'price': defaultPrice,
+              'description': description,
+            });
+          } else {
+            print('DEBUG: Service is not a String, skipping');
+          }
+        }
+        
+        print('DEBUG: Created default pricelist = $pricelist');
         
         setState(() {
-          _pricelist = List<Map<String, dynamic>>.from(fallbackResponse);
+          _pricelist = pricelist;
         });
-      } catch (fallbackError) {
-        // Error loading fallback pricelist
+        print('DEBUG: Business detail _pricelist set to default: $_pricelist');
+      } else {
+        print('DEBUG: services_offered is not a List or is null');
       }
+    } catch (e) {
+      print('DEBUG: Error in _loadPricelist: $e');
+      setState(() {
+        _pricelist = [];
+      });
     }
   }
 
@@ -243,6 +369,32 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
         return 'Professional pressing service';
       default:
         return 'Professional laundry service';
+    }
+  }
+
+  String _getDefaultPrice(String service) {
+    // Default prices for common services
+    switch (service.toLowerCase()) {
+      case 'wash & fold':
+        return '50.00';
+      case 'ironing':
+        return '30.00';
+      case 'deliver':
+      case 'delivery':
+        return '20.00';
+      case 'dry cleaning':
+      case 'dry clean':
+        return '80.00';
+      case 'pressing':
+        return '25.00';
+      case 'pick up':
+        return '15.00';
+      case 'drop off':
+        return '10.00';
+      case 'self service':
+        return '40.00';
+      default:
+        return '45.00';
     }
   }
 
@@ -433,7 +585,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                                   end: Alignment.bottomCenter,
                                   colors: [
                                     Colors.transparent,
-                                    Colors.black.withValues(alpha: 0.7),
+                                    Colors.black.withOpacity(0.7),
                                   ],
                                   stops: const [0.5, 1.0],
                                 ),
@@ -446,7 +598,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                             left: 16,
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.3),
+                                color: Colors.black.withOpacity(0.3),
                                 shape: BoxShape.circle,
                               ),
                               child: IconButton(
@@ -470,7 +622,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
+                                    color: Colors.black.withOpacity(0.1),
                                     spreadRadius: 1,
                                     blurRadius: 10,
                                     offset: const Offset(0, 2),
@@ -562,9 +714,41 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Open Hours - extended to sides
+          // About Us
           Container(
-            width: double.infinity, // Extend to sides
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'About Us',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _fullBusinessData!['about_us'] ?? 'Welcome to our laundry service! We provide professional laundry services with care and attention to detail.',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Open Hours
+          Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.grey[50],
@@ -582,21 +766,20 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Monday - Sunday: 8:00 AM - 8:00 PM',
-                  style: TextStyle(
+                Text(
+                  _fullBusinessData!['open_hours'] ?? 'Open hours not available.',
+                  style: const TextStyle(
                     fontSize: 14,
                     color: Colors.black87,
-                    height: 1.5,
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          // 2. Delivery Service - extended to sides
+          // Delivery Service
           Container(
-            width: double.infinity, // Extend to sides
+            width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.grey[50],
@@ -635,41 +818,9 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
             ),
           ),
           const SizedBox(height: 16),
-          // 3. About Us - extended to sides
+          // Contact Details
           Container(
-            width: double.infinity, // Extend to sides
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'About Us',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  _fullBusinessData!['about_us'] ?? 'Welcome to our laundry service! We provide professional laundry services with care and attention to detail.',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          // 4. Contact Details - extended to sides
-          Container(
-            width: double.infinity, // Extend to sides
+            width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.grey[50],
@@ -692,8 +843,8 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          final phoneNumber = _fullBusinessData!['business_phone_number'] ?? 
-                                        _fullBusinessData!['contact_number'] ?? 
+                          final phoneNumber = _fullBusinessData!['business_phone_number'] ??
+                                        _fullBusinessData!['contact_number'] ??
                                         'No phone number available';
                           showDialog(
                             context: context,
@@ -754,12 +905,90 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          // Address with Map
+          /*
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Address',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _fullBusinessData!['address'] ?? 'Address not available.',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 200,
+                  child: _fullBusinessData!['latitude'] != null && _fullBusinessData!['longitude'] != null
+                      ? FlutterMap(
+                          options: MapOptions(
+                            center: LatLng(
+                              _fullBusinessData!['latitude'],
+                              _fullBusinessData!['longitude'],
+                            ),
+                            zoom: 15.0,
+                          ),
+                          layers: [
+                            TileLayerOptions(
+                              urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                              subdomains: ['a', 'b', 'c'],
+                            ),
+                            MarkerLayerOptions(
+                              markers: [
+                                Marker(
+                                  width: 80.0,
+                                  height: 80.0,
+                                  point: LatLng(
+                                    _fullBusinessData!['latitude'],
+                                    _fullBusinessData!['longitude'],
+                                  ),
+                                  builder: (ctx) => const Icon(
+                                    Icons.location_pin,
+                                    color: Colors.red,
+                                    size: 40,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        )
+                      : const Center(
+                          child: Text(
+                            'Map not available.',
+                            style: TextStyle(color: Colors.black54),
+                          ),
+                        ),
+              ),
+            ],
+          ),
+          */
         ],
       ),
     );
   }
 
   Widget _buildDeliverTab() {
+    // Get services offered from business data
+    final servicesOffered = _fullBusinessData?['services_offered'] ?? [];
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -783,11 +1012,21 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                   ),
                 ),
                 const SizedBox(height: 16),
-                _buildServiceIcon('Washing', Icons.local_laundry_service),
-                const SizedBox(height: 12),
-                _buildServiceIcon('Delivery', Icons.local_shipping),
-                const SizedBox(height: 12),
-                _buildServiceIcon('Wash & Fold', Icons.checkroom),
+                if (servicesOffered.isEmpty)
+                  const Text(
+                    'No services available',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                  )
+                else
+                  ...servicesOffered.map((service) => Column(
+                    children: [
+                      _buildServiceIcon(service, _getServiceIcon(service)),
+                      if (service != servicesOffered.last) const SizedBox(height: 12),
+                    ],
+                  )).toList(),
               ],
             ),
           ),
@@ -841,62 +1080,95 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                 color: Colors.grey[50],
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Center(
-                child: Text(
-                  'Pricing information will be available soon',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
-                ),
-              ),
-            )
-          else
-            ...(_pricelist.map((item) => Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item['service_name'] ?? 'Service',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        if (item['description'] != null)
-                          Text(
-                            item['description'],
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
-                          ),
-                      ],
+                  Icon(
+                    Icons.info_outline,
+                    size: 48,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Pricing information will be available soon',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
                     ),
                   ),
+                  const SizedBox(height: 8),
                   Text(
-                    '₱${item['price'] ?? '0'}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF6F5ADC),
+                    'Contact the business directly for pricing details',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
                     ),
                   ),
                 ],
               ),
-            )).toList()),
+            )
+          else
+            Column(
+              children: _pricelist.map((item) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      spreadRadius: 1,
+                      blurRadius: 3,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item['service_name'] ?? 'Service',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          if (item['description'] != null)
+                            Text(
+                              item['description'],
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6F5ADC).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '₱${(double.tryParse(item['price']?.toString() ?? '0') ?? 0).toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF6F5ADC),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )).toList(),
+            ),
         ],
       ),
     );
@@ -1090,6 +1362,31 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
         ],
       ),
     );
+  }
+
+  IconData _getServiceIcon(String serviceName) {
+    // Map service names to appropriate icons
+    switch (serviceName.toLowerCase()) {
+      case 'washing':
+      case 'wash':
+        return Icons.local_laundry_service;
+      case 'delivery':
+      case 'pickup & delivery':
+        return Icons.local_shipping;
+      case 'wash & fold':
+      case 'folding':
+        return Icons.checkroom;
+      case 'dry cleaning':
+        return Icons.dry_cleaning;
+      case 'ironing':
+        return Icons.iron;
+      case 'stain removal':
+        return Icons.cleaning_services;
+      case 'alterations':
+        return Icons.cut;
+      default:
+        return Icons.local_laundry_service; // Default laundry icon
+    }
   }
 
   Widget _buildServiceIcon(String serviceName, IconData icon) {

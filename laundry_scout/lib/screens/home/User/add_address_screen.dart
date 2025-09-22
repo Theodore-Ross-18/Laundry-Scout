@@ -80,6 +80,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         ),
                         child: TextField(
                           controller: _addressController,
+                          style: const TextStyle(color: Colors.black),
                           decoration: InputDecoration(
                             hintText: 'Enter your address',
                             hintStyle: TextStyle(color: Colors.grey[500]),
@@ -263,9 +264,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       ),
     );
     
-    if (result != null && result is String) {
+    if (result != null && result is Map<String, dynamic>) {
       setState(() {
-        _addressController.text = result;
+        _addressController.text = result['address'] ?? '';
       });
     }
   }
