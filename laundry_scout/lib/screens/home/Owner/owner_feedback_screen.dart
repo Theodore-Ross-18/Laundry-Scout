@@ -57,7 +57,7 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
         print('Real-time feedback update received: ${feedback.length} items');
         if (mounted) {
           setState(() {
-            _feedback = feedback;
+            _feedback = feedback.where((item) => item['user_profiles'] != null).toList();
             _calculateStats();
           });
         }
@@ -92,7 +92,7 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
       
       if (mounted) {
         setState(() {
-          _feedback = feedback;
+          _feedback = feedback.where((item) => item['user_profiles'] != null).toList();
           _calculateStats();
         });
       }

@@ -10,6 +10,7 @@ import 'owner_feedback_screen.dart'; // Import the feedback screen
 import 'edit_profile_screen.dart'; // Import the edit profile screen
 import 'availability_screen.dart'; // Import the availability screen
 import 'orders_screen.dart'; // Import the orders screen
+import '../../../services/feedback_service.dart'; // Import FeedbackService
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -30,6 +31,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   };
   int _promoCount = 0;
   int _reviewCount = 0;
+  final FeedbackService _feedbackService = FeedbackService();
 
   @override
   void initState() {
@@ -37,7 +39,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     _loadBusinessProfile();
     _loadOrderStats();
     _loadPromoStats();
-    _loadReviewStats();
+    // _loadReviewStats(); // Removed as it's now called after _loadBusinessProfile
   }
 
   Future<void> _loadBusinessProfile() async {
@@ -45,10 +47,21 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
+      final businessId = await _feedbackService.getBusinessIdForOwner(user.id);
+      if (businessId == null) {
+        print('No business ID found for user: ${user.id}');
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
       final response = await Supabase.instance.client
           .from('business_profiles')
           .select()
-          .eq('id', user.id)
+          .eq('id', businessId) // Use the fetched businessId
           .single();
 
       if (mounted) {
@@ -56,6 +69,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
           _businessProfile = response;
           _isLoading = false;
         });
+        _loadReviewStats(); // Load review stats after business profile is loaded
       }
     } catch (e) {
       if (mounted) {
@@ -121,16 +135,23 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   Future<void> _loadReviewStats() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) return;
+      if (user == null || _businessProfile == null) return; // Ensure _businessProfile is loaded
 
-      final response = await Supabase.instance.client
-          .from('feedback')
-          .select('id')
-          .eq('business_id', user.id);
+      final businessId = _businessProfile!['id'];
+      if (businessId == null) {
+        print('Business ID is null, cannot load review stats.');
+        return;
+      }
+
+      // Use FeedbackService to get feedback, which includes user_profiles
+      final allFeedback = await _feedbackService.getFeedback(businessId);
+
+      // Filter feedback to only count those with user_profiles
+      final filteredFeedback = allFeedback.where((feedback) => feedback['user_profiles'] != null).toList();
 
       if (mounted) {
         setState(() {
-          _reviewCount = response.length;
+          _reviewCount = filteredFeedback.length;
         });
         print('Review count: $_reviewCount'); // Add this line for debugging
       }
