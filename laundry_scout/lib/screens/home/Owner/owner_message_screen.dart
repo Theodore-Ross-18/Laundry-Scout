@@ -1059,7 +1059,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
         'user_id': user.id,
         'rating': _rating,
         'comment': _feedbackController.text.trim(),
-        'feedback_type': 'admin', // Identify as admin feedback for message screen
+        'feedback_type': 'business', // Identify as business feedback for message screen
         'created_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       });
