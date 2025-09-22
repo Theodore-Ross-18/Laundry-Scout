@@ -37,7 +37,7 @@ function Users() {
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
-      const { data, error } = await supabase.from("user_profiles").select("*");
+      const { data, error } = await supabase.from("user_profiles").select("*, verified_status");
 
       if (!error) {
         setUsers(data);
