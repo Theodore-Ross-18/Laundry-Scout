@@ -415,6 +415,33 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
                         ),
             ),
           ),
+          // Feedback button
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.all(20),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _showFeedbackModal(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF7B61FF),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Feedback',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -434,6 +461,13 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
     } else {
       return 'now';
     }
+  }
+
+  void _showFeedbackModal() {
+    showDialog(
+      context: context,
+      builder: (context) => const FeedbackModal(),
+    );
   }
 }
 
@@ -962,5 +996,292 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
     } else {
       return timeString;
     }
+  }
+}
+
+class FeedbackModal extends StatefulWidget {
+  const FeedbackModal({super.key});
+
+  @override
+  State<FeedbackModal> createState() => _FeedbackModalState();
+}
+
+class _FeedbackModalState extends State<FeedbackModal> {
+  final TextEditingController _feedbackController = TextEditingController();
+  int _rating = 0;
+  bool _isSubmitted = false;
+
+  @override
+  void dispose() {
+    _feedbackController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitFeedback() async {
+    if (_feedbackController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your feedback'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (_rating == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a rating'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSubmitted = true;
+    });
+
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please login to submit feedback'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // SQL query to insert admin feedback from message screen
+      await Supabase.instance.client.from('feedback').insert({
+        'user_id': user.id,
+        'rating': _rating,
+        'comment': _feedbackController.text.trim(),
+        'feedback_type': 'admin', // Identify as admin feedback for message screen
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Thank you for your feedback!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error submitting feedback: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitted = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        margin: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(30),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              const Text(
+                'Give Us Your Feedback',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2D3748),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Star rating display
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) {
+                  return Icon(
+                    Icons.star,
+                    color: Colors.grey[300],
+                    size: 24,
+                  );
+                }),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Do you have any thoughts you would\nlike to share?',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF718096),
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              // Interactive star rating
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _rating = index + 1;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(
+                        Icons.star,
+                        color: index < _rating ? const Color(0xFFFFB800) : Colors.grey[300],
+                        size: 36,
+                      ),
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 24),
+              // Feedback text area
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF7FAFC),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: Colors.grey[200]!,
+                    width: 1,
+                  ),
+                ),
+                child: TextField(
+                  controller: _feedbackController,
+                  maxLines: 5,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF2D3748),
+                  ),
+                  decoration: const InputDecoration(
+                    hintText: 'Leave Your Thoughts Here...',
+                    hintStyle: TextStyle(
+                      color: Color(0xFFA0AEC0),
+                      fontSize: 16,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 30),
+              // Action buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(25),
+                        border: Border.all(
+                          color: Colors.grey[300]!,
+                          width: 1,
+                        ),
+                      ),
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Color(0xFF718096),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(25),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF7B61FF), Color(0xFF9C88FF)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF7B61FF).withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: _isSubmitted ? null : _submitFeedback,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                        ),
+                        child: _isSubmitted
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                'Submit',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -28,12 +28,16 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     'in_progress': 0,
     'completed': 0,
   };
+  int _promoCount = 0;
+  int _reviewCount = 0;
 
   @override
   void initState() {
     super.initState();
     _loadBusinessProfile();
     _loadOrderStats();
+    _loadPromoStats();
+    _loadReviewStats();
   }
 
   Future<void> _loadBusinessProfile() async {
@@ -90,6 +94,46 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       }
     } catch (e) {
       print('Error loading order stats: $e');
+    }
+  }
+
+  Future<void> _loadPromoStats() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final response = await Supabase.instance.client
+          .from('promos')
+          .select('id')
+          .eq('business_id', user.id);
+
+      if (mounted) {
+        setState(() {
+          _promoCount = response.length;
+        });
+      }
+    } catch (e) {
+      print('Error loading promo stats: $e');
+    }
+  }
+
+  Future<void> _loadReviewStats() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final response = await Supabase.instance.client
+          .from('feedback')
+          .select('id')
+          .eq('business_id', user.id);
+
+      if (mounted) {
+        setState(() {
+          _reviewCount = response.length;
+        });
+      }
+    } catch (e) {
+      print('Error loading review stats: $e');
     }
   }
 
@@ -219,8 +263,8 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                       },
                                       child: _analyticsCard(Icons.history, '${_orderStats['total']}', 'Order History', Color(0xFF7B61FF)),
                                     ),
-                                    _analyticsCard(Icons.local_offer, '0', 'Promos', Color(0xFF7B61FF)),
-                                    _analyticsCard(Icons.star_outline, '0', 'Reviews', Color(0xFF7B61FF)),
+                                    _analyticsCard(Icons.local_offer, '$_promoCount', 'Promos', Color(0xFF7B61FF)),
+                                    _analyticsCard(Icons.star_outline, '$_reviewCount', 'Reviews', Color(0xFF7B61FF)),
                                     _slotAnalyticsCard(_businessProfile?['availability_status'] ?? 'Open Slots'),
                                   ],
                                 ),
