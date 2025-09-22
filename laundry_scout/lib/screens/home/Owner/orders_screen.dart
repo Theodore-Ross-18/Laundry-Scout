@@ -93,6 +93,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F8F8),
       appBar: AppBar(
+        leading: const BackButton(color: Colors.black),
         title: const Text('Orders'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,

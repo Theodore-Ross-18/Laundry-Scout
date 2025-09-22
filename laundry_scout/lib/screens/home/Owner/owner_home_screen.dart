@@ -207,21 +207,21 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                             padding: const EdgeInsets.all(20.0),
                             child: Column(
                               children: [
+
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    _statBox(Icons.shopping_bag, '${_orderStats['total']}', 'Orders', Color(0xFF4BE1AB)),
-                                    _statBox(Icons.timer, '${_orderStats['pending']}', 'Pending', Color(0xFFFF8A71)),
-                                    _viewOrdersButton(),
-                                  ],
-                                ),
-                                const SizedBox(height: 20),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    _statBox(Icons.sync, '${_orderStats['in_progress']}', 'On Progress', Color(0xFFFFC542)),
-                                    _statBox(Icons.local_shipping, '${_orderStats['completed']}', 'Delivered', Color(0xFF3ECFFF)),
-                                    SizedBox(width: 80), // To align with View Orders button
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(builder: (context) => const OrdersScreen()),
+                                        );
+                                      },
+                                      child: _analyticsCard(Icons.history, '${_orderStats['total']}', 'Order History', Color(0xFF7B61FF)),
+                                    ),
+                                    _analyticsCard(Icons.local_offer, '0', 'Promos', Color(0xFF7B61FF)),
+                                    _analyticsCard(Icons.star_outline, '0', 'Reviews', Color(0xFF7B61FF)),
+                                    _slotAnalyticsCard(_businessProfile?['availability_status'] ?? 'Open Slots'),
                                   ],
                                 ),
                               ],
@@ -234,17 +234,18 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
                         child: Column(
                           children: [
+                            // Row 1: Add Promo | Edit Profile
                             Row(
                               children: [
                                 Expanded(
-                                  child: GestureDetector( // Wrap with GestureDetector
+                                  child: GestureDetector(
                                     onTap: () {
-                                      Navigator.of(context).push( // Navigate to AddPromoScreen
+                                      Navigator.of(context).push(
                                         MaterialPageRoute(builder: (context) => const AddPromoScreen()),
                                       );
                                     },
-                                    child: _actionCard(Icons.percent, 'Add Promo', Colors.deepPurple),
-                                  ),
+                                    child: _actionCard(Icons.local_offer, 'Add Promo', Colors.deepPurple),
+                                    ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -260,6 +261,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                               ],
                             ),
                             const SizedBox(height: 16),
+                            // Row 2: Reviews | Set Availability
                             Row(
                               children: [
                                 Expanded(
@@ -269,8 +271,8 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                         MaterialPageRoute(builder: (context) => const OwnerFeedbackScreen()),
                                       );
                                     },
-                                    child: _actionCard(Icons.reviews, 'Reviews', Colors.deepPurple),
-                                  ),
+                                    child: _actionCard(Icons.star_outline, 'Reviews', Colors.deepPurple),
+                                    ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -289,11 +291,32 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                 ),
                               ],
                             ),
+                            const SizedBox(height: 16),
+                            // Row 3: Add Branch | Add Staff
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      // Placeholder for Add Branch functionality
+                                    },
+                                    child: _actionCard(Icons.add, 'Add Branch', Colors.blue),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      // Placeholder for Add Staff functionality
+                                    },
+                                    child: _actionCard(Icons.person_add, 'Add Staff', Colors.green),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
-                      SizedBox(height: 24),
-                      // Removed the old navigation items container
                     ],
                   ),
                 ),
@@ -338,52 +361,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     );
   }
 
-  Widget _statBox(IconData icon, String value, String label, Color color) {
-    return Container(
-      width: 80,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 4),
-          Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
-          Text(label, style: TextStyle(fontSize: 12, color: Colors.black)),
-        ],
-      ),
-    );
-  }
-
-  Widget _viewOrdersButton() {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => const OrdersScreen()),
-        );
-      },
-      child: Container(
-        width: 80,
-        height: 64,
-        decoration: BoxDecoration(
-          color: Color(0xFF7B61FF),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.shopping_cart_checkout, color: Colors.white, size: 28),
-              const SizedBox(height: 4),
-              Text('View Orders', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   // Helper method for availability card
   Widget _availabilityCard() {
@@ -455,12 +432,60 @@ Widget _actionCard(IconData icon, String label, Color iconColor) {
   );
 }
 
-// Widget _navItem(IconData icon, String label, bool selected) {  <-- REMOVE THIS WIDGET
-//   return Column(
-//     mainAxisSize: MainAxisSize.min,
-//     children: [
-//       Icon(icon, color: selected ? Colors.deepPurple : Colors.black54),
-//       Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: selected ? Colors.deepPurple : Colors.black54, fontSize: 12)),
-//     ],
-//   );
-// }
+
+
+// Helper method for analytics box
+Widget _analyticsCard(IconData icon, String value, String label, Color iconColor) {
+  return Container(
+    width: 80,
+    height: 90,
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: Colors.grey[200]!),
+    ),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, color: iconColor, size: 24),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.black), textAlign: TextAlign.center),
+      ],
+    ),
+  );
+}
+
+// Helper method for slot status analytics box
+Widget _slotAnalyticsCard(String availabilityStatus) {
+  Color dotColor = Colors.green;
+  if (availabilityStatus == 'Filling Up') dotColor = Colors.orange;
+  if (availabilityStatus == 'Full') dotColor = Colors.red;
+  if (availabilityStatus == 'Unavailable') dotColor = Colors.grey;
+
+  return Container(
+    width: 80,
+    height: 90,
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: Colors.grey[200]!),
+    ),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 18,
+          height: 18,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: dotColor,
+          ),
+        ),
+        const SizedBox(height: 4),
+        const Text('Slot', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+        Text(availabilityStatus.split(' ')[0], style: const TextStyle(fontSize: 12, color: Colors.black)),
+      ],
+    ),
+  );
+}

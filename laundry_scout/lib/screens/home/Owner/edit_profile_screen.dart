@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../widgets/optimized_image.dart';
-import '../User/schedule_selection_screen.dart';
+
+import 'dart:convert' as json;
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -18,7 +19,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   
   // Laundry Information controllers
   final _aboutUsController = TextEditingController();
-  final _openHoursController = TextEditingController();
   
   // Services Offered
   final List<String> _availableServices = [
@@ -42,6 +42,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final Map<int, TextEditingController> _editPriceControllers = {};
   final Set<int> _editingIndices = {};
   
+  // Weekly Schedule (currently not shown in UI)
+  List<Map<String, dynamic>> _weeklySchedule = [];
+  final Map<String, TextEditingController> _openControllers = {};
+  final Map<String, TextEditingController> _closeControllers = {};
+  final Map<String, bool> _closedDays = {};
+  
   bool _isLoading = true;
   bool _isSaving = false;
   bool _deliveryAvailable = false;
@@ -60,7 +66,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _aboutUsController.dispose();
-    _openHoursController.dispose();
     _serviceNameController.dispose();
     _priceController.dispose();
     
@@ -71,6 +76,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     for (var controller in _editPriceControllers.values) {
       controller.dispose();
     }
+    
+    // Dispose schedule controllers
+    for (var c in _openControllers.values) {
+      c.dispose();
+    }
+    for (var c in _closeControllers.values) {
+      c.dispose();
+    }
+    // removed weekly schedule controllers
+    
     super.dispose();
   }
 
@@ -94,7 +109,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           
           // Load laundry information
           _aboutUsController.text = _businessProfile!['about_business'] ?? '';
-          _openHoursController.text = _businessProfile!['open_hours'] ?? '';
           _deliveryAvailable = _businessProfile!['does_delivery'] ?? false;
           
           // Load services offered
@@ -130,6 +144,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           // Sync services with pricelist to ensure all selected services have prices
           _syncServicesWithPricelist();
           
+          // Load weekly schedule
+          final openHours = _businessProfile!['open_hours'] ?? '';
+          if (openHours.isNotEmpty) {
+            try {
+              List<dynamic> scheduleData = json.jsonDecode(openHours);
+              _weeklySchedule = scheduleData.map((e) => Map<String, dynamic>.from(e)).toList();
+            } catch (e) {
+              _weeklySchedule = _getDefaultSchedule();
+            }
+          } else {
+            _weeklySchedule = _getDefaultSchedule();
+          }
+          
+          // Initialize controllers for schedule
+          for (var schedule in _weeklySchedule) {
+            String day = schedule['day'];
+            _openControllers[day] = TextEditingController(text: schedule['open']);
+            _closeControllers[day] = TextEditingController(text: schedule['close']);
+            _closedDays[day] = schedule['closed'] ?? false;
+          }
+          // Removed loading of weekly schedule
           _isLoading = false;
         });
       }
@@ -143,6 +178,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         );
       }
     }
+  }
+
+  List<Map<String, dynamic>> _getDefaultSchedule() {
+    return [
+      {'day': 'Monday', 'open': '09:00', 'close': '18:00', 'closed': false},
+      {'day': 'Tuesday', 'open': '09:00', 'close': '18:00', 'closed': false},
+      {'day': 'Wednesday', 'open': '09:00', 'close': '18:00', 'closed': false},
+      {'day': 'Thursday', 'open': '09:00', 'close': '18:00', 'closed': false},
+      {'day': 'Friday', 'open': '09:00', 'close': '18:00', 'closed': false},
+      {'day': 'Saturday', 'open': '09:00', 'close': '18:00', 'closed': false},
+      {'day': 'Sunday', 'open': '09:00', 'close': '18:00', 'closed': true},
+    ];
   }
 
   void _toggleService(String service) {
@@ -246,22 +293,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
   }
 
-  Future<void> _selectSchedule() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ScheduleSelectionScreen(
-          selectedSchedule: _selectedSchedule,
-        ),
-      ),
-    );
 
-    if (result != null && result is Map<String, String>) {
-      setState(() {
-        _selectedSchedule = result;
-      });
-    }
-  }
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
@@ -280,7 +312,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'email': _emailController.text.trim(),
         'business_phone_number': _phoneController.text.trim(),
         'about_business': _aboutUsController.text.trim(),
-        'open_hours': _openHoursController.text.trim(),
         'does_delivery': _deliveryAvailable,
         'services_offered': _selectedServices,
         'service_prices': _pricelist,
@@ -517,6 +548,117 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  // Editable schedule section for owner
+  Widget _buildEditableScheduleSection() {
+    final List<String> pickupTimes = [
+      '8:00 AM - 10:00 AM',
+      '11:00 AM - 1:00 PM',
+      '3:00 PM - 5:00 PM',
+    ];
+    final List<String> dropoffTimes = [
+      '1:00 PM - 3:00 PM',
+      '4:00 PM - 6:00 PM',
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Pick-Up Schedule',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...pickupTimes.map((time) => _buildScheduleTimeSlot(
+          time: time,
+          isSelected: _selectedSchedule != null && _selectedSchedule!['pickup'] == time,
+          onTap: () {
+            setState(() {
+              if (_selectedSchedule == null) {
+                _selectedSchedule = {'pickup': time, 'dropoff': ''};
+              } else {
+                _selectedSchedule!['pickup'] = time;
+              }
+            });
+          },
+        )),
+        const SizedBox(height: 24),
+        const Text(
+          'Drop-Off Schedule',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...dropoffTimes.map((time) => _buildScheduleTimeSlot(
+          time: time,
+          isSelected: _selectedSchedule != null && _selectedSchedule!['dropoff'] == time,
+          onTap: () {
+            setState(() {
+              if (_selectedSchedule == null) {
+                _selectedSchedule = {'pickup': '', 'dropoff': time};
+              } else {
+                _selectedSchedule!['dropoff'] = time;
+              }
+            });
+          },
+        )),
+      ],
+    );
+  }
+
+  Widget _buildScheduleTimeSlot({required String time, required bool isSelected, required VoidCallback onTap}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: isSelected ? Color.fromRGBO(111, 90, 220, 0.1) : Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? const Color(0xFF6F5ADC) : Colors.grey[200]!,
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.access_time,
+                color: isSelected ? const Color(0xFF6F5ADC) : Colors.grey[600],
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  time,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected ? const Color(0xFF6F5ADC) : Colors.black87,
+                  ),
+                ),
+              ),
+              if (isSelected)
+                const Icon(
+                  Icons.check_circle,
+                  color: Color(0xFF6F5ADC),
+                  size: 20,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -634,16 +776,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: _openHoursController,
-                      label: 'Open Hours',
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return null; // Not required anymore
-                        }
-                        return null;
-                      },
-                    ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
@@ -686,45 +818,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     const SizedBox(height: 32),
                     
-                    // 4. Business Schedule Section
+                    // 3. Business Schedule Section (Editable)
                     _buildSectionHeader('Business Schedule'),
                     const SizedBox(height: 16),
-                    GestureDetector(
-                      onTap: _selectSchedule,
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.schedule,
-                              color: Colors.grey[600],
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                _selectedSchedule != null
-                                    ? 'Pickup: ${_selectedSchedule!['pickup']}\nDropoff: ${_selectedSchedule!['dropoff']}'
-                                    : 'Edit pickup and dropoff schedule',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: _selectedSchedule != null
-                                      ? Colors.black87
-                                      : Colors.grey[600],
-                                ),
-                              ),
-                            ),
-                            const Icon(Icons.edit, color: Colors.blue),
-                          ],
-                        ),
-                      ),
-                    ),
+                    _buildEditableScheduleSection(),
                     const SizedBox(height: 32),
                     
                     // 5. Pricelist Section - Now Editable

@@ -96,15 +96,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFF8F8F8), // AppBar background color
         elevation: 0, // No shadow
-        leading: TextButton(
-          onPressed: () {
-            Navigator.pop(context); // Navigate back
-          },
-          child: const Text(
-            'Cancel',
-            style: TextStyle(color: Color(0xFF7B61FF), fontSize: 16), // Purple color
-          ),
-        ),
+        leading: const BackButton(color: Colors.black),
         actions: [
           TextButton(
             onPressed: () {
