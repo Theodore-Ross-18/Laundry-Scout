@@ -466,7 +466,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
   void _showFeedbackModal() {
     showDialog(
       context: context,
-      builder: (context) => const FeedbackModal(),
+      builder: (context) => FeedbackModal(businessId: Supabase.instance.client.auth.currentUser!.id),
     );
   }
 }
@@ -1000,7 +1000,8 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
 }
 
 class FeedbackModal extends StatefulWidget {
-  const FeedbackModal({super.key});
+  final String? businessId;
+  const FeedbackModal({super.key, this.businessId});
 
   @override
   State<FeedbackModal> createState() => _FeedbackModalState();
@@ -1057,6 +1058,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
       // SQL query to insert admin feedback from message screen
       await Supabase.instance.client.from('feedback').insert({
         'user_id': user.id,
+        'business_id': widget.businessId,
         'rating': _rating,
         'comment': _feedbackController.text.trim(),
         'feedback_type': 'business', // Identify as business feedback for message screen
