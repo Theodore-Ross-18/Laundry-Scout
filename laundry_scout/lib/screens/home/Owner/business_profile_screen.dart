@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../splash/splash_screen.dart';
+import 'changeEPP.dart'; // Import the new screen
 
 // Helper function for creating a fade transition (copied from profile_screen.dart)
 Route _createFadeRoute(Widget page) {
@@ -221,7 +222,9 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         const SizedBox(height: 16),
                         
                         // Settings Items
-                        _modernSettingsTile('Change Email & Password', Icons.email_outlined),
+                        _modernSettingsTile('Change Email, Phone, and Password', Icons.email_outlined, onTap: () {
+                          Navigator.of(context).push(_createFadeRoute(const ChangeEPPScreen()));
+                        }),
                         const SizedBox(height: 12),
                         _modernSettingsTile('Push Notifications', Icons.notifications_none, hasTrailing: true),
                         
