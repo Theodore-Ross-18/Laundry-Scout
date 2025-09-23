@@ -60,6 +60,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _pickupTimeController = TextEditingController();
   final _dropoffTimeController = TextEditingController();
 
+  // New lists of controllers for dynamic time slots
+  final List<TextEditingController> _pickupSlotControllers = [];
+  final List<TextEditingController> _dropoffSlotControllers = [];
+
   @override
   void initState() {
     super.initState();
@@ -98,6 +102,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _pickupTimeController.dispose();
     _dropoffTimeController.dispose();
 
+    // Dispose new dynamic time slot controllers
+    for (var controller in _pickupSlotControllers) {
+      controller.dispose();
+    }
+    for (var controller in _dropoffSlotControllers) {
+      controller.dispose();
+    }
+
     super.dispose();
   }
 
@@ -127,8 +139,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _openHoursController.text = _businessProfile!['open_hours_text'] ?? '';
 
           // Load available pickup and dropoff time slots
-          _pickupTimeController.text = _businessProfile!['available_pickup_time_slots']?.join(', ') ?? '';
-          _dropoffTimeController.text = _businessProfile!['available_dropoff_time_slots']?.join(', ') ?? '';
+          // _pickupTimeController.text = _businessProfile!['available_pickup_time_slots']?.join(', ') ?? '';
+          // _dropoffTimeController.text = _businessProfile!['available_dropoff_time_slots']?.join(', ') ?? '';
+
+          _pickupSlotControllers.clear();
+          final List<String> pickupSlots = List<String>.from(_businessProfile!['available_pickup_time_slots'] ?? []);
+          for (var slot in pickupSlots) {
+            _pickupSlotControllers.add(TextEditingController(text: slot));
+          }
+
+          _dropoffSlotControllers.clear();
+          final List<String> dropoffSlots = List<String>.from(_businessProfile!['available_dropoff_time_slots'] ?? []);
+          for (var slot in dropoffSlots) {
+            _dropoffSlotControllers.add(TextEditingController(text: slot));
+          }
 
           // Load services offered
           final servicesOffered = _businessProfile!['services_offered'];
@@ -356,8 +380,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'services_offered': _selectedServices,
         'service_prices': _pricelist,
         'open_hours_text': _openHoursController.text.trim(), // Save open hours
-        'available_pickup_time_slots': _pickupTimeController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
-        'available_dropoff_time_slots': _dropoffTimeController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+        'available_pickup_time_slots': _pickupSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
+        'available_dropoff_time_slots': _dropoffSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
       };
 
       // Add schedule if selected
@@ -611,28 +635,122 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         const SizedBox(height: 24),
         _buildSectionHeader('Pick-Up Time Slots'),
         const SizedBox(height: 12),
-        _buildTextField(
-          controller: _pickupTimeController,
-          label: 'Enter pickup time slots (comma separated, e.g., 8:00 AM - 10:00 AM, 11:00 AM - 1:00 PM)',
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter at least one pickup time slot';
-            }
-            return null;
-          },
+        // Removed _buildTextField for pickup time slots
+        // _buildTextField(
+        //   controller: _pickupTimeController,
+        //   label: 'Enter pickup time slots (comma separated, e.g., 8:00 AM - 10:00 AM, 11:00 AM - 1:00 PM)',
+        //   validator: (value) {
+        //     if (value == null || value.isEmpty) {
+        //       return 'Please enter at least one pickup time slot';
+        //     }
+        //     return null;
+        //   },
+        // ),
+        Column(
+          children: _pickupSlotControllers.asMap().entries.map((entry) {
+            int index = entry.key;
+            TextEditingController controller = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      controller: controller,
+                      label: 'Pickup Slot ${index + 1}',
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a pickup time slot';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                    onPressed: () {
+                      setState(() {
+                        controller.dispose();
+                        _pickupSlotControllers.removeAt(index);
+                      });
+                    },
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            icon: const Icon(Icons.add, color: Color(0xFF7B61FF)),
+            label: const Text('Add Pickup Slot', style: TextStyle(color: Color(0xFF7B61FF))),
+            onPressed: () {
+              setState(() {
+                _pickupSlotControllers.add(TextEditingController());
+              });
+            },
+          ),
         ),
         const SizedBox(height: 16),
         _buildSectionHeader('Drop-Off Time Slots'),
         const SizedBox(height: 12),
-        _buildTextField(
-          controller: _dropoffTimeController,
-          label: 'Enter dropoff time slots (comma separated, e.g., 1:00 PM - 3:00 PM, 4:00 PM - 6:00 PM)',
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter at least one dropoff time slot';
-            }
-            return null;
-          },
+        // Removed _buildTextField for dropoff time slots
+        // _buildTextField(
+        //   controller: _dropoffTimeController,
+        //   label: 'Enter dropoff time slots (comma separated, e.g., 1:00 PM - 3:00 PM, 4:00 PM - 6:00 PM)',
+        //   validator: (value) {
+        //     if (value == null || value.isEmpty) {
+        //       return 'Please enter at least one dropoff time slot';
+        //     }
+        //     return null;
+        //   },
+        // ),
+        Column(
+          children: _dropoffSlotControllers.asMap().entries.map((entry) {
+            int index = entry.key;
+            TextEditingController controller = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      controller: controller,
+                      label: 'Drop-Off Slot ${index + 1}',
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a drop-off time slot';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                    onPressed: () {
+                      setState(() {
+                        controller.dispose();
+                        _dropoffSlotControllers.removeAt(index);
+                      });
+                    },
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            icon: const Icon(Icons.add, color: Color(0xFF7B61FF)),
+            label: const Text('Add Drop-Off Slot', style: TextStyle(color: Color(0xFF7B61FF))),
+            onPressed: () {
+              setState(() {
+                _dropoffSlotControllers.add(TextEditingController());
+              });
+            },
+          ),
         ),
         const SizedBox(height: 24),
       ],
