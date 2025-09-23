@@ -34,8 +34,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   
   // Pricelist - Make it final since it's modified through methods
   final List<Map<String, dynamic>> _pricelist = [];
-  final _serviceNameController = TextEditingController();
-  final _priceController = TextEditingController();
+  // Removed _serviceNameController and _priceController as per user request.
+  // final _serviceNameController = TextEditingController();
+  // final _priceController = TextEditingController();
   
   // Controllers for editing existing pricelist items
   final Map<int, TextEditingController> _editServiceControllers = {};
@@ -71,8 +72,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _aboutUsController.dispose();
-    _serviceNameController.dispose();
-    _priceController.dispose();
+    // Removed _serviceNameController.dispose() and _priceController.dispose() as per user request.
+    // _serviceNameController.dispose();
+    // _priceController.dispose();
     
     // Dispose editing controllers
     for (var controller in _editServiceControllers.values) {
@@ -251,18 +253,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
   }
 
-  void _addPricelistItem() {
-    if (_serviceNameController.text.trim().isNotEmpty && _priceController.text.trim().isNotEmpty) {
-      setState(() {
-        _pricelist.add({
-          'service': _serviceNameController.text.trim(),
-          'price': _priceController.text.trim(),
-        });
-        _serviceNameController.clear();
-        _priceController.clear();
-      });
-    }
-  }
+  // Removed _addPricelistItem function as per user request.
+  // void _addPricelistItem() {
+  //   if (_serviceNameController.text.trim().isNotEmpty && _priceController.text.trim().isNotEmpty) {
+  //     setState(() {
+  //       _pricelist.add({
+  //         'service': _serviceNameController.text.trim(),
+  //         'price': _priceController.text.trim(),
+  //       });
+  //       _serviceNameController.clear();
+  //       _priceController.clear();
+  //     });
+  //   }
+  // }
 
   void _removePricelistItem(int index) {
     setState(() {
@@ -805,56 +808,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 32),
                     
                     // 5. Pricelist Section - Now Editable
-                    _buildSectionHeader('Pricelist'),
-                    const SizedBox(height: 16),
-                    
-                    // Add new pricelist item
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _serviceNameController,
-                            decoration: InputDecoration(
-                              hintText: 'Service name',
-                              hintStyle: const TextStyle(color: Colors.black),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            ),
-                            style: const TextStyle(color: Colors.black87),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: 100,
-                          child: TextField(
-                            controller: _priceController,
-                            decoration: InputDecoration(
-                              hintText: 'Price',
-                              hintStyle: const TextStyle(color: Colors.black),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.grey[300]!),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                              prefixText: '₱',
-                            ),
-                            keyboardType: TextInputType.number,
-                            style: const TextStyle(color: Colors.black87),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.add, color: Color(0xFF7B61FF)),
-                          onPressed: _addPricelistItem,
-                        ),
-                        const SizedBox(width: 8),
+                        _buildSectionHeader('Pricelist'),
                         IconButton(
                           icon: const Icon(Icons.sync, color: Colors.blue),
                           onPressed: _syncServicesWithPricelist,
@@ -863,6 +820,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
+                    
+                    // Removed input fields for service name and price, and the 'Plus' button
+                    // as per user request. The sync button is kept for now.
+                    // Row(
+                    //   children: [
+                    //     const Spacer(), // To push the sync button to the right if needed
+                    //     IconButton(
+                    //       icon: const Icon(Icons.sync, color: Colors.blue),
+                    //       onPressed: _syncServicesWithPricelist,
+                    //       tooltip: 'Sync services with pricelist',
+                    //     ),
+                    //   ],
+                    // ),
+                    // const SizedBox(height: 16),
                     
                     // Display editable pricelist
                     if (_pricelist.isNotEmpty) ...[

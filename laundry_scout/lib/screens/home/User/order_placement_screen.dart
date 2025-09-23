@@ -198,6 +198,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
         backgroundColor: const Color(0xFF6F5ADC),
         foregroundColor: Colors.white,
       ),
+      backgroundColor: Colors.white,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -210,7 +211,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                     Text(
                       widget.businessData['business_name'] ?? 'Business Name',
                       style: const TextStyle(
-                          fontSize: 24, fontWeight: FontWeight.bold),
+                          fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
                     ),
                     const SizedBox(height: 8),
                     Text(
