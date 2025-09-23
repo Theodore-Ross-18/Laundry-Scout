@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../splash/splash_screen.dart';
 import 'changeEPP.dart'; // Import the new screen
+import 'owner_notification_screen.dart'; // Import the OwnerNotificationScreen
 
 // Helper function for creating a fade transition (copied from profile_screen.dart)
 Route _createFadeRoute(Widget page) {
@@ -226,7 +227,9 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                           Navigator.of(context).push(_createFadeRoute(const ChangeEPPScreen()));
                         }),
                         const SizedBox(height: 12),
-                        _modernSettingsTile('Push Notifications', Icons.notifications_none, hasTrailing: true),
+                        _modernSettingsTile('Push Notifications', Icons.notifications_none, hasTrailing: true, onTap: () {
+                          Navigator.of(context).push(_createFadeRoute(const OwnerNotificationScreen()));
+                        }),
                         
                         const SizedBox(height: 40),
                         

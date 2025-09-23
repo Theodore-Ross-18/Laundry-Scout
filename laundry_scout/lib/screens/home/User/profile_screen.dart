@@ -5,6 +5,7 @@ import '../../splash/splash_screen.dart'; // Changed import to splash screen
 import '../../auth/login_screen.dart'; // Assuming login_screen.dart is in this path
 import '../../../widgets/optimized_image.dart';
 import '../../../services/image_service.dart';
+import '../Owner/owner_notification_screen.dart'; // Import the OwnerNotificationScreen
 
 // Helper function for creating a fade transition (copied from login_screen.dart)
 Route _createFadeRoute(Widget page) {
@@ -267,6 +268,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _buildDivider(),
                       _buildProfileField('Phone Number', _phoneNumber),
                       const SizedBox(height: 40),
+                      // Settings Section
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Settings',
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Add Push Notifications tile
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(_createFadeRoute(const OwnerNotificationScreen()));
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8F8F8),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.notifications_none, color: Color(0xFF6C757D), size: 20),
+                              SizedBox(width: 16),
+                              Text(
+                                'Push Notifications',
+                                style: TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Spacer(),
+                              Icon(Icons.chevron_right, color: Color(0xFF6C757D), size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
                       // Log Out Button
                       Center(
                         child: ElevatedButton(
