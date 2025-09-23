@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'address_selection_screen.dart';
 import 'service_selection_screen.dart';
 import 'schedule_selection_screen.dart';
@@ -6,163 +7,73 @@ import 'order_confirmation_screen.dart';
 
 class OrderPlacementScreen extends StatefulWidget {
   final Map<String, dynamic> businessData;
+  final List<String> availablePickupTimeSlots; // New
+  final List<String> availableDropoffTimeSlots; // New
 
-  const OrderPlacementScreen({super.key, required this.businessData});
+  const OrderPlacementScreen({
+    super.key,
+    required this.businessData,
+    required this.availablePickupTimeSlots, // New
+    required this.availableDropoffTimeSlots, // New
+  });
 
   @override
   State<OrderPlacementScreen> createState() => _OrderPlacementScreenState();
 }
 
 class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _addressController = TextEditingController();
+  final _specialInstructionsController = TextEditingController();
   String? _selectedAddress;
-  List<String> _selectedServices = [];
   Map<String, String>? _selectedSchedule;
-  String _specialInstructions = '';
-  bool _isExpanded = false;
-  List<Map<String, dynamic>> _pricelist = [];
+  List<String> _selectedServices = []; // Initialize _selectedServices
+  List<Map<String, dynamic>> _pricelist = []; // Initialize _pricelist
+  bool _isExpanded = false; // Initialize _isExpanded
+  String _specialInstructions = ''; // Initialize _specialInstructions
+  Map<String, dynamic>? _businessProfile; // Add this line
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadBusinessData();
+    _loadAddresses();
+    _loadBusinessProfile(); // Call this to load business profile
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF6F5ADC),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF6F5ADC),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Laundry Scout',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          children: [
-                            _buildAddressSection(),
-                            const SizedBox(height: 20),
-                            _buildServicesSection(),
-                            const SizedBox(height: 20),
-                            _buildScheduleSection(),
-                            const SizedBox(height: 20),
-                            _buildInstructionsSection(),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildContinueButton(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  void dispose() {
+    _addressController.dispose();
+    _specialInstructionsController.dispose();
+    super.dispose();
   }
 
-  Widget _buildAddressSection() {
-    return GestureDetector(
-      onTap: () async {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const AddressSelectionScreen(),
-          ),
+  Future<void> _loadBusinessProfile() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select()
+          .eq('id', widget.businessData['id'])
+          .single();
+      if (mounted) {
+        setState(() {
+          _businessProfile = response;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading business profile: $e')),
         );
-        if (result != null) {
-          setState(() {
-            _selectedAddress = result;
-          });
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6F5ADC).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.home,
-                color: Color(0xFF6F5ADC),
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Add Address',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _selectedAddress ?? 'Your Current Location',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.edit,
-              color: Colors.grey[400],
-              size: 20,
-            ),
-          ],
-        ),
-      ),
-    );
+      }
+    }
   }
 
-  Future<void> _loadBusinessData() async {
+  Future<void> _loadAddresses() async {
     try {
       final servicesOfferedData = widget.businessData['services_offered'];
       final servicePricesData = widget.businessData['service_prices'];
@@ -279,6 +190,124 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
     }
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Place Order'),
+        backgroundColor: const Color(0xFF6F5ADC),
+        foregroundColor: Colors.white,
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.businessData['business_name'] ?? 'Business Name',
+                      style: const TextStyle(
+                          fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.businessData['business_address'] ??
+                          'Business Address',
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildServicesSection(),
+                    const SizedBox(height: 16),
+                    _buildAddressSection(),
+                    const SizedBox(height: 16),
+                    _buildScheduleSection(),
+                    const SizedBox(height: 16),
+                    _buildInstructionsSection(),
+                    const SizedBox(height: 32),
+                    _buildContinueButton(),
+                  ],
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildAddressSection() {
+    return GestureDetector(
+      onTap: () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AddressSelectionScreen(
+              // selectedAddress: _selectedAddress, // Remove this line
+            ),
+          ),
+        );
+        if (result != null) {
+          setState(() {
+            _selectedAddress = result as String;
+          });
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6F5ADC).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.location_on,
+                color: Color(0xFF6F5ADC),
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Pickup & Drop-off Address',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _selectedAddress ?? 'Select address',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.add,
+              color: Colors.grey[400],
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildServicesSection() {
     if (_isLoading) {
       return Container(
@@ -377,6 +406,8 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
           MaterialPageRoute(
             builder: (context) => ScheduleSelectionScreen(
               selectedSchedule: _selectedSchedule,
+              availablePickupTimeSlots: _businessProfile?['available_pickup_time_slots']?.cast<String>() ?? [],
+              availableDropoffTimeSlots: _businessProfile?['available_dropoff_time_slots']?.cast<String>() ?? [],
             ),
           ),
         );

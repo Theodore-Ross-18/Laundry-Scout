@@ -198,7 +198,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     try {
         final response = await Supabase.instance.client
             .from('business_profiles')
-            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours_text') // Add open_hours_text here
+            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours_text, available_pickup_time_slots, available_dropoff_time_slots') // Add new columns here
             .eq('id', widget.businessData['id'])
             .single();
       
@@ -545,6 +545,9 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
       MaterialPageRoute(
         builder: (context) => OrderPlacementScreen(
           businessData: _fullBusinessData!,
+          // New: Pass available time slots to OrderPlacementScreen
+          availablePickupTimeSlots: List<String>.from(_fullBusinessData!['available_pickup_time_slots'] ?? []),
+          availableDropoffTimeSlots: List<String>.from(_fullBusinessData!['available_dropoff_time_slots'] ?? []),
         ),
       ),
     );

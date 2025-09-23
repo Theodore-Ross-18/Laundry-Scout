@@ -56,6 +56,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   // Add a controller for open hours
   final _openHoursController = TextEditingController();
+  final _pickupTimeController = TextEditingController();
+  final _dropoffTimeController = TextEditingController();
 
   @override
   void initState() {
@@ -91,6 +93,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     
     // Dispose the new open hours controller
     _openHoursController.dispose();
+    _pickupTimeController.dispose();
+    _dropoffTimeController.dispose();
 
     super.dispose();
   }
@@ -119,6 +123,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           
           // Load open hours
           _openHoursController.text = _businessProfile!['open_hours_text'] ?? '';
+
+          // Load available pickup and dropoff time slots
+          _pickupTimeController.text = _businessProfile!['available_pickup_time_slots']?.join(', ') ?? '';
+          _dropoffTimeController.text = _businessProfile!['available_dropoff_time_slots']?.join(', ') ?? '';
 
           // Load services offered
           final servicesOffered = _businessProfile!['services_offered'];
@@ -345,6 +353,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'services_offered': _selectedServices,
         'service_prices': _pricelist,
         'open_hours_text': _openHoursController.text.trim(), // Save open hours
+        'available_pickup_time_slots': _pickupTimeController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+        'available_dropoff_time_slots': _dropoffTimeController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
       };
 
       // Add schedule if selected
@@ -580,15 +590,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   // Editable schedule section for owner
   Widget _buildEditableScheduleSection() {
-    final List<String> pickupTimes = [
-      '8:00 AM - 10:00 AM',
-      '11:00 AM - 1:00 PM',
-      '3:00 PM - 5:00 PM',
-    ];
-    final List<String> dropoffTimes = [
-      '1:00 PM - 3:00 PM',
-      '4:00 PM - 6:00 PM',
-    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -605,102 +606,37 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           },
         ),
         const SizedBox(height: 24),
-        const Text(
-          'Pick-Up Schedule',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
+        _buildSectionHeader('Pick-Up Time Slots'),
         const SizedBox(height: 12),
-        ...pickupTimes.map((time) => _buildScheduleTimeSlot(
-          time: time,
-          isSelected: _selectedSchedule != null && _selectedSchedule!['pickup'] == time,
-          onTap: () {
-            setState(() {
-              if (_selectedSchedule == null) {
-                _selectedSchedule = {'pickup': time, 'dropoff': ''};
-              } else {
-                _selectedSchedule!['pickup'] = time;
-              }
-            });
+        _buildTextField(
+          controller: _pickupTimeController,
+          label: 'Enter pickup time slots (comma separated, e.g., 8:00 AM - 10:00 AM, 11:00 AM - 1:00 PM)',
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter at least one pickup time slot';
+            }
+            return null;
           },
-        )),
-        const SizedBox(height: 24),
-        const Text(
-          'Drop-Off Schedule',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
         ),
+        const SizedBox(height: 16),
+        _buildSectionHeader('Drop-Off Time Slots'),
         const SizedBox(height: 12),
-        ...dropoffTimes.map((time) => _buildScheduleTimeSlot(
-          time: time,
-          isSelected: _selectedSchedule != null && _selectedSchedule!['dropoff'] == time,
-          onTap: () {
-            setState(() {
-              if (_selectedSchedule == null) {
-                _selectedSchedule = {'pickup': '', 'dropoff': time};
-              } else {
-                _selectedSchedule!['dropoff'] = time;
-              }
-            });
+        _buildTextField(
+          controller: _dropoffTimeController,
+          label: 'Enter dropoff time slots (comma separated, e.g., 1:00 PM - 3:00 PM, 4:00 PM - 6:00 PM)',
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter at least one dropoff time slot';
+            }
+            return null;
           },
-        )),
+        ),
         const SizedBox(height: 24),
       ],
     );
   }
 
-  Widget _buildScheduleTimeSlot({required String time, required bool isSelected, required VoidCallback onTap}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            color: isSelected ? Color.fromRGBO(111, 90, 220, 0.1) : Colors.grey[50],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? const Color(0xFF6F5ADC) : Colors.grey[200]!,
-              width: isSelected ? 2 : 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.access_time,
-                color: isSelected ? const Color(0xFF6F5ADC) : Colors.grey[600],
-                size: 20,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  time,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: isSelected ? const Color(0xFF6F5ADC) : Colors.black87,
-                  ),
-                ),
-              ),
-              if (isSelected)
-                const Icon(
-                  Icons.check_circle,
-                  color: Color(0xFF6F5ADC),
-                  size: 20,
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
 
 
   @override

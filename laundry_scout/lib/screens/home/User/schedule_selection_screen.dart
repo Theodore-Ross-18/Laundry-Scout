@@ -2,8 +2,15 @@ import 'package:flutter/material.dart';
 
 class ScheduleSelectionScreen extends StatefulWidget {
   final Map<String, String>? selectedSchedule;
+  final List<String> availablePickupTimeSlots; // New
+  final List<String> availableDropoffTimeSlots; // New
 
-  const ScheduleSelectionScreen({super.key, this.selectedSchedule});
+  const ScheduleSelectionScreen({
+    super.key,
+    this.selectedSchedule,
+    this.availablePickupTimeSlots = const [], // Initialize with empty list
+    this.availableDropoffTimeSlots = const [], // Initialize with empty list
+  });
 
   @override
   State<ScheduleSelectionScreen> createState() => _ScheduleSelectionScreenState();
@@ -13,16 +20,9 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
   String? _selectedPickupTime;
   String? _selectedDropoffTime;
 
-  final List<String> _pickupTimes = [
-    '8:00 AM - 10:00 AM',
-    '11:00 AM - 1:00 PM',
-    '3:00 PM - 5:00 PM',
-  ];
-
-  final List<String> _dropoffTimes = [
-    '1:00 PM - 3:00 PM',
-    '4:00 PM - 6:00 PM',
-  ];
+  // Use widget.availablePickupTimeSlots and widget.availableDropoffTimeSlots
+  List<String> get _pickupTimes => widget.availablePickupTimeSlots;
+  List<String> get _dropoffTimes => widget.availableDropoffTimeSlots;
 
   @override
   void initState() {
