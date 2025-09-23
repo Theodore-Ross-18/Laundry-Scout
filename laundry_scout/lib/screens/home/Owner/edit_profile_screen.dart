@@ -821,7 +821,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 32),
                     
                     // 1. Business Information Section
-                    _buildSectionHeader('Business Information'),
+                    
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: _businessNameController,
@@ -834,36 +834,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: _emailController,
-                      label: 'Email',
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return null; // Not required anymore
-                        }
-                        if (!RegExp(r'^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})$').hasMatch(value)) {
-                          return 'Please enter a valid email address';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: _phoneController,
-                      label: 'Phone Number',
-                      keyboardType: TextInputType.phone,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return null; // Not required anymore
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 32),
+
+
                     
                     // 2. Laundry Information Section
-                    _buildSectionHeader('Laundry Information'),
+                    
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: _aboutUsController,
