@@ -100,8 +100,22 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
 
         if (existingUsername != null) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Username already taken')),
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('Signup Error', style: TextStyle(color: Colors.black)),
+                  content: const Text('Username already taken', style: TextStyle(color: Colors.black)),
+                  actions: <Widget>[
+                    TextButton(
+                      child: const Text('OK', style: TextStyle(color: Colors.black)),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                );
+              },
             );
           }
           setState(() {
@@ -120,8 +134,22 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
 
         if (existingUserEmail != null) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Email already registered. Please use a different email or try logging in.')),
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('Signup Error', style: TextStyle(color: Colors.black)),
+                  content: const Text('Email already registered. Please use a different email or try logging in.', style: TextStyle(color: Colors.black)),
+                  actions: <Widget>[
+                    TextButton(
+                      child: const Text('OK', style: TextStyle(color: Colors.black)),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                );
+              },
             );
           }
           setState(() {
@@ -140,8 +168,22 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
 
         if (existingBusinessEmail != null) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Email already registered as a business account. Please use a different email or try logging in.')),
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text('Signup Error'),
+                  content: const Text('Email already registered as a business account. Please use a different email or try logging in.', style: TextStyle(color: Colors.black)),
+                  actions: <Widget>[
+                    TextButton(
+                      child: const Text('OK', style: TextStyle(color: Colors.black)),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                );
+              },
             );
           }
           setState(() {
@@ -166,17 +208,26 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
           if (response.session == null) {
             // Email confirmation required
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Please check your email and click the confirmation link to complete signup.'),
-                  duration: Duration(seconds: 5),
-                ),
-              );
-              // Optionally navigate to a "check your email" screen instead of SelectUserScreen
-              // For now, we'll still navigate but show the message
-              Navigator.pushReplacement(
-                context,
-                _createFadeRoute(SelectUserScreen(username: _usernameController.text.trim())),
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Signup Successful'),
+                    content: const Text('Please check your email and click the confirmation link to complete signup.', style: TextStyle(color: Colors.black)),
+                    actions: <Widget>[
+                      TextButton(
+                        child: const Text('OK', style: TextStyle(color: Colors.black)),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          Navigator.pushReplacement(
+                            context,
+                            _createFadeRoute(SelectUserScreen(username: _usernameController.text.trim())),
+                          );
+                        },
+                      ),
+                    ],
+                  );
+                },
               );
             }
           } else {
@@ -191,18 +242,60 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
         } else {
            // Handle cases where auth.signUp succeeds but response.user is null (less common)
            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Signup failed: User not created')),
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Signup Error'),
+                    content: const Text('Signup failed: User not created'),
+                    actions: <Widget>[
+                      TextButton(
+                        child: const Text('OK'),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
+                  );
+                },
               );
            }
         }
       } on AuthException catch (error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Auth Error: ${error.message}')),
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Authentication Error'),
+              content: Text('Auth Error: ${error.message}', style: TextStyle(color: Colors.black)),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('OK'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
         );
       } catch (error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('General Error: $error')),
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Error'),
+              content: Text('General Error: $error', style: TextStyle(color: Colors.black)),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('OK'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
         );
       } finally {
         if (mounted) {
