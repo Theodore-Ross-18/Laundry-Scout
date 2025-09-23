@@ -283,10 +283,10 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
 
       if (!isProfileComplete) {
         print('🔍 [OWNER] _checkAndAddProfileSetupNotification: Profile is INCOMPLETE. Checking for existing incomplete notification.');
-        // Check if an unread 'profile_setup_incomplete' notification already exists
+        // Check if an 'profile_setup_incomplete' notification already exists (read or unread)
         final existingIncompleteNotification = _notifications.firstWhereOrNull(
-            (n) => n['type'] == 'profile_setup' && n['status_type'] == 'incomplete' && n['is_read'] == false);
-        print('🔍 [OWNER] _checkAndAddProfileSetupNotification: Existing unread incomplete notification: $existingIncompleteNotification');
+            (n) => n['type'] == 'profile_setup' && n['status_type'] == 'incomplete');
+        print('🔍 [OWNER] _checkAndAddProfileSetupNotification: Existing incomplete notification: $existingIncompleteNotification');
 
         if (existingIncompleteNotification == null) {
           // Insert new 'profile_setup_incomplete' notification
@@ -305,7 +305,7 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
           });
           print('✅ [OWNER] _checkAndAddProfileSetupNotification: Added new incomplete profile setup notification.');
         } else {
-          print('ℹ️ [OWNER] _checkAndAddProfileSetupNotification: Unread incomplete profile setup notification already exists.');
+          print('ℹ️ [OWNER] _checkAndAddProfileSetupNotification: Incomplete profile setup notification already exists.');
         }
       } else {
         print('🔍 [OWNER] _checkAndAddProfileSetupNotification: Profile is COMPLETE. Checking for existing notifications.');
@@ -323,10 +323,10 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
           print('✅ [OWNER] _checkAndAddProfileSetupNotification: Marked incomplete notification ${notification['id']} as read.');
         }
 
-        // Check if an unread 'profile_setup_complete' notification already exists
+        // Check if a 'profile_setup_complete' notification already exists (read or unread)
         final existingCompleteNotification = _notifications.firstWhereOrNull(
-            (n) => n['type'] == 'profile_setup' && n['status_type'] == 'complete' && n['is_read'] == false);
-        print('🔍 [OWNER] _checkAndAddProfileSetupNotification: Existing unread complete notification: $existingCompleteNotification');
+            (n) => n['type'] == 'profile_setup' && n['status_type'] == 'complete');
+        print('🔍 [OWNER] _checkAndAddProfileSetupNotification: Existing complete notification: $existingCompleteNotification');
 
 
         if (existingCompleteNotification == null) {
@@ -346,7 +346,7 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
           });
           print('✅ [OWNER] _checkAndAddProfileSetupNotification: Added new complete profile setup notification.');
         } else {
-          print('ℹ️ [OWNER] _checkAndAddProfileSetupNotification: Unread complete profile setup notification already exists.');
+          print('ℹ️ [OWNER] _checkAndAddProfileSetupNotification: Complete profile setup notification already exists.');
         }
       }
     } catch (e) {
