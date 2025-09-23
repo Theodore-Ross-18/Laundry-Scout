@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'address_selection_screen.dart';
 import 'service_selection_screen.dart';
 import 'schedule_selection_screen.dart';
@@ -165,106 +164,118 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
 
   Future<void> _loadBusinessData() async {
     try {
-      final businessId = widget.businessData['id'];
-      final response = await Supabase.instance.client
-          .from('business_profiles')
-          .select('services_offered')
-          .eq('id', businessId)
-          .single();
+      final servicesOfferedData = widget.businessData['services_offered'];
+      final servicePricesData = widget.businessData['service_prices'];
 
-      final servicesOffered = response['services_offered'];
+      print('DEBUG ORDER: servicesOfferedData = $servicesOfferedData');
+      print('DEBUG ORDER: servicePricesData = $servicePricesData');
+      print('DEBUG ORDER: servicePricesData type = ${servicePricesData.runtimeType}');
 
-      print('DEBUG ORDER: servicesOffered = $servicesOffered');
-      print('DEBUG ORDER: servicesOffered type = ${servicesOffered.runtimeType}');
-      print('DEBUG ORDER: servicesOffered is null? = ${servicesOffered == null}');
+      List<Map<String, dynamic>> tempPricelist = [];
 
-      setState(() {
-        _pricelist = [];
-        
-        if (servicesOffered is List) {
-          print('DEBUG ORDER: Processing as List format');
-          // Handle JSONB array format with objects containing 'service' and 'price' fields
-          for (var item in servicesOffered) {
-            print('DEBUG ORDER: Processing item = $item');
-            if (item is Map<String, dynamic>) {
-              String priceStr = '';
-              if (item['price'] != null) {
-                // Ensure price is formatted as a string with 2 decimal places
-                double price = double.tryParse(item['price'].toString()) ?? 0.0;
-                priceStr = price.toStringAsFixed(2);
-              } else {
-                priceStr = '0.00';
-              }
-              
-              _pricelist.add({
-                'service_name': item['service'] ?? '',
-                'price': priceStr,
-              });
-            }
-          }
-        } else if (servicesOffered is Map<String, dynamic>) {
-          print('DEBUG ORDER: Processing as Map format');
-          // Handle JSONB object format where keys are service names and values are prices
-          servicesOffered.forEach((service, price) {
+      if (servicePricesData != null && servicePricesData is List && servicePricesData.isNotEmpty) {
+        print('DEBUG ORDER: Processing servicePricesData as List format');
+        for (var item in servicePricesData) {
+          if (item is Map<String, dynamic>) {
+            String serviceName = item['service'] ?? item['service_name'] ?? '';
             String priceStr = '';
-            if (price != null) {
-              // Ensure price is formatted as a string with 2 decimal places
-              double priceValue = double.tryParse(price.toString()) ?? 0.0;
-              priceStr = priceValue.toStringAsFixed(2);
+
+            if (item['price'] != null) {
+              double price = double.tryParse(item['price'].toString()) ?? 0.0;
+              priceStr = price.toStringAsFixed(2);
             } else {
               priceStr = '0.00';
             }
-            
-            _pricelist.add({
-              'service_name': service,
-              'price': priceStr,
-            });
-          });
-        }
-        
-        print('DEBUG ORDER: Final _pricelist = $_pricelist');
-        _isLoading = false;
-      });
-    } catch (e) {
-      print('DEBUG ORDER: Error loading business data: $e');
-      setState(() {
-        // Fallback to widget.businessData if Supabase fails
-        final servicesOffered = widget.businessData['services_offered'] as List<dynamic>? ?? [];
-        final servicePrices = widget.businessData['service_prices'];
-        
-        print('DEBUG ORDER FALLBACK: servicesOffered = $servicesOffered');
-        print('DEBUG ORDER FALLBACK: servicePrices = $servicePrices');
-        print('DEBUG ORDER FALLBACK: servicePrices type = ${servicePrices.runtimeType}');
-        
-        _pricelist = [];
-        
-        if (servicePrices is List) {
-          print('DEBUG ORDER FALLBACK: Processing as List format');
-          // Handle JSONB array format with objects containing 'service' and 'price' fields
-          for (var item in servicePrices) {
-            print('DEBUG ORDER FALLBACK: Processing item = $item');
-            if (item is Map<String, dynamic>) {
-              _pricelist.add({
-                'service_name': item['service'] ?? '',
-                'price': (item['price']?.toDouble() ?? 0.0).toStringAsFixed(2),
+
+            if (serviceName.isNotEmpty) {
+              tempPricelist.add({
+                'service_name': serviceName,
+                'price': priceStr,
+                'description': _getServiceDescription(serviceName),
               });
             }
           }
-        } else if (servicePrices is Map<String, dynamic>) {
-          print('DEBUG ORDER FALLBACK: Processing as Map format');
-          // Handle JSONB object format where keys are service names and values are prices
-          for (String service in servicesOffered) {
-            final price = servicePrices[service]?.toDouble() ?? 0.0;
-            _pricelist.add({
+        }
+      } else if (servicePricesData != null && servicePricesData is Map<String, dynamic>) {
+        print('DEBUG ORDER: Processing servicePricesData as Map format');
+        servicesOfferedData?.forEach((service) {
+          if (service is String) {
+            final price = servicePricesData[service]?.toDouble() ?? 0.0;
+            tempPricelist.add({
               'service_name': service,
               'price': price.toStringAsFixed(2),
+              'description': _getServiceDescription(service),
+            });
+          }
+        });
+      } else if (servicesOfferedData is List) {
+        print('DEBUG ORDER: No service_prices found, using services_offered = $servicesOfferedData');
+        for (var serviceName in servicesOfferedData) {
+          if (serviceName is String) {
+            String defaultPrice = _getDefaultPrice(serviceName);
+            String description = _getServiceDescription(serviceName);
+            tempPricelist.add({
+              'service_name': serviceName,
+              'price': defaultPrice,
+              'description': description,
             });
           }
         }
-        
-        print('DEBUG ORDER FALLBACK: Final _pricelist = $_pricelist');
+      }
+
+      setState(() {
+        _pricelist = tempPricelist;
         _isLoading = false;
       });
+      print('DEBUG ORDER: Final _pricelist = $_pricelist');
+    } catch (e) {
+      print('DEBUG ORDER: Error loading business data from widget.businessData: $e');
+      setState(() {
+        _pricelist = [];
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _getServiceDescription(String service) {
+    switch (service) {
+      case 'Wash & Fold':
+        return 'Complete washing and folding service';
+      case 'Ironing':
+        return 'Professional ironing service';
+      case 'Deliver':
+        return 'Pickup and delivery service';
+      case 'Dry Cleaning':
+        return 'Professional dry cleaning';
+      case 'Pressing':
+        return 'Professional pressing service';
+      default:
+        return 'Professional laundry service';
+    }
+  }
+
+  String _getDefaultPrice(String service) {
+    switch (service.toLowerCase()) {
+      case 'wash & fold':
+        return '50.00';
+      case 'ironing':
+        return '30.00';
+      case 'deliver':
+      case 'delivery':
+        return '20.00';
+      case 'dry cleaning':
+      case 'dry clean':
+        return '80.00';
+      case 'pressing':
+        return '25.00';
+      case 'pick up':
+        return '15.00';
+      case 'drop off':
+        return '10.00';
+      case 'self service':
+        return '40.00';
+      default:
+        return '45.00';
     }
   }
 

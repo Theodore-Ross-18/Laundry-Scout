@@ -114,23 +114,36 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           // Load services offered
           final servicesOffered = _businessProfile!['services_offered'];
           if (servicesOffered is List) {
-            _selectedServices = List<String>.from(servicesOffered);
+            // Normalize service names when loading from database and remove duplicates
+            _selectedServices = List<String>.from(servicesOffered.map((service) {
+              if (service is String) {
+                return service.toLowerCase() == 'deliver' ? 'Delivery' : service;
+              }
+              return service;
+            }).whereType<String>().toSet().toList());
           } else if (servicesOffered is String) {
-            _selectedServices = [servicesOffered];
+            _selectedServices = [servicesOffered.toLowerCase() == 'deliver' ? 'Delivery' : servicesOffered];
           }
           
           // Load pricelist
           final pricelistData = _businessProfile!['service_prices'];
           if (pricelistData is List) {
             _pricelist.clear();
+            final uniquePricelist = <String, Map<String, dynamic>>{};
             for (var item in pricelistData) {
               if (item is Map<String, dynamic>) {
-                _pricelist.add({
-                  'service': item['service'] ?? '',
+                String serviceName = item['service'] ?? '';
+                // Normalize service names when loading from database
+                if (serviceName.toLowerCase() == 'deliver') {
+                  serviceName = 'Delivery';
+                }
+                uniquePricelist[serviceName] = {
+                  'service': serviceName,
                   'price': item['price'] ?? '',
-                });
+                };
               }
             }
+            _pricelist.addAll(uniquePricelist.values);
           }
           
           // Load schedule if available
@@ -193,24 +206,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _toggleService(String service) {
+    // Normalize service name before processing
+    String normalizedService = service.toLowerCase() == 'deliver' ? 'Delivery' : service;
+
     setState(() {
-      if (_selectedServices.contains(service)) {
+      if (_selectedServices.contains(normalizedService)) {
         // Remove service from selected services
-        _selectedServices.remove(service);
+        _selectedServices.remove(normalizedService);
         
         // Also remove from pricelist if it exists
-        _pricelist.removeWhere((item) => item['service'] == service);
+        _pricelist.removeWhere((item) => item['service'] == normalizedService);
       } else {
         // Add service to selected services
-        _selectedServices.add(service);
+        _selectedServices.add(normalizedService);
         
         // Check if service already exists in pricelist
-        bool serviceExists = _pricelist.any((item) => item['service'] == service);
+        bool serviceExists = _pricelist.any((item) => item['service'] == normalizedService);
         
         // If not exists, add it with default price of 0.00
         if (!serviceExists) {
           _pricelist.add({
-            'service': service,
+            'service': normalizedService,
             'price': '0.00',
           });
         }
@@ -280,15 +296,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       
       // Add any missing selected services to pricelist with default price
       for (String service in _selectedServices) {
-        if (!existingServices.contains(service)) {
+        // Normalize service name before checking/adding
+        String normalizedService = service.toLowerCase() == 'deliver' ? 'Delivery' : service;
+
+        if (!existingServices.contains(normalizedService)) {
           _pricelist.add({
-            'service': service,
+            'service': normalizedService,
             'price': '0.00',
           });
         }
       }
       
       // Remove any services from pricelist that are no longer selected
+      // Ensure comparison is done with normalized names
       _pricelist.removeWhere((item) => !_selectedServices.contains(item['service']));
     });
   }
