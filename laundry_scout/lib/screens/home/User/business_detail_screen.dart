@@ -196,11 +196,11 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
 
   Future<void> _loadFullBusinessData() async {
     try {
-      final response = await Supabase.instance.client
-          .from('business_profiles')
-          .select('*, availability_status, business_phone_number, services_offered, service_prices')
-          .eq('id', widget.businessData['id'])
-          .single();
+        final response = await Supabase.instance.client
+            .from('business_profiles')
+            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours_text') // Add open_hours_text here
+            .eq('id', widget.businessData['id'])
+            .single();
       
       setState(() {
         _fullBusinessData = response;
@@ -735,7 +735,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  _fullBusinessData!['about_us'] ?? 'Welcome to our laundry service! We provide professional laundry services with care and attention to detail.',
+                  _fullBusinessData!['about_business'] ?? 'Welcome to our laundry service! We provide professional laundry services with care and attention to detail.',
                   style: const TextStyle(
                     fontSize: 14,
                     color: Colors.black87,
@@ -767,7 +767,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  _fullBusinessData!['open_hours'] ?? 'Open hours not available.',
+                  _fullBusinessData!['open_hours_text'] ?? 'Open hours not available.',
                   style: const TextStyle(
                     fontSize: 14,
                     color: Colors.black87,

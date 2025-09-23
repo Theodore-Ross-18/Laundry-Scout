@@ -54,6 +54,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Map<String, dynamic>? _businessProfile;
   Map<String, String>? _selectedSchedule;
 
+  // Add a controller for open hours
+  final _openHoursController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -86,6 +89,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
     // removed weekly schedule controllers
     
+    // Dispose the new open hours controller
+    _openHoursController.dispose();
+
     super.dispose();
   }
 
@@ -111,6 +117,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _aboutUsController.text = _businessProfile!['about_business'] ?? '';
           _deliveryAvailable = _businessProfile!['does_delivery'] ?? false;
           
+          // Load open hours
+          _openHoursController.text = _businessProfile!['open_hours_text'] ?? '';
+
           // Load services offered
           final servicesOffered = _businessProfile!['services_offered'];
           if (servicesOffered is List) {
@@ -335,6 +344,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'does_delivery': _deliveryAvailable,
         'services_offered': _selectedServices,
         'service_prices': _pricelist,
+        'open_hours_text': _openHoursController.text.trim(), // Save open hours
       };
 
       // Add schedule if selected
@@ -582,6 +592,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _buildSectionHeader('Open Hours'),
+        const SizedBox(height: 16),
+        _buildTextField(
+          controller: _openHoursController,
+          label: 'Open Hours (e.g., Mon-Sat: 9AM-5PM)',
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter your open hours';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 24),
         const Text(
           'Pick-Up Schedule',
           style: TextStyle(
@@ -627,6 +650,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             });
           },
         )),
+        const SizedBox(height: 24),
       ],
     );
   }
