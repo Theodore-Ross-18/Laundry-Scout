@@ -11,6 +11,8 @@ import 'edit_profile_screen.dart'; // Import the edit profile screen
 import 'availability_screen.dart'; // Import the availability screen
 import 'orders_screen.dart'; // Import the orders screen
 import '../../../services/feedback_service.dart'; // Import FeedbackService
+import 'add_branch_screen.dart'; // Import the new screen
+import 'add_staff_screen.dart'; // Import the new screen
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -365,7 +367,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                 Expanded(
                                   child: GestureDetector(
                                     onTap: () {
-                                      // Placeholder for Add Branch functionality
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (context) => const AddBranchScreen()),
+                                      );
                                     },
                                     child: _actionCard(Icons.add, 'Add Branch', Colors.blue),
                                   ),
@@ -374,7 +378,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                 Expanded(
                                   child: GestureDetector(
                                     onTap: () {
-                                      // Placeholder for Add Staff functionality
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (context) => const AddStaffScreen()),
+                                      );
                                     },
                                     child: _actionCard(Icons.person_add, 'Add Staff', Colors.green),
                                   ),
