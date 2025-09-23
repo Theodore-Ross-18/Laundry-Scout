@@ -865,51 +865,49 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const Icon(Icons.check_circle_outline_rounded, color: Colors.greenAccent, size: 100),
-            const SizedBox(height: 24),
+            Icon(Icons.check_circle_outline, color: Colors.white, size: 80),
+            const SizedBox(height: 20),
             Text(
-              'Information Submitted!',
+              'Submission Complete!',
+              style: textTheme.headlineMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
-              style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Text(
-              'Your business information has been successfully submitted. You can now proceed to set up your business profile.',
+              'The Admin Will Verify the Requirement, but you can setup your business profile for now.',
+              style: textTheme.bodyLarge?.copyWith(color: Colors.white70),
               textAlign: TextAlign.center,
-              style: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.8)),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
             ElevatedButton(
-              onPressed: () async {
+              onPressed: () {
                 // Clear saved form data on successful submission
-                await FormPersistenceService.clearBusinessInfoData();
-                
-                // Navigate to SetBusinessProfileScreen
-                Navigator.pushReplacement(
-                  context,
+                FormPersistenceService.clearBusinessInfoData();
+                Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
                     builder: (context) => SetBusinessProfileScreen(
                       username: widget.username,
-                      businessName: _businessNameController.text.trim(), // Pass business name
-                      exactLocation: _businessAddressController.text.trim(), // Pass business address as exact location
+                      businessName: _businessNameController.text.trim(),
+                      exactLocation: _businessAddressController.text.trim(),
                     ),
                   ),
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6F5ADC), // Purple background
-                foregroundColor: const Color(0xFFFFFFFF), // White text
+                backgroundColor: const Color(0xFF6F5ADC),
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
               ),
-              child: const Text('Set Up Business Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Setup Business Profile',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
       ),
     );
   }
-
-} // <-- THIS IS THE FINAL CLOSING BRACE FOR THE _SetBusinessInfoScreenState CLASS. ALL METHODS ABOVE MUST BE INSIDE.
+}
