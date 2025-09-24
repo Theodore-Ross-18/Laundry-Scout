@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:file_picker/file_picker.dart'; // Import file_picker
+import 'dart:typed_data'; // Import for Uint8List
+import 'dart:io'; // Import for File class
 import '../../../widgets/optimized_image.dart';
 
 import 'dart:convert' as json;
@@ -63,6 +66,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   // New lists of controllers for dynamic time slots
   final List<TextEditingController> _pickupSlotControllers = [];
   final List<TextEditingController> _dropoffSlotControllers = [];
+
+  // For image upload
+  File? _selectedImageFile; // To store the selected image file for non-web
+  Uint8List? _selectedImageBytes; // To store the selected image bytes for web
+  String? _coverPhotoUrl; // To store the current cover photo URL
 
   @override
   void initState() {
@@ -135,6 +143,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _aboutUsController.text = _businessProfile!['about_business'] ?? '';
           _deliveryAvailable = _businessProfile!['does_delivery'] ?? false;
           
+          // Load cover photo URL
+          _coverPhotoUrl = _businessProfile!['cover_photo_url'];
+          _coverPhotoUrl = _businessProfile!['cover_photo_url'];
+
           // Load open hours
           _openHoursController.text = _businessProfile!['open_hours_text'] ?? '';
 
@@ -357,7 +369,36 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
   }
 
+  // Function to pick an image
+  Future<void> _pickImage() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image, // Specify that we only want image files
+        allowMultiple: false,
+        withData: true, // For web, get bytes
+      );
 
+      if (result != null) {
+        setState(() {
+          if (result.files.single.bytes != null) {
+            // Web platform
+            _selectedImageBytes = result.files.single.bytes;
+            _selectedImageFile = null; // Clear file reference for web
+          } else {
+            // Mobile/Desktop platforms
+            _selectedImageFile = File(result.files.single.path!);
+            _selectedImageBytes = null; // Clear bytes reference for non-web
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking image: $e')),
+        );
+      }
+    }
+  }
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
@@ -388,6 +429,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (_selectedSchedule != null) {
         updateData['pickup_schedule'] = _selectedSchedule!['pickup'];
         updateData['dropoff_schedule'] = _selectedSchedule!['dropoff'];
+      }
+
+      // Upload new cover photo if selected
+      if (_selectedImageFile != null || _selectedImageBytes != null) {
+        final String fileExtension = _selectedImageFile?.path.split('.').last ?? 'png';
+        final String fileName = '${user.id}/cover_photo.$fileExtension';
+        final String path = fileName;
+
+        if (_selectedImageFile != null) {
+          // For mobile/desktop
+          final Uint8List imageBytes = await _selectedImageFile!.readAsBytes();
+          await Supabase.instance.client.storage.from('business_photos').uploadBinary(
+                path,
+                imageBytes,
+                fileOptions: const FileOptions(upsert: true),
+              );
+        } else if (_selectedImageBytes != null) {
+          // For web
+          await Supabase.instance.client.storage.from('business_photos').uploadBinary(
+                path,
+                _selectedImageBytes!,
+                fileOptions: const FileOptions(upsert: true),
+              );
+        }
+
+        final String publicUrl = Supabase.instance.client.storage
+            .from('business_photos')
+            .getPublicUrl(path);
+        updateData['cover_photo_url'] = publicUrl;
       }
 
       await Supabase.instance.client
@@ -789,39 +859,87 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Profile Photo Section
-                    Center(
-                      child: Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.grey[300],
-                        ),
-                        child: _businessProfile?['cover_photo_url'] != null
-                            ? ClipOval(
-                                child: OptimizedImage(
-                                  imageUrl: _businessProfile!['cover_photo_url'],
-                                  width: 120,
-                                  height: 120,
-                                  fit: BoxFit.cover,
-                                  errorWidget: const Icon(
-                                    Icons.camera_alt,
-                                    size: 40,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              )
-                            : const Icon(
-                                Icons.camera_alt,
-                                size: 40,
-                                color: Colors.grey,
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    
+                    // Cover Photo Section
+                             Container(
+                               height: 200,
+                               width: double.infinity,
+                               decoration: BoxDecoration(
+                                 color: Colors.grey[200],
+                                 borderRadius: BorderRadius.circular(12),
+                               ),
+                               child: Stack(
+                                 children: [
+                                   if (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty)
+                                     ...[ // Wrap in a list and use spread operator
+                                       Positioned.fill(
+                                         child: ClipRRect(
+                                           borderRadius: BorderRadius.circular(12),
+                                           child: OptimizedImage(
+                                             imageUrl: _coverPhotoUrl!,
+                                             fit: BoxFit.cover,
+                                           ),
+                                         ),
+                                       ),
+                                     ]
+                                   else if (_selectedImageBytes != null)
+                                     ...[ // Wrap in a list and use spread operator
+                                       Positioned.fill(
+                                         child: ClipRRect(
+                                           borderRadius: BorderRadius.circular(12),
+                                           child: Image.memory(
+                                             _selectedImageBytes!,
+                                             fit: BoxFit.cover,
+                                           ),
+                                         ),
+                                       ),
+                                     ]
+                                   else if (_selectedImageFile != null)
+                                     ...[ // Wrap in a list and use spread operator
+                                       Positioned.fill(
+                                         child: ClipRRect(
+                                           borderRadius: BorderRadius.circular(12),
+                                           child: Image.file(
+                                             _selectedImageFile!,
+                                             fit: BoxFit.cover,
+                                           ),
+                                         ),
+                                       ),
+                                     ]
+                                   else if (_coverPhotoUrl == null && _selectedImageBytes == null && _selectedImageFile == null)
+                                     ...[ // Wrap in a list and use spread operator
+                                       Center(
+                                         child: Icon(
+                                           Icons.photo,
+                                           size: 50,
+                                           color: Colors.grey[400],
+                                         ),
+                                       ),
+                                     ], // Corrected comma placement: after the closing ']'
+                                   Positioned(
+                                       bottom: 10,
+                                       right: 10,
+                                       child: ConstrainedBox(
+                                         constraints: const BoxConstraints(maxWidth: 200), // Adjust maxWidth as needed
+                                         child: ElevatedButton.icon(
+                                           onPressed: _pickImage,
+                                           icon: const Icon(Icons.camera_alt, color: Colors.white),
+                                           label: const Text('Change Cover Photo', style: TextStyle(color: Colors.white)),
+                                           style: ElevatedButton.styleFrom(
+                                             backgroundColor: const Color(0xFF7B61FF),
+                                             shape: RoundedRectangleBorder(
+                                               borderRadius: BorderRadius.circular(8),
+                                             ),
+                                           ),
+                                         ),
+                                       ),
+                                   ),
+                                   ],
+                                 ),
+                               ),
+                               const SizedBox(height: 20),
+
                     // 1. Business Information Section
-                    
+
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: _businessNameController,
@@ -833,12 +951,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
-
-
-                    
-                    // 2. Laundry Information Section
-                    
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: _aboutUsController,
