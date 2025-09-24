@@ -915,23 +915,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                          ),
                                        ),
                                      ], // Corrected comma placement: after the closing ']'
-                                   Positioned(
-                                       bottom: 10,
-                                       right: 10,
-                                       child: ConstrainedBox(
-                                         constraints: const BoxConstraints(maxWidth: 200), // Adjust maxWidth as needed
-                                         child: ElevatedButton.icon(
-                                           onPressed: _pickImage,
-                                           icon: const Icon(Icons.camera_alt, color: Colors.white),
-                                           label: const Text('Change Cover Photo', style: TextStyle(color: Colors.white)),
-                                           style: ElevatedButton.styleFrom(
-                                             backgroundColor: const Color(0xFF7B61FF),
-                                             shape: RoundedRectangleBorder(
-                                               borderRadius: BorderRadius.circular(8),
-                                             ),
-                                           ),
+                                   Positioned.fill( // Make the button fill the entire container
+                                     child: ElevatedButton.icon(
+                                       onPressed: _pickImage,
+                                       icon: const Icon(Icons.camera_alt, color: Colors.white),
+                                       label: const Text('Change Cover Photo', style: TextStyle(color: Colors.white)),
+                                       style: ElevatedButton.styleFrom(
+                                         backgroundColor: Colors.grey.withOpacity(0.5), // Changed to grey with 50% opacity
+                                         shape: RoundedRectangleBorder(
+                                           borderRadius: BorderRadius.circular(12), // Match parent border radius
                                          ),
+                                         padding: EdgeInsets.zero, // Remove default padding to fill completely
                                        ),
+                                     ),
                                    ),
                                    ],
                                  ),
