@@ -35,6 +35,14 @@
   color: #222;
 }
 
+.dashboard-tables {
+  display: flex;
+  gap: 50px;
+  /* justify-content: center; */
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
 .dashboard-date {
   font-size: 0.9rem;
   color: #777;
@@ -221,7 +229,9 @@
 }
 
 /* 🌟 APPLICANTS */
-.dashboard-applicants {
+
+
+.dashboard-applicant-tables {
   background: #fff;
   border-radius: 12px;
   padding: 20px;
@@ -229,18 +239,47 @@
   box-shadow: 0 2px 8px rgba(80, 80, 120, 0.05);
 }
 
-.applicants-header {
+.dashboard-applicant-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 14px;
 }
 
-.applicants-title {
+.dashboard-applicant-title {
   font-size: 1.2rem;
   font-weight: 700;
   color: #222;
 }
+
+/* APPLICANT END */
+
+/* HISTORY */
+
+.dashboard-history-tables {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 0 2px 8px rgba(80, 80, 120, 0.05);
+}
+
+.dashboard-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.dashboard-history-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #222;
+}
+
+/* HISTORY END */
+
+
 
 .view-all-btn {
   background: #6a5ae0;
@@ -257,20 +296,20 @@
   background: #5846d6;
 }
 
-.dashboard-applicants table {
+.dashboard-tables table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.dashboard-applicants th,
-.dashboard-applicants td {
+.dashboard-tables th,
+.dashboard-tables td {
   padding: 12px;
   border-bottom: 1px solid #eee;
   text-align: left;
   font-size: 0.95rem;
 }
 
-.dashboard-applicants th {
+.dashboard-tables th {
   background: #f7f7fa;
   font-weight: 700;
   color: #333;

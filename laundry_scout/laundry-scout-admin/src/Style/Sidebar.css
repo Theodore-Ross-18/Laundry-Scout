@@ -15,15 +15,15 @@
 /* Title / Logo */
 .sidebar-title {
   text-align: center;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 20px;
-  padding:20px 15px;
+  padding:10px 15px;
   color: #6c5ce7;
 }
 
 /* Reset list */
 .sidebar ul {
-  border-top: 4px solid #e1e1e1;
+  border-top: 1px solid #e1e1e1;
   list-style: none;
   padding: 0;
   margin: 0;

@@ -15,6 +15,10 @@ import Notifications from "./Notifications";
 import Sidebar from "./Sidebar";
 
 function Dashboard() {
+  // State
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [customers, setCustomers] = useState(0);
   const [owners, setOwners] = useState(0);
   const [scans, setScans] = useState(0);
@@ -37,18 +41,21 @@ function Dashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const navigate = useNavigate();
 
-  // 📊 Fetch stats, applicants, and ratings
+  // 📊 Fetch stats, applicants, ratings, history
   useEffect(() => {
     const fetchStats = async () => {
       const { count: customerCount } = await supabase
         .from("user_profiles")
         .select("*", { count: "exact", head: true });
+
       const { count: ownerCount } = await supabase
         .from("business_profiles")
         .select("*", { count: "exact", head: true });
+
       const { count: scanCount } = await supabase
         .from("qr_scans")
         .select("*", { count: "exact", head: true });
+
       const { count: feedbackCount } = await supabase
         .from("feedback")
         .select("*", { count: "exact", head: true })
@@ -87,9 +94,43 @@ function Dashboard() {
       }
     };
 
+    const fetchHistory = async () => {
+      const { data, error } = await supabase
+        .from("business_profiles")
+        .select(
+          "id,business_name,owner_first_name,owner_last_name,status,rejection_reason,created_at"
+        )
+        .in("status", ["approved", "rejected"])
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching history:", error.message);
+      } else {
+        const transformed = (data || []).map((row) => ({
+          id: row.id,
+          business_name: row.business_name,
+          owner_name: `${row.owner_first_name || ""} ${
+            row.owner_last_name || ""
+          }`.trim(),
+          action:
+            row.status?.toLowerCase() === "approved"
+              ? "Approval"
+              : row.status?.toLowerCase() === "rejected"
+              ? "Rejection"
+              : "-",
+          status: row.status,
+          rejection_reason: row.rejection_reason,
+          created_at: row.created_at,
+        }));
+        setRecords(transformed);
+      }
+      setLoading(false);
+    };
+
     fetchStats();
     fetchApplicants();
     fetchRatings();
+    fetchHistory();
   }, []);
 
   // ✅ Close dropdown when clicking outside
@@ -98,6 +139,15 @@ function Dashboard() {
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
+
+  // 🔍 Filter history by search
+  const filteredRecords = records.filter((rec) =>
+    [rec.business_name, rec.owner_name, rec.action, rec.status]
+      .filter(Boolean)
+      .some((field) =>
+        field.toLowerCase().includes(search.toLowerCase())
+      )
+  );
 
   // Logout handler
   const handleLogout = async () => {
@@ -241,50 +291,120 @@ function Dashboard() {
             </div>
           </div>
         </section>
-
-        {/* Applicants Table */}
-        <section className="dashboard-applicants">
-          <div className="applicants-header">
-            <div className="applicants-title">Applicants</div>
-            <button
-              className="view-all-btn"
-              onClick={() => navigate("/applications")}
-            >
-              View All
-            </button>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Store Name</th>
-                <th>Owner Name</th>
-                <th>Date Submitted</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {applicants.map((app, idx) => (
-                <tr key={idx}>
-                  <td>{app.business_name}</td>
-                  <td>
-                    {app.owner_first_name || ""} {app.owner_last_name || ""}
-                  </td>
-                  <td>
-                    {app.created_at
-                      ? new Date(app.created_at).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })
-                      : ""}
-                  </td>
-                  <td className={`status ${app.status || "pending"}`}>
-                    {app.status || "Pending"}
-                  </td>
+        
+        {/* Applicants + History side by side */}
+        <section className="dashboard-tables">
+          {/* Applicants Table */}
+          <div className="dashboard-applicant-tables">
+            <div className="dashboard-applicant-header">
+              <div className="dashboard-applicant-title">Applicants</div>
+              <button
+                className="view-all-btn"
+                onClick={() => navigate("/applications")}
+              >
+                View All
+              </button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Store Name</th>
+                  <th>Owner Name</th>
+                  <th>Date Submitted</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {applicants.map((app, idx) => (
+                  <tr key={idx}>
+                    <td>{app.business_name}</td>
+                    <td>
+                      {app.owner_first_name || ""} {app.owner_last_name || ""}
+                    </td>
+                    <td>
+                      {app.created_at
+                        ? new Date(app.created_at).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })
+                        : ""}
+                    </td>
+                    <td className={`status ${app.status || "pending"}`}>
+                      {app.status || "Pending"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* History Table */}
+          <div className="dashboard-history-tables">
+            <div className="dashboard-history-header">
+              <div className="dashboard-history-title">History</div>
+              <button
+                className="view-all-btn"
+                onClick={() => navigate("/history")}
+              >
+                View All
+              </button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Business</th>
+                  <th>Owner</th>
+                  <th>Action</th>
+                  <th>Status</th>
+                  <th>Reason</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan="6">Loading...</td>
+                  </tr>
+                ) : filteredRecords.length > 0 ? (
+                  filteredRecords.map((rec, idx) => (
+                    <tr key={rec.id || idx}>
+                      <td>{rec.business_name}</td>
+                      <td>{rec.owner_name}</td>
+                      <td>{rec.action || "-"}</td>
+                      <td className={`status ${rec.status}`}>
+                        {rec.status?.toLowerCase() === "approved" ? (
+                          <span
+                            style={{ color: "green", fontWeight: "bold" }}
+                          >
+                            ✔ Approved
+                          </span>
+                        ) : (
+                          <span style={{ color: "red", fontWeight: "bold" }}>
+                            ✖ Rejected
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        {rec.status?.toLowerCase() === "rejected"
+                          ? rec.rejection_reason || "N/A"
+                          : "N/A"}
+                      </td>
+                      <td>
+                        {rec.created_at
+                          ? new Date(rec.created_at).toLocaleString()
+                          : ""}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6">No history records found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </section>
       </main>
     </div>

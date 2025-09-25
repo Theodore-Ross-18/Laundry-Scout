@@ -197,8 +197,8 @@ function History() {
                 <th>Owner</th>
                 <th>Action</th>
                 <th>Status</th>
-                <th>Reason</th>
-                <th>Time</th>
+                <th>Rejection Reason</th>
+                <th>Date</th>
               </tr>
             </thead>
             <tbody>
