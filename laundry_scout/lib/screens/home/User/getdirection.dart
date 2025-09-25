@@ -165,7 +165,7 @@ class _GetDirectionScreenState extends State<GetDirectionScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
                   'Distance: $_distance',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF6F5ADC)),
                   textAlign: TextAlign.center,
                 ),
               ),
