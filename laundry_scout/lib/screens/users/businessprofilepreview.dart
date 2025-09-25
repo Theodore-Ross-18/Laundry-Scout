@@ -22,7 +22,7 @@ class BusinessProfilePreview extends StatefulWidget {
   final List<Map<String, dynamic>>? reviews;
 
   const BusinessProfilePreview({
-    Key? key,
+    super.key,
     required this.businessName,
     required this.location,
     required this.aboutBusiness,
@@ -38,7 +38,7 @@ class BusinessProfilePreview extends StatefulWidget {
     this.rating,
     this.reviewCount,
     this.reviews,
-  }) : super(key: key);
+  });
 
   @override
   State<BusinessProfilePreview> createState() => _BusinessProfilePreviewState();
@@ -47,7 +47,7 @@ class BusinessProfilePreview extends StatefulWidget {
 class _BusinessProfilePreviewState extends State<BusinessProfilePreview>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  Map<String, TextEditingController> _priceControllers = {};
+  final Map<String, TextEditingController> _priceControllers = {};
   bool _isEditingPrices = false;
 
   @override
@@ -129,7 +129,7 @@ class _BusinessProfilePreviewState extends State<BusinessProfilePreview>
       body: Column(
         children: [
           // Cover Photo
-          Container(
+          SizedBox(
             height: 200,
             child: widget.coverPhotoFile != null
                 ? Container(

@@ -15,7 +15,7 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
   late RealtimeChannel _notificationsSubscription;
-  Map<String, String> _userNames = {}; // Cache for user names
+  final Map<String, String> _userNames = {}; // Cache for user names
 
   @override
   void initState() {

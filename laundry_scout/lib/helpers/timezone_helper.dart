@@ -21,6 +21,6 @@ class TimezoneHelper {
     final hours = offset.inHours;
     final minutes = (offset.inMinutes % 60).abs();
     final sign = hours >= 0 ? '+' : '-';
-    return '${sign}${hours.abs().toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
+    return '$sign${hours.abs().toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
   }
 }

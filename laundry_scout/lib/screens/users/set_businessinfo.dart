@@ -18,7 +18,7 @@ class SetBusinessInfoScreen extends StatefulWidget {
 }
 
 class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
-  PageController _pageController = PageController();
+  final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _showForm = false;
   Timer? _timer; // Timer for slides

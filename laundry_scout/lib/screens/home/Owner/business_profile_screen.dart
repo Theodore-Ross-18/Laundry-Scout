@@ -234,7 +234,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         const SizedBox(height: 40),
                         
                         // Sign Out Button
-                        Container(
+                        SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: _signOut,

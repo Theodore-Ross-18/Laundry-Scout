@@ -1261,7 +1261,7 @@ Found ${_markers.length} locations within 1km:
                                                 Text(
                                                   _loadingStatus,
                                                   style: const TextStyle(
-                                                    color: const Color(0xFF7B61FF),
+                                                    color: Color(0xFF7B61FF),
                                                     fontSize: 10,
                                                   ),
                                                   overflow: TextOverflow.ellipsis,

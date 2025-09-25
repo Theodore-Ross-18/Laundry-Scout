@@ -18,11 +18,11 @@ class SetBusinessProfileScreen extends StatefulWidget {
   final String exactLocation; // Add exactLocation parameter
 
   const SetBusinessProfileScreen({
-    Key? key,
+    super.key,
     required this.username,
     required this.businessName, // Require businessName
     required this.exactLocation, // Require exactLocation
-  }) : super(key: key);
+  });
 
   @override
   _SetBusinessProfileScreenState createState() => _SetBusinessProfileScreenState();
@@ -41,10 +41,10 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
   String? _coverPhotoUrl; // This variable will now be used
   bool _isLoading = false;
   // Add this line to define the missing variable
-  List<String> _availableServices = ['Wash & Fold', 'Ironing', 'Deliver', 'Dry Cleaning', 'Pressing'];
+  final List<String> _availableServices = ['Wash & Fold', 'Ironing', 'Deliver', 'Dry Cleaning', 'Pressing'];
   List<String> _selectedServices = [];
-  Map<String, double> _servicePrices = {};
-  Map<String, TextEditingController> _priceControllers = {};
+  final Map<String, double> _servicePrices = {};
+  final Map<String, TextEditingController> _priceControllers = {};
   double? _latitude;
   double? _longitude;
   bool _isLocationLoading = false;

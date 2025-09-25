@@ -22,7 +22,9 @@ class RealtimeMessageService {
   }
 
   void dispose() {
-    _activeChannels.values.forEach((channel) => channel.unsubscribe());
+    for (var channel in _activeChannels.values) {
+      channel.unsubscribe();
+    }
     _activeChannels.clear();
     _cacheCleanupTimer?.cancel();
     _messageController.close();
