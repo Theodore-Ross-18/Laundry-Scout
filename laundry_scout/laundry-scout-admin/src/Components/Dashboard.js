@@ -12,6 +12,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import "../Style/Dashboard.css";
 import Notifications from "./Notifications";
+import Settings from "./settings/Settings"
 import Sidebar from "./Sidebar";
 
 function Dashboard() {
@@ -171,19 +172,24 @@ function Dashboard() {
           </div>
 
           <div className="dashboard-header-icons">
-            <Notifications />
-
+            <div className="notification-wrapper">
+              <Notifications />
+            </div>
+            <div className="settings-wrapper">
+              <FiSettings
+                size={22}
+                className="settings-icon"
+                onClick={() => navigate("/settings")}
+                />
+            </div>
             <div className="dropdown-wrapper">
               <img
                 src="https://via.placeholder.com/32"
                 alt="profile"
                 className="profile-avatar"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowSettings(!showSettings);
-                }}
-              />
-              {showSettings && (
+                onClick={() => navigate("/profile")}
+                />
+              {/* {showSettings && (
                 <div
                   className="dropdown-panel"
                   onClick={(e) => e.stopPropagation()}
@@ -210,7 +216,7 @@ function Dashboard() {
                     Logout
                   </div>
                 </div>
-              )}
+              )} */}
             </div>
           </div>
         </header>
@@ -371,13 +377,13 @@ function Dashboard() {
                       <td className={`status ${rec.status}`}>
                         {rec.status?.toLowerCase() === "approved" ? (
                           <span
-                            style={{ color: "green", fontWeight: "bold" }}
+                            style={{ color: "#10b981", fontWeight: "bold" }}
                           >
-                            ✔ Approved
+                            Approved
                           </span>
                         ) : (
-                          <span style={{ color: "red", fontWeight: "bold" }}>
-                            ✖ Rejected
+                          <span style={{ color: "#e74c3c", fontWeight: "bold" }}>
+                            Rejected
                           </span>
                         )}
                       </td>

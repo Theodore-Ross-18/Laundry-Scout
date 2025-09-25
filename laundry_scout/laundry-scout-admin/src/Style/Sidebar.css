@@ -6,6 +6,8 @@
   display: flex;
   flex-direction: column;
   padding: 10px 0;
+  justify-content: space-between;
+  font-family: "Poppins", sans-serif;
 }
 
 .sidebar.closed {
@@ -17,11 +19,14 @@
   text-align: center;
   font-weight: 700;
   font-size: 20px;
-  padding:10px 15px;
+  padding: 10px 15px;
   color: #6c5ce7;
 }
 
-/* Reset list */
+.sidebar-content {
+  flex-grow: 1;
+}
+
 .sidebar ul {
   border-top: 1px solid #e1e1e1;
   list-style: none;
@@ -30,21 +35,22 @@
 }
 
 .sidebar li {
-  margin: 20px 0px;
+  margin: 20px 0;
+  align-items: center;
 }
 
 /* Sidebar links */
 .sidebar li a {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 24px;
   padding: 12px 20px;
   color: #333;
   text-decoration: none;
   font-weight: 500;
   border-radius: 8px;
   white-space: nowrap;
-  transition: background 0.2s, color 0.2s;
+  transition: all 0.3s ease; /* smooth hover transitions */
 }
 
 /* Default icon */
@@ -54,35 +60,27 @@
   color: #333;
 }
 
-/* ✅ Active item (outer purple background + inner white pill) */
+/* ✅ Active item (outer purple background + white text) */
 .sidebar nav ul li.active {
   background: #6b4eff;
   border-radius: 12px;
-  margin: 20px 0px;
-  padding: 14px 24px; /* creates space for white pill inside */
 }
 
 .sidebar nav ul li.active a {
-  /* background: #ffffff; */
   color: #ffffff;
   font-weight: 600;
-  border-radius: 8px;
-  padding: 10px 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 
 .sidebar li.active a .menu-icon {
   color: #ffffff;
 }
 
-/* Hover effect (simple light background, not like active) */
+/* ✅ Fixed Hover effect (does NOT push items down) */
 .sidebar li:not(.active) a:hover {
-  width: 180px;
   background: #6b4eff;
   color: #ffffff;
   border-left: 4px solid #422cae;
+  padding-left: 16px; /* adjust for border so it doesn’t shift */
 }
 
 .sidebar li:not(.active) a:hover .menu-icon {
@@ -97,18 +95,19 @@
   gap: 10px;
   color: #d9534f;
   cursor: pointer;
+  font-family: "Poppins", sans-serif;
   font-weight: 600;
   margin-top: 20px;
+  margin-bottom: 20px;
   border-radius: 8px;
-
   background: transparent;
   border: none;
   box-shadow: none;
   text-decoration: none;
+  transition: all 0.3s ease;
 }
 
 .sidebar-logout:not(.active):hover {
-  width: 230px;
   background: #f54949;
   color: #ffffff;
   border-left: 4px solid #be1515;

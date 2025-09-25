@@ -21,6 +21,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1px solid #c9c9c9;
+  padding: 12px 0px; 
 }
 
 .users-header-left {
@@ -276,7 +278,23 @@
 }
 
 .menu-dropdown .danger {
-  color: #d9534f;
+  color: #ff0000;
+}
+
+/* Delete button styling */
+.actions-cell .danger {
+  background: transparent;
+  border: none;
+  color: #ff0000;
+  cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.actions-cell .danger:hover {
+  color: #cc0000;
 }
 
 /* Modal overlay */
@@ -309,6 +327,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+
 }
 
 .close-icon {

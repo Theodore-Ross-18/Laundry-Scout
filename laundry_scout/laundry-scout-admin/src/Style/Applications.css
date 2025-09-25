@@ -22,6 +22,8 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  border-bottom: 1px solid #c9c9c9;
+  padding: 12px 0px; 
 }
 .applications-header-left {
   display: flex;
@@ -439,7 +441,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #eee;
+
   padding-bottom: 10px;
 }
 .modal-header h3 {

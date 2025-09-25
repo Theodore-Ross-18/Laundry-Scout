@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../../Supabase/supabaseClient";
 import { useNavigate } from "react-router-dom";
-import "../../Style/Admin.css";
+import { FiSettings } from "react-icons/fi";
+import "../../Style/Settings.css";
 
 // ✅ Translations
 const translations = {

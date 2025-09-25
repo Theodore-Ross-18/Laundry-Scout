@@ -1,0 +1,5 @@
+.settings-wrapper:hover {
+  cursor: pointer;
+  color: #6a5ae0;
+  transform: scale(1.1);
+}
