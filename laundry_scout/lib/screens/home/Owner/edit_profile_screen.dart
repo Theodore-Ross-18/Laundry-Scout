@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart'; // Import file_picker
 import 'dart:typed_data'; // Import for Uint8List
 import 'dart:io'; // Import for File class
 import '../../../widgets/optimized_image.dart';
+import 'package:laundry_scout/screens/home/Owner/owner_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -14,10 +16,12 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _businessNameController = TextEditingController();
-  final _businessAddressController = TextEditingController(); // New controller for business address
-  
-  // Laundry Information controllers
+  final TextEditingController _businessNameController = TextEditingController();
+  final TextEditingController _businessAddressController = TextEditingController();
+  double? _latitude;
+  double? _longitude;
+  final TextEditingController _latitudeController = TextEditingController();
+  final TextEditingController _longitudeController = TextEditingController();
   final _aboutUsController = TextEditingController();
   final _termsAndConditionsController = TextEditingController(); // New controller for Terms and Conditions
   
@@ -79,9 +83,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void dispose() {
     _businessNameController.dispose();
-    _businessAddressController.dispose(); // Dispose new controller
+    _businessAddressController.dispose();
+    _latitudeController.dispose();
+    _longitudeController.dispose();
     _aboutUsController.dispose();
-    _termsAndConditionsController.dispose(); // Dispose new controller
+    _termsAndConditionsController.dispose();
     // Removed _serviceNameController.dispose() and _priceController.dispose() as per user request.
     // _serviceNameController.dispose();
     // _priceController.dispose();
@@ -135,6 +141,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _businessProfile = Map<String, dynamic>.from(response);
           _businessNameController.text = _businessProfile!['business_name'] ?? '';
           _businessAddressController.text = _businessProfile!['business_address'] ?? ''; // Load business address
+          _latitude = _businessProfile!['latitude'];
+          _longitude = _businessProfile!['longitude'];
+          _latitudeController.text = _latitude?.toString() ?? '';
+          _longitudeController.text = _longitude?.toString() ?? '';
           
           // Load laundry information
           _aboutUsController.text = _businessProfile!['about_business'] ?? '';
@@ -391,6 +401,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       Map<String, dynamic> updateData = {
         'business_name': _businessNameController.text.trim(),
         'business_address': _businessAddressController.text.trim(), // Save business address
+        'latitude': _latitude,
+        'longitude': _longitude,
         'about_business': _aboutUsController.text.trim(),
         'does_delivery': _deliveryAvailable,
         'terms_and_conditions': _termsAndConditionsController.text.trim(), // Save terms and conditions
@@ -910,28 +922,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 24),
                     _buildSectionHeader('Your Shop\'s Exact Location'),
                     const SizedBox(height: 16),
+                    // Business Address Field
                     TextFormField(
                       controller: _businessAddressController,
-                      style: const TextStyle(color: Colors.black87),
+                      style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
                         labelText: 'Business Address',
-                        labelStyle: const TextStyle(color: Colors.black87),
+                        labelStyle: const TextStyle(color: Colors.black),
+                        hintText: 'Enter your business address',
+                        prefixIcon: const Icon(Icons.location_on, color: Colors.black54),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.map, color: Colors.black54),
+                          onPressed: () async {
+                            final LatLng? selectedLocation = await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => OwnerMapScreen(
+                                  initialLatitude: _latitude,
+                                  initialLongitude: _longitude,
+                                ),
+                              ),
+                            );
+                            
+                            if (selectedLocation != null) {
+                              setState(() {
+                                _latitude = selectedLocation.latitude;
+                                _longitude = selectedLocation.longitude;
+                                _latitudeController.text = _latitude?.toString() ?? '';
+                                _longitudeController.text = _longitude?.toString() ?? '';
+                              });
+                            }
+                          },
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF7B61FF)),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        prefixIcon: const Icon(Icons.location_on, color: Color(0xFF7B61FF)), // Location icon
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -940,8 +964,39 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 24),
-
+                    const SizedBox(height: 20),
+                    // Latitude Field
+                    TextFormField(
+                      controller: _latitudeController,
+                      readOnly: true,
+                      style: const TextStyle(color: Colors.black),
+                      decoration: InputDecoration(
+                        labelText: 'Latitude',
+                        labelStyle: const TextStyle(color: Colors.black),
+                        hintText: 'Latitude will be set from map',
+                        prefixIcon: const Icon(Icons.location_on, color: Colors.black54),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Longitude Field
+                    TextFormField(
+                      controller: _longitudeController,
+                      readOnly: true,
+                      style: const TextStyle(color: Colors.black),
+                      decoration: InputDecoration(
+                        labelText: 'Longitude',
+                        labelStyle: const TextStyle(color: Colors.black),
+                        hintText: 'Longitude will be set from map',
+                        prefixIcon: const Icon(Icons.location_on, color: Colors.black54),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     _buildTextField(
                       controller: _aboutUsController,
                       label: 'About Us',
