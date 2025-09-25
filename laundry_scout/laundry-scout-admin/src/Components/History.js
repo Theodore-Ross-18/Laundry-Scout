@@ -89,10 +89,6 @@ function History() {
       <main className={`history-main ${isSidebarOpen ? "" : "expanded"}`}>
         <header className="history-header">
           <div className="history-header-left">
-            <FiMenu
-              className="history-toggle-sidebar"
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            />
             <div>
               <h2 className="history-title">HISTORY</h2>
               <p className="history-subtitle">Track all approval and rejection records</p>
@@ -181,7 +177,7 @@ function History() {
             )}
           </div>
 
-          <div className="filter-right">
+          <div className="history-filter-right">
             <button className="date-btn">19 Dec - 20 Dec 2024</button>
             <button className="all-btn">All Transactions</button>
           </div>

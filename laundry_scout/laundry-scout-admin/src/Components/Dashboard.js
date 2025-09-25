@@ -164,10 +164,6 @@ function Dashboard() {
       <main className={`dashboard-main ${sidebarOpen ? "" : "expanded"}`}>
         <header className="dashboard-header">
           <div className="dashboard-header-left">
-            <FiMenu
-              className="dashboard-toggle-sidebar"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            />
             <div>
               <h2>DASHBOARD</h2>
               <div className="dashboard-date">{new Date().toDateString()}</div>

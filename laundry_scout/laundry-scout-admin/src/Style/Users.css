@@ -1,5 +1,6 @@
 /* ===== Layout ===== */
 .users-root {
+  background: #f7f7fa;
   display: flex;
   min-height: 100vh;
   font-family: "Poppins", sans-serif;
@@ -7,9 +8,12 @@
 
 /* ===== Main ===== */
 .users-main {
-  flex: 1;
-  background: #f9f9fb;
+  flex: 1 1;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  transition: margin-left 0.3s ease-in-out;
 }
 
 /* ===== Header ===== */
@@ -17,7 +21,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
 }
 
 .users-header-left {
@@ -40,14 +43,11 @@
 }
 
 .users-header-icons {
-    position: fixed;
-    top: 16px;
-    right: 16px;
-    display: flex
-;
+    display: flex;
     align-items: center;
-    gap: 16px;
-    z-index: 1000;
+    gap: 18px;
+    margin-left: auto;
+    position: relative;
 }
 
 .users-subtitle {
@@ -134,16 +134,16 @@
   margin-bottom: 20px;
 }
 
-.filter-tab {
-  font-weight: 600;
-  font-size: 14px;
-  background: #f3f0ff;
-  padding: 6px 12px;
-  border-radius: 8px;
-  color: #6b4eff;
+.users-filter-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #333;
 }
 
-.filter-tab .count {
+.users-filter-tab .count {
   margin-left: 6px;
   background: #6b4eff;
   color: white;
@@ -153,13 +153,22 @@
 }
 
 .users-search-box {
-  flex: 1;
-  padding: 8px 14px;
-  border: 1px solid #ddd;
+  flex: 1 1;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  font-size: 14px;
+  padding: 6px 10px;
+  max-width: 320px;
+}
+
+.users-search-input {
+  border: none;
   outline: none;
-  transition: border-color 0.2s;
+  flex: 1;
+  font-size: 0.9rem;
+  background: transparent;
 }
 
 .search-box:focus {
@@ -168,11 +177,11 @@
 
 /* ===== Table ===== */
 .users-table-wrapper {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  padding: 24px;
-  overflow-x: auto;
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    width: 97%;
 }
 
 .user-profiles-title {
@@ -181,6 +190,14 @@
   margin-bottom: 16px;
   font-weight: 600;
   font-size: 18px;
+}
+
+.users-subtitle{
+  font-family: "Poppins", sans-serif;
+  font-size: 15.2px;
+  margin: 0px;
+  font-size: 0.9rem;
+  color: #888;
 }
 
 .users-table {

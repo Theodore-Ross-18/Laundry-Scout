@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "../Supabase/supabaseClient";
 import "../Style/Clients.css";
-import { FiMenu } from "react-icons/fi";
+import { FiMenu, FiSearch } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
 // ✅ Import the shared components
@@ -12,8 +12,14 @@ function Clients() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+
+  // added to support search history
+  const [searchHistory, setSearchHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [showSettings, setShowSettings] = useState(false); // ✅ settings dropdown
+  const [showSettings, setShowSettings] = useState(false); // settings dropdown
+  const searchRef = useRef(null);
 
   const navigate = useNavigate();
 
@@ -24,7 +30,7 @@ function Clients() {
       const { data, error } = await supabase
         .from("business_profiles")
         .select("*")
-        .eq("status", "approved"); // ✅ only approved
+        .eq("status", "approved"); // only approved
 
       if (error) {
         console.error("Error fetching clients:", error.message);
@@ -37,17 +43,35 @@ function Clients() {
     fetchClients();
   }, []);
 
-  // 🔹 Filter clients
+  // 🔹 Filter clients by search text
   const filteredClients = clients.filter((client) => {
     const name = client?.business_name || client?.name || "";
     return name.toLowerCase().includes(search.toLowerCase());
   });
 
-  // Close settings dropdown on outside click
+  // 🔹 handle Enter key for search history
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && search.trim() !== "") {
+      if (!searchHistory.includes(search)) {
+        setSearchHistory([search, ...searchHistory].slice(0, 5));
+      }
+      setShowHistory(false);
+    }
+  };
+
+  const deleteHistory = (item) =>
+    setSearchHistory(searchHistory.filter((h) => h !== item));
+
+  // Close dropdowns on outside click
   useEffect(() => {
-    const handleClickOutside = () => setShowSettings(false);
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowHistory(false);
+        setShowSettings(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -59,10 +83,6 @@ function Clients() {
       <main className={`clients-main ${sidebarOpen ? "" : "expanded"}`}>
         <header className="clients-header">
           <div className="clients-header-left">
-            <FiMenu
-              className="clients-toggle-sidebar"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            />
             <div>
               <h1 className="clients-title">CLIENTS</h1>
               <p className="clients-subtitle">All Approved Laundry Businesses</p>
@@ -115,15 +135,46 @@ function Clients() {
           </div>
         </header>
 
-        {/* Search */}
-        <div>
-          <input
-            type="text"
-            placeholder="Search clients..."
-            className="clients-search-box"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        {/* Search + Filter */}
+        <div className="applications-filters">
+          <div className="applications-filter-tab">
+            <span className="app-filter-label">All Clients</span>
+            <span className="count">{filteredClients.length}</span>
+          </div>
+          <div className="applications-search-box" ref={searchRef}>
+            <FiSearch className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search Clients"
+              className="applications-search-input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setShowHistory(true)}
+            />
+            {showHistory && searchHistory.length > 0 && (
+              <ul className="applications-search-history">
+                {searchHistory.map((item, idx) => (
+                  <li key={idx} onClick={() => setSearch(item)}>
+                    <span>{item}</span>
+                    <button
+                      className="applications-delete-history"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteHistory(item);
+                      }}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className="applications-filter-right">
+            <button className="date-btn">19 Dec - 20 Dec 2024</button>
+            <button className="all-btn">All Transactions</button>
+          </div>
         </div>
 
         {/* Client Cards */}

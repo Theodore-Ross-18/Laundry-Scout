@@ -90,7 +90,7 @@
 }
 
 /* Logout button */
-.logout {
+.sidebar-logout {
   padding: 12px 20px;
   display: flex;
   align-items: center;
@@ -100,10 +100,15 @@
   font-weight: 600;
   margin-top: 20px;
   border-radius: 8px;
+
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  text-decoration: none;
 }
 
-.logout:not(.active):hover {
-  width: 180px;
+.sidebar-logout:not(.active):hover {
+  width: 230px;
   background: #f54949;
   color: #ffffff;
   border-left: 4px solid #be1515;

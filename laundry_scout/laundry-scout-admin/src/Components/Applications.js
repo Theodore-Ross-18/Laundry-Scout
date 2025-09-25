@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "../Supabase/supabaseClient";
 import "../Style/Applications.css";
-import { FiMenu } from "react-icons/fi";
+import { FiMenu, FiSearch } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
 // ✅ Sidebar + Notifications
@@ -171,10 +171,6 @@ function Applications() {
         {/* Header */}
         <header className="applications-header">
           <div className="applications-header-left">
-            <FiMenu
-              className="applications-toggle-sidebar"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            />
             <div>
               <h2 className="applications-title">APPLICATIONS</h2>
               <p className="applications-subtitle">
@@ -223,15 +219,16 @@ function Applications() {
           <>
             {/* Filters */}
             <div className="applications-filters">
-              <div className="filter-tab">
-                All Applicants{" "}
+              <div className="applications-filter-tab">
+                <span className="app-filter-label">All Applicants</span>
                 <span className="count">{filteredBusinesses.length}</span>
               </div>
-              <div className="applications-search-wrapper" ref={searchRef}>
+              <div className="applications-search-box" ref={searchRef}>
+                <FiSearch className="search-icon" />
                 <input
                   type="text"
                   placeholder="Search Here"
-                  className="applications-search-box"
+                  className="applications-search-input"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -255,6 +252,10 @@ function Applications() {
                     ))}
                   </ul>
                 )}
+              </div>
+              <div className="applications-filter-right">
+                <button className="date-btn">19 Dec - 20 Dec 2024</button>
+                <button className="all-btn">All Transactions</button>
               </div>
             </div>
 
