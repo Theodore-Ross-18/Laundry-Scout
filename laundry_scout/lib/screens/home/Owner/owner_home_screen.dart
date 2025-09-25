@@ -452,9 +452,9 @@ Widget _actionCard(IconData icon, String label, Color iconColor) {
     child: Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, color: iconColor, size: 28),
-        const SizedBox(width: 10),
         Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+        const SizedBox(width: 10),
+        Icon(icon, color: iconColor, size: 28),
       ],
     ),
   );
