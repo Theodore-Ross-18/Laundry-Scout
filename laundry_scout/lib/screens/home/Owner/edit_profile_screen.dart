@@ -15,8 +15,7 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _businessNameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final _businessAddressController = TextEditingController(); // New controller for business address
   
   // Laundry Information controllers
   final _aboutUsController = TextEditingController();
@@ -80,8 +79,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void dispose() {
     _businessNameController.dispose();
-    _emailController.dispose();
-    _phoneController.dispose();
+    _businessAddressController.dispose(); // Dispose new controller
     _aboutUsController.dispose();
     _termsAndConditionsController.dispose(); // Dispose new controller
     // Removed _serviceNameController.dispose() and _priceController.dispose() as per user request.
@@ -136,8 +134,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         setState(() {
           _businessProfile = Map<String, dynamic>.from(response);
           _businessNameController.text = _businessProfile!['business_name'] ?? '';
-          _emailController.text = _businessProfile!['email'] ?? '';
-          _phoneController.text = _businessProfile!['business_phone_number'] ?? '';
+          _businessAddressController.text = _businessProfile!['business_address'] ?? ''; // Load business address
           
           // Load laundry information
           _aboutUsController.text = _businessProfile!['about_business'] ?? '';
@@ -393,8 +390,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       // Prepare update data
       Map<String, dynamic> updateData = {
         'business_name': _businessNameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'business_phone_number': _phoneController.text.trim(),
+        'business_address': _businessAddressController.text.trim(), // Save business address
         'about_business': _aboutUsController.text.trim(),
         'does_delivery': _deliveryAvailable,
         'terms_and_conditions': _termsAndConditionsController.text.trim(), // Save terms and conditions
@@ -898,20 +894,54 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                ),
                                const SizedBox(height: 20),
 
-                    // 1. Business Information Section
-
+                    const SizedBox(height: 24),
+                    _buildSectionHeader('Business Information'),
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: _businessNameController,
                       label: 'Business Name',
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Business name is required';
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your business name';
                         }
                         return null;
                       },
                     ),
+                    const SizedBox(height: 24),
+                    _buildSectionHeader('Your Shop\'s Exact Location'),
                     const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _businessAddressController,
+                      style: const TextStyle(color: Colors.black87),
+                      decoration: InputDecoration(
+                        labelText: 'Business Address',
+                        labelStyle: const TextStyle(color: Colors.black87),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFF7B61FF)),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        prefixIcon: const Icon(Icons.location_on, color: Color(0xFF7B61FF)), // Location icon
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your business address';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 24),
+
                     _buildTextField(
                       controller: _aboutUsController,
                       label: 'About Us',
@@ -923,7 +953,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
                     const SizedBox(height: 16),
                     Row(
                       children: [
