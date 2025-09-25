@@ -147,6 +147,104 @@
   background: #4b39c8;
 }
 
+/* Forgot Password container */
+.reset-container {
+  background: rgba(255,255,255,0.08);
+  border-radius: 20px;
+  padding: 40px 32px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 380px;
+  animation: fadeIn 1s;
+}
+
+.reset-container h2 {
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.reset-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.reset-form input {
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+  transition: background 0.2s;
+}
+
+.reset-form input::placeholder {
+  color: #e0e0e0;
+  opacity: 1;
+}
+
+.reset-form input:focus {
+  background: rgba(255,255,255,0.28);
+}
+
+.reset-form button {
+  margin-top: 10px;
+  padding: 12px 0;
+  border-radius: 8px;
+  border: none;
+  background: #5f4be8;
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.reset-form button:hover {
+  background: #4b39c8;
+}
+
+/* Message styles */
+.reset-message {
+  margin-top: 12px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #4caf50; /* success green */
+}
+
+.reset-error {
+  margin-top: 12px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #f44336; /* error red */
+}
+
+/* Back button */
+.reset-container .back-btn {
+  margin-top: 16px;
+  background: transparent;
+  border: 1px solid #fff;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.2s, color 0.2s;
+}
+
+.reset-container .back-btn:hover {
+  background: #fff;
+  color: #5f4be8;
+}
+
+
 @keyframes fadeIn {
   from { opacity: 0; transform: scale(0.98);}
   to { opacity: 1; transform: scale(1);}

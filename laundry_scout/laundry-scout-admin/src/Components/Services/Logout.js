@@ -1,11 +1,17 @@
-// src/Services/logoutService.js
+// src/Components/Services/Logout.js
 import { supabase } from "../../Supabase/supabaseClient";
 
-export const handleLogout = async (navigate) => {
+export const handleLogout = async (navigate, onLogout, setLoggingOut) => {
   try {
-    await supabase.auth.signOut();
-    navigate("/login");
+    setLoggingOut(true); // disable button
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+
+    if (onLogout) onLogout();
+    navigate("/");
   } catch (error) {
-    console.error("Error logging out:", error.message);
+    console.error("❌ Logout failed:", error.message);
+  } finally {
+    setLoggingOut(false);
   }
 };

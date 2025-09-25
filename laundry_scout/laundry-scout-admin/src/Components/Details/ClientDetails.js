@@ -42,10 +42,13 @@ function ClientDetail() {
       <div className="client-header">
         <img
           src={client.cover_photo_url || "https://via.placeholder.com/600x300"}
-          alt={client.business_name || client.owner_last_name}
+          alt={client.business_name || client.owner_last_name || "Business"}
           className="cover-photo"
         />
-        <h1>{client.business_name || (client.owner_first_name + " " + client.owner_last_name)}</h1>
+        <h1>
+          {client.business_name ||
+            `${client.owner_first_name || ""} ${client.owner_last_name || ""}`}
+        </h1>
         <p className="address">📍 {client.business_address || "N/A"}</p>
         <p className="since">
           Member Since{" "}
@@ -55,58 +58,20 @@ function ClientDetail() {
         </p>
       </div>
 
-      {/* Body Section */}
+      {/* Dynamic Body Section */}
       <div className="client-body">
-        <h2>Business Information</h2>
-        <p>
-          <strong>Owner:</strong> {client.owner_last_name || "N/A"}
-        </p>
-        <p>
-          <strong>Description:</strong> {client.description || "No description"}
-        </p>
-        <p>
-          <strong>Status:</strong> {client.status || "N/A"}
-        </p>
-        <p>
-          <strong>Type:</strong> {client.business_type || "N/A"}
-        </p>
-        <p>
-          <strong>Registration #:</strong> {client.registration_number || "N/A"}
-        </p>
-        <p>
-          <strong>Tax ID:</strong> {client.tax_id || "N/A"}
-        </p>
+        <h2>Profile Details</h2>
+        {Object.entries(client).map(([key, value]) => {
+          // Skip system fields if you don’t want them
+          if (["id", "created_at", "cover_photo_url"].includes(key)) return null;
 
-        <h2>Contact Info</h2>
-        <p>📞 {client.business_phone_number || "N/A"}</p>
-        <p>📧 {client.email || "N/A"}</p>
-        <p>🌐 {client.website || "N/A"}</p>
-        <p>📱 {client.social_media || "N/A"}</p>
-
-        <h2>Location</h2>
-        <p>
-          <strong>Address:</strong> {client.business_address || "N/A"}
-        </p>
-        <p>
-          <strong>City:</strong> {client.city || "N/A"}
-        </p>
-        <p>
-          <strong>Province:</strong> {client.province || "N/A"}
-        </p>
-        <p>
-          <strong>Zip Code:</strong> {client.zip_code || "N/A"}
-        </p>
-
-        <h2>Additional Info</h2>
-        <p>
-          <strong>Employees:</strong> {client.employees_count || "N/A"}
-        </p>
-        <p>
-          <strong>Opening Hours:</strong> {client.opening_hours || "N/A"}
-        </p>
-        <p>
-          <strong>Payment Methods:</strong> {client.payment_methods || "N/A"}
-        </p>
+          return (
+            <p key={key}>
+              <strong>{key.replace(/_/g, " ")}:</strong>{" "}
+              {value && value !== "" ? value.toString() : "N/A"}
+            </p>
+          );
+        })}
       </div>
     </div>
   );

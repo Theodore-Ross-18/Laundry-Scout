@@ -1,9 +1,9 @@
 /* ===== Root Layout ===== */
-.dashboard-root {
+.history-root {
   display: flex;
   min-height: 100vh;
   background: #f7f7fa;
-  font-family: "Inter", sans-serif;
+  font-family: "Poppins", sans-serif;
 }
 
 /* ===== Title Container (always visible) ===== */
@@ -21,92 +21,13 @@
   z-index: 100;
 }
 
-.sidebar-title {
-  font-weight: 700;
-  font-size: 1.2rem;
+.history-toggle-sidebar {
+  font-size: 1.6rem;
   color: #6a5ae0;
-  margin-bottom: 10px;
-}
-
-.sidebar-toggle {
-  background: none;
-  border: none;
-  font-size: 1.4rem;
   cursor: pointer;
-  color: #6a5ae0;
-  transition: transform 0.2s;
-  z-index: 101; /* Ensure toggle is above other elements */
-}
-.sidebar-toggle:hover {
-  transform: scale(1.1);
 }
 
-/* ===== Sidebar ===== */
-.sidebar {
-  width: 240px;
-  background: #fff;
-  border-right: 1px solid #eee;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 20px 0;
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 1000;
-  transition: transform 0.5s ease-in-out, visibility 0.5s ease-in-out;
-}
-
-.sidebar.closed {
-  transform: translateX(-100%);
-  visibility: hidden;
-}
-
-.dashboard-main {
-  margin-left: 240px;
-  transition: margin-left 0.5s ease-in-out;
-}
-
-.dashboard-main.full {
-  margin-left: 0;
-}
-.sidebar-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #6b4eff;
-  padding: 0px;
-  margin-bottom: 20px;
-}
-
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.sidebar li {
-  margin: 10px 0;
-}
-
-.sidebar li a {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 20px;
-  color: #333;
-  text-decoration: none;
-  border-radius: 8px;
-  transition: background 0.2s;
-}
-
-.sidebar li.active a,
-.sidebar li a:hover {
-  background: #f3f0ff;
-  color: #6b4eff;
-}
-
-.logout {
+/* .logout {
   padding: 12px 20px;
   display: flex;
   align-items: center;
@@ -114,40 +35,9 @@
   color: #d9534f;
   cursor: pointer;
   font-weight: 600;
-}
-.sidebar.open {
-  transform: translateX(0);
-}
+} */
 
-.sidebar-menu ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.sidebar-menu ul li {
-  padding: 14px 24px;
-  margin: 6px 0;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: 0.2s;
-}
-.sidebar-menu ul li:hover {
-  background: #f3f1ff;
-}
-.sidebar-menu ul li.active {
-  background: #6a5ae0;
-  color: #fff;
-  font-weight: 600;
-}
-.sidebar-menu ul li a {
-  text-decoration: none;
-  color: inherit;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.logout {
+/* .logout {
   margin-top: auto;
   padding: 14px 24px;
   color: #b0b0b0;
@@ -157,41 +47,49 @@
   display: flex;
   align-items: center;
   gap: 10px;
-}
+} */
 
 /* ===== Main Layout ===== */
-.dashboard-main {
+.history-main {
   flex: 1;
-  padding: 36px 48px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 32px; /* space for title */
-  margin-left: 220px; /* Ensure proper spacing from sidebar */
+  gap: 32px; /* space for title */ /* Ensure proper spacing from sidebar */
   transition: margin-left 0.3s ease-in-out;
 }
-.dashboard-main.shifted {
+.history-main.shifted {
   margin-left: 220px;
 }
-.dashboard-main.full {
+.history-main.full {
   margin-left: 0;
 }
 
 /* ===== Header ===== */
-.dashboard-header {
+.history-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-.header-left h2 {
+
+.history-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.history-title {
+  color: #000000;
   margin: 0;
   font-size: 1.5rem;
   font-weight: 700;
 }
-.dashboard-date {
+.history-subtitle {
+  margin: 0px;
   font-size: 0.9rem;
   color: #888;
 }
-.dashboard-header-icons {
+.history-header-icons {
   position: fixed;
   top: 16px;
   right: 16px;
@@ -200,7 +98,7 @@
   gap: 16px;
   z-index: 1000; /* Ensure icons are above other elements */
 }
-.dashboard-header-icons .icon {
+.history-header-icons .icon {
   font-size: 1.3rem;
   color: #666;
   cursor: pointer;
@@ -236,6 +134,7 @@
   color: #333;
 }
 .filter-label {
+  color: #6b4eff;
   font-weight: 600;
 }
 .filter-count {
@@ -296,7 +195,10 @@
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
-.table-title {
+.History-table-title {
+  padding-bottom: 20px;
+  text-align: center;
+  color: #000000;
   font-weight: 600;
   font-size: 1.1rem;
   margin-bottom: 14px;

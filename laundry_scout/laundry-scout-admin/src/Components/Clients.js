@@ -1,31 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../Supabase/supabaseClient";
 import "../Style/Clients.css";
-import {
-  FiSettings,
-  FiBell,
-  FiMenu,
-  FiHome,
-  FiFileText,
-  FiUsers,
-  FiUser,
-  FiClock,
-  FiMessageSquare,
-  FiLogOut,
-} from "react-icons/fi";
-import { Link, useNavigate } from "react-router-dom";
+import { FiMenu } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+
+// ✅ Import the shared components
+import Sidebar from "./Sidebar";
+import Notifications from "./Notifications";
 
 function Clients() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  // 🔧 Settings / Notifications
-  const [showSettings, setShowSettings] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [showSettings, setShowSettings] = useState(false); // ✅ settings dropdown
 
   const navigate = useNavigate();
 
@@ -55,147 +43,88 @@ function Clients() {
     return name.toLowerCase().includes(search.toLowerCase());
   });
 
+  // Close settings dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = () => setShowSettings(false);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
   return (
-    <div className="dashboard-root">
-      {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? "" : "closed"}`}>
-        <div className="sidebar-title">Laundry Scout</div>
-        <nav>
-          <ul>
-            <li>
-              <Link to="/dashboard">
-                <FiHome className="menu-icon" />
-                <span>Dashboard</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/applications">
-                <FiFileText className="menu-icon" />
-                <span>Applications</span>
-              </Link>
-            </li>
-            <li className="active">
-              <Link to="/clients">
-                <FiUsers className="menu-icon" />
-                <span>Clients</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/users">
-                <FiUser className="menu-icon" />
-                <span>Users</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/history">
-                <FiClock className="menu-icon" />
-                <span>History</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/feedback">
-                <FiMessageSquare className="menu-icon" />
-                <span>Feedback</span>
-              </Link>
-            </li>
-          </ul>
-        </nav>
-        <div className="logout" onClick={() => navigate("/logout")}>
-          <FiLogOut className="menu-icon" />
-          <span>Log Out</span>
-        </div>
-      </aside>
+    <div className="clients-root">
+      {/* ✅ Shared Sidebar */}
+      <Sidebar isOpen={sidebarOpen} activePage="clients" />
 
       {/* Main Content */}
-      <main className="dashboard-main">
-        <header className="client-header">
-          <div className="header-left">
+      <main className={`clients-main ${sidebarOpen ? "" : "expanded"}`}>
+        <header className="clients-header">
+          <div className="clients-header-left">
             <FiMenu
-              className="toggle-sidebar"
+              className="clients-toggle-sidebar"
               onClick={() => setSidebarOpen(!sidebarOpen)}
             />
             <div>
-              <h1>CLIENTS</h1>
-              <p>All Approved Laundry Businesses</p>
+              <h1 className="clients-title">CLIENTS</h1>
+              <p className="clients-subtitle">All Approved Laundry Businesses</p>
             </div>
           </div>
-          <div className="client-header-icons">
-            {/* Notifications */}
-            <div className="dropdown-wrapper">
-              <FiBell
-                className="icon"
-                onClick={() => {
-                  setShowNotifications(!showNotifications);
-                  setShowSettings(false);
-                  setUnreadCount(0);
-                }}
-              />
-              {unreadCount > 0 && (
-                <span className="notification-badge">{unreadCount}</span>
-              )}
 
-              {showNotifications && (
-                <div className="dropdown-panel">
-                  {notifications.length === 0 ? (
-                    <div className="dropdown-item">No notifications</div>
-                  ) : (
-                    notifications.slice(0, 5).map((n) => (
-                      <div key={n.id} className="dropdown-item">
-                        <strong>{n.title}</strong>
-                        <p>{n.message}</p>
-                        <span className="notif-time">{n.time}</span>
-                      </div>
-                    ))
-                  )}
-                  <div
-                    className="dropdown-item"
-                    onClick={() => navigate("/notifications")}
-                  >
-                    View All
-                  </div>
-                </div>
-              )}
-            </div>
+          {/* Header icons: Notifications + Profile Dropdown */}
+          <div className="clients-header-icons">
+            <Notifications />
 
-            {/* Profile */}
-            <div className="dropdown-wrapper">
-              <img
-                src="/path/to/updated/profile-image.png"
-                alt="Profile"
-                className="profile-avatar"
-                onClick={() => {
-                  setShowSettings(!showSettings);
-                  setShowNotifications(false);
-                }}
-              />
-              {showSettings && (
-                <div className="dropdown-panel">
-                  <div
-                    className="dropdown-item"
-                    onClick={() => navigate("/profile")}
-                  >
-                    My Profile
-                  </div>
-                  <div
-                    className="dropdown-item"
-                    onClick={() => navigate("/settings")}
-                  >
-                    Settings
-                  </div>
-                  <div
-                    className="dropdown-item"
-                    onClick={async () => {
-                      await supabase.auth.signOut();
-                      navigate("/login");
-                    }}
-                  >
-                    Logout
-                  </div>
+            {/* ✅ Profile Avatar */}
+            <img
+              src="/path-to-avatar.jpg"
+              alt="Profile"
+              className="profile-avatar"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowSettings(!showSettings);
+              }}
+            />
+
+            {showSettings && (
+              <div
+                className="dropdown-panel"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div
+                  className="dropdown-item"
+                  onClick={() => navigate("/profile")}
+                >
+                  My Profile
                 </div>
-              )}
-            </div>
+                <div
+                  className="dropdown-item"
+                  onClick={() => navigate("/settings")}
+                >
+                  Settings
+                </div>
+                <div
+                  className="dropdown-item"
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    navigate("/login");
+                  }}
+                >
+                  Logout
+                </div>
+              </div>
+            )}
           </div>
         </header>
+
+        {/* Search */}
+        <div>
+          <input
+            type="text"
+            placeholder="Search clients..."
+            className="clients-search-box"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
 
         {/* Client Cards */}
         {loading ? (
@@ -208,7 +137,7 @@ function Clients() {
               <div
                 key={client.id}
                 className="client-card"
-                onClick={() => navigate(`/clients/${client.id}`)} // ✅ go to detail
+                onClick={() => navigate(`/clients/${client.id}`)}
                 style={{ cursor: "pointer" }}
               >
                 <img

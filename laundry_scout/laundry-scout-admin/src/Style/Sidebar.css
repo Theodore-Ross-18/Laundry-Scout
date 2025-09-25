@@ -1,0 +1,124 @@
+/* Sidebar container */
+.sidebar {
+  width: 230px;
+  background: #ffffff;
+  border-right: 1px solid #e5e5e5;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0;
+}
+
+.sidebar.closed {
+  width: 70px;
+}
+
+/* Title / Logo */
+.sidebar-title {
+  text-align: center;
+  font-weight: 800;
+  font-size: 20px;
+  padding:20px 15px;
+  color: #6c5ce7;
+}
+
+/* Reset list */
+.sidebar ul {
+  border-top: 4px solid #e1e1e1;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar li {
+  margin: 20px 0px;
+}
+
+/* Sidebar links */
+.sidebar li a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+  border-radius: 8px;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
+}
+
+/* Default icon */
+.sidebar li a .menu-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  color: #333;
+}
+
+/* ✅ Active item (outer purple background + inner white pill) */
+.sidebar nav ul li.active {
+  background: #6b4eff;
+  border-radius: 12px;
+  margin: 20px 0px;
+  padding: 14px 24px; /* creates space for white pill inside */
+}
+
+.sidebar nav ul li.active a {
+  /* background: #ffffff; */
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar li.active a .menu-icon {
+  color: #ffffff;
+}
+
+/* Hover effect (simple light background, not like active) */
+.sidebar li:not(.active) a:hover {
+  width: 180px;
+  background: #6b4eff;
+  color: #ffffff;
+  border-left: 4px solid #422cae;
+}
+
+.sidebar li:not(.active) a:hover .menu-icon {
+  color: #ffffff;
+}
+
+/* Logout button */
+.logout {
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #d9534f;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 20px;
+  border-radius: 8px;
+}
+
+.logout:not(.active):hover {
+  width: 180px;
+  background: #f54949;
+  color: #ffffff;
+  border-left: 4px solid #be1515;
+}
+
+/* Closed sidebar (icons only) */
+.sidebar.closed .sidebar-title {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar.closed li a span {
+  display: none;
+}
+
+.sidebar.closed .logout span {
+  display: none;
+}

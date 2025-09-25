@@ -1,25 +1,20 @@
+// src/Components/Dashboard.js
 import React, { useState, useEffect } from "react";
 import { supabase } from "../Supabase/supabaseClient";
 import {
   FiSettings,
   FiMenu,
-  FiHome,
-  FiFileText,
-  FiUsers,
-  FiUser,
-  FiClock,
-  FiMessageSquare,
-  FiLogOut,
   FiUserCheck,
   FiUserPlus,
   FiGrid,
   FiMail,
 } from "react-icons/fi";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "../Style/Dashboard.css";
 import Notifications from "./Notifications";
+import Sidebar from "./Sidebar";
 
-function Dashboard({ onLogout }) {
+function Dashboard() {
   const [customers, setCustomers] = useState(0);
   const [owners, setOwners] = useState(0);
   const [scans, setScans] = useState(0);
@@ -42,21 +37,18 @@ function Dashboard({ onLogout }) {
   const [showSettings, setShowSettings] = useState(false);
   const navigate = useNavigate();
 
-  // 📊 Fetch stats
+  // 📊 Fetch stats, applicants, and ratings
   useEffect(() => {
     const fetchStats = async () => {
       const { count: customerCount } = await supabase
         .from("user_profiles")
         .select("*", { count: "exact", head: true });
-
       const { count: ownerCount } = await supabase
         .from("business_profiles")
         .select("*", { count: "exact", head: true });
-
       const { count: scanCount } = await supabase
         .from("qr_scans")
         .select("*", { count: "exact", head: true });
-
       const { count: feedbackCount } = await supabase
         .from("feedback")
         .select("*", { count: "exact", head: true })
@@ -74,27 +66,21 @@ function Dashboard({ onLogout }) {
         .select("*")
         .order("created_at", { ascending: false })
         .limit(5);
-
-      if (!error && data) {
-        setApplicants(data);
-      }
+      if (!error && data) setApplicants(data);
     };
 
     const fetchRatings = async () => {
       const { data, error } = await supabase.from("feedback").select("rating");
-
       if (!error && data) {
         const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
         let total = data.length;
         let sum = 0;
-
         data.forEach((row) => {
           if (row.rating >= 1 && row.rating <= 5) {
             counts[row.rating] += 1;
             sum += row.rating;
           }
         });
-
         setTotalRatings(total);
         setRatingCounts(counts);
         setAverageRating(total > 0 ? (sum / total).toFixed(1) : 0);
@@ -108,70 +94,28 @@ function Dashboard({ onLogout }) {
 
   // ✅ Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = () => {
-      setShowSettings(false);
-    };
+    const handleClickOutside = () => setShowSettings(false);
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
+  // Logout handler
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
+
   return (
     <div className="dashboard-root">
-      {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? "" : "closed"}`}>
-        <div className="sidebar-title">Laundry Scout</div>
-        <nav>
-          <ul>
-            <li className="active">
-              <Link to="/dashboard">
-                <FiHome className="menu-icon" />
-                <span>Dashboard</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/applications">
-                <FiFileText className="menu-icon" />
-                <span>Applications</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/clients">
-                <FiUsers className="menu-icon" />
-                <span>Clients</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/users">
-                <FiUser className="menu-icon" />
-                <span>Users</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/history">
-                <FiClock className="menu-icon" />
-                <span>History</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/feedback">
-                <FiMessageSquare className="menu-icon" />
-                <span>Feedback</span>
-              </Link>
-            </li>
-          </ul>
-        </nav>
-        <div className="logout" onClick={onLogout}>
-          <FiLogOut className="menu-icon" />
-          <span>Log Out</span>
-        </div>
-      </aside>
+      {/* ✅ Sidebar Component */}
+      <Sidebar isOpen={sidebarOpen} />
 
-      {/* Main */}
+      {/* Main content */}
       <main className={`dashboard-main ${sidebarOpen ? "" : "expanded"}`}>
         <header className="dashboard-header">
-          <div className="header-left">
+          <div className="dashboard-header-left">
             <FiMenu
-              className="toggle-sidebar"
+              className="dashboard-toggle-sidebar"
               onClick={() => setSidebarOpen(!sidebarOpen)}
             />
             <div>
@@ -181,10 +125,8 @@ function Dashboard({ onLogout }) {
           </div>
 
           <div className="dashboard-header-icons">
-            {/* Notifications */}
             <Notifications />
 
-            {/* Profile Dropdown */}
             <div className="dropdown-wrapper">
               <img
                 src="https://via.placeholder.com/32"
@@ -218,10 +160,7 @@ function Dashboard({ onLogout }) {
                   >
                     Settings
                   </div>
-                  <div
-                    className="dropdown-item"
-                    onClick={onLogout}
-                  >
+                  <div className="dropdown-item" onClick={handleLogout}>
                     Logout
                   </div>
                 </div>
@@ -230,7 +169,7 @@ function Dashboard({ onLogout }) {
           </div>
         </header>
 
-        {/* Stats */}
+        {/* Dashboard Overview / Stats */}
         <section className="dashboard-overview">
           <div className="overview-rating">
             <div className="overview-title">Average User Rating</div>
@@ -303,7 +242,7 @@ function Dashboard({ onLogout }) {
           </div>
         </section>
 
-        {/* Applicants */}
+        {/* Applicants Table */}
         <section className="dashboard-applicants">
           <div className="applicants-header">
             <div className="applicants-title">Applicants</div>

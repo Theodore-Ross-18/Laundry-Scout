@@ -1,87 +1,15 @@
 /* ===== Layout ===== */
-.dashboard-root {
+.users-root {
   display: flex;
   min-height: 100vh;
-  font-family: "Inter", sans-serif;
-}
-
-.sidebar {
-  width: 240px;
-  background: #fff;
-  border-right: 1px solid #eee;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 20px 0;
-  transition: width 0.3s ease;
-}
-
-.sidebar.closed {
-  width: 60px;
-}
-
-.sidebar-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #6b4eff;
-  padding: 0 20px;
-  margin-bottom: 20px;
-}
-
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.sidebar li {
-  margin: 10px 0;
-}
-
-.sidebar li a {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 20px;
-  color: #333;
-  text-decoration: none;
-  border-radius: 8px;
-  transition: background 0.2s;
-}
-
-.sidebar li.active a,
-.sidebar li a:hover {
-  background: #f3f0ff;
-  color: #6b4eff;
-}
-
-.logout {
-  padding: 12px 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #d9534f;
-  cursor: pointer;
-  font-weight: 600;
+  font-family: "Poppins", sans-serif;
 }
 
 /* ===== Main ===== */
-.dashboard-main {
+.users-main {
   flex: 1;
   background: #f9f9fb;
   padding: 20px;
-  margin-left: 240px;
-  transition: margin-left 0.3s ease;
-}
-
-.sidebar.closed ~ .dashboard-main {
-  margin-left: 60px;
-}
-
-.users-container {
-  background: transparent;
-  display: flex;
-  flex-direction: column;
 }
 
 /* ===== Header ===== */
@@ -92,7 +20,14 @@
   margin-bottom: 20px;
 }
 
+.users-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 .users-title {
+  color: #000000;
   font-size: 24px;
   font-weight: 700;
   margin: 0;
@@ -102,6 +37,29 @@
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.users-header-icons {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    display: flex
+;
+    align-items: center;
+    gap: 16px;
+    z-index: 1000;
+}
+
+.users-subtitle {
+  margin-top: 0px;
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.users-toggle-sidebar {
+  font-size: 1.6rem;
+  color: #6a5ae0;
+  cursor: pointer;
 }
 
 .dropdown-wrapper {
@@ -194,7 +152,7 @@
   font-size: 12px;
 }
 
-.search-box {
+.users-search-box {
   flex: 1;
   padding: 8px 14px;
   border: 1px solid #ddd;
@@ -218,6 +176,7 @@
 }
 
 .user-profiles-title {
+  color: #000000;
   text-align: center;
   margin-bottom: 16px;
   font-weight: 600;
@@ -302,3 +261,52 @@
 .menu-dropdown .danger {
   color: #d9534f;
 }
+
+/* Modal overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(30, 30, 30, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+/* Modal box */
+.modal-content {
+  background: #fff;
+  padding: 20px 30px;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+  animation: fadeIn 0.3s ease;
+}
+
+/* Header */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close-icon {
+  cursor: pointer;
+  font-size: 22px;
+  color: #555;
+}
+
+.modal-body p {
+  margin: 10px 0;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.modal-body strong {
+  color: #333;
+}
+

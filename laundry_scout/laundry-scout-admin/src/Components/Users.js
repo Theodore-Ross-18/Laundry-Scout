@@ -1,20 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "../Supabase/supabaseClient";
 import "../Style/Users.css";
-import {
-  FiSettings,
-  FiBell,
-  FiMenu,
-  FiHome,
-  FiFileText,
-  FiUsers,
-  FiUser,
-  FiClock,
-  FiMessageSquare,
-  FiLogOut,
-  FiMoreVertical,
-} from "react-icons/fi";
-import { Link, useNavigate } from "react-router-dom";
+import { FiMoreVertical, FiMenu, FiX } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import Notifications from "./Notifications";
+import Sidebar from "./Sidebar";
 
 const statusColor = (status) =>
   status === "Verified" ? { color: "green" } : { color: "red" };
@@ -25,18 +15,22 @@ function Users() {
   const [search, setSearch] = useState("");
   const [menuOpen, setMenuOpen] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  // 🔔 Notifications & Profile states
   const [showSettings, setShowSettings] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
+
+  // 🔔 Notifications states
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Modal states
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
+<<<<<<< HEAD
       const { data, error } = await supabase.from("user_profiles").select("*, verified_status");
 
       if (!error) {
@@ -44,12 +38,17 @@ function Users() {
       } else {
         console.error("Error fetching users:", error);
       }
+=======
+      const { data, error } = await supabase.from("user_profiles").select("*");
+      if (!error) setUsers(data);
+      else console.error("Error fetching users:", error);
+>>>>>>> c136dd8e (Modified)
       setLoading(false);
     };
     fetchUsers();
   }, []);
 
-  // ✅ Real-time Supabase notifications (same as Dashboard)
+  // Real-time Supabase notifications
   useEffect(() => {
     const addNotification = (title, message) => {
       setNotifications((prev) => [
@@ -79,12 +78,9 @@ function Users() {
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(userSub);
-    };
+    return () => supabase.removeChannel(userSub);
   }, []);
 
-  // ✅ Filter users
   const filteredUsers = users.filter((u) =>
     [u.first_name, u.last_name, u.email, u.mobile_number, u.customer_id]
       .filter(Boolean)
@@ -95,143 +91,108 @@ function Users() {
     setMenuOpen(menuOpen === idx ? null : idx);
   };
 
-  return (
-    <div className="dashboard-root">
-      {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? "" : "closed"}`}>
-        <div className="sidebar-title">Laundry Scout</div>
-        <nav>
-          <ul>
-            <li>
-              <Link to="/dashboard">
-                <FiHome className="menu-icon" />
-                <span>Dashboard</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/applications">
-                <FiFileText className="menu-icon" />
-                <span>Applications</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/clients">
-                <FiUsers className="menu-icon" />
-                <span>Clients</span>
-              </Link>
-            </li>
-            <li className="active">
-              <Link to="/users">
-                <FiUser className="menu-icon" />
-                <span>Users</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/history">
-                <FiClock className="menu-icon" />
-                <span>History</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/feedback">
-                <FiMessageSquare className="menu-icon" />
-                <span>Feedback</span>
-              </Link>
-            </li>
-          </ul>
-        </nav>
-        <div className="logout" onClick={() => navigate("/logout")}>
-          <FiLogOut className="menu-icon" />
-          <span>Log Out</span>
-        </div>
-      </aside>
+  // View user details
+  const handleView = (user) => {
+    setSelectedUser(user);
+    setShowModal(true);
+    setMenuOpen(null);
+  };
 
-      {/* Main */}
-      <main className="dashboard-main">
+  // Delete user
+  const handleDelete = async (user) => {
+    if (window.confirm(`Are you sure you want to delete ${user.email}?`)) {
+      const { error } = await supabase
+        .from("user_profiles")
+        .delete()
+        .eq("uid", user.uid);
+
+      if (!error) {
+        setUsers((prev) => prev.filter((u) => u.uid !== user.uid));
+        alert("User deleted successfully.");
+      } else {
+        console.error("Delete error:", error);
+        alert("Failed to delete user.");
+      }
+    }
+    setMenuOpen(null);
+  };
+
+  // Close settings dropdown
+  useEffect(() => {
+    const handleClickOutside = () => setShowSettings(false);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="users-root">
+      {/* ✅ Shared Sidebar */}
+      <Sidebar isOpen={sidebarOpen} activePage="users" />
+
+      <main className={`users-main ${sidebarOpen ? "" : "expanded"}`}>
         <div className="users-container">
-          {/* 🔝 Top Header Bar */}
+          {/* Header */}
           <div className="users-header">
-            <div>
-              <h2 className="users-title">Users</h2>
-              <p>All the users Using the App can be viewed here</p>
+            <div className="users-header-left">
+              <FiMenu
+                className="users-toggle-sidebar"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+              />
+              <div>
+                <h2 className="users-title">Users</h2>
+                <p className="users-subtitle">
+                  All the users Using the App can be viewed here
+                </p>
+              </div>
             </div>
 
-            <div className="users-header-actions">
-              {/* Notifications */}
-              <div className="dropdown-wrapper">
-                <FiBell
-                  className="icon"
-                  onClick={() => {
-                    setShowNotifications(!showNotifications);
-                    setShowSettings(false);
-                    setUnreadCount(0);
-                  }}
-                />
-                {unreadCount > 0 && (
-                  <span className="notification-badge">{unreadCount}</span>
-                )}
-
-                {showNotifications && (
-                  <div className="dropdown-panel">
-                    {notifications.length === 0 ? (
-                      <div className="dropdown-item">No notifications</div>
-                    ) : (
-                      notifications.slice(0, 5).map((n) => (
-                        <div key={n.id} className="dropdown-item">
-                          <strong>{n.title}</strong>
-                          <p>{n.message}</p>
-                          <span className="notif-time">{n.time}</span>
-                        </div>
-                      ))
-                    )}
-                    <div
-                      className="dropdown-item"
-                      onClick={() => navigate("/notifications")}
-                    >
-                      View All
-                    </div>
+            {/* Notifications + Profile */}
+            <div className="users-header-icons">
+              <Notifications
+                notifications={notifications}
+                unreadCount={unreadCount}
+              />
+              <img
+                src="/path-to-avatar.jpg"
+                alt="Profile"
+                className="profile-avatar"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSettings(!showSettings);
+                }}
+              />
+              {showSettings && (
+                <div
+                  className="dropdown-panel"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div
+                    className="dropdown-item"
+                    onClick={() => navigate("/profile")}
+                  >
+                    My Profile
                   </div>
-                )}
-              </div>
-
-              {/* Profile */}
-              <div className="dropdown-wrapper">
-                <img
-                  src="https://via.placeholder.com/32"
-                  alt="Profile"
-                  className="profile-avatar"
-                  onClick={() => {
-                    setShowSettings(!showSettings);
-                    setShowNotifications(false);
-                  }}
-                />
-                {showSettings && (
-                  <div className="dropdown-panel">
-                    <div
-                      className="dropdown-item"
-                      onClick={() => navigate("/profile")}
-                    >
-                      My Profile
-                    </div>
-                    <div
-                      className="dropdown-item"
-                      onClick={() => navigate("/settings")}
-                    >
-                      Settings
-                    </div>
-                    <div
-                      className="dropdown-item"
-                      onClick={() => alert("Logging out...")}
-                    >
-                      Logout
-                    </div>
+                  <div
+                    className="dropdown-item"
+                    onClick={() => navigate("/settings")}
+                  >
+                    Settings
                   </div>
-                )}
-              </div>
+                  <div
+                    className="dropdown-item"
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      navigate("/login");
+                    }}
+                  >
+                    Logout
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* 🔍 Filter/Search Bar */}
+          {/* Search */}
           <div className="users-filters">
             <div className="filter-tab">
               All Users <span className="count">{filteredUsers.length}</span>
@@ -239,13 +200,13 @@ function Users() {
             <input
               type="text"
               placeholder="Search Here"
-              className="search-box"
+              className="users-search-box"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
 
-          {/* ✅ Table */}
+          {/* Users Table */}
           <div className="users-table-wrapper">
             <h3 className="user-profiles-title">User Profiles</h3>
             <table className="users-table">
@@ -300,18 +261,11 @@ function Users() {
                         </button>
                         {menuOpen === idx && (
                           <div className="menu-dropdown">
-                            <button
-                              onClick={() => alert(`Viewing ${user.email}`)}
-                            >
+                            <button onClick={() => handleView(user)}>
                               View
                             </button>
                             <button
-                              onClick={() => alert(`Editing ${user.email}`)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => alert(`Deleting ${user.email}`)}
+                              onClick={() => handleDelete(user)}
                               className="danger"
                             >
                               Delete
@@ -331,6 +285,51 @@ function Users() {
           </div>
         </div>
       </main>
+
+      {/* ✅ User Details Modal */}
+      {showModal && selectedUser && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2>User Details</h2>
+              <FiX
+                className="close-icon"
+                onClick={() => setShowModal(false)}
+              />
+            </div>
+            <div className="modal-body">
+              <p>
+                <strong>Customer ID:</strong> {selectedUser.customer_id}
+              </p>
+              <p>
+                <strong>First Name:</strong> {selectedUser.first_name}
+              </p>
+              <p>
+                <strong>Last Name:</strong> {selectedUser.last_name}
+              </p>
+              <p>
+                <strong>Email:</strong> {selectedUser.email}
+              </p>
+              <p>
+                <strong>Mobile:</strong> {selectedUser.mobile_number}
+              </p>
+              <p>
+                <strong>Status:</strong>{" "}
+                <span style={statusColor(selectedUser.verified_status)}>
+                  {selectedUser.verified_status}
+                </span>
+              </p>
+              <p>
+                <strong>Created At:</strong>{" "}
+                {new Date(selectedUser.created_at).toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
