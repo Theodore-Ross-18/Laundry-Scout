@@ -437,53 +437,8 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
   // Helper method for availability card
   Widget _availabilityCard() {
-    // Get current availability status from business profile
-    final availabilityStatus = _businessProfile?['availability_status'] ?? 'Open Slots';
-    
-    // Define status colors and icons
-    final statusConfig = {
-      'Open Slots': {'color': Colors.green, 'icon': Icons.check_circle},
-      'Filling Up': {'color': Colors.orange, 'icon': Icons.schedule},
-      'Full': {'color': Colors.red, 'icon': Icons.cancel},
-      'Unavailable': {'color': Colors.grey, 'icon': Icons.block},
-    };
-    
-    final config = statusConfig[availabilityStatus] ?? statusConfig['Open Slots']!;
-    
-    return Container(
-      height: 70,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(config['icon'] as IconData, color: config['color'] as Color, size: 14),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    availabilityStatus,
-                    style: TextStyle(color: Colors.black, fontSize: 12),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text('Set Availability', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 12)),
-          ],
-        ),
-      ),
-    );
+    return _actionCard(Icons.calendar_today, 'Set Availability', Colors.deepPurple);
   }
-}
 
 // Helper widgets:
 Widget _actionCard(IconData icon, String label, Color iconColor) {
@@ -561,4 +516,5 @@ Widget _slotAnalyticsCard(String availabilityStatus) {
       ],
     ),
   );
+}
 }

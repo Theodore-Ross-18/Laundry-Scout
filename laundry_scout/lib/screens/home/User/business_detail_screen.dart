@@ -31,7 +31,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this); // Changed from 4 to 3
     _loadFullBusinessData().then((_) {
       // Load pricelist and reviews only after business data is loaded
       _loadPricelist();
@@ -198,7 +198,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     try {
         final response = await Supabase.instance.client
             .from('business_profiles')
-            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours_text, available_pickup_time_slots, available_dropoff_time_slots') // Add new columns here
+            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours_text, available_pickup_time_slots, available_dropoff_time_slots, does_delivery') // Add new columns here
             .eq('id', widget.businessData['id'])
             .single();
       
@@ -558,7 +558,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF6F5ADC),
+      backgroundColor: Colors.white,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : _fullBusinessData == null
@@ -674,40 +674,35 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                         ],
                       ),
                     ),
-                    // Tab Bar
+                    // TabBar
                     Container(
                       color: Colors.white,
                       child: TabBar(
                         controller: _tabController,
+                        indicatorColor: const Color(0xFF6F5ADC),
                         labelColor: const Color(0xFF6F5ADC),
                         unselectedLabelColor: Colors.grey,
-                        indicatorColor: const Color(0xFF6F5ADC),
-                        indicatorWeight: 3,
+                        tabAlignment: TabAlignment.fill,
                         tabs: const [
                           Tab(text: 'About'),
-                          Tab(text: 'Deliver'),
-                          Tab(text: 'Pricelist'),
+                          Tab(text: 'Order'),
                           Tab(text: 'Reviews'),
                         ],
                       ),
                     ),
-                    // Tab Content
+                    // TabBarView
                     Expanded(
-                      child: Container(
-                        color: Colors.white,
-                        child: TabBarView(
-                          controller: _tabController,
-                          children: [
-                            _buildAboutTab(),
-                            _buildDeliverTab(),
-                            _buildPricelistTab(),
-                            _buildReviewsTab(),
-                          ],
-                        ),
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildAboutTab(),
+                          _buildOrderTab(),
+                          _buildReviewsTab(),
+                        ],
                       ),
                     ),
-                   ],
-                 ),
+                  ],
+                ),
     );
   }
 
@@ -988,80 +983,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     );
   }
 
-  Widget _buildDeliverTab() {
-    // Get services offered from business data
-    final servicesOffered = _fullBusinessData?['services_offered'] ?? [];
-    
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Delivery Services',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (servicesOffered.isEmpty)
-                  const Text(
-                    'No services available',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                  )
-                else
-                  ...servicesOffered.map((service) => Column(
-                    children: [
-                      _buildServiceIcon(service, _getServiceIcon(service)),
-                      if (service != servicesOffered.last) const SizedBox(height: 12),
-                    ],
-                  )).toList(),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          // Place Order Button - Only in Deliver tab
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _placeOrder,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6F5ADC),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Place Order',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPricelistTab() {
+  Widget _buildOrderTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1127,40 +1049,30 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                     ),
                   ],
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item['service_name'] ?? 'Service',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          if (item['description'] != null)
-                            Text(
-                              item['description'],
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                        ],
+                    Text(
+                      item['service_name'] ?? 'N/A',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF6F5ADC).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                    const SizedBox(height: 4),
+                    Text(
+                      item['description'] ?? 'N/A',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.bottomRight,
                       child: Text(
-                        '₱${(double.tryParse(item['price']?.toString() ?? '0') ?? 0).toStringAsFixed(2)}',
+                        '₱${item['price']}',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -1172,6 +1084,47 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                 ),
               )).toList(),
             ),
+          const SizedBox(height: 24),
+          // Place Order Button
+          SizedBox(
+            width: double.infinity,
+            child: _fullBusinessData!['does_delivery'] == true
+                ? ElevatedButton(
+                    onPressed: _placeOrder,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6F5ADC),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Place Order',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                : Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'Delivery Not Available for Now',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+          ),
         ],
       ),
     );
@@ -1367,56 +1320,5 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     );
   }
 
-  IconData _getServiceIcon(String serviceName) {
-    // Map service names to appropriate icons
-    switch (serviceName.toLowerCase()) {
-      case 'washing':
-      case 'wash':
-        return Icons.local_laundry_service;
-      case 'delivery':
-      case 'pickup & delivery':
-        return Icons.local_shipping;
-      case 'wash & fold':
-      case 'folding':
-        return Icons.checkroom;
-      case 'dry cleaning':
-        return Icons.dry_cleaning;
-      case 'ironing':
-        return Icons.iron;
-      case 'stain removal':
-        return Icons.cleaning_services;
-      case 'alterations':
-        return Icons.cut;
-      default:
-        return Icons.local_laundry_service; // Default laundry icon
-    }
-  }
 
-  Widget _buildServiceIcon(String serviceName, IconData icon) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF6F5ADC).withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            color: const Color(0xFF6F5ADC),
-            size: 24,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          serviceName,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
-          ),
-        ),
-      ],
-    );
-  }
 }
