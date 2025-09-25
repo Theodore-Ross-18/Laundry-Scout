@@ -940,15 +940,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: _termsAndConditionsController,
-                      label: 'Terms and Conditions',
-                      maxLines: 5,
-                      validator: (value) {
-                        return null; // Optional field
-                      },
-                    ),
-                    const SizedBox(height: 16),
                     const SizedBox(height: 16),
                     Row(
                       children: [
@@ -1053,7 +1044,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                     const SizedBox(height: 32),
                     
-                    // Save Button
+                    // Terms and Conditions Section
+                    _buildSectionHeader('Terms and Conditions'),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _termsAndConditionsController,
+                      label: 'Terms and Conditions',
+                      maxLines: 5,
+                      validator: (value) {
+                        return null; // Optional field
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 6. Save Button
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
