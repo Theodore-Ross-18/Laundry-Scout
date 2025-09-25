@@ -5,8 +5,6 @@ import 'dart:typed_data'; // Import for Uint8List
 import 'dart:io'; // Import for File class
 import '../../../widgets/optimized_image.dart';
 
-import 'dart:convert' as json;
-
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -212,18 +210,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           // Sync services with pricelist to ensure all selected services have prices
           _syncServicesWithPricelist();
           
-          // Load weekly schedule
-          final openHours = _businessProfile!['open_hours'] ?? '';
-          if (openHours.isNotEmpty) {
-            try {
-              List<dynamic> scheduleData = json.jsonDecode(openHours);
-              _weeklySchedule = scheduleData.map((e) => Map<String, dynamic>.from(e)).toList();
-            } catch (e) {
-              _weeklySchedule = _getDefaultSchedule();
-            }
-          } else {
-            _weeklySchedule = _getDefaultSchedule();
-          }
           
           // Initialize controllers for schedule
           for (var schedule in _weeklySchedule) {
@@ -248,17 +234,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  List<Map<String, dynamic>> _getDefaultSchedule() {
-    return [
-      {'day': 'Monday', 'open': '09:00', 'close': '18:00', 'closed': false},
-      {'day': 'Tuesday', 'open': '09:00', 'close': '18:00', 'closed': false},
-      {'day': 'Wednesday', 'open': '09:00', 'close': '18:00', 'closed': false},
-      {'day': 'Thursday', 'open': '09:00', 'close': '18:00', 'closed': false},
-      {'day': 'Friday', 'open': '09:00', 'close': '18:00', 'closed': false},
-      {'day': 'Saturday', 'open': '09:00', 'close': '18:00', 'closed': false},
-      {'day': 'Sunday', 'open': '09:00', 'close': '18:00', 'closed': true},
-    ];
-  }
+  
 
   void _toggleService(String service) {
     // Normalize service name before processing
