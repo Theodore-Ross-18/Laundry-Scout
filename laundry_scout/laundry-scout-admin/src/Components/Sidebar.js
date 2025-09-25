@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FiHome, FiFileText, FiUsers, FiUser, FiClock, FiMessageSquare, FiLogOut } from "react-icons/fi";
 import { handleLogout } from "./Services/Logout";
 import "../Style/Sidebar.css";
-import titleLogo from "../laundry-scout_title-logo.png";
+import titleLogo from "../laundry-scout title-logo.png";
 
 function Sidebar({ isOpen = true, onLogout }) {
   const location = useLocation();

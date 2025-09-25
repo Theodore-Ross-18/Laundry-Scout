@@ -21,6 +21,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1px solid #c9c9c9;
+  padding: 12px 0px; 
 }
 
 .users-header-left {
@@ -325,6 +327,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+
 }
 
 .close-icon {
