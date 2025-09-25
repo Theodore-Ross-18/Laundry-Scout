@@ -33,6 +33,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
   String _specialInstructions = ''; // Initialize _specialInstructions
   Map<String, dynamic>? _businessProfile; // Add this line
   bool _isLoading = true;
+  bool _isTermsExpanded = false; // New state for Terms and Conditions expansion
 
   @override
   void initState() {
@@ -227,6 +228,8 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                     _buildScheduleSection(),
                     const SizedBox(height: 16),
                     _buildInstructionsSection(),
+                    const SizedBox(height: 16),
+                    _buildTermsAndConditionsSection(), // Add Terms and Conditions section
                     const SizedBox(height: 32),
                     _buildContinueButton(),
                   ],
@@ -583,6 +586,73 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
     );
   }
 
+  Widget _buildTermsAndConditionsSection() {
+    final String termsAndConditions = _businessProfile?['terms_and_conditions'] ?? 'No terms and conditions provided.';
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _isTermsExpanded = !_isTermsExpanded;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6F5ADC).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.description,
+                    color: Color(0xFF6F5ADC),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Text(
+                    'Terms and Conditions',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                Icon(
+                  _isTermsExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  color: const Color.fromARGB(255, 0, 0, 0),
+                  size: 20,
+                ),
+              ],
+            ),
+            if (_isTermsExpanded) ...[
+              const SizedBox(height: 16),
+              Text(
+                termsAndConditions,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   void _continueToConfirmation() {
     Navigator.push(
       context,
@@ -593,6 +663,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
           services: _selectedServices,
           schedule: _selectedSchedule!,
           specialInstructions: _specialInstructions,
+          termsAndConditions: _businessProfile!['terms_and_conditions'] ?? 'No terms and conditions provided.', // Pass terms and conditions
         ),
       ),
     );
