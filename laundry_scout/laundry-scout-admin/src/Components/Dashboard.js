@@ -371,13 +371,13 @@ function Dashboard() {
                       <td className={`status ${rec.status}`}>
                         {rec.status?.toLowerCase() === "approved" ? (
                           <span
-                            style={{ color: "green", fontWeight: "bold" }}
+                            style={{ color: "#10b981", fontWeight: "bold" }}
                           >
-                            ✔ Approved
+                            Approved
                           </span>
                         ) : (
-                          <span style={{ color: "red", fontWeight: "bold" }}>
-                            ✖ Rejected
+                          <span style={{ color: "#e74c3c", fontWeight: "bold" }}>
+                            Rejected
                           </span>
                         )}
                       </td>

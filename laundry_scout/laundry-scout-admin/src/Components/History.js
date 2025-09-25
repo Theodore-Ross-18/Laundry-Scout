@@ -210,9 +210,9 @@ function History() {
                     <td>{rec.action || "-"}</td>
                     <td className={`status ${rec.status}`}>
                       {rec.status?.toLowerCase() === "approved" ? (
-                        <span style={{ color: "green", fontWeight: "bold" }}>✔ Approved</span>
+                        <span style={{ color: "#10b981", fontWeight: "bold" }}>Approved</span>
                       ) : (
-                        <span style={{ color: "red", fontWeight: "bold" }}>✖ Rejected</span>
+                        <span style={{ color: "#e74c3c", fontWeight: "bold" }}>Rejected</span>
                       )}
                     </td>
                     <td>{rec.status?.toLowerCase() === "rejected" ? rec.rejection_reason || "N/A" : "N/A"}</td>

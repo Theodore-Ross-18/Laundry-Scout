@@ -242,21 +242,12 @@ function Users() {
                         : "Not Verified"}
                     </td>
                     <td className="actions-cell">
-                      <button
-                        className="menu-btn"
-                        onClick={() => toggleMenu(idx)}
+                      <button 
+                        onClick={() => alert(`Deleting ${user.email}`)} 
+                        className="danger"
                       >
-                        <FiMoreVertical />
+                        Delete
                       </button>
-                      {menuOpen === idx && (
-                        <div className="menu-dropdown">
-                          <button onClick={() => alert(`Viewing ${user.email}`)}>View</button>
-                          <button onClick={() => alert(`Editing ${user.email}`)}>Edit</button>
-                          <button onClick={() => alert(`Deleting ${user.email}`)} className="danger">
-                            Delete
-                          </button>
-                        </div>
-                      )}
                     </td>
                   </tr>
                 ))

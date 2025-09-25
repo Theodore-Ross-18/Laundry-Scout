@@ -6,6 +6,8 @@
   display: flex;
   flex-direction: column;
   padding: 10px 0;
+  justify-content: space-between;
+  font-family: "Poppins", sans-serif;
 }
 
 .sidebar.closed {
@@ -21,7 +23,9 @@
   color: #6c5ce7;
 }
 
-/* Reset list */
+.sidebar-content {
+  flex-grow: 1;
+}
 .sidebar ul {
   border-top: 1px solid #e1e1e1;
   list-style: none;
@@ -97,8 +101,10 @@
   gap: 10px;
   color: #d9534f;
   cursor: pointer;
+  font-family: "Poppins", sans-serif;
   font-weight: 600;
   margin-top: 20px;
+  margin-bottom: 20px;
   border-radius: 8px;
 
   background: transparent;
