@@ -121,7 +121,7 @@
 .history-filters {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: '10px';
   gap: 16px;
   margin-bottom: 20px;
 }

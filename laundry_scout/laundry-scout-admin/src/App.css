@@ -130,6 +130,22 @@
   color: #fff;
 }
 
+.back-to.login {
+  margin-top: 15px;
+  text-align: center;
+}
+
+.back-to.login a {
+  color: #e0e0e0;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.back-to.login a:hover {
+  color: #fff;
+}
+
 .remember-forgot {
   color: #e0e0e0;
   display: flex;

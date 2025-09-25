@@ -1,30 +1,51 @@
-// src/Components/settings/Profile.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "../../Supabase/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import "../../Style/Admin.css";
 
 function Profile({ adminUser }) {
-  const isDefaultAdmin = !adminUser?.id; // no id = default login
   const navigate = useNavigate();
-
-  // State for details + editing
-  const [showEmailForm, setShowEmailForm] = useState(false);
-  const [emailInput, setEmailInput] = useState(adminUser?.email || "");
-  const [emailSent, setEmailSent] = useState(false);
-  const [verified, setVerified] = useState(false);
+  const effectiveId = adminUser?.admin_id ?? 1; // fallback id 1
 
   const [form, setForm] = useState({
-    username: adminUser?.username || "",
-    phone_number: adminUser?.phone_number || "",
-    profile_img: adminUser?.profile_img || "",
+    username: "",
+    password: "",
+    email: "",
+    phone_number: "",
+    profile_img: "",
   });
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [editMode, setEditMode] = useState(false);
 
-  // --- Upload profile image ---
+  // ✅ fetch admin data from Supabase on mount or id change
+  useEffect(() => {
+    if (!effectiveId) return;
+    (async () => {
+      const { data, error } = await supabase
+        .from("admin")
+        .select("*")
+        .eq("admin_id", effectiveId)
+        .single();
+
+      if (error) {
+        setMessage("❌ Unable to fetch admin info: " + error.message);
+      } else if (data) {
+        setForm({
+          username: data.username || "",
+          password: data.password || "",
+          email: data.email || "",
+          phone_number: data.phone_number || "",
+          profile_img: data.profile_img || "",
+        });
+      }
+    })();
+  }, [effectiveId]);
+
+  // upload new avatar
   const handleFileUpload = async (e) => {
+    if (!editMode) return;
     const file = e.target.files[0];
     if (!file) return;
 
@@ -39,156 +60,124 @@ function Profile({ adminUser }) {
       const { data } = supabase.storage
         .from("admin-avatars")
         .getPublicUrl(filePath);
-      setForm({ ...form, profile_img: data.publicUrl });
+      setForm((prev) => ({ ...prev, profile_img: data.publicUrl }));
       setMessage("✅ Profile picture uploaded!");
     }
   };
 
-  // --- Send verification OTP for email ---
-  const sendVerificationLink = async () => {
-    if (!emailInput) {
-      setMessage("❌ Please enter an email.");
-      return;
-    }
-    setLoading(true);
-
-    const { error } = await supabase.auth.signInWithOtp({
-      email: emailInput,
-      options: { emailRedirectTo: window.location.origin },
-    });
-
-    setLoading(false);
-    if (error) {
-      setMessage("❌ Failed to send verification link: " + error.message);
-    } else {
-      setMessage("📩 Verification link sent to " + emailInput);
-      setEmailSent(true);
-    }
-  };
-
-  // --- Save profile changes (including verified email) ---
+  // save changes
   const handleSave = async () => {
-    if (showEmailForm && !verified) {
-      setMessage("❌ Please verify your new email first.");
+    if (!effectiveId) {
+      setMessage("❌ Admin ID not available yet.");
       return;
     }
 
     setLoading(true);
-    let error;
-
-    if (isDefaultAdmin) {
-      const { error: insertError } = await supabase.from("admin").insert([
-        {
-          username: form.username,
-          email: emailInput,
-          phone_number: form.phone_number,
-          profile_img: form.profile_img,
-        },
-      ]);
-      error = insertError;
-    } else {
-      const { error: updateError } = await supabase
-        .from("admin")
-        .update({
-          username: form.username,
-          email: emailInput,
-          phone_number: form.phone_number,
-          profile_img: form.profile_img,
-        })
-        .eq("id", adminUser.id);
-      error = updateError;
-    }
+    const { error: updateError } = await supabase
+      .from("admin")
+      .update({
+        username: form.username,
+        password: form.password,
+        email: form.email,
+        phone_number: form.phone_number,
+        profile_img: form.profile_img,
+      })
+      .eq("admin_id", effectiveId);
 
     setLoading(false);
-    if (error) {
-      setMessage("❌ Save failed: " + error.message);
+
+    if (updateError) {
+      setMessage("❌ Save failed: " + updateError.message);
     } else {
       setMessage("✅ Profile updated successfully!");
-      setTimeout(() => navigate("/dashboard"), 1500);
+      setEditMode(false);
+      setTimeout(() => setMessage(""), 2000);
     }
   };
 
   return (
     <div className="page-container">
-      <button className="btn" onClick={() => navigate(-1)}>
-        ⬅ Back
-      </button>
+      <button className="btn" onClick={() => navigate(-1)}>⬅ Back</button>
       <h2>👤 Admin Profile</h2>
 
-      {/* --- Account Details --- */}
-      <div className="card">
-        <h3>Account Details</h3>
-
-        {/* Avatar */}
-        <div className="form-group">
-          <label>Profile Picture</label>
-          <input type="file" accept="image/*" onChange={handleFileUpload} />
-          {form.profile_img && (
-            <img
-              src={form.profile_img}
-              alt="Avatar"
-              className="avatar-preview"
-            />
-          )}
-        </div>
-
-        <p><strong>Username:</strong> {form.username}</p>
-        <p><strong>Email:</strong> {emailInput || "Not set"}</p>
-        <p><strong>Phone:</strong> {form.phone_number || "Not set"}</p>
-
-        {/* Change Email Button */}
-        {!showEmailForm && (
-          <button
-            className="btn secondary"
-            onClick={() => setShowEmailForm(true)}
-          >
-            ➕ Change / Add Email
-          </button>
-        )}
-      </div>
-
-      {/* --- Email Change Form --- */}
-      {showEmailForm && (
+      {/* Read-only */}
+      {!editMode && (
         <div className="card">
-          <h3>Update Email</h3>
-          <div className="form-group">
-            <label>New Email</label>
-            <input
-              type="email"
-              value={emailInput}
-              onChange={(e) => setEmailInput(e.target.value)}
-              disabled={verified}
-            />
-          </div>
-
-          {!emailSent && (
-            <button
-              className="btn primary"
-              onClick={sendVerificationLink}
-              disabled={loading}
-            >
-              {loading ? "Sending..." : "Send Verification Link"}
-            </button>
+          <h3>Account Details</h3>
+          {form.profile_img && (
+            <img src={form.profile_img} alt="Avatar" className="avatar-preview" />
           )}
-
-          {emailSent && (
-            <p className="message">
-              📩 Check your inbox and click the link to verify your new email.
-            </p>
-          )}
+          <p><strong>Username:</strong> {form.username}</p>
+          <p><strong>Password:</strong> ******</p>
+          <p><strong>Email:</strong> {form.email}</p>
+          <p><strong>Phone Number:</strong> {form.phone_number}</p>
+          <button className="btn" onClick={() => setEditMode(true)}>
+            ✏️ Edit Profile
+          </button>
         </div>
       )}
 
-      {/* --- Save Button --- */}
-      <div className="card">
-        <button
-          className="btn primary"
-          onClick={handleSave}
-          disabled={loading}
-        >
-          {loading ? "Saving..." : "Save Profile"}
-        </button>
-      </div>
+      {/* Editable */}
+      {editMode && (
+        <div className="card">
+          <h3>Edit Profile</h3>
+          <div className="form-group">
+            <label>Profile Picture</label>
+            <input type="file" accept="image/*" onChange={handleFileUpload} />
+            {form.profile_img && (
+              <img src={form.profile_img} alt="Avatar" className="avatar-preview" />
+            )}
+          </div>
+          <div className="form-group">
+            <label>Username</label>
+            <input
+              type="text"
+              value={form.username}
+              onChange={(e) => setForm({ ...form, username: e.target.value })}
+            />
+          </div>
+          <div className="form-group">
+            <label>Password</label>
+            <input
+              type="password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+            />
+          </div>
+          <div className="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+          </div>
+          <div className="form-group">
+            <label>Phone Number</label>
+            <input
+              type="text"
+              value={form.phone_number}
+              onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
+            />
+          </div>
+
+          <div className="form-actions">
+            <button
+              className="btn primary"
+              onClick={handleSave}
+              disabled={loading}
+            >
+              {loading ? "Saving..." : "Save Changes"}
+            </button>
+            <button
+              className="btn secondary"
+              onClick={() => setEditMode(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {message && <p className="message">{message}</p>}
     </div>
