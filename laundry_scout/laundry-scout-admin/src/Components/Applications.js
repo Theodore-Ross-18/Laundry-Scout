@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "../Supabase/supabaseClient";
 import "../Style/Applications.css";
-import { FiMenu, FiSearch } from "react-icons/fi";
+import { FiMenu, FiSearch, FiSettings } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 
 // ✅ Sidebar + Notifications
@@ -179,38 +179,24 @@ function Applications() {
             </div>
           </div>
           <div className="applications-header-icons">
-            <Notifications />
-            <img
-              src="/path-to-avatar.jpg"
-              alt="Profile"
-              className="profile-avatar"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowSettings(!showSettings);
-              }}
-            />
-            {showSettings && (
-              <div
-                className="dropdown-panel"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="dropdown-item" onClick={() => navigate("/profile")}>
-                  My Profile
-                </div>
-                <div className="dropdown-item" onClick={() => navigate("/settings")}>
-                  Settings
-                </div>
-                <div
-                  className="dropdown-item"
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    navigate("/login");
-                  }}
-                >
-                  Logout
-                </div>
+            <div className="notification-wrapper">
+              <Notifications />
+            </div>
+            <div className="settings-wrapper">
+              <FiSettings
+                size={22}
+                className="settings-icon"
+                onClick={() => navigate("/settings")}
+                />
+            </div>
+            <div className="dropdown-wrapper">
+              <img
+                src="https://via.placeholder.com/32"
+                alt="profile"
+                className="profile-avatar"
+                onClick={() => navigate("/profile")}
+                />
               </div>
-            )}
           </div>
         </header>
 
