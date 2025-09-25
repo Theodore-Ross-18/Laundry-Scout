@@ -20,6 +20,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   
   // Laundry Information controllers
   final _aboutUsController = TextEditingController();
+  final _termsAndConditionsController = TextEditingController(); // New controller for Terms and Conditions
   
   // Services Offered
   final List<String> _availableServices = [
@@ -82,6 +83,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _aboutUsController.dispose();
+    _termsAndConditionsController.dispose(); // Dispose new controller
     // Removed _serviceNameController.dispose() and _priceController.dispose() as per user request.
     // _serviceNameController.dispose();
     // _priceController.dispose();
@@ -139,6 +141,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           
           // Load laundry information
           _aboutUsController.text = _businessProfile!['about_business'] ?? '';
+          _termsAndConditionsController.text = _businessProfile!['terms_and_conditions'] ?? ''; // Load terms and conditions
           _deliveryAvailable = _businessProfile!['does_delivery'] ?? false;
           
           // Load cover photo URL
@@ -394,6 +397,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'business_phone_number': _phoneController.text.trim(),
         'about_business': _aboutUsController.text.trim(),
         'does_delivery': _deliveryAvailable,
+        'terms_and_conditions': _termsAndConditionsController.text.trim(), // Save terms and conditions
         'services_offered': _selectedServices,
         'service_prices': _pricelist,
         'open_hours_text': _openHoursController.text.trim(), // Save open hours
@@ -933,6 +937,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           return null; // Not required anymore
                         }
                         return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _termsAndConditionsController,
+                      label: 'Terms and Conditions',
+                      maxLines: 5,
+                      validator: (value) {
+                        return null; // Optional field
                       },
                     ),
                     const SizedBox(height: 16),

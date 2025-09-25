@@ -8,6 +8,7 @@ class OrderConfirmationScreen extends StatefulWidget {
   final List<String> services;
   final Map<String, String> schedule;
   final String specialInstructions;
+  final String termsAndConditions; // New
 
   const OrderConfirmationScreen({
     super.key,
@@ -16,6 +17,7 @@ class OrderConfirmationScreen extends StatefulWidget {
     required this.services,
     required this.schedule,
     required this.specialInstructions,
+    required this.termsAndConditions, // New
   });
 
   @override
@@ -25,6 +27,7 @@ class OrderConfirmationScreen extends StatefulWidget {
 class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   bool _isPlacingOrder = false;
   String _paymentMethod = 'Cash on Delivery';
+  bool _isTermsExpanded = false; // New state for Terms and Conditions expansion
 
   final List<String> _paymentMethods = ['Cash on Delivery', 'GCash', 'PayMaya'];
 
@@ -397,6 +400,11 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             ),
                             const SizedBox(height: 24),
 
+                            // Terms and Conditions
+                            _buildTermsAndConditionsSection(),
+
+                            const SizedBox(height: 24),
+
                             // Place Order Button
                           ],
                         ),
@@ -450,57 +458,101 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     });
 
     try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) {
-        throw Exception('User not authenticated');
-      }
-
+      final supabase = Supabase.instance.client;
       final orderId = _generateOrderId();
-      final orderData = {
-        'order_number': orderId,
-        'user_id': user.id,
-        'business_id': widget.businessData['id'],
-        'status': 'pending',
-        'total_amount': _total,
-        'delivery_address': widget.address,
+
+      // Fetch business ID from businessData
+      final String businessId = widget.businessData['id'];
+
+      // Fetch user ID
+      final String userId = supabase.auth.currentUser!.id;
+
+      // Fetch business name
+      final String businessName = widget.businessData['business_name'];
+
+      // Fetch user profile to get user_name
+      final userProfileResponse = await supabase
+          .from('profiles')
+          .select('user_name')
+          .eq('id', userId)
+          .single();
+      final String userName = userProfileResponse['user_name'];
+
+      // Insert order into the 'orders' table
+      await supabase.from('orders').insert({
+        'order_id': orderId,
+        'user_id': userId,
+        'business_id': businessId,
+        'business_name': businessName,
+        'user_name': userName,
+        'address': widget.address,
+        'services': widget.services,
+        'schedule': widget.schedule,
         'special_instructions': widget.specialInstructions,
-        'items': widget.services,
-        'pickup_schedule': widget.schedule['pickup'],
-        'dropoff_schedule': widget.schedule['dropoff'],
+        'total_amount': _total,
         'payment_method': _paymentMethod,
-        'created_at': DateTime.now().toIso8601String(),
-      };
+        'status': 'Pending',
+      });
 
-      await Supabase.instance.client
-          .from('orders')
-          .insert(orderData);
-
-      if (mounted) {
-        // Navigate back to home and show success message
-        Navigator.of(context).popUntil((route) => route.isFirst);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Order placed successfully! Order #$orderId'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
+      // Show success message and navigate back
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Order placed successfully!')),
+      );
+      Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to place order: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error placing order: $e')),
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isPlacingOrder = false;
-        });
-      }
+      setState(() {
+        _isPlacingOrder = false;
+      });
     }
+  }
+
+  Widget _buildTermsAndConditionsSection() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            title: const Text(
+              'Terms and Conditions',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            trailing: Icon(
+              _isTermsExpanded ? Icons.expand_less : Icons.expand_more,
+              color: const Color(0xFF6F5ADC),
+            ),
+            onTap: () {
+              setState(() {
+                _isTermsExpanded = !_isTermsExpanded;
+              });
+            },
+          ),
+          if (_isTermsExpanded)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                widget.termsAndConditions.isEmpty
+                    ? 'No terms and conditions provided by the business.'
+                    : widget.termsAndConditions,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
