@@ -12,9 +12,12 @@
 
 /* Main Content */
 .clients-main {
-  flex: 1;
+  flex: 1 1;
   padding: 20px;
-  transition: margin-left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  transition: margin-left 0.3s ease-in-out;
 }
 
 /* Header */
@@ -22,7 +25,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  /* margin-bottom: 24px; */
 }
 
 .clients-title {

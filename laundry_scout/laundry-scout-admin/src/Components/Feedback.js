@@ -125,10 +125,6 @@ function Feedback() {
 
       <main className={`feedback-main ${sidebarOpen ? "" : "expanded"}`}>
         <header className="feedback-header-left">
-          <FiMenu
-              className="feedback-toggle-sidebar"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            />
           <div>
             <h2 className="feedback-title">Feedback</h2>
             <p className="feedback-subtitle">Showing all feedback from users and businesses</p>

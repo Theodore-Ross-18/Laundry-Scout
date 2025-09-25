@@ -39,7 +39,7 @@ function Sidebar({ isOpen = true, onLogout }) {
       </nav>
 
       <button
-        className="logout"
+        className="sidebar-logout"
         onClick={() => handleLogout(navigate, onLogout, setLoggingOut)}
         disabled={loggingOut}
       >

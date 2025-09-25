@@ -167,7 +167,7 @@
   font-size: 0.9rem;
   background: transparent;
 }
-.filter-right {
+.history-filter-right {
   display: flex;
   gap: 10px;
 }
