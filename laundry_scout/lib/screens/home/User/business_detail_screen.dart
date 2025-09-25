@@ -7,6 +7,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'order_placement_screen.dart';
 import '../../../services/feedback_service.dart';
+import 'package:flutter_map/flutter_map.dart'; // Import for FlutterMap
+import 'package:latlong2/latlong.dart'; // Import for LatLng
+import 'package:laundry_scout/screens/home/User/getdirection.dart';
 
 class BusinessDetailScreen extends StatefulWidget {
   final Map<String, dynamic> businessData;
@@ -198,7 +201,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     try {
         final response = await Supabase.instance.client
             .from('business_profiles')
-            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours_text, available_pickup_time_slots, available_dropoff_time_slots, does_delivery') // Add new columns here
+            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours_text, available_pickup_time_slots, available_dropoff_time_slots, does_delivery, latitude, longitude') // Add new columns here
             .eq('id', widget.businessData['id'])
             .single();
       
@@ -674,6 +677,9 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                         ],
                       ),
                     ),
+
+
+
                     // TabBar
                     Container(
                       color: Colors.white,
@@ -699,18 +705,18 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                           _buildOrderTab(),
                           _buildReviewsTab(),
                         ],
-                      ),
-                    ),
-                  ],
-                ),
-    );
+                      ), // Closing TabBarView
+                    ), // Closing Expanded
+                  ], // Closing Column children
+                ), // Closing Column
+    ); // Closing Scaffold
   }
 
   Widget _buildAboutTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // About Us
           Container(
@@ -905,7 +911,6 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
           ),
           const SizedBox(height: 16),
           // Address with Map
-          /*
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -926,7 +931,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  _fullBusinessData!['address'] ?? 'Address not available.',
+                  _fullBusinessData!['business_address'] ?? 'Address not available.',
                   style: const TextStyle(
                     fontSize: 14,
                     color: Colors.black87,
@@ -938,27 +943,27 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                   child: _fullBusinessData!['latitude'] != null && _fullBusinessData!['longitude'] != null
                       ? FlutterMap(
                           options: MapOptions(
-                            center: LatLng(
+                            initialCenter: LatLng(
                               _fullBusinessData!['latitude'],
                               _fullBusinessData!['longitude'],
                             ),
-                            zoom: 15.0,
+                            initialZoom: 15.0,
+                            interactiveFlags: InteractiveFlag.none, // Make map non-interactive
                           ),
-                          layers: [
-                            TileLayerOptions(
-                              urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                              subdomains: ['a', 'b', 'c'],
+                          children: [
+                            TileLayer(
+                              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                             ),
-                            MarkerLayerOptions(
+                            MarkerLayer(
                               markers: [
                                 Marker(
-                                  width: 80.0,
-                                  height: 80.0,
                                   point: LatLng(
                                     _fullBusinessData!['latitude'],
                                     _fullBusinessData!['longitude'],
                                   ),
-                                  builder: (ctx) => const Icon(
+                                  width: 80,
+                                  height: 80,
+                                  child: const Icon(
                                     Icons.location_pin,
                                     color: Colors.red,
                                     size: 40,
@@ -968,16 +973,50 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                             ),
                           ],
                         )
-                      : const Center(
+                      : Center(
                           child: Text(
-                            'Map not available.',
-                            style: TextStyle(color: Colors.black54),
+                            'Location not available',
+                            style: TextStyle(color: Colors.grey[600]),
                           ),
                         ),
-              ),
-            ],
+                ),
+                const SizedBox(height: 16),
+                if (_fullBusinessData!['latitude'] != null && _fullBusinessData!['longitude'] != null)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => GetDirectionScreen(
+                              destinationLatitude: _fullBusinessData!['latitude'],
+                              destinationLongitude: _fullBusinessData!['longitude'],
+                              businessName: _fullBusinessData!['business_name'],
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6F5ADC),
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Get Direction',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
-          */
         ],
       ),
     );
