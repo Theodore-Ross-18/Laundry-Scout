@@ -17,12 +17,14 @@ class ServiceSelectionScreen extends StatefulWidget {
 class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
   late List<String> _selectedServices;
 
-  List<Map<String, dynamic>> get _services => widget.pricelist.map((item) => {
-    'name': item['service_name'] ?? 'Unknown Service',
-    'icon': _getServiceIcon(item['service_name']),
-    'color': _getServiceColor(item['service_name']),
-    'price': (double.tryParse(item['price']?.toString() ?? '0') ?? 0).toStringAsFixed(2),
-  }).toList();
+  List<Map<String, dynamic>> get _services => widget.pricelist
+      .where((item) => (double.tryParse(item['price']?.toString() ?? '0') ?? 0) > 0.0)
+      .map((item) => {
+        'name': item['service_name'] ?? 'Unknown Service',
+        'icon': _getServiceIcon(item['service_name']),
+        'color': _getServiceColor(item['service_name']),
+        'price': (double.tryParse(item['price']?.toString() ?? '0') ?? 0).toStringAsFixed(2),
+      }).toList();
 
   @override
   void initState() {

@@ -196,14 +196,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             for (var item in pricelistData) {
               if (item is Map<String, dynamic>) {
                 String serviceName = item['service'] ?? '';
+                double price = double.tryParse(item['price'].toString()) ?? 0.0;
+
                 // Normalize service names when loading from database
                 if (serviceName.toLowerCase() == 'deliver') {
                   serviceName = 'Delivery';
                 }
-                uniquePricelist[serviceName] = {
-                  'service': serviceName,
-                  'price': item['price'] ?? '',
-                };
+
+                // Only add service if price is greater than 0.0
+                if (price > 0.0) {
+                  uniquePricelist[serviceName] = {
+                    'service': serviceName,
+                    'price': price.toStringAsFixed(2),
+                  };
+                }
               }
             }
             _pricelist.addAll(uniquePricelist.values);

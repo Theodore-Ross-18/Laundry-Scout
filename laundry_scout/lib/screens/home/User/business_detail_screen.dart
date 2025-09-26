@@ -251,15 +251,17 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
           if (item is Map<String, dynamic>) {
             String serviceName = item['service'] ?? item['service_name'] ?? '';
             String priceStr = '';
+            double price = 0.0;
             
             if (item['price'] != null) {
-              double price = double.tryParse(item['price'].toString()) ?? 0.0;
+              price = double.tryParse(item['price'].toString()) ?? 0.0;
               priceStr = price.toStringAsFixed(2);
             } else {
               priceStr = '0.00';
             }
             
-            if (serviceName.isNotEmpty) {
+            // Only add service if price is not 0.00
+            if (serviceName.isNotEmpty && price > 0.0) {
               pricelist.add({
                 'service_name': serviceName,
                 'price': priceStr,
