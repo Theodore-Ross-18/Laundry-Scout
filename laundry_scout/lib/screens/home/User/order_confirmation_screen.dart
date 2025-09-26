@@ -9,6 +9,8 @@ class OrderConfirmationScreen extends StatefulWidget {
   final Map<String, String> schedule;
   final String specialInstructions;
   final String termsAndConditions; // New
+  final double? latitude; // New
+  final double? longitude; // New
 
   const OrderConfirmationScreen({
     super.key,
@@ -18,6 +20,8 @@ class OrderConfirmationScreen extends StatefulWidget {
     required this.schedule,
     required this.specialInstructions,
     required this.termsAndConditions, // New
+    this.latitude, // New
+    this.longitude, // New
   });
 
   @override
@@ -492,21 +496,35 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         'total_amount': _total,
         'payment_method': _paymentMethod,
         'status': 'Pending',
+        'latitude': widget.latitude, // Add latitude
+        'longitude': widget.longitude, // Add longitude
       });
 
-      // Show success message and navigate back
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Order placed successfully!')),
-      );
-      Navigator.popUntil(context, (route) => route.isFirst);
+      if (mounted) {
+        // Show success message and navigate back
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Order placed successfully!')),
+        );
+        Navigator.popUntil(context, (route) => route.isFirst);
+      }
+    } on PostgrestException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error placing order: ${e.message}')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error placing order: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An unexpected error occurred: $e')),
+        );
+      }
     } finally {
-      setState(() {
-        _isPlacingOrder = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isPlacingOrder = false;
+        });
+      }
     }
   }
 

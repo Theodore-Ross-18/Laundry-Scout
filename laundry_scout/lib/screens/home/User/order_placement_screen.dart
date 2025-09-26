@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'address_selection_screen.dart';
 import 'service_selection_screen.dart';
 import 'schedule_selection_screen.dart';
 import 'order_confirmation_screen.dart';
+import 'package:laundry_scout/screens/home/User/pickdropmap.dart'; // Import PickDropMapScreen
+import 'package:latlong2/latlong.dart'; // Import LatLng
 
 class OrderPlacementScreen extends StatefulWidget {
   final Map<String, dynamic> businessData;
@@ -34,6 +35,13 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
   Map<String, dynamic>? _businessProfile; // Add this line
   bool _isLoading = true;
   bool _isTermsExpanded = false; // New state for Terms and Conditions expansion
+  
+  // New fields for user location
+  final TextEditingController _currentAddressController = TextEditingController();
+  double? _latitude;
+  double? _longitude;
+  final TextEditingController _latitudeController = TextEditingController();
+  final TextEditingController _longitudeController = TextEditingController();
 
   @override
   void initState() {
@@ -46,6 +54,9 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
   void dispose() {
     _addressController.dispose();
     _specialInstructionsController.dispose();
+    _currentAddressController.dispose();
+    _latitudeController.dispose();
+    _longitudeController.dispose();
     super.dispose();
   }
 
@@ -76,6 +87,37 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
 
   Future<void> _loadAddresses() async {
     try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        final userProfile = await Supabase.instance.client
+            .from('user_profiles')
+            .select('latitude, longitude')
+            .eq('id', user.id)
+            .single();
+
+        if (mounted) {
+          setState(() {
+            _latitude = userProfile['latitude'];
+            _longitude = userProfile['longitude'];
+                  _latitudeController.text = _latitude?.toString() ?? '';
+            _longitudeController.text = _longitude?.toString() ?? '';
+          });
+        }
+
+        final userAddressResponse = await Supabase.instance.client
+            .from('user_profiles')
+            .select('current_address')
+            .eq('id', user.id)
+            .single();
+
+        if (mounted) {
+          setState(() {
+            _currentAddressController.text = userAddressResponse['current_address'] ?? '';
+            _selectedAddress = userAddressResponse['current_address'];
+          });
+        }
+      }
+
       final servicesOfferedData = widget.businessData['services_offered'];
       final servicePricesData = widget.businessData['service_prices'];
 
@@ -240,75 +282,137 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
   }
 
   Widget _buildAddressSection() {
-    return GestureDetector(
-      onTap: () async {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AddressSelectionScreen(
-              // selectedAddress: _selectedAddress, // Remove this line
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Pickup & Drop-off Address',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _currentAddressController,
+          style: const TextStyle(color: Colors.black),
+          decoration: InputDecoration(
+            labelText: 'Current Address',
+            labelStyle: TextStyle(color: Colors.grey[600]),
+            hintText: 'Enter your current address',
+            hintStyle: TextStyle(color: Colors.grey[400]),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFF6F5ADC)),
             ),
           ),
-        );
-        if (result != null) {
-          setState(() {
-            _selectedAddress = result as String;
-          });
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
+          onChanged: (value) {
+            setState(() {
+              _selectedAddress = value;
+            });
+          },
         ),
-        child: Row(
+        const SizedBox(height: 16),
+        Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6F5ADC).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.location_on,
-                color: Color(0xFF6F5ADC),
-                size: 24,
+            Expanded(
+              child: TextFormField(
+                controller: _latitudeController,
+                style: const TextStyle(color: Colors.black),
+                decoration: InputDecoration(
+                  labelText: 'Latitude',
+                  labelStyle: TextStyle(color: Colors.grey[600]),
+                  hintText: 'e.g., 14.5995',
+                  hintStyle: TextStyle(color: Colors.grey[400]),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF6F5ADC)),
+                  ),
+                ),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  setState(() {
+                    _latitude = double.tryParse(value);
+                  });
+                },
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Pickup & Drop-off Address',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
+              child: TextFormField(
+                controller: _longitudeController,
+                style: const TextStyle(color: Colors.black),
+                decoration: InputDecoration(
+                  labelText: 'Longitude',
+                  labelStyle: TextStyle(color: Colors.grey[600]),
+                  hintText: 'e.g., 120.9842',
+                  hintStyle: TextStyle(color: Colors.grey[400]),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _selectedAddress ?? 'Select address',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF6F5ADC)),
                   ),
-                ],
+                ),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  setState(() {
+                    _longitude = double.tryParse(value);
+                  });
+                },
               ),
-            ),
-            Icon(
-              Icons.add,
-              color: Colors.grey[400],
-              size: 20,
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              final LatLng? selectedLocation = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PickDropMapScreen(
+                                            initialLatitude: _latitude ?? 0.0,
+                                            initialLongitude: _longitude ?? 0.0,
+                                          ),
+                ),
+              );
+              if (selectedLocation != null) {
+                setState(() {
+                  _latitude = selectedLocation.latitude;
+                  _longitude = selectedLocation.longitude;
+                  _latitudeController.text = _latitude.toString();
+                  _longitudeController.text = _longitude.toString();
+                });
+              }
+            },
+            icon: const Icon(Icons.map, color: Colors.white),
+            label: const Text(
+              'Pin Location on Map',
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6F5ADC),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -433,7 +537,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF6F5ADC).withValues(alpha: 0.1),
+                color: const Color(0xFF6F5ADC).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
@@ -560,7 +664,9 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
   Widget _buildContinueButton() {
     final bool canContinue = _selectedAddress != null && 
                             _selectedServices.isNotEmpty && 
-                            _selectedSchedule != null;
+                            _selectedSchedule != null &&
+                            _latitude != null && // Check for latitude
+                            _longitude != null; // Check for longitude
     
     return SizedBox(
       width: double.infinity,
@@ -663,7 +769,9 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
           services: _selectedServices,
           schedule: _selectedSchedule!,
           specialInstructions: _specialInstructions,
-          termsAndConditions: _businessProfile!['terms_and_conditions'] ?? 'No terms and conditions provided.', // Pass terms and conditions
+          termsAndConditions: _businessProfile?['terms_and_conditions'] ?? 'No terms and conditions provided.', // Pass terms and conditions
+          latitude: _latitude, // Pass latitude
+          longitude: _longitude, // Pass longitude
         ),
       ),
     );

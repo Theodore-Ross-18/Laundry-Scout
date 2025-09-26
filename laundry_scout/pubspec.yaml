@@ -22,7 +22,7 @@ dependencies:
   flutter_image_compress: ^2.3.0
   path_provider: ^2.1.4
   shared_preferences: ^2.2.2
-  geolocator: ^10.1.0
+  geolocator: ^14.0.2 # Updated geolocator dependency
   permission_handler: ^11.3.1
   flutter_map: ^6.1.0
   latlong2: ^0.9.1
@@ -31,6 +31,7 @@ dependencies:
   intl: ^0.19.0
   pdf: ^3.10.4
   printing: ^5.11.0
+  geolocator_web: ^4.0.0 # Added geolocator_web dependency
 
 dev_dependencies:
   flutter_test:
