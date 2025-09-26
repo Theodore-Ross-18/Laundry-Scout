@@ -968,33 +968,54 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     // Latitude Field
                     TextFormField(
                       controller: _latitudeController,
-                      readOnly: true,
                       style: const TextStyle(color: Colors.black),
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Latitude',
-                        labelStyle: const TextStyle(color: Colors.black),
-                        hintText: 'Latitude will be set from map',
-                        prefixIcon: const Icon(Icons.location_on, color: Colors.black54),
+                        labelStyle: TextStyle(color: Colors.black),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(color: Colors.black),
                         ),
+                        prefixIcon: Icon(Icons.location_on, color: Colors.black54),
                       ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter latitude';
+                        }
+                        if (double.tryParse(value) == null) {
+                          return 'Please enter a valid number';
+                        }
+                        return null;
+                      },
+                      onChanged: (value) {
+                        _latitude = double.tryParse(value);
+                      },
                     ),
-                    const SizedBox(height: 20),
-                    // Longitude Field
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _longitudeController,
-                      readOnly: true,
                       style: const TextStyle(color: Colors.black),
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Longitude',
-                        labelStyle: const TextStyle(color: Colors.black),
-                        hintText: 'Longitude will be set from map',
-                        prefixIcon: const Icon(Icons.location_on, color: Colors.black54),
+                        labelStyle: TextStyle(color: Colors.black),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(color: Colors.black),
                         ),
+                        prefixIcon: Icon(Icons.location_on, color: Colors.black54),
                       ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter longitude';
+                        }
+                        if (double.tryParse(value) == null) {
+                          return 'Please enter a valid number';
+                        }
+                        return null;
+                      },
+                      onChanged: (value) {
+                        _longitude = double.tryParse(value);
+                      },
                     ),
                     const SizedBox(height: 20),
                     _buildTextField(
