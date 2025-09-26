@@ -471,33 +471,29 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       // Fetch user ID
       final String userId = supabase.auth.currentUser!.id;
 
-      // Fetch business name
-      final String businessName = widget.businessData['business_name'];
-
       // Fetch user profile to get user_name
       final userProfileResponse = await supabase
-          .from('profiles')
-          .select('user_name')
+          .from('user_profiles')
+          .select('username')
           .eq('id', userId)
           .single();
-      final String userName = userProfileResponse['user_name'];
+      final String userName = userProfileResponse['username'];
 
       // Insert order into the 'orders' table
       await supabase.from('orders').insert({
-        'order_id': orderId,
+        'order_number': orderId,
         'user_id': userId,
         'business_id': businessId,
-        'business_name': businessName,
+
         'user_name': userName,
-        'address': widget.address,
+        'pickup_address': widget.address,
         'services': widget.services,
-        'schedule': widget.schedule,
+        'pickup_schedule': widget.schedule,
         'special_instructions': widget.specialInstructions,
         'total_amount': _total,
         'payment_method': _paymentMethod,
         'status': 'Pending',
-        'latitude': widget.latitude, // Add latitude
-        'longitude': widget.longitude, // Add longitude
+
       });
 
       if (mounted) {
