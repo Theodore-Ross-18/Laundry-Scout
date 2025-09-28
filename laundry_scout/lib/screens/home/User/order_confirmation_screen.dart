@@ -30,17 +30,59 @@ class OrderConfirmationScreen extends StatefulWidget {
 
 class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   bool _isPlacingOrder = false;
-  String _paymentMethod = 'Cash on Delivery';
   bool _isTermsExpanded = false; // New state for Terms and Conditions expansion
 
-  final List<String> _paymentMethods = ['Cash on Delivery', 'GCash', 'PayMaya'];
+  Map<String, dynamic>? _fullBusinessData; // To store full business data
 
-  final Map<String, double> _servicePrices = {
-    'Iron Only': 50.0,
-    'Clean & Iron': 120.0,
-    'Wash & Fold': 180.0,
-    'Carpets': 200.0,
-  };
+  Map<String, double> _servicePrices = {}; // Initialize as empty map
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBusinessDataAndPrices();
+  }
+
+  Future<void> _loadBusinessDataAndPrices() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('service_prices')
+          .eq('id', widget.businessData['id'])
+          .single();
+
+      _fullBusinessData = response;
+
+      if (_fullBusinessData != null && _fullBusinessData!['service_prices'] != null) {
+        final servicePricesData = _fullBusinessData!['service_prices'];
+        if (servicePricesData is List) {
+          for (var item in servicePricesData) {
+            if (item is Map<String, dynamic>) {
+              String serviceName = item['service'] ?? item['service_name'] ?? '';
+              double price = double.tryParse(item['price'].toString()) ?? 0.0;
+              if (serviceName.isNotEmpty) {
+                _servicePrices[serviceName] = price;
+              }
+            }
+          }
+        } else if (servicePricesData is Map<String, dynamic>) {
+          servicePricesData.forEach((serviceName, price) {
+            _servicePrices[serviceName] = double.tryParse(price.toString()) ?? 0.0;
+          });
+        }
+      }
+      setState(() {}); // Rebuild to reflect loaded prices
+    } catch (e) {
+      print('Error loading business data and prices: $e');
+    }
+  }
+  // bool _isTermsExpanded = false; // New state for Terms and Conditions expansion // Removed duplicate
+
+  // final Map<String, double> _servicePrices = {
+  //   'Iron Only': 50.0,
+  //   'Clean & Iron': 120.0,
+  //   'Wash & Fold': 180.0,
+  //   'Carpets': 200.0,
+  // };
 
   double get _subtotal {
     return widget.services.fold(0.0, (sum, service) {
@@ -365,44 +407,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             ),
                             const SizedBox(height: 24),
                             
-                            // Payment Details
-                            const Text(
-                              'Payment Details',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Mode of Payment',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                DropdownButton<String>(
-                                  value: _paymentMethod,
-                                  onChanged: (String? newValue) {
-                                    setState(() {
-                                      _paymentMethod = newValue!;
-                                    });
-                                  },
-                                  items: _paymentMethods
-                                      .map<DropdownMenuItem<String>>((String value) {
-                                    return DropdownMenuItem<String>(
-                                      value: value,
-                                      child: Text(value),
-                                    );
-                                  }).toList(),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
+
 
                             // Terms and Conditions
                             _buildTermsAndConditionsSection(),
@@ -472,12 +477,12 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       final String userId = supabase.auth.currentUser!.id;
 
       // Fetch user profile to get user_name
-      final userProfileResponse = await supabase
-          .from('user_profiles')
-          .select('username')
-          .eq('id', userId)
-          .single();
-      final String userName = userProfileResponse['username'];
+      // final userProfileResponse = await supabase
+      //     .from('user_profiles')
+      //     .select('username')
+      //     .eq('id', userId)
+      //     .single();
+      // final String userName = userProfileResponse['username'];
 
       // Insert order into the 'orders' table
       await supabase.from('orders').insert({
@@ -485,14 +490,17 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         'user_id': userId,
         'business_id': businessId,
 
-        'user_name': userName,
+        // 'user_name': userName, // Removed as it's not in the schema
         'pickup_address': widget.address,
-        'services': widget.services,
-        'pickup_schedule': widget.schedule,
+        'items': widget.services, // Store services as JSON in 'items'
+        'pickup_schedule': widget.schedule['pickup'], // Store pickup schedule as string
+        'dropoff_schedule': widget.schedule['dropoff'], // Store dropoff schedule as string
         'special_instructions': widget.specialInstructions,
         'total_amount': _total,
-        'payment_method': _paymentMethod,
-        'status': 'Pending',
+        // 'payment_method': _paymentMethod, // Removed
+        'status': 'pending', // Ensure status matches schema default
+        if (widget.latitude != null) 'latitude': widget.latitude,
+        if (widget.longitude != null) 'longitude': widget.longitude,
 
       });
 

@@ -31,13 +31,28 @@ class _OrdersScreenState extends State<OrdersScreen> {
       // Get orders for this business owner
       final response = await Supabase.instance.client
           .from('orders')
-          .select('*')
+          .select('*') // Fetch all order data
           .eq('business_id', user.id)
           .order('created_at', ascending: false);
 
+      // Now, for each order, fetch the user_profile data
+      List<Map<String, dynamic>> ordersWithUserDetails = [];
+      for (var order in response) {
+        final userId = order['user_id'];
+        if (userId != null) {
+          final userProfileResponse = await Supabase.instance.client
+              .from('user_profiles')
+              .select('first_name, last_name')
+              .eq('id', userId)
+              .single();
+          order['user_profiles'] = userProfileResponse; // Attach user profile to the order
+        }
+        ordersWithUserDetails.add(order);
+      }
+
       if (mounted) {
         setState(() {
-          _orders = List<Map<String, dynamic>>.from(response);
+          _orders = List<Map<String, dynamic>>.from(ordersWithUserDetails);
           _isLoading = false;
         });
       }
@@ -171,11 +186,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   Widget _buildOrderCard(Map<String, dynamic> order) {
-    final customerName = 'Customer'; // Simplified for now - can be enhanced later
-    final orderNumber = order['order_number'] ?? 'N/A';
-    final status = order['status'] ?? 'pending';
-    final createdAt = DateTime.parse(order['created_at']);
-    final totalAmount = order['total_amount']?.toDouble() ?? 0.0;
+     final customerFirstName = order['user_profiles']?['first_name'] ?? 'N/A';
+     final customerLastName = order['user_profiles']?['last_name'] ?? '';
+     final customerName = '$customerFirstName $customerLastName'.trim();
+     final orderNumber = order['order_number'] ?? 'N/A';
+     final status = order['status'] ?? 'pending';
+     final createdAt = DateTime.parse(order['created_at']);
+     final totalAmount = order['total_amount']?.toDouble() ?? 0.0;
 
     Color statusColor;
     switch (status) {
@@ -228,6 +245,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
+                    color: Colors.black, // Changed text color to black
                   ),
                 ),
                 Container(
@@ -250,12 +268,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
             const SizedBox(height: 8),
             Text(
               'Customer: $customerName',
-              style: const TextStyle(fontSize: 14),
+              style: const TextStyle(fontSize: 14, color: Colors.black), // Changed text color to black
             ),
             const SizedBox(height: 4),
             Text(
               'Date: ${DateFormat('MMM dd, yyyy - hh:mm a').format(createdAt)}',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 12, color: Colors.black), // Changed text color to black
             ),
             const SizedBox(height: 4),
             Text(
@@ -263,6 +281,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
+                color: Colors.black, // Changed text color to black
               ),
             ),
             if (status == 'pending') ...[
@@ -326,8 +345,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               pw.Text('Customer: $customerName'),
                               pw.Text('Date: ${DateFormat('MMM dd, yyyy - hh:mm a').format(createdAt)}'),
                               pw.Text('Total: ₱${totalAmount.toStringAsFixed(2)}'),
-                              pw.Text('Payment Method: ${order['payment_method'] ?? 'N/A'}'),
-                              pw.Text('Payment Balance: ₱${order['payment_balance']?.toStringAsFixed(2) ?? '0.00'}'),
+                              // pw.Text('Payment Method: ${order['payment_method'] ?? 'N/A'}'),
+                              // pw.Text('Payment Balance: ₱${order['payment_balance']?.toStringAsFixed(2) ?? '0.00'}'),
                             ],
                           );
                         },
@@ -344,16 +363,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 ),
               ),
             ],
-            const SizedBox(height: 4),
-            Text(
-              'Payment Method: ${order['payment_method'] ?? 'N/A'}',
-              style: const TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Payment Balance: ₱${order['payment_balance']?.toStringAsFixed(2) ?? '0.00'}',
-              style: const TextStyle(fontSize: 14),
-            ),
+            // Text(
+            //   'Payment Method: ${order['payment_method'] ?? 'N/A'}',
+            //   style: const TextStyle(fontSize: 14, color: Colors.black), // Changed text color to black
+            // ),
+            // const SizedBox(height: 4),
+            // Text(
+            //   'Payment Balance: ₱${order['payment_balance']?.toStringAsFixed(2) ?? '0.00'}',
+            //   style: const TextStyle(fontSize: 14, color: Colors.black), // Changed text color to black
+            // ),
           ],
         ),
       ),
