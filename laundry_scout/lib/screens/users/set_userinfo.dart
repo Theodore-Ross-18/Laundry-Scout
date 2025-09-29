@@ -6,10 +6,10 @@ import '../../services/form_persistence_service.dart';
 
 class SetUserInfoScreen extends StatefulWidget {
   // Add a field to receive the username
-  final String username;
+  final String? username;
 
   // Update the constructor to require the username
-  const SetUserInfoScreen({super.key, required this.username});
+  const SetUserInfoScreen({super.key, this.username});
 
   @override
   _SetUserInfoScreenState createState() => _SetUserInfoScreenState();
@@ -17,24 +17,22 @@ class SetUserInfoScreen extends StatefulWidget {
 
 class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
   final PageController _pageController = PageController();
-  int _currentPage = 0;
+  late int _currentPage;
   bool _showForm = false;
 
   final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _mobileNumberController = TextEditingController();
   final _emailController = TextEditingController();
-  final _otpController = TextEditingController(); // Add OTP controller
   final _confirmEmailController = TextEditingController(); // Add controller for confirming email
 
-  bool _isEmailVerified = false; // Track email verification status
-  bool _isVerifyingOtp = false; // Track if OTP is being verified
+
+
 
   Timer? _timer; // Add a Timer variable
-  Timer? _otpTimer; // Timer for OTP countdown
-  int _otpTimerDuration = 60; // Initial duration in seconds
-  bool _isOtpTimerActive = false; // Track if OTP timer is running
+
 
   final List<Map<String, String>> slides = [
     {
@@ -54,6 +52,8 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     },
   ];
 
+
+
   @override
   void initState() {
     super.initState();
@@ -63,17 +63,10 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
       _emailController.text = user.email!;
       // Check if email is already confirmed (optional, but good practice)
       // Supabase user metadata might contain email_confirmed_at
-      // For simplicity, we'll assume verification is needed here regardless
+      // For simplicity, we\'ll assume verification is needed here regardless
     }
-
-    // Load saved form data
-    _loadSavedFormData();
-
-    // Add listeners to save data when user types
-    _firstNameController.addListener(_saveFormData);
-    _lastNameController.addListener(_saveFormData);
-    _mobileNumberController.addListener(_saveFormData);
-    _confirmEmailController.addListener(_saveFormData);
+    _usernameController.text = widget.username ?? '';
+    _currentPage = 0;
 
     // Start the auto-slide timer
     _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
@@ -94,32 +87,6 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     });
   }
 
-  // Load saved form data
-  Future<void> _loadSavedFormData() async {
-    final savedData = await FormPersistenceService.loadUserInfoData();
-    if (savedData != null && mounted) {
-      setState(() {
-        _firstNameController.text = savedData['firstName'] ?? '';
-        _lastNameController.text = savedData['lastName'] ?? '';
-        _mobileNumberController.text = savedData['mobileNumber'] ?? '';
-        _confirmEmailController.text = savedData['confirmEmail'] ?? '';
-        _isEmailVerified = savedData['isEmailVerified'] ?? false;
-      });
-    }
-  }
-
-  // Save form data
-  Future<void> _saveFormData() async {
-    final formData = {
-      'firstName': _firstNameController.text,
-      'lastName': _lastNameController.text,
-      'mobileNumber': _mobileNumberController.text,
-      'confirmEmail': _confirmEmailController.text,
-      'isEmailVerified': _isEmailVerified,
-    };
-    await FormPersistenceService.saveUserInfoData(formData);
-  }
-
   @override
   void dispose() {
     _pageController.dispose();
@@ -127,10 +94,9 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     _lastNameController.dispose();
     _mobileNumberController.dispose();
     _emailController.dispose();
-    _otpController.dispose(); // Dispose OTP controller
     _confirmEmailController.dispose(); // Dispose confirm email controller
     _timer?.cancel(); // Cancel the timer in dispose
-    _otpTimer?.cancel(); // Cancel the OTP timer
+
     super.dispose();
   }
 
@@ -160,9 +126,9 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
   // Function to verify OTP
   Future<void> _verifyOtp() async {
     final email = _emailController.text.trim(); // Use the pre-filled email for verification
-    final otp = _otpController.text.trim();
+    
 
-    if (email.isEmpty || otp.isEmpty) {
+    if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter email and verification code')),
       );
@@ -170,7 +136,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     }
 
     setState(() {
-      _isVerifyingOtp = true;
+      
     });
 
     // Start the timer when verification is attempted
@@ -180,20 +146,18 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
       final AuthResponse res = await Supabase.instance.client.auth.verifyOTP(
         type: OtpType.email,
         email: email,
-        token: otp,
+        token: '',
       );
 
       if (res.user != null) {
         // OTP verification successful
         if (mounted) {
-          setState(() {
-            _isEmailVerified = true;
-          });
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Email verified successfully!')),
           );
-          _otpTimer?.cancel(); // Stop the timer on success
-          _isOtpTimerActive = false; // Update state
+      
+      
         }
       } else {
          // Handle cases where user is null but no exception was thrown (shouldn't happen with verifyOTP usually)
@@ -219,7 +183,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     } finally {
       if (mounted) {
         setState(() {
-          _isVerifyingOtp = false;
+
           // Timer continues if verification failed, stops if successful (handled above)
         });
       }
@@ -228,26 +192,12 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
 
   // Function to start the OTP countdown timer
   void _startOtpTimer() {
-    _otpTimer?.cancel(); // Cancel any existing timer
-    _otpTimerDuration = 60; // Reset duration
-    _isOtpTimerActive = true; // Set timer active state
 
-    _otpTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_otpTimerDuration < 1) {
-        timer.cancel();
-        if (mounted) {
-          setState(() {
-            _isOtpTimerActive = false; // Timer finished
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            _otpTimerDuration--;
-          });
-        }
-      }
-    });
+
+
+
+
+
   }
 
   // Function to resend OTP (placeholder)
@@ -261,13 +211,13 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
 
 
   Future<void> _submitUserInfo() async {
-    // Check if email is verified before submitting
-    if (!_isEmailVerified) {
-       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please verify your email first.')),
-        );
-        return; // Stop the submission process
-    }
+    // Removed check if email is verified before submitting
+    
+    //    ScaffoldMessenger.of(context).showSnackBar(
+    //       const SnackBar(content: Text(\'Please verify your email first.\')),
+    //     );
+    //     return; // Stop the submission process
+    // }
 
     // Get current user ID
     final user = Supabase.instance.client.auth.currentUser;
@@ -279,13 +229,13 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
       return;
     }
 
-    // Check if the confirmed email matches the email entered in the email field (which is now pre-filled)
-    if (_confirmEmailController.text.trim() != _emailController.text.trim()) {
-       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Confirmed email must match your registered email.')),
-        );
-        return; // Stop the submission process
-    }
+    // Removed check for confirmed email matching the email entered
+    // if (_confirmEmailController.text.trim() != _emailController.text.trim()) {
+    //    ScaffoldMessenger.of(context).showSnackBar(
+    //       const SnackBar(content: Text(\'Confirmed email must match your registered email.\')),
+    //     );
+    //     return; // Stop the submission process
+    // }
 
 
     if (_formKey.currentState!.validate()) {
@@ -552,85 +502,52 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                   },
               ),
               const SizedBox(height: 16), // Adjusted spacing, was 30
-              // Moved Confirm Email field here and removed if (_isEmailVerified) wrapper
-              _buildTextField(
-                controller: _confirmEmailController,
-                labelText: 'Confirm Email Address', 
-                keyboardType: TextInputType.emailAddress,
-                textTheme: textTheme,
-                validator: (value) { 
-                  if (value == null || value.isEmpty) {
-                    return 'Please confirm your email address';
-                  }
-                  // The actual matching check is done in _submitUserInfo
-                  return null;
-                },
-              ),
-              const SizedBox(height: 30), // Spacer after Confirm Email
 
-              // Email Verification Section
-              if (!_isEmailVerified) ...[
-                 // Removed the "Send Verification Code" button
-                const SizedBox(height: 16), // Keep or adjust spacing as needed
-                _buildTextField(
-                  controller: _otpController,
-                  labelText: 'Verification Code',
-                  keyboardType: TextInputType.number,
-                  textTheme: textTheme,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: (_isVerifyingOtp || _isOtpTimerActive) ? null : _verifyOtp, // Disable while verifying or timer is active
-                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6F5ADC), // Purple background
-                    foregroundColor: const Color(0xFFFFFFFF), // White text
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30.0),
-                    ),
-                  ),
-                  child: _isVerifyingOtp
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          'Verify',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                ),
-                const SizedBox(height: 10), // Add space below the Verify button
-                if (_isOtpTimerActive) // Show timer if active
-                  Center(
-                    child: Text(
-                      'Resend code in $_otpTimerDuration seconds',
-                      style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
-                    ),
-                  ),
-                if (!_isOtpTimerActive && !_isEmailVerified) // Show resend button if timer finished and not verified
-                   Center(
-                    child: TextButton(
-                      onPressed: _resendOtp,
-                      child: Text(
-                        'Resend Code',
-                        style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 30), // Add space before Submit button
-              ],
+              // Removed _buildTextField for _confirmEmailController
+              // Removed OTP input field and related buttons
 
-              // Submit Button (only enabled after verification)
+              //   Column(
+              //     children: [
+              //       const SizedBox(height: 16),
+              //       _buildTextField(
+              
+              //         labelText: \'Verification Code\',
+              //         keyboardType: TextInputType.number,
+              //         textTheme: textTheme,
+              //         validator: (value) {
+              //           if (value == null || value.isEmpty) {
+              //             return \'Please enter the verification code\';
+              //           }
+              //           return null;
+              //         },
+              //       ),
+              //       const SizedBox(height: 16),
+              //       _isVerifyingOtp
+              //           ? const CircularProgressIndicator()
+              //           : ElevatedButton(
+              //               onPressed: _verifyOtp,
+              //               child: const Text(\'Verify Email\'),
+              //             ),
+              //       const SizedBox(height: 16),
+              //       if (_isOtpTimerActive)
+              //         Text(
+              //           \'Resend OTP in \${_otpTimerDuration}s\',
+              //           style: textTheme.bodySmall?.copyWith(color: Colors.white),
+              //         )
+              //       else
+              //         TextButton(
+              //           onPressed: _resendOtp,
+              //           child: const Text(\'Resend OTP\', style: TextStyle(color: Colors.white)),
+              //         ),
+              //     ],
+              //   ),
+              const SizedBox(height: 30),
               ElevatedButton(
-                onPressed: _isEmailVerified ? _submitUserInfo : null, // Enable only if verified
+                onPressed: _submitUserInfo,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _isEmailVerified ? const Color(0xFFFFFFFF) : Colors.grey, // White background when enabled, grey when disabled
-                  foregroundColor: _isEmailVerified ? const Color(0xFF6F5ADC) : Colors.white, // Purple text when enabled, white when disabled
-                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  backgroundColor: const Color(0xFF6F5ADC), // Purple background
+                  foregroundColor: const Color(0xFFFFFFFF), // White text
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30.0),
                   ),

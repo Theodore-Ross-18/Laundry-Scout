@@ -13,13 +13,13 @@ import '../../services/form_persistence_service.dart';
 import '../../services/location_service.dart';
 
 class SetBusinessProfileScreen extends StatefulWidget {
-  final String username;
+  final String? username;
   final String businessName; // Add businessName parameter
   final String exactLocation; // Add exactLocation parameter
 
   const SetBusinessProfileScreen({
     super.key,
-    required this.username,
+    this.username,
     required this.businessName, // Require businessName
     required this.exactLocation, // Require exactLocation
   });
@@ -118,12 +118,14 @@ class _SetBusinessProfileScreenState extends State<SetBusinessProfileScreen> {
             _emailController.text = response['email'] ?? user.email ?? '';
           });
         }
-      } catch (e) {
-        // If no profile data exists, use user email from auth
-        if (mounted && user.email != null) {
+      } on PostgrestException catch (e) {
+        if (e.code == 'PGRST116' && mounted && user.email != null) { // PGRST116 indicates no rows found
           setState(() {
             _emailController.text = user.email!;
           });
+        } else {
+          // Re-throw or handle other PostgrestExceptions
+          print('Error fetching user data: ${e.message}');
         }
       }
     }

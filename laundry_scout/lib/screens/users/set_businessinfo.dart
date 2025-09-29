@@ -10,8 +10,8 @@ import 'set_businessprofile.dart';
 import '../../services/form_persistence_service.dart';
 
 class SetBusinessInfoScreen extends StatefulWidget {
-  final String username;
-  const SetBusinessInfoScreen({super.key, required this.username});
+  final String? username;
+  const SetBusinessInfoScreen({super.key, this.username});
 
   @override
   _SetBusinessInfoScreenState createState() => _SetBusinessInfoScreenState();
@@ -30,12 +30,12 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   final _businessNameController = TextEditingController();
   final _businessAddressController = TextEditingController();
   final _emailController = TextEditingController();
-  final _otpController = TextEditingController();
+
   final _confirmEmailController = TextEditingController();
 
-  // File? _birFile; // Old
-  // File? _certificateFile; // Old
-  // File? _permitFile; // Old
+  // Removed _birFile
+  // Removed _certificateFile
+  // Removed _permitFile
   PlatformFile? _birFile; // New
   PlatformFile? _certificateFile; // New
   PlatformFile? _permitFile; // New
@@ -45,8 +45,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   bool _isSubmitting = false;
   bool _submissionComplete = false;
 
-  Timer? _otpTimer; // Timer for OTP countdown
-  int _otpTimerDuration = 60; // Initial duration in seconds
+
   bool _isOtpTimerActive = false; // Track if OTP timer is running
 
 
@@ -75,6 +74,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     if (user != null && user.email != null) {
       _emailController.text = user.email!;
     }
+    // Set _isEmailVerified to true as email is verified in verification_screen.dart
+    _isEmailVerified = true;
     
     // Load saved form data
     _loadSavedFormData();
@@ -143,10 +144,10 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     _businessNameController.dispose();
     _businessAddressController.dispose();
     _emailController.dispose();
-    _otpController.dispose();
+
     _confirmEmailController.dispose();
     _timer?.cancel(); // Cancel slide timer
-    _otpTimer?.cancel(); // Cancel OTP timer
+    // Removed _otpTimer?.cancel();
     super.dispose();
   }
 
@@ -171,94 +172,9 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     });
   }
 
-  Future<void> _verifyOtp() async {
-    final email = _emailController.text.trim();
-    final otp = _otpController.text.trim();
-    if (email.isEmpty || otp.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter email and verification code')),
-      );
-      return;
-    }
-    setState(() { _isVerifyingOtp = true; });
-
-    // Start the timer when verification is attempted
-    _startOtpTimer();
-
-    try {
-      final AuthResponse res = await Supabase.instance.client.auth.verifyOTP(
-        type: OtpType.email, email: email, token: otp,
-      );
-      if (res.user != null) {
-        if (mounted) {
-          setState(() { _isEmailVerified = true; });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Email verified successfully!')),
-          );
-          _otpTimer?.cancel(); // Stop the timer on success
-          _isOtpTimerActive = false; // Update state
-        }
-      } else {
-         if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Verification failed. Please try again.')),
-            );
-         }
-      }
-    } on AuthException catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Verification failed: ${error.message}')),
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('An unexpected error occurred: ${error.toString()}')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isVerifyingOtp = false;
-          // Timer continues if verification failed, stops if successful (handled above)
-        });
-      }
-    }
-  }
-
-  // Function to start the OTP countdown timer
-  void _startOtpTimer() {
-    _otpTimer?.cancel(); // Cancel any existing timer
-    _otpTimerDuration = 60; // Reset duration
-    _isOtpTimerActive = true; // Set timer active state
-
-    _otpTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_otpTimerDuration < 1) {
-        timer.cancel();
-        if (mounted) {
-          setState(() {
-            _isOtpTimerActive = false; // Timer finished
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            _otpTimerDuration--;
-          });
-        }
-      }
-    });
-  }
-
-  // Function to resend OTP (placeholder)
-  void _resendOtpBusiness() {
-    // TODO: Implement actual OTP resend logic here
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Resending OTP... Please wait...')),
-    );
-    _startOtpTimer(); // Restart the timer
-  }
+  // Removed _verifyOtp() method
+  // Removed _startOtpTimer() method
+  // Removed _resendOtpBusiness() method
 
 
   Future<void> _pickFile(Function(PlatformFile) onFilePicked, String fileTypeLabel) async {
@@ -307,12 +223,13 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   }
 
   Future<void> _submitBusinessInfo() async {
-    if (!_isEmailVerified) {
-       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please verify your email first.')),
-        );
-        return;
-    }
+    // Removed check if email is verified before submitting
+    // if (!_isEmailVerified) {
+    //    ScaffoldMessenger.of(context).showSnackBar(
+    //       const SnackBar(content: Text(\'Please verify your email first.\')),
+    //     );
+    //     return;
+    // }
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -320,12 +237,13 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
       );
       return;
     }
-    if (_confirmEmailController.text.trim() != _emailController.text.trim()) {
-       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Confirmed email must match your registered email.')),
-        );
-        return;
-    }
+    // Removed check for confirmed email matching the email entered
+    // if (_confirmEmailController.text.trim() != _emailController.text.trim()) {
+    //    ScaffoldMessenger.of(context).showSnackBar(
+    //       const SnackBar(content: Text(\'Confirmed email must match your registered email.\')),
+    //     );
+    //     return;
+    // }
 
     // Add checks for required files here
     if (_birFile == null) {
@@ -676,51 +594,62 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 },
               ),
               const SizedBox(height: 10),
-              if (!_isEmailVerified) ...[
-                _buildFormTextField(
-                  controller: _otpController,
-                  labelText: 'Verification Code (OTP)',
-                  keyboardType: TextInputType.number,
-                  textTheme: textTheme,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Please enter the OTP';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: (_isVerifyingOtp || _isOtpTimerActive) ? null : _verifyOtp, // Disable while verifying or timer is active
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6F5ADC), // Purple background
-                    foregroundColor: const Color(0xFFFFFFFF), // White text
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-                  ),
-                  child: _isVerifyingOtp
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-                      : const Text('Verify', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                ),
-                const SizedBox(height: 10), // Add space below the Verify button
-                if (_isOtpTimerActive) // Show timer if active
-                  Center(
-                    child: Text(
-                      'Resend code in $_otpTimerDuration seconds',
-                      style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
-                    ),
-                  ),
-                if (!_isOtpTimerActive && !_isEmailVerified) // Show resend button if timer finished and not verified
-                   Center(
-                    child: TextButton(
-                      onPressed: _resendOtpBusiness,
-                      child: Text(
-                        'Resend Code',
-                        style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 30), // Add space before file pickers
-              ],
-
+              // Removed OTP verification section
+              // if (!_isEmailVerified) ...[
+              //   const SizedBox(height: 16),
+              //   _buildTextField(
+              //     controller: _otpController,
+              //     labelText: \'Verification Code\',
+              //     keyboardType: TextInputType.number,
+              //     textTheme: textTheme,
+              //   ),
+              //   const SizedBox(height: 16),
+              //   ElevatedButton(
+              //     onPressed: (_isVerifyingOtp || _isOtpTimerActive) ? null : _verifyOtp,
+              //     style: ElevatedButton.styleFrom(
+              //       backgroundColor: const Color(0xFF6F5ADC),
+              //       foregroundColor: const Color(0xFFFFFFFF),
+              //       padding: const EdgeInsets.symmetric(vertical: 15),
+              //       shape: RoundedRectangleBorder(
+              //         borderRadius: BorderRadius.circular(30.0),
+              //       ),
+              //     ),
+              //     child: _isVerifyingOtp
+              //         ? const SizedBox(
+              //             height: 20,
+              //             width: 20,
+              //             child: CircularProgressIndicator(
+              //               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              //               strokeWidth: 2,
+              //             ),
+              //           )
+              //         : const Text(
+              //             \'Verify\',
+              //             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              //           ),
+              //   ),
+              //   const SizedBox(height: 10),
+              //   if (_isOtpTimerActive)
+              //     Center(
+              //       child: Text(
+              
+              //         style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
+              //       ),
+              //     ),
+              //   if (!_isOtpTimerActive && !_isEmailVerified)
+              //     Center(
+              //       child: TextButton(
+              //         onPressed: _resendOtpBusiness,
+              //         child: Text(
+              //           \'Resend Code\',
+              //           style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
+              //         ),
+              //       ),
+              //     ),
+              //   const SizedBox(height: 30),
+              // ],
+              // File Upload Section
+              const SizedBox(height: 30),
               _buildFileUploadField(
                 label: 'Attach BIR Registration',
                 file: _birFile,
