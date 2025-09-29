@@ -6,6 +6,8 @@ import 'dart:io'; // Import for File class
 import '../../../widgets/optimized_image.dart';
 import 'package:laundry_scout/screens/home/Owner/owner_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:laundry_scout/screens/home/User/business_detail_screen.dart'; // Import for BusinessDetailScreen
+import 'package:flutter/foundation.dart' show kIsWeb; // Import for kIsWeb
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -826,6 +828,55 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           icon: const Icon(Icons.arrow_back, color: Color(0xFF7B61FF)),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // Create a temporary businessData map for preview
+              final Map<String, dynamic> previewBusinessData = {
+                'id': _businessProfile!['id'],
+                'business_name': _businessNameController.text.trim(),
+                'business_address': _businessAddressController.text.trim(),
+                'latitude': _latitude,
+                'longitude': _longitude,
+                'about_business': _aboutUsController.text.trim(),
+                'does_delivery': _deliveryAvailable,
+                'terms_and_conditions': _termsAndConditionsController.text.trim(),
+                'services_offered': _selectedServices,
+                'service_prices': _pricelist,
+                'open_hours_text': _openHoursController.text.trim(),
+                'available_pickup_time_slots': _pickupSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
+                'available_dropoff_time_slots': _dropoffSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
+                'cover_photo_url': _coverPhotoUrl, // Pass existing URL
+                // Pass the selected image file for preview if available
+                '_coverPhotoFile': _selectedImageFile != null
+                    ? PlatformFile(
+                        name: _selectedImageFile!.path.split('/').last,
+                        size: _selectedImageFile!.lengthSync(),
+                        path: _selectedImageFile!.path,
+                        bytes: kIsWeb ? _selectedImageBytes : null,
+                      )
+                    : null,
+              };
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BusinessDetailScreen(
+                    businessData: previewBusinessData,
+                  ),
+                ),
+              );
+            },
+            child: const Text(
+              'Preview',
+              style: TextStyle(
+                color: Color(0xFF7B61FF),
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
