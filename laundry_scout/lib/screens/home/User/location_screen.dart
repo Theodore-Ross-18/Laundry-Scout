@@ -155,52 +155,93 @@ class _LocationScreenState extends State<LocationScreen> {
                     ],
                   ),
                 )
-              : FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-                    initialZoom: 14.0,
-                  ),
+              : Stack(
                   children: [
-                    TileLayer(
-                      urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                      subdomains: const ['a', 'b', 'c'],
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        // User's current location marker
-                        Marker(
-                          width: 80.0,
-                          height: 80.0,
-                          point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-                          child: const Icon(
-                            Icons.my_location,
-                            color: Colors.blue,
-                            size: 40.0,
-                          ),
-                        ),
-                        // Business markers
-                        ..._businessProfiles.map((business) {
-                          final lat = business['latitude'];
-                          final lng = business['longitude'];
-                          if (lat != null && lng != null) {
-                            return Marker(
-                              width: 80.0,
-                              height: 80.0,
-                              point: LatLng(lat, lng),
-                              child: GestureDetector(
-                                onTap: () => _onTapBusinessMarker(business),
-                                child: const Icon(
-                                  Icons.local_laundry_service,
-                                  color: Colors.red,
-                                  size: 40.0,
-                                ),
+                    Column(
+                      children: [
+                        Expanded(
+                          child: FlutterMap(
+                              mapController: _mapController,
+                              options: MapOptions(
+                                initialCenter: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                                initialZoom: 14.0,
                               ),
-                            );
-                          }
-                          return Marker(point: LatLng(0,0), child: Container()); // Placeholder for null lat/lng
-                        }).toList(),
+                              children: [
+                                TileLayer(
+                                  urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                                  subdomains: const ['a', 'b', 'c'],
+                                ),
+                                MarkerLayer(
+                                  markers: [
+                                    // User's current location marker
+                                    Marker(
+                                      width: 80.0,
+                                      height: 80.0,
+                                      point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                                      child: const Icon(
+                                        Icons.my_location,
+                                        color: Colors.blue,
+                                        size: 40.0,
+                                      ),
+                                    ),
+                                    // Business markers
+                                    ..._businessProfiles.map((business) {
+                                      final lat = business['latitude'];
+                                      final lng = business['longitude'];
+                                      if (lat != null && lng != null) {
+                                        return Marker(
+                                          width: 80.0,
+                                          height: 80.0,
+                                          point: LatLng(lat, lng),
+                                          child: GestureDetector(
+                                            onTap: () => _onTapBusinessMarker(business),
+                                            child: const Icon(
+                                              Icons.local_laundry_service,
+                                              color: Colors.green,
+                                              size: 40.0,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                      return Marker(point: LatLng(0,0), child: Container()); // Placeholder for null lat/lng
+                                    }).toList(),
+                                  ],
+                                ),
+                              ],
+                            ),
+                        ),
                       ],
+                    ),
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: Container(
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(8.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                              spreadRadius: 1,
+                              blurRadius: 3,
+                              offset: const Offset(0, 2), // changes position of shadow
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.my_location, color: Colors.blue, size: 20.0),
+                            const SizedBox(width: 5),
+                            const Text('You', style: TextStyle(color: Colors.black)),
+                            const SizedBox(width: 20),
+                            const Icon(Icons.local_laundry_service, color: Colors.green, size: 20.0),
+                            const SizedBox(width: 5),
+                            const Text('Laundry Shop', style: TextStyle(color: Colors.black)),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
