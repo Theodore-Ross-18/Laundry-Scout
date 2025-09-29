@@ -8,10 +8,14 @@ import 'package:flutter/foundation.dart' show kIsWeb; // Add this import
 import 'package:mime/mime.dart'; 
 import '../../services/form_persistence_service.dart';
 import '../home/Owner/owner_home_screen.dart';
+import 'package:uuid/uuid.dart'; // Import the uuid package
 
 class SetBusinessInfoScreen extends StatefulWidget {
   final String? username;
-  const SetBusinessInfoScreen({super.key, this.username});
+  final bool isBranch; // New parameter
+  final String? ownerId; // New parameter
+
+  const SetBusinessInfoScreen({super.key, this.username, this.isBranch = false, this.ownerId});
 
   @override
   _SetBusinessInfoScreenState createState() => _SetBusinessInfoScreenState();
@@ -66,6 +70,9 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.isBranch) {
+      _showForm = true; // Skip slides if adding a branch
+    }
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null && user.email != null) {
       _emailController.text = user.email!;
@@ -310,10 +317,13 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
         return;
       }
       try {
+        // Determine the ID to use for the business profile
+        final String businessProfileId = widget.isBranch ? Uuid().v4() : user.id;
+
         await Supabase.instance.client
             .from('business_profiles')
             .upsert({
-              'id': user.id,
+              'id': businessProfileId,
               'username': widget.username,
               'owner_first_name': _firstNameController.text.trim(),
               'owner_last_name': _lastNameController.text.trim(),
@@ -324,12 +334,17 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
               'bir_registration_url': birUrl,
               'business_certificate_url': certificateUrl,
               'mayors_permit_url': permitUrl,
+              'is_branch': widget.isBranch, // Set is_branch
+              'owner_id': widget.ownerId, // Set owner_id
             });
         if (mounted) {
           setState(() {
             _isSubmitting = false;
             _submissionComplete = true;
           });
+          if (widget.isBranch) {
+            Navigator.of(context).pop(true); // Go back to AddBranchScreen and indicate success
+          }
         }
       } catch (error) {
         if (mounted) {
