@@ -836,17 +836,6 @@ class _LocationScreenState extends State<LocationScreen> {
       },
     );
   }
-
-  void _launchPhoneCall(String phoneNumber) {
-    // This method will be implemented to handle phone calls
-    // For now, show a snackbar indicating the action
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Would call: $phoneNumber'),
-      ),
-    );
-  }
-
   // Helper methods for network status display
   IconData _getNetworkIcon() {
     switch (_networkSpeed) {
