@@ -32,7 +32,7 @@ class _LocationScreenState extends State<LocationScreen> {
 
     if (permission == LocationPermission.denied) {
       setState(() {
-        _locationPermissionMessage = "Location permissions are denied. Please allow location access to view the map.";
+        _locationPermissionMessage = "Please allow location access to view the nearby laundry shops in the map";
         _isLoading = false;
       });
     } else if (permission == LocationPermission.deniedForever) {
@@ -167,6 +167,7 @@ class _LocationScreenState extends State<LocationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF6F5ADC),
       appBar: AppBar(
         title: const Text('Nearby Laundry Shops'),
         backgroundColor: const Color(0xFF6F5ADC),
@@ -179,10 +180,20 @@ class _LocationScreenState extends State<LocationScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(_locationPermissionMessage, textAlign: TextAlign.center),
+                      Icon(
+                        Icons.location_on,
+                        color: Colors.white,
+                        size: 110.0,
+                      ),
+                      SizedBox(height: 20),
+                      Text(_locationPermissionMessage, textAlign: TextAlign.center, style: TextStyle(color: Colors.white)),
                       const SizedBox(height: 20),
                       ElevatedButton(
                         onPressed: _requestLocationPermission,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF6F5ADC),
+                          foregroundColor: Colors.white,
+                        ),
                         child: const Text('Allow Location Access'),
                       ),
                     ],
