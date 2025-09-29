@@ -6,8 +6,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb; // Add this import
 // For Supabase uploadBinary, you might need mime type. Add to pubspec.yaml: mime: ^1.0.4
 import 'package:mime/mime.dart'; 
-import 'set_businessprofile.dart';
 import '../../services/form_persistence_service.dart';
+import '../home/Owner/owner_home_screen.dart';
 
 class SetBusinessInfoScreen extends StatefulWidget {
   final String? username;
@@ -807,16 +807,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
             const SizedBox(height: 30),
             ElevatedButton(
               onPressed: () {
-                // Clear saved form data on successful submission
-                FormPersistenceService.clearBusinessInfoData();
                 Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => SetBusinessProfileScreen(
-                      username: widget.username,
-                      businessName: _businessNameController.text.trim(),
-                      exactLocation: _businessAddressController.text.trim(),
-                    ),
-                  ),
+                  MaterialPageRoute(builder: (context) => const OwnerHomeScreen()),
                 );
               },
               style: ElevatedButton.styleFrom(

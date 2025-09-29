@@ -5,7 +5,6 @@ import 'package:laundry_scout/screens/home/User/home_screen.dart';
 import 'package:laundry_scout/screens/home/Owner/owner_home_screen.dart';
 import 'package:laundry_scout/screens/users/set_userinfo.dart';
 import 'package:laundry_scout/screens/users/set_businessinfo.dart';
-import 'package:laundry_scout/screens/users/set_businessprofile.dart';
 
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
@@ -54,11 +53,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
           break;
         case 'incomplete_business_profile':
           // User has completed business info but hasn't set up business profile
-          targetScreen = SetBusinessProfileScreen(
-            username: profileState['username'] ?? 'User',
-            businessName: profileState['business_name'] ?? '',
-            exactLocation: profileState['exact_location'] ?? '',
-          );
+          targetScreen = const OwnerHomeScreen();
           break;
         case 'incomplete_user_info':
           // User has started user setup but hasn't completed user info
