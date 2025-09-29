@@ -107,10 +107,10 @@ class _LocationScreenState extends State<LocationScreen> {
             children: [
               Text(
                 businessData['business_name'] ?? 'Unknown Business',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
               ),
               const SizedBox(height: 8),
-              Text(businessData['business_address'] ?? 'No address provided'),
+              Text(businessData['business_address'] ?? 'No address provided', style: const TextStyle(color: Colors.black)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
