@@ -37,6 +37,9 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
 
   final _confirmEmailController = TextEditingController();
 
+  final _branchPasswordController = TextEditingController(); // New
+  final _branchStaffController = TextEditingController(); // New
+
   // Removed _birFile
   // Removed _certificateFile
   // Removed _permitFile
@@ -110,6 +113,9 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
 
   // Load saved form data
   Future<void> _loadSavedFormData() async {
+    if (widget.isBranch) {
+      return; // Do not load saved data if adding a branch
+    }
     final savedData = await FormPersistenceService.loadBusinessInfoData();
     if (savedData != null && mounted) {
       setState(() {
@@ -149,6 +155,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     _emailController.dispose();
 
     _confirmEmailController.dispose();
+    _branchPasswordController.dispose(); // New
+    _branchStaffController.dispose(); // New
     _timer?.cancel(); // Cancel slide timer
     // Removed _otpTimer?.cancel();
     super.dispose();
@@ -336,6 +344,10 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
               'mayors_permit_url': permitUrl,
               'is_branch': widget.isBranch, // Set is_branch
               'owner_id': widget.ownerId, // Set owner_id
+              if (widget.isBranch) ...{
+                'branch_password': _branchPasswordController.text.trim(),
+                'branch_staff': _branchStaffController.text.trim().split(',').map((e) => e.trim()).toList(),
+              },
             });
         if (mounted) {
           setState(() {
@@ -593,6 +605,40 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 },
               ),
               const SizedBox(height: 10),
+              if (widget.isBranch) ...[
+                _buildFormTextField(
+                  controller: _branchPasswordController,
+                  labelText: 'Branch Password',
+                  obscureText: true,
+                  textTheme: textTheme,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a password for the branch';
+                    }
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _branchStaffController,
+                  decoration: InputDecoration(
+                    labelText: 'Branch Staff (comma-separated emails)',
+                    labelStyle: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.7)),
+                    filled: true,
+                    fillColor: Colors.white.withValues(alpha: 0.1),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Colors.white)),
+                  ),
+                  style: textTheme.bodyMedium?.copyWith(color: Colors.white),
+                  keyboardType: TextInputType.text,
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 20),
+              ],
               _buildFormTextField(
                 controller: _confirmEmailController, // Use confirm email controller
                 labelText: 'Confirm Email Address',

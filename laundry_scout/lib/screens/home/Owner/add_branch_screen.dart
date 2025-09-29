@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../users/set_businessinfo.dart'; // Import the SetBusinessInfoScreen
+import 'branch_detail_screen.dart'; // Import the BranchDetailScreen
 
 class AddBranchScreen extends StatefulWidget {
   const AddBranchScreen({super.key});
@@ -81,7 +82,13 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                         subtitle: Text(branch['business_address'] ?? 'N/A'),
                         trailing: const Icon(Icons.arrow_forward_ios),
                         onTap: () {
-                          // TODO: Navigate to branch details or edit screen
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => BranchDetailScreen(
+                                branchId: branch['id'],
+                              ),
+                            ),
+                          );
                         },
                       ),
                     );
