@@ -18,6 +18,8 @@ class _LocationScreenState extends State<LocationScreen> {
   String _locationPermissionMessage = "Location permission not granted.";
   List<Map<String, dynamic>> _businessProfiles = [];
   final MapController _mapController = MapController();
+  double _searchRadius = 1.0; // Initial search radius in kilometers
+  bool _foundLaundryShops = false; // Track if any shops are found within the radius
 
   @override
   void initState() {
@@ -66,7 +68,9 @@ class _LocationScreenState extends State<LocationScreen> {
       setState(() {
         _currentPosition = position;
       });
-      _fetchBusinessProfiles();
+      print('Current Location: Latitude: ${_currentPosition!.latitude}, Longitude: ${_currentPosition!.longitude}');
+      _mapController.move(LatLng(_currentPosition!.latitude, _currentPosition!.longitude), _mapController.zoom); // Move map to current location
+      _fetchBusinessProfiles(radius: _searchRadius);
     } catch (e) {
       setState(() {
         _locationPermissionMessage = "Could not get your location: $e";
@@ -75,7 +79,10 @@ class _LocationScreenState extends State<LocationScreen> {
     }
   }
 
-  Future<void> _fetchBusinessProfiles() async {
+  Future<void> _fetchBusinessProfiles({double? radius}) async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
       final response = await Supabase.instance.client
           .from('business_profiles')
@@ -83,9 +90,31 @@ class _LocationScreenState extends State<LocationScreen> {
           .not('latitude', 'is', null)
           .not('longitude', 'is', null);
 
+      List<Map<String, dynamic>> allBusinessProfiles = List<Map<String, dynamic>>.from(response);
+      List<Map<String, dynamic>> filteredProfiles = [];
+
+      if (_currentPosition != null) {
+        for (var business in allBusinessProfiles) {
+          final lat = business['latitude'];
+          final lng = business['longitude'];
+          if (lat != null && lng != null) {
+            final distance = _calculateDistance(
+              _currentPosition!.latitude,
+              _currentPosition!.longitude,
+              lat,
+              lng,
+            );
+            if (distance <= (radius ?? _searchRadius)) {
+              filteredProfiles.add(business);
+            }
+          }
+        }
+      }
+
       setState(() {
-        _businessProfiles = List<Map<String, dynamic>>.from(response);
+        _businessProfiles = filteredProfiles;
         _isLoading = false;
+        _foundLaundryShops = filteredProfiles.isNotEmpty;
       });
     } catch (e) {
       setState(() {
@@ -93,6 +122,10 @@ class _LocationScreenState extends State<LocationScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    return Geolocator.distanceBetween(lat1, lon1, lat2, lon2) / 1000; // Distance in kilometers
   }
 
   void _onTapBusinessMarker(Map<String, dynamic> businessData) {
@@ -161,9 +194,15 @@ class _LocationScreenState extends State<LocationScreen> {
                       children: [
                         Expanded(
                           child: FlutterMap(
+                              key: ValueKey(_currentPosition), // Add key to force rebuild on location change
                               mapController: _mapController,
                               options: MapOptions(
-                                initialCenter: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                                center: _currentPosition != null
+                                    ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+                                    : LatLng(0, 0), // Default to (0,0) or a sensible fallback
+                                zoom: 13.0,
+                                minZoom: 10.0,
+                                maxZoom: 18.0,
                                 initialZoom: 14.0,
                               ),
                               children: [
@@ -241,6 +280,57 @@ class _LocationScreenState extends State<LocationScreen> {
                             const Text('Laundry Shop', style: TextStyle(color: Colors.black)),
                           ],
                         ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 16,
+                      left: 16,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.9),
+                              borderRadius: BorderRadius.circular(8.0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 1,
+                                  blurRadius: 3,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              'Search Radius: ${_searchRadius.toStringAsFixed(0)} km',
+                              style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          if (!_foundLaundryShops && _searchRadius < 6.0) // Only show button if no shops found and radius is less than max
+                            SizedBox(
+                              width: 200, // Adjust width as needed
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  setState(() {
+                                    _searchRadius = (_searchRadius + 1.0).clamp(1.0, 6.0);
+                                  });
+                                  _fetchBusinessProfiles(radius: _searchRadius);
+                                },
+                                icon: const Icon(Icons.search), // Add an icon to the button
+                                label: const Text('Locate Laundry'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF6F5ADC), // Use the theme color
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), // Adjust padding
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ],
