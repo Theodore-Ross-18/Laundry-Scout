@@ -123,103 +123,9 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     });
   }
 
-  // Function to verify OTP
-  Future<void> _verifyOtp() async {
-    final email = _emailController.text.trim(); // Use the pre-filled email for verification
-    
-
-    if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter email and verification code')),
-      );
-      return;
-    }
-
-    setState(() {
-      
-    });
-
-    // Start the timer when verification is attempted
-    _startOtpTimer();
-
-    try {
-      final AuthResponse res = await Supabase.instance.client.auth.verifyOTP(
-        type: OtpType.email,
-        email: email,
-        token: '',
-      );
-
-      if (res.user != null) {
-        // OTP verification successful
-        if (mounted) {
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Email verified successfully!')),
-          );
-      
-      
-        }
-      } else {
-         // Handle cases where user is null but no exception was thrown (shouldn't happen with verifyOTP usually)
-         if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Verification failed. Please try again.')),
-            );
-         }
-      }
-
-    } on AuthException catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Verification failed: ${error.message}')),
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('An unexpected error occurred: ${error.toString()}')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-
-          // Timer continues if verification failed, stops if successful (handled above)
-        });
-      }
-    }
-  }
-
-  // Function to start the OTP countdown timer
-  void _startOtpTimer() {
-
-
-
-
-
-
-  }
-
-  // Function to resend OTP (placeholder)
-  void _resendOtp() {
-    // TODO: Implement actual OTP resend logic here
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Resending OTP... Please wait...')),
-    );
-    _startOtpTimer(); // Restart the timer
-  }
-
 
   Future<void> _submitUserInfo() async {
-    // Removed check if email is verified before submitting
     
-    //    ScaffoldMessenger.of(context).showSnackBar(
-    //       const SnackBar(content: Text(\'Please verify your email first.\')),
-    //     );
-    //     return; // Stop the submission process
-    // }
-
-    // Get current user ID
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
       // Handle case where user is not logged in (shouldn't happen if flow is correct)
@@ -228,14 +134,6 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
       );
       return;
     }
-
-    // Removed check for confirmed email matching the email entered
-    // if (_confirmEmailController.text.trim() != _emailController.text.trim()) {
-    //    ScaffoldMessenger.of(context).showSnackBar(
-    //       const SnackBar(content: Text(\'Confirmed email must match your registered email.\')),
-    //     );
-    //     return; // Stop the submission process
-    // }
 
 
     if (_formKey.currentState!.validate()) {

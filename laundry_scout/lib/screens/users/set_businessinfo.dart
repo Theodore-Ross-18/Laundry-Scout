@@ -41,12 +41,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   PlatformFile? _permitFile; // New
 
   bool _isEmailVerified = false;
-  bool _isVerifyingOtp = false;
   bool _isSubmitting = false;
   bool _submissionComplete = false;
-
-
-  bool _isOtpTimerActive = false; // Track if OTP timer is running
 
 
   final List<Map<String, String>> slides = [
