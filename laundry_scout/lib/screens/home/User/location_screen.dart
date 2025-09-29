@@ -69,7 +69,7 @@ class _LocationScreenState extends State<LocationScreen> {
         _currentPosition = position;
       });
       print('Current Location: Latitude: ${_currentPosition!.latitude}, Longitude: ${_currentPosition!.longitude}');
-      _mapController.move(LatLng(_currentPosition!.latitude, _currentPosition!.longitude), _mapController.zoom); // Move map to current location
+      _mapController.move(LatLng(_currentPosition!.latitude, _currentPosition!.longitude), 14.0); // Move map to current location and set zoom
       _fetchBusinessProfiles(radius: _searchRadius);
     } catch (e) {
       setState(() {
@@ -210,6 +210,19 @@ class _LocationScreenState extends State<LocationScreen> {
                                   urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                                   subdomains: const ['a', 'b', 'c'],
                                 ),
+                                if (_currentPosition != null)
+                                  CircleLayer(
+                                    circles: [
+                                      CircleMarker(
+                                        point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                                        useRadiusInMeter: true, // ✅ use meters instead of pixels
+                                        radius: _searchRadius * 1000, // km → meters
+                                        color: const Color(0xFF6F5ADC).withOpacity(0.2),
+                                        borderColor: const Color(0xFF6F5ADC),
+                                        borderStrokeWidth: 2,
+                                      ),
+                                    ],
+                                  ),
                                 MarkerLayer(
                                   markers: [
                                     // User's current location marker
