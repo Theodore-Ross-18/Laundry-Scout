@@ -19,7 +19,7 @@ class _LocationScreenState extends State<LocationScreen> {
   List<Map<String, dynamic>> _businessProfiles = [];
   final MapController _mapController = MapController();
   double _searchRadius = 1.0; // Initial search radius in kilometers
-  bool _foundLaundryShops = false; // Track if any shops are found within the radius
+  // bool _foundLaundryShops = false; // Track if any shops are found within the radius
 
   @override
   void initState() {
@@ -64,11 +64,11 @@ class _LocationScreenState extends State<LocationScreen> {
     });
     try {
       Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
+          desiredAccuracy: LocationAccuracy.best);
       setState(() {
         _currentPosition = position;
       });
-      print('Current Location: Latitude: ${_currentPosition!.latitude}, Longitude: ${_currentPosition!.longitude}');
+      print('Current Location: Latitude: ${_currentPosition!.latitude}, Longitude: ${_currentPosition!.longitude}, Accuracy: ${position.accuracy}m');
       _mapController.move(LatLng(_currentPosition!.latitude, _currentPosition!.longitude), 14.0); // Move map to current location and set zoom
       _fetchBusinessProfiles(radius: _searchRadius);
     } catch (e) {
@@ -114,7 +114,7 @@ class _LocationScreenState extends State<LocationScreen> {
       setState(() {
         _businessProfiles = filteredProfiles;
         _isLoading = false;
-        _foundLaundryShops = filteredProfiles.isNotEmpty;
+        // _foundLaundryShops = filteredProfiles.isNotEmpty;
       });
     } catch (e) {
       setState(() {
@@ -332,13 +332,13 @@ class _LocationScreenState extends State<LocationScreen> {
                             ),
                           ),
                           const SizedBox(height: 10),
-                          if (!_foundLaundryShops && _searchRadius < 6.0) // Only show button if no shops found and radius is less than max
+                          if (_searchRadius < 10.0) // Only show button if radius is less than max
                             SizedBox(
                               width: 200, // Adjust width as needed
                               child: ElevatedButton.icon(
                                 onPressed: () {
                                   setState(() {
-                                    _searchRadius = (_searchRadius + 1.0).clamp(1.0, 6.0);
+                                    _searchRadius = (_searchRadius + 1.0).clamp(1.0, 10.0);
                                   });
                                   _fetchBusinessProfiles(radius: _searchRadius);
                                 },
