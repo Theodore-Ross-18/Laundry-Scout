@@ -11,6 +11,8 @@ class OrderConfirmationScreen extends StatefulWidget {
   final String termsAndConditions; // New
   final double? latitude; // New
   final double? longitude; // New
+  final String? firstName; // New
+  final String? lastName; // New
 
   const OrderConfirmationScreen({
     super.key,
@@ -22,6 +24,8 @@ class OrderConfirmationScreen extends StatefulWidget {
     required this.termsAndConditions, // New
     this.latitude, // New
     this.longitude, // New
+    this.firstName, // New
+    this.lastName, // New
   });
 
   @override
@@ -278,6 +282,15 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
+                              '${widget.firstName ?? ''} ${widget.lastName ?? ''}', // Customer Name
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                            const SizedBox(height: 4), // Small space between name and address
+                            Text(
                               widget.address,
                               style: TextStyle(
                                 fontSize: 16,
@@ -506,6 +519,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         'order_number': orderId,
         'user_id': userId,
         'business_id': businessId,
+        'customer_name': '${widget.firstName ?? ''} ${widget.lastName ?? ''}', // New
 
         // 'user_name': userName, // Removed as it's not in the schema
         'pickup_address': widget.address,

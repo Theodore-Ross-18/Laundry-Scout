@@ -85,7 +85,7 @@ class OrderDetailsScreen extends StatelessWidget {
                         style: TextStyle(fontSize: 16, color: Colors.black),
                       ),
                       Text(
-                        order[''] ?? 'N/A',
+                        order['customer_name'] ?? 'N/A',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
