@@ -393,7 +393,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     }
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        leading: widget.isBranch ? const BackButton() : null,
         title: const Text(''),
         actions: _showForm && !_isSubmitting && !_submissionComplete
             ? null
@@ -606,6 +606,22 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
               ),
               const SizedBox(height: 10),
               if (widget.isBranch) ...[
+                TextFormField(
+                  controller: _branchStaffController,
+                  decoration: InputDecoration(
+                    labelText: 'Branch Staff (Username)',
+                    labelStyle: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.7)),
+                    filled: true,
+                    fillColor: Colors.white.withValues(alpha: 0.1),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Colors.white)),
+                  ),
+                  style: textTheme.bodyMedium?.copyWith(color: Colors.white),
+                  keyboardType: TextInputType.text,
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 20),
                 _buildFormTextField(
                   controller: _branchPasswordController,
                   labelText: 'Branch Password',
@@ -620,22 +636,6 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                     }
                     return null;
                   },
-                ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: _branchStaffController,
-                  decoration: InputDecoration(
-                    labelText: 'Branch Staff (comma-separated emails)',
-                    labelStyle: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.7)),
-                    filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.1),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Colors.white)),
-                  ),
-                  style: textTheme.bodyMedium?.copyWith(color: Colors.white),
-                  keyboardType: TextInputType.text,
-                  maxLines: 3,
                 ),
                 const SizedBox(height: 20),
               ],

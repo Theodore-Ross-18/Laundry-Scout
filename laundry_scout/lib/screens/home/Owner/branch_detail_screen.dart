@@ -64,17 +64,52 @@ class _BranchDetailScreenState extends State<BranchDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildDetailRow('Business Name', _branchDetails!['business_name']),
-                      _buildDetailRow('Address', _branchDetails!['business_address']),
-                      _buildDetailRow('Phone Number', _branchDetails!['business_phone_number']),
-                      _buildDetailRow('Email', _branchDetails!['email']),
-                      _buildDetailRow('About', _branchDetails!['about_business']),
-                      _buildDetailRow('Services Offered', _branchDetails!['services_offered']?.toString()),
-                      _buildDetailRow('Does Delivery', _branchDetails!['does_delivery']?.toString()),
-                      _buildDetailRow('Is Online', _branchDetails!['is_online']?.toString()),
-                      _buildDetailRow('Availability Status', _branchDetails!['availability_status']),
-                      _buildDetailRow('Operating Hours', _branchDetails!['open_hours_text']),
-                      _buildDetailRow('Terms and Conditions', _branchDetails!['terms_and_conditions']),
+                      _buildSectionHeader('Business Information'),
+                      Card(
+                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              _buildDetailRow('Business Name', _branchDetails!['business_name']),
+                              _buildDetailRow('Address', _branchDetails!['business_address']),
+                              _buildDetailRow('Phone Number', _branchDetails!['business_phone_number']),
+                              _buildDetailRow('Email', _branchDetails!['email']),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildSectionHeader('About & Services'),
+                      Card(
+                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              _buildDetailRow('About', _branchDetails!['about_business']),
+                              _buildDetailRow('Services Offered', _branchDetails!['services_offered']?.toString()),
+                              _buildDetailRow('Does Delivery', (_branchDetails!['does_delivery'] as bool?) == true ? 'Yes' : 'No'),
+                              _buildDetailRow('Is Online', (_branchDetails!['is_online'] as bool?) == true ? 'Yes' : 'No'),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildSectionHeader('Operational Details'),
+                      Card(
+                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              _buildDetailRow('Availability Status', _branchDetails!['availability_status']),
+                              _buildDetailRow('Operating Hours', _branchDetails!['open_hours_text']),
+                              _buildDetailRow('Terms and Conditions', _branchDetails!['terms_and_conditions']),
+                            ],
+                          ),
+                        ),
+                      ),
                       // Add more fields as needed
                     ],
                   ),
@@ -82,26 +117,34 @@ class _BranchDetailScreenState extends State<BranchDetailScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String? value) {
+  Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '$label:',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value ?? 'N/A',
-            style: const TextStyle(fontSize: 16),
-          ),
-        ],
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Color.fromARGB(255, 255, 255, 255), // Changed to black
+        ),
       ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String? value) {
+    return ListTile(
+      title: Text(
+        label,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+      ),
+      subtitle: Text(
+        value ?? 'N/A',
+        style: const TextStyle(fontSize: 16),
+      ),
+      contentPadding: EdgeInsets.zero, // Remove default ListTile padding
     );
   }
 }
