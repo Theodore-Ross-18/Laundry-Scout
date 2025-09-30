@@ -26,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> _promos = []; 
   List<Map<String, dynamic>> _filteredLaundryShops = []; 
   Map<String, dynamic> _currentFilters = {};
+  int _activeOrdersCount = 0; // Add this line
 
   final TextEditingController _searchController = TextEditingController(); 
   final ScrollController _scrollController = ScrollController(); // Add this line
@@ -56,6 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
         loadUserProfile: _loadUserProfile,
         loadLaundryShops: _loadLaundryShops,
         loadPromos: _loadPromos,
+        activeOrdersCount: _activeOrdersCount, // Add this line
       ),
       const LocationScreen(),
       const LaundryScreen(),
@@ -65,6 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
      // Add listener to update HomeScreenBody when _userName changes, for example
     // This is a simplified way; for more complex state updates, consider a state management solution
     // or ensure data is passed reactively.
+    _loadActiveOrdersCount(); // Call the new function
   }
 
   // Method to update HomeScreenBody when data changes
@@ -85,6 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
         loadUserProfile: _loadUserProfile,
         loadLaundryShops: _loadLaundryShops,
         loadPromos: _loadPromos,
+        activeOrdersCount: _activeOrdersCount, // Add this line
       );
     });
   }
@@ -320,6 +324,42 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
   
+  Future<void> _loadActiveOrdersCount() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) {
+        setState(() {
+          _activeOrdersCount = 0;
+        });
+        return;
+      }
+
+      final countResponse = await Supabase.instance.client
+          .from('orders')
+          .select('id')
+          .eq('user_id', user.id)
+          .inFilter('status', ['pending', 'confirmed', 'in_progress', 'ready'])
+          .count();
+
+      if (mounted) {
+        setState(() {
+          _activeOrdersCount = countResponse.count;
+          _updateHomeScreenBodyState();
+        });
+      }
+    } catch (e) {
+      print('Error loading active orders count: $e');
+      if (mounted) {
+        setState(() {
+          _activeOrdersCount = 0;
+          _updateHomeScreenBodyState();
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading active orders count: $e')),
+        );
+      }
+    }
+  }
 
   void _onItemTapped(int index) {
     if (!mounted) return;
@@ -357,6 +397,7 @@ class _HomeScreenState extends State<HomeScreen> {
         loadUserProfile: _loadUserProfile,
         loadLaundryShops: _loadLaundryShops,
         loadPromos: _loadPromos,
+        activeOrdersCount: _activeOrdersCount, // Add this line
       );
 
     final user = Supabase.instance.client.auth.currentUser;
@@ -433,6 +474,7 @@ class HomeScreenBody extends StatelessWidget {
   final Future<void> Function() loadUserProfile;
   final Future<void> Function() loadLaundryShops;
   final Future<void> Function() loadPromos;
+  final int activeOrdersCount; // Add this line
 
   const HomeScreenBody({
     super.key,
@@ -449,6 +491,7 @@ class HomeScreenBody extends StatelessWidget {
     required this.loadUserProfile,
     required this.loadLaundryShops,
     required this.loadPromos,
+    required this.activeOrdersCount, // Add this line
   });
 
   Widget _buildAvailabilityStatus(String? availabilityStatus) {
@@ -560,6 +603,7 @@ class HomeScreenBody extends StatelessWidget {
                             ),
                           ],
                         ),
+
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -586,6 +630,7 @@ class HomeScreenBody extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 20),
+
                     Row(
                       children: [
                         Expanded(
@@ -644,7 +689,7 @@ class HomeScreenBody extends StatelessWidget {
                       children: [
                         Icon(Icons.assignment, size: 40, color: Colors.grey[700]),
                         const SizedBox(height: 4),
-                        const Text('0 Active orders', style: TextStyle(color: Colors.black)),
+                        Text('$activeOrdersCount Active orders', style: TextStyle(color: Colors.black)),
                       ],
                     ),
                     Column(
@@ -662,7 +707,7 @@ class HomeScreenBody extends StatelessWidget {
               if (!isSearching) // Use passed isSearching
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(
+                   child: Text(
                     'Promos',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
