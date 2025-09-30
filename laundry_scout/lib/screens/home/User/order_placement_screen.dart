@@ -760,12 +760,19 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
   }
 
   void _continueToConfirmation() {
+    if (_currentAddressController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a delivery address.')),
+      );
+      return;
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => OrderConfirmationScreen(
           businessData: widget.businessData,
-          address: _selectedAddress!,
+          address: _currentAddressController.text,
           services: _selectedServices,
           schedule: _selectedSchedule!,
           specialInstructions: _specialInstructions,

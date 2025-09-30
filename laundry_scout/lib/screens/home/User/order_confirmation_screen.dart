@@ -268,6 +268,23 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                               ),
                             ),
                             const SizedBox(height: 24),
+                            const Text(
+                              'Delivery Address',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              widget.address,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
                             
                             // Status
                             const Text(
@@ -492,6 +509,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
         // 'user_name': userName, // Removed as it's not in the schema
         'pickup_address': widget.address,
+        'delivery_address': widget.address, // Set delivery address
         'items': widget.services, // Store services as JSON in 'items'
         'pickup_schedule': widget.schedule['pickup'], // Store pickup schedule as string
         'dropoff_schedule': widget.schedule['dropoff'], // Store dropoff schedule as string
