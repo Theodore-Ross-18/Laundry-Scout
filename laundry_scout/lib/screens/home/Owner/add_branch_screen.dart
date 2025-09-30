@@ -80,7 +80,16 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                       child: ListTile(
                         title: Text(branch['business_name'] ?? 'N/A'),
                         subtitle: Text(branch['business_address'] ?? 'N/A'),
-                        trailing: const Icon(Icons.arrow_forward_ios),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _confirmDeleteBranch(branch['id']),
+                            ),
+                            const Icon(Icons.arrow_forward_ios),
+                          ],
+                        ),
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
@@ -121,5 +130,58 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  Future<void> _confirmDeleteBranch(String branchId) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Confirm Delete',
+            style: TextStyle(color: Colors.black), // Make title text black
+          ),
+          content: const Text(
+            'Are you sure you want to delete this branch?',
+            style: TextStyle(color: Colors.black),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.black), // Make Cancel text black
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      _deleteBranch(branchId);
+    }
+  }
+
+  Future<void> _deleteBranch(String branchId) async {
+    try {
+      await _supabase.from('business_profiles').delete().eq('id', branchId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Branch deleted successfully!')),
+        );
+        _fetchBranches(); // Refresh the list after deletion
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting branch: $e')),
+        );
+      }
+    }
   }
 }
