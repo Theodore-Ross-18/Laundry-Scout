@@ -379,7 +379,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                           ),
                                         ),
                                         Text(
-                                          '₱${_servicePrices[service]?.toStringAsFixed(0)}',
+                                          '₱${_servicePrices[service.split(' (')[0]]?.toStringAsFixed(0)}',
                                           style: const TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
