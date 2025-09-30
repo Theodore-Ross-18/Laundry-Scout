@@ -70,7 +70,10 @@ class _LocationScreenState extends State<LocationScreen> {
       });
       print('Current Location: Latitude: ${_currentPosition!.latitude}, Longitude: ${_currentPosition!.longitude}, Accuracy: ${position.accuracy}m');
       _mapController.move(LatLng(_currentPosition!.latitude, _currentPosition!.longitude), 14.0); // Move map to current location and set zoom
-      _fetchBusinessProfiles(radius: _searchRadius);
+      await _fetchBusinessProfiles(radius: _searchRadius);
+      setState(() {
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() {
         _locationPermissionMessage = "Could not get your location: $e";
@@ -80,9 +83,6 @@ class _LocationScreenState extends State<LocationScreen> {
   }
 
   Future<void> _fetchBusinessProfiles({double? radius}) async {
-    setState(() {
-      _isLoading = true;
-    });
     try {
       final response = await Supabase.instance.client
           .from('business_profiles')
@@ -113,13 +113,11 @@ class _LocationScreenState extends State<LocationScreen> {
 
       setState(() {
         _businessProfiles = filteredProfiles;
-        _isLoading = false;
         // _foundLaundryShops = filteredProfiles.isNotEmpty;
       });
     } catch (e) {
       setState(() {
         _locationPermissionMessage = "Error fetching business profiles: $e";
-        _isLoading = false;
       });
     }
   }
