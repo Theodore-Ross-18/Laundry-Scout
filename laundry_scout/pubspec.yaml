@@ -32,6 +32,7 @@ dependencies:
   pdf: ^3.10.4
   printing: ^5.11.0
   geolocator_web: ^4.0.0 # Added geolocator_web dependency
+  flutter_svg: ^2.0.10+1
 
 dev_dependencies:
   flutter_test:
@@ -53,6 +54,7 @@ flutter:
     - lib/assets/user/slides/second.png
     - lib/assets/user/slides/third.png
     - lib/assets/promo_example.png
+    - lib/assets/laundry_logo.svg
   
   fonts:
     - family: Poppins
