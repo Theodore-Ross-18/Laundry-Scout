@@ -28,7 +28,7 @@ dependencies:
   latlong2: ^0.9.1
   geocoding: ^3.0.0
   http: ^1.1.0
-  intl: ^0.19.0
+  intl: ^0.20.2
   pdf: ^3.10.4
   printing: ^5.11.0
   geolocator_web: ^4.0.0 # Added geolocator_web dependency

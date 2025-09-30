@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'package:laundry_scout/screens/home/User/order_details.dart';
+import 'package:intl/intl.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -476,7 +477,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                                 ),
                               ),
                               title: Text(
-                                'Order ID: ${order['order_number'] ?? 'N/A'}',
+                                'Order ID : #${order['order_number'] ?? 'N/A'}',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black,
@@ -488,7 +489,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                                 children: [
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Status: ${order['status'] ?? 'N/A'}',
+                                    '${order['customer_name'] ?? 'N/A'} (${order['items'] ?? 'N/A'})',
                                     style: TextStyle(
                                       color: Colors.grey[600],
                                       fontSize: 14,
@@ -496,21 +497,20 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Total: ₱${order['total_amount']?.toStringAsFixed(2) ?? '0.00'}',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _formatTime(order['created_at']),
+                                    'Ordered at ${DateFormat('h:mma, MMMM dd, yyyy').format(DateTime.parse(order['created_at']))}',
                                     style: TextStyle(
                                       color: Colors.grey[500],
                                       fontSize: 12,
                                     ),
                                   ),
                                 ],
+                              ),
+                              trailing: Chip(
+                                label: Text(
+                                  order['status'] ?? 'N/A',
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                                backgroundColor: Colors.blueAccent,
                               ),
                               onTap: () {
                                 Navigator.push(
