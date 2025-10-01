@@ -68,6 +68,22 @@ class _OrdersScreenState extends State<OrdersScreen> {
     }
   }
 
+  Future<void> _setOrderAsComplete(String orderId) async {
+    try {
+      await Supabase.instance.client
+          .from('orders')
+          .update({'status': 'completed'})
+          .eq('id', orderId);
+      _loadOrders(); // Refresh the list after updating
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating order status: $e')),
+        );
+      }
+    }
+  }
+
   List<Map<String, dynamic>> get _filteredOrders {
     if (_selectedFilter == 'pending_orders') {
       return _orders.where((order) =>
@@ -264,16 +280,25 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   'Ordered at ${DateFormat('h:mm a, MMMM dd, yyyy').format(createdAt)}',
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => OwnerOrderDetailsScreen(order: order),
+                Row(
+                  children: [
+                    if (status == 'pending' || status == 'in_progress')
+                      TextButton(
+                        onPressed: () => _setOrderAsComplete(order['id']),
+                        child: const Text('Set as Complete', style: TextStyle(color: Color(0xFF7B61FF))),
                       ),
-                    );
-                  },
-                  child: const Text('View', style: TextStyle(color: Colors.black)),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OwnerOrderDetailsScreen(order: order),
+                          ),
+                        );
+                      },
+                      child: const Text('View', style: TextStyle(color: Colors.black)),
+                    ),
+                  ],
                 ),
               ],
             ),
