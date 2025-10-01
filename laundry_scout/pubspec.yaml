@@ -33,6 +33,7 @@ dependencies:
   printing: ^5.11.0
   geolocator_web: ^4.0.0 # Added geolocator_web dependency
   flutter_svg: ^2.0.10+1
+  open_route_service: ^1.2.2
 
 dev_dependencies:
   flutter_test:
