@@ -595,11 +595,69 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                   },
                   child: const Text('View', style: TextStyle(color: Colors.black)),
                 ),
+                if (status == 'pending')
+                  TextButton(
+                    onPressed: () {
+                      _cancelOrder(order['id']);
+                    },
+                    child: const Text('Cancel Order', style: TextStyle(color: Colors.red)),
+                  ),
               ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _cancelOrder(String orderId) async {
+    final bool confirm = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Cancel Order'),
+          content: const Text('Are you sure you want to cancel this order?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Yes'),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
+
+    if (confirm) {
+      try {
+        await Supabase.instance.client
+            .from('orders')
+            .update({'status': 'cancelled'})
+            .eq('id', orderId);
+
+        _loadOrders(); // Refresh orders after cancellation
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Order cancelled successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to cancel order: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 }

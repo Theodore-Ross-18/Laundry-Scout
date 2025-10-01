@@ -56,16 +56,20 @@ class OwnerOrderDetailsScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.blue.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         order['status'] ?? 'N/A',
                         style: const TextStyle(
-                          color: Colors.black,
+                          color: Colors.blue,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                    ),
+                    const Text(
+                      'Status',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
 
                   ],
@@ -98,7 +102,7 @@ class OwnerOrderDetailsScreen extends StatelessWidget {
                         style: TextStyle(fontSize: 16, color: Colors.black),
                       ),
                       Text(
-                        order['items']?.toString() ?? 'N/A',
+                        order['service_type'] ?? 'N/A',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -139,7 +143,7 @@ class OwnerOrderDetailsScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
                       const Text(
-                        'Special Instructions:',
+                        'Note:',
                         style: TextStyle(fontSize: 16, color: Colors.black),
                       ),
                       Text(
@@ -180,7 +184,7 @@ class OwnerOrderDetailsScreen extends StatelessWidget {
                 ),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       const Text(
                         'Payment balance',
