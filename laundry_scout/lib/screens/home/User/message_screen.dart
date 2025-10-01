@@ -322,20 +322,27 @@ class _MessageScreenState extends State<MessageScreen> {
                                               Row(
                                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                 children: [
-                                                  Text(
-                                                    business['business_name'] ?? 'Business',
-                                                    style: const TextStyle(
-                                                      fontWeight: FontWeight.w600,
-                                                      fontSize: 16,
-                                                      color: Colors.black,
+                                                  Expanded(
+                                                    child: Text(
+                                                      business['business_name'] ?? 'Business',
+                                                      style: const TextStyle(
+                                                        fontWeight: FontWeight.w600,
+                                                        fontSize: 16,
+                                                        color: Colors.black,
+                                                      ),
+                                                      overflow: TextOverflow.ellipsis,
+                                                      maxLines: 2,
                                                     ),
                                                   ),
                                                   if (lastMessage != null)
-                                                    Text(
-                                                      _formatTime(lastMessage['created_at']),
-                                                      style: TextStyle(
-                                                        color: Colors.grey[500],
-                                                        fontSize: 12,
+                                                    Flexible(
+                                                      child: Text(
+                                                        _formatTime(lastMessage['created_at']),
+                                                        style: TextStyle(
+                                                          color: Colors.grey[500],
+                                                          fontSize: 12,
+                                                        ),
+                                                        overflow: TextOverflow.ellipsis,
                                                       ),
                                                     ),
                                                 ],
