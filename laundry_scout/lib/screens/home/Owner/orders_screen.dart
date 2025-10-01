@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:laundry_scout/screens/home/Owner/owner_order_details.dart';
 
@@ -82,35 +79,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return []; // Should not happen with current filters
   }
 
-  Future<void> _updateOrderStatus(String orderId, String newStatus) async {
-    try {
-      await Supabase.instance.client
-          .from('orders')
-          .update({'status': newStatus})
-          .eq('id', orderId);
 
-      // Refresh orders
-      _loadOrders();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Order status updated to $newStatus'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update order: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {

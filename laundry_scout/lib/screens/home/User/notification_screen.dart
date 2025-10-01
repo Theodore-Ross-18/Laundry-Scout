@@ -4,7 +4,6 @@ import 'dart:async';
 import 'package:laundry_scout/screens/home/User/order_details.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:laundry_scout/screens/home/Owner/owner_order_details.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
