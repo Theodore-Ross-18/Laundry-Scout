@@ -4,6 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:laundry_scout/screens/home/Owner/owner_order_details.dart';
+
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -15,7 +18,7 @@ class OrdersScreen extends StatefulWidget {
 class _OrdersScreenState extends State<OrdersScreen> {
   List<Map<String, dynamic>> _orders = [];
   bool _isLoading = true;
-  String _selectedFilter = 'all';
+  String _selectedFilter = 'pending_orders';
 
   @override
   void initState() {
@@ -69,8 +72,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   List<Map<String, dynamic>> get _filteredOrders {
-    if (_selectedFilter == 'all') return _orders;
-    return _orders.where((order) => order['status'] == _selectedFilter).toList();
+    if (_selectedFilter == 'pending_orders') {
+      return _orders.where((order) =>
+          order['status'] == 'pending' || order['status'] == 'in_progress').toList();
+    } else if (_selectedFilter == 'past_orders') {
+      return _orders.where((order) =>
+          order['status'] == 'completed' || order['status'] == 'cancelled').toList();
+    }
+    return []; // Should not happen with current filters
   }
 
   Future<void> _updateOrderStatus(String orderId, String newStatus) async {
@@ -122,13 +131,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                _buildFilterChip('all', 'All'),
+                _buildFilterChip('pending_orders', 'Pending Orders'),
                 const SizedBox(width: 8),
-                _buildFilterChip('pending', 'Pending'),
-                const SizedBox(width: 8),
-                _buildFilterChip('in_progress', 'In Progress'),
-                const SizedBox(width: 8),
-                _buildFilterChip('completed', 'Completed'),
+                _buildFilterChip('past_orders', 'Past Orders'),
               ],
             ),
           ),
@@ -185,14 +190,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
     );
   }
 
+
   Widget _buildOrderCard(Map<String, dynamic> order) {
-     final customerFirstName = order['user_profiles']?['first_name'] ?? 'N/A';
-     final customerLastName = order['user_profiles']?['last_name'] ?? '';
-     final customerName = '$customerFirstName $customerLastName'.trim();
-     final orderNumber = order['order_number'] ?? 'N/A';
-     final status = order['status'] ?? 'pending';
-     final createdAt = DateTime.parse(order['created_at']);
-     final totalAmount = order['total_amount']?.toDouble() ?? 0.0;
+    final customerFirstName = order['user_profiles']?['first_name'] ?? '';
+    final customerLastName = order['user_profiles']?['last_name'] ?? '';
+    final customerName = '$customerFirstName $customerLastName'.trim();
+    final orderNumber = order['order_number'] ?? '';
+    final status = order['status'] ?? 'pending';
+    final createdAt = DateTime.parse(order['created_at']);
 
     Color statusColor;
     switch (status) {
@@ -240,13 +245,19 @@ class _OrdersScreenState extends State<OrdersScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Order #$orderNumber',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.black, // Changed text color to black
-                  ),
+                Row(
+                  children: [
+                    SvgPicture.asset('lib/assets/icons/laundry-machine.svg', width: 24, height: 24, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Order ID : #$orderNumber',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -255,7 +266,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    status.toUpperCase(),
+                    status.replaceAll('_', ' ').toUpperCase(),
                     style: TextStyle(
                       color: statusColor,
                       fontWeight: FontWeight.bold,
@@ -267,111 +278,35 @@ class _OrdersScreenState extends State<OrdersScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Customer: $customerName',
-              style: const TextStyle(fontSize: 14, color: Colors.black), // Changed text color to black
+              customerName,
+              style: const TextStyle(fontSize: 14, color: Colors.black),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 0),
             Text(
-              'Date: ${DateFormat('MMM dd, yyyy - hh:mm a').format(createdAt)}',
-              style: TextStyle(fontSize: 12, color: Colors.black), // Changed text color to black
+              '${order['service_type'] ?? ''}',
+              style: const TextStyle(fontSize: 14, color: Colors.black),
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Total: ₱${totalAmount.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.black, // Changed text color to black
-              ),
-            ),
-            if (status == 'pending') ...[
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => _updateOrderStatus(order['id'], 'in_progress'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Accept'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => _updateOrderStatus(order['id'], 'cancelled'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Decline'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            if (status == 'in_progress') ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _updateOrderStatus(order['id'], 'completed'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Mark as Completed'),
+            const SizedBox(height: 0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Ordered at ${DateFormat('h:mm a, MMMM dd, yyyy').format(createdAt)}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
-              ),
-            ],
-            if (status == 'completed') ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    final pdf = pw.Document();
-                    pdf.addPage(
-                      pw.Page(
-                        build: (pw.Context context) {
-                          return pw.Column(
-                            crossAxisAlignment: pw.CrossAxisAlignment.start,
-                            children: [
-                              pw.Text('Order Receipt', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
-                              pw.SizedBox(height: 16),
-                              pw.Text('Order #: $orderNumber'),
-                              pw.Text('Customer: $customerName'),
-                              pw.Text('Date: ${DateFormat('MMM dd, yyyy - hh:mm a').format(createdAt)}'),
-                              pw.Text('Total: ₱${totalAmount.toStringAsFixed(2)}'),
-                              // pw.Text('Payment Method: ${order['payment_method'] ?? 'N/A'}'),
-                              // pw.Text('Payment Balance: ₱${order['payment_balance']?.toStringAsFixed(2) ?? '0.00'}'),
-                            ],
-                          );
-                        },
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OwnerOrderDetailsScreen(order: order),
                       ),
                     );
-                    await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdf.save());
                   },
-                  icon: const Icon(Icons.download, size: 18),
-                  label: const Text('Download Receipt'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[800],
-                    foregroundColor: Colors.white,
-                  ),
+                  child: const Text('View', style: TextStyle(color: Colors.black)),
                 ),
-              ),
-            ],
-            // Text(
-            //   'Payment Method: ${order['payment_method'] ?? 'N/A'}',
-            //   style: const TextStyle(fontSize: 14, color: Colors.black), // Changed text color to black
-            // ),
-            // const SizedBox(height: 4),
-            // Text(
-            //   'Payment Balance: ₱${order['payment_balance']?.toStringAsFixed(2) ?? '0.00'}',
-            //   style: const TextStyle(fontSize: 14, color: Colors.black), // Changed text color to black
-            // ),
+              ],
+            ),
           ],
         ),
       ),

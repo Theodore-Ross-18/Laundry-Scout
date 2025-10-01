@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'package:laundry_scout/screens/home/User/order_details.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:laundry_scout/screens/home/Owner/owner_order_details.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -76,9 +78,24 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
           .eq('user_id', user.id)
           .order('created_at', ascending: false);
 
+      // Now, for each order, fetch the user_profile data
+      List<Map<String, dynamic>> ordersWithUserDetails = [];
+      for (var order in response) {
+        final userId = order['user_id'];
+        if (userId != null) {
+          final userProfileResponse = await Supabase.instance.client
+              .from('user_profiles')
+              .select('first_name, last_name')
+              .eq('id', userId)
+              .single();
+          order['user_profiles'] = userProfileResponse; // Attach user profile to the order
+        }
+        ordersWithUserDetails.add(order);
+      }
+
       if (mounted) {
         setState(() {
-          _orders = List<Map<String, dynamic>>.from(response);
+          _orders = List<Map<String, dynamic>>.from(ordersWithUserDetails);
           _ordersLoading = false;
         });
       }
@@ -335,7 +352,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                         ),
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.only(top: 20),
+                        padding: const EdgeInsets.all(16),
                         itemCount: _notifications.length,
                         itemBuilder: (context, index) {
                           final notification = _notifications[index];
@@ -451,81 +468,137 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                         ),
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.only(top: 20),
+                        padding: const EdgeInsets.all(16),
                         itemCount: _orders.length,
                         itemBuilder: (context, index) {
                           final order = _orders[index];
-                          return Container(
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.grey.withOpacity(0.2),
-                              ),
-                            ),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: Colors.green.withOpacity(0.1),
-                                child: const Icon(
-                                  Icons.shopping_bag,
-                                  color: Colors.green,
-                                  size: 20,
-                                ),
-                              ),
-                              title: Text(
-                                'Order ID : #${order['order_number'] ?? 'N/A'}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${order['customer_name'] ?? 'N/A'} (${order['items'] ?? 'N/A'})',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Ordered at ${DateFormat('h:mma, MMMM dd, yyyy').format(DateTime.parse(order['created_at']))}',
-                                    style: TextStyle(
-                                      color: Colors.grey[500],
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              trailing: Chip(
-                                label: Text(
-                                  order['status'] ?? 'N/A',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                                backgroundColor: Colors.blueAccent,
-                              ),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => OrderDetailsScreen(order: order),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
+                          return _buildOrderCard(order);
                         },
                       ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildOrderCard(Map<String, dynamic> order) {
+    final customerFirstName = order['user_profiles']?['first_name'] ?? '';
+    final customerLastName = order['user_profiles']?['last_name'] ?? '';
+    final customerName = '$customerFirstName $customerLastName'.trim();
+    final orderNumber = order['order_number'] ?? '';
+    final status = order['status'] ?? 'pending';
+    final createdAt = DateTime.parse(order['created_at']);
+
+    Color statusColor;
+    switch (status) {
+      case 'pending':
+        statusColor = Colors.orange;
+        break;
+      case 'in_progress':
+        statusColor = Colors.blue;
+        break;
+      case 'completed':
+        statusColor = Colors.green;
+        break;
+      case 'cancelled':
+        statusColor = Colors.red;
+        break;
+      default:
+        statusColor = Colors.grey;
+    }
+
+    Color statusBgColor;
+    switch (status) {
+      case 'pending':
+        statusBgColor = Colors.orange.withOpacity(0.15);
+        break;
+      case 'in_progress':
+        statusBgColor = Colors.blue.withOpacity(0.15);
+        break;
+      case 'completed':
+        statusBgColor = Colors.green.withOpacity(0.15);
+        break;
+      case 'cancelled':
+        statusBgColor = Colors.red.withOpacity(0.15);
+        break;
+      default:
+        statusBgColor = Colors.grey.withOpacity(0.15);
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    SvgPicture.asset('lib/assets/icons/laundry-machine.svg', width: 24, height: 24, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Order ID : #$orderNumber',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusBgColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    status.replaceAll('_', ' ').toUpperCase(),
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              customerName,
+              style: const TextStyle(fontSize: 14, color: Colors.black),
+            ),
+            const SizedBox(height: 0),
+            Text(
+              '${order['service_type'] ?? ''}',
+              style: const TextStyle(fontSize: 14, color: Colors.black),
+            ),
+            const SizedBox(height: 0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Ordered at ${DateFormat('h:mm a, MMMM dd, yyyy').format(createdAt)}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OwnerOrderDetailsScreen(order: order),
+                      ),
+                    );
+                  },
+                  child: const Text('View', style: TextStyle(color: Colors.black)),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
