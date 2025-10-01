@@ -130,6 +130,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             color: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _buildFilterChip('pending_orders', 'Pending Orders'),
                 const SizedBox(width: 8),
