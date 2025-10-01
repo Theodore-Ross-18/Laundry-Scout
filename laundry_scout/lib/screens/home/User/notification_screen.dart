@@ -584,24 +584,28 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                   'Ordered at ${DateFormat('h:mm a, MMMM dd, yyyy').format(createdAt)}',
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => OwnerOrderDetailsScreen(order: order),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OrderDetailsScreen(order: order),
+                          ),
+                        );
+                      },
+                      child: const Text('View', style: TextStyle(color: Colors.black)),
+                    ),
+                    if (status == 'pending')
+                      TextButton(
+                        onPressed: () {
+                          _showCancelOrderDialog(context, order['id']);
+                        },
+                        child: const Text('Cancel Order', style: TextStyle(color: Colors.red)),
                       ),
-                    );
-                  },
-                  child: const Text('View', style: TextStyle(color: Colors.black)),
+                  ],
                 ),
-                if (status == 'pending')
-                  TextButton(
-                    onPressed: () {
-                      _cancelOrder(order['id']);
-                    },
-                    child: const Text('Cancel Order', style: TextStyle(color: Colors.red)),
-                  ),
               ],
             ),
           ],
@@ -610,8 +614,8 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
     );
   }
 
-  Future<void> _cancelOrder(String orderId) async {
-    final bool confirm = await showDialog(
+  void _showCancelOrderDialog(BuildContext context, String orderId) {
+    showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
@@ -619,44 +623,47 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
           content: const Text('Are you sure you want to cancel this order?'),
           actions: <Widget>[
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
               child: const Text('No'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
             ),
             TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Yes'),
+              child: const Text('Yes', style: TextStyle(color: Colors.red)),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _cancelOrder(orderId);
+              },
             ),
           ],
         );
       },
-    ) ?? false;
+    );
+  }
 
-    if (confirm) {
-      try {
-        await Supabase.instance.client
-            .from('orders')
-            .update({'status': 'cancelled'})
-            .eq('id', orderId);
-
-        _loadOrders(); // Refresh orders after cancellation
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Order cancelled successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to cancel order: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+  Future<void> _cancelOrder(String orderId) async {
+    try {
+      await Supabase.instance.client
+          .from('orders')
+          .update({'status': 'cancelled'})
+          .eq('id', orderId);
+      _loadOrders(); // Refresh the orders list
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order cancelled successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel order: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }

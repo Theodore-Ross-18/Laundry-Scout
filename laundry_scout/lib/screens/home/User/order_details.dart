@@ -53,19 +53,60 @@ class OrderDetailsScreen extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        order['status'] ?? 'N/A',
-                        style: const TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    Builder(
+                      builder: (context) {
+                        Color statusColor;
+                        switch (order['status']) {
+                          case 'pending':
+                            statusColor = Colors.orange;
+                            break;
+                          case 'in_progress':
+                            statusColor = Colors.blue;
+                            break;
+                          case 'completed':
+                            statusColor = Colors.green;
+                            break;
+                          case 'cancelled':
+                            statusColor = Colors.red;
+                            break;
+                          default:
+                            statusColor = Colors.grey;
+                        }
+
+                        Color statusBgColor;
+                        switch (order['status']) {
+                          case 'pending':
+                            statusBgColor = Colors.orange.withOpacity(0.15);
+                            break;
+                          case 'in_progress':
+                            statusBgColor = Colors.blue.withOpacity(0.15);
+                            break;
+                          case 'completed':
+                            statusBgColor = Colors.green.withOpacity(0.15);
+                            break;
+                          case 'cancelled':
+                            statusBgColor = Colors.red.withOpacity(0.15);
+                            break;
+                          default:
+                            statusBgColor = Colors.grey.withOpacity(0.15);
+                        }
+
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: statusBgColor,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            (order['status'] ?? 'N/A').replaceAll('_', ' ').toUpperCase(),
+                            style: TextStyle(
+                              color: statusColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     const Text(
                       'Status',
