@@ -58,12 +58,54 @@ function ClientDetail() {
         </p>
       </div>
 
-      {/* Dynamic Body Section */}
+      {/* Profile Sections */}
       <div className="client-body">
-        <h2>Profile Details</h2>
+        {/* Business Info */}
+        <h2>Business Information</h2>
+        <p>
+          <strong>Business Name:</strong> {client.business_name || "N/A"}
+        </p>
+        <p>
+          <strong>Business Address:</strong> {client.business_address || "N/A"}
+        </p>
+        <p>
+          <strong>Business Type:</strong> {client.business_type || "N/A"}
+        </p>
+
+        {/* Owner Info */}
+        <h2>Owner Information</h2>
+        <p>
+          <strong>Owner First Name:</strong> {client.owner_first_name || "N/A"}
+        </p>
+        <p>
+          <strong>Owner Last Name:</strong> {client.owner_last_name || "N/A"}
+        </p>
+        <p>
+          <strong>Owner Email:</strong> {client.owner_email || "N/A"}
+        </p>
+        <p>
+          <strong>Owner Phone:</strong> {client.owner_phone || "N/A"}
+        </p>
+
+        {/* Other Details */}
+        <h2>Additional Details</h2>
         {Object.entries(client).map(([key, value]) => {
-          // Skip system fields if you don’t want them
-          if (["id", "created_at", "cover_photo_url"].includes(key)) return null;
+          // skip system + already shown fields
+          if (
+            [
+              "id",
+              "created_at",
+              "cover_photo_url",
+              "business_name",
+              "business_address",
+              "business_type",
+              "owner_first_name",
+              "owner_last_name",
+              "owner_email",
+              "owner_phone",
+            ].includes(key)
+          )
+            return null;
 
           return (
             <p key={key}>

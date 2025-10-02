@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "../Supabase/supabaseClient";
 import "../Style/History.css";
-import { FiMenu, FiSearch } from "react-icons/fi";
+import { FiMenu, FiSearch, FiSettings } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import Notifications from "./Notifications";
 import Sidebar from "./Sidebar";
@@ -90,52 +90,31 @@ function History() {
         <header className="history-header">
           <div className="history-header-left">
             <div>
-              <h2 className="history-title">HISTORY</h2>
-              <p className="history-subtitle">Track all approval and rejection records</p>
+              <h2 className="history-title">History</h2>
+              <p className="history-subtitle">Track all approval and rejection records here.</p>
             </div>
           </div>
 
           {/* Header Icons: Notifications + Profile */}
-          <div className="history-header-icons">
-            <Notifications />
-            
-            <img
-              src="/path-to-avatar.jpg"
-              alt="Profile"
-              className="profile-avatar"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowSettings(!showSettings);
-              }}
-            />
-            {showSettings && (
-              <div
-                className="dropdown-panel"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div
-                  className="dropdown-item"
-                  onClick={() => navigate("/profile")}
-                >
-                  My Profile
-                </div>
-                <div
-                  className="dropdown-item"
-                  onClick={() => navigate("/settings")}
-                >
-                  Settings
-                </div>
-                <div
-                  className="dropdown-item"
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    navigate("/login");
-                  }}
-                >
-                  Logout
-                </div>
-              </div>
-            )}
+          <div className="applications-header-icons">
+            <div className="notification-wrapper">
+              <Notifications />
+            </div>
+            <div className="settings-wrapper">
+              <FiSettings
+                size={22}
+                className="settings-icon"
+                onClick={() => navigate("/settings")}
+              />
+            </div>
+            <div className="dropdown-wrapper">
+              <img
+                src="https://via.placeholder.com/32"
+                alt="profile"
+                className="profile-avatar"
+                onClick={() => navigate("/profile")}
+              />
+            </div>
           </div>
         </header>
 
@@ -178,8 +157,8 @@ function History() {
           </div>
 
           <div className="history-filter-right">
-            <button className="date-btn">19 Dec - 20 Dec 2024</button>
-            <button className="all-btn">All Transactions</button>
+            <button className="h-date-btn">19 Dec - 20 Dec 2024</button>
+            <button className="h-all-btn">All Transactions</button>
           </div>
         </div>
 

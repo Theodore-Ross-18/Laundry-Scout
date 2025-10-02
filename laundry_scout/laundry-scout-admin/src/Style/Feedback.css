@@ -22,17 +22,17 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 10px;
-  margin-bottom: 20px;
-
+  width: 100%;
+  border-bottom: 1px solid #c9c9c9;
+  padding: 0px 0px 12px 0px; 
 }
 
 .feedback-header-left {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 14px;
   border-bottom: 1px solid #c9c9c9;
-  padding: 12px 0px; 
+  padding: 12px 0px;
 
 }
 
@@ -67,12 +67,13 @@
   cursor: pointer;
   color: #555;
 }
-.profile-avatar {
+
+/* .profile-avatar {
   border-radius: 50%;
   width: 34px;
   height: 34px;
   object-fit: cover;
-}
+} */
 
 /* Tabs */
 .tabs {
@@ -140,9 +141,9 @@
 
 .feedback-title {
   color: #000000;
+  margin: 0 0 5px 0;
   font-size: 1.5rem;
   font-weight: 700;
-  margin: 0;
 }
 
 .feedback-subtitle {
@@ -191,6 +192,7 @@
   padding: 5px 10px;
   margin-right: 15px;
   border-radius: 10px;
+  border: 1px solid #e5e7eb;
 }
 
 .feedback-tabs .tab-button:not(.active):hover {

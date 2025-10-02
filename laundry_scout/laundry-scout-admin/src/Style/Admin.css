@@ -55,9 +55,8 @@ h3 {
   gap: 20px;
 }
 
-.profile-avatar {
-  flex-shrink: 0;
-}
+
+/* Avatar */
 
 .avatar-img {
   width: 90px;

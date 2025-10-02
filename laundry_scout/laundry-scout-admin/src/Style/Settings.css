@@ -1,5 +1,161 @@
-.settings-wrapper:hover {
+/* src/Style/Settings.css */
+
+/* 🌞 Light Theme (Default) */
+:root {
+  --bg-color: #f9f9fb;
+  --text-color: #333;
+  --card-bg: #fff;
+  --border-color: #ddd;
+  --muted-text: #666;
+  --primary-color: #6a5ae0;
+  --table-header-bg: #f7f7fa;
+}
+
+/* 🌙 Dark Theme */
+[data-theme="dark"] {
+  --bg-color: #1e1e2f;
+  --text-color: #f1f1f1;
+  --card-bg: #2a2a3d;
+  --border-color: #444;
+  --muted-text: #aaa;
+  --primary-color: #8c7fff;
+  --table-header-bg: #2d2d40;
+}
+
+/* ============================= */
+/* Layout */
+/* ============================= */
+.settings-root {
+  display: flex;
+  width: 100%;
+}
+
+.settings-main {
+  flex: 1;
+  min-height: 100vh; /* ✅ Full height, removes white strip */
+  background: var(--bg-color);
+  color: var(--text-color);
+  padding: 20px;
+  /* border-radius: 12px; */
+  font-family: "Inter", sans-serif;
+}
+
+/* ============================= */
+/* Header */
+/* ============================= */
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.settings-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.settings-subtitle {
+  font-size: 14px;
+  color: var(--muted-text);
+}
+
+.settings-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.icon {
+  font-size: 20px;
+  color: var(--text-color);
   cursor: pointer;
-  color: #6a5ae0;
-  transform: scale(1.1);
+  transition: opacity 0.2s ease;
+}
+
+.icon:hover {
+  opacity: 0.8;
+}
+
+.settings-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* ============================= */
+/* Profile */
+/* ============================= */
+.profile-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+/* Profile avatar style moved to App.css for consistency */
+
+/* ============================= */
+/* Cards */
+/* ============================= */
+.settings-card {
+  background: var(--card-bg);
+  color: var(--text-color);
+  padding: 15px 20px;
+  margin: 15px 0;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.settings-card h4 {
+  margin-bottom: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+/* ============================= */
+/* Appearance Toggle */
+/* ============================= */
+.appearance-toggle {
+  display: flex;
+  gap: 10px;
+}
+
+.appearance-toggle button {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--border-color);
+  color: var(--text-color);
+  transition: all 0.3s ease;
+}
+
+.appearance-toggle button:hover {
+  opacity: 0.9;
+}
+
+.appearance-toggle button.active {
+  background: var(--primary-color);
+  color: #fff;
+}
+
+/* ============================= */
+/* Language Dropdown */
+/* ============================= */
+.settings-card select {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-color);
+  outline: none;
+  transition: border 0.3s ease, background 0.3s ease;
+}
+
+.settings-card select:focus {
+  border-color: var(--primary-color);
 }
