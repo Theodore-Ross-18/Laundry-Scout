@@ -1,13 +1,14 @@
 /* Sidebar container */
 .sidebar {
   width: 230px;
-  background: #ffffff;
-  border-right: 1px solid #e5e5e5;
+  background: var(--card-bg); /* ✅ dynamic */
+  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   padding: 10px 0;
   justify-content: space-between;
   font-family: "Poppins", sans-serif;
+  color: var(--text-color); /* ✅ dynamic text */
 }
 
 .sidebar.closed {
@@ -20,7 +21,7 @@
   font-weight: 700;
   font-size: 20px;
   padding: 10px 15px;
-  color: #6c5ce7;
+  color: var(--primary-color);
 }
 
 .sidebar-content {
@@ -28,7 +29,7 @@
 }
 
 .sidebar ul {
-  border-top: 1px solid #e1e1e1;
+  border-top: 1px solid var(--border-color);
   list-style: none;
   padding: 0;
   margin: 0;
@@ -45,24 +46,24 @@
   align-items: center;
   gap: 24px;
   padding: 12px 20px;
-  color: #333;
+  color: var(--text-color); /* ✅ dynamic */
   text-decoration: none;
   font-weight: 500;
   border-radius: 8px;
   white-space: nowrap;
-  transition: all 0.3s ease; /* smooth hover transitions */
+  transition: all 0.3s ease;
 }
 
 /* Default icon */
 .sidebar li a .menu-icon {
   font-size: 18px;
   flex-shrink: 0;
-  color: #333;
+  color: var(--text-color); /* ✅ dynamic */
 }
 
-/* ✅ Active item (outer purple background + white text) */
+/* ✅ Active item */
 .sidebar nav ul li.active {
-  background: #6b4eff;
+  background: var(--primary-color);
   border-radius: 12px;
 }
 
@@ -75,12 +76,12 @@
   color: #ffffff;
 }
 
-/* ✅ Fixed Hover effect (does NOT push items down) */
+/* ✅ Hover effect */
 .sidebar li:not(.active) a:hover {
-  background: #6b4eff;
+  background: var(--primary-color);
   color: #ffffff;
   border-left: 4px solid #422cae;
-  padding-left: 16px; /* adjust for border so it doesn’t shift */
+  padding-left: 16px;
 }
 
 .sidebar li:not(.active) a:hover .menu-icon {
@@ -113,7 +114,7 @@
   border-left: 4px solid #be1515;
 }
 
-/* Closed sidebar (icons only) */
+/* Closed sidebar */
 .sidebar.closed .sidebar-title {
   opacity: 0;
   pointer-events: none;
