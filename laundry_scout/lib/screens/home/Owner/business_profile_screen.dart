@@ -87,12 +87,14 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
           children: [
             Icon(icon, color: Color(0xFF6C757D), size: 20),
             const SizedBox(width: 16),
-            Text(
-              title,
-              style: TextStyle(
-                color: Colors.black87,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
             Spacer(),
@@ -182,26 +184,28 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         const SizedBox(height: 32),
                         
                         // Profile Name
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: (_businessProfile!["business_name"] ?? "Don Ernesto"),
-                                style: TextStyle(
-                                  color: Color(0xFF7B61FF),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 24,
+                        Expanded(
+                          child: RichText(
+                            text: TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: (_businessProfile!["business_name"] ?? "Don Ernesto"),
+                                  style: TextStyle(
+                                    color: Color(0xFF7B61FF),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 24,
+                                  ),
                                 ),
-                              ),
-                              TextSpan(
-                                text: "'s Profile",
-                                style: TextStyle(
-                                  color: Colors.black87,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 24,
+                                TextSpan(
+                                  text: "'s Profile",
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 24,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                         

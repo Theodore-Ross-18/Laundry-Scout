@@ -282,17 +282,28 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    GestureDetector(
-                                      onTap: () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(builder: (context) => const OrdersScreen()),
-                                        );
-                                      },
-                                      child: _analyticsCard(Icons.history, '${_orderStats['total']}', 'Order History', Color(0xFF7B61FF)),
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(builder: (context) => const OrdersScreen()),
+                                          );
+                                        },
+                                        child: _analyticsCard(Icons.history, '${_orderStats['total']}', 'Order History', Color(0xFF7B61FF)),
+                                      ),
                                     ),
-                                    _analyticsCard(Icons.local_offer, '$_promoCount', 'Promos', Color(0xFF7B61FF)),
-                                    _analyticsCard(Icons.star_outline, '$_reviewCount', 'Reviews', Color(0xFF7B61FF)),
-                                    _slotAnalyticsCard(_businessProfile?['availability_status'] ?? 'Open Slots'),
+                                    const SizedBox(width: 8), // Add some spacing between cards
+                                    Expanded(
+                                      child: _analyticsCard(Icons.local_offer, '$_promoCount', 'Promos', Color(0xFF7B61FF)),
+                                    ),
+                                    const SizedBox(width: 8), // Add some spacing between cards
+                                    Expanded(
+                                      child: _analyticsCard(Icons.star_outline, '$_reviewCount', 'Reviews', Color(0xFF7B61FF)),
+                                    ),
+                                    const SizedBox(width: 8), // Add some spacing between cards
+                                    Expanded(
+                                      child: _slotAnalyticsCard(_businessProfile?['availability_status'] ?? 'Open Slots'),
+                                    ),
                                   ],
                                 ),
                               ],
