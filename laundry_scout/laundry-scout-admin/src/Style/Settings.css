@@ -94,13 +94,7 @@
   margin: 20px 0;
 }
 
-.profile-avatar {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--border-color);
-}
+/* Profile avatar style moved to App.css for consistency */
 
 /* ============================= */
 /* Cards */

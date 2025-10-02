@@ -166,7 +166,7 @@ function Dashboard() {
         <header className="dashboard-header">
           <div className="dashboard-header-left">
             <div>
-              <h2>DASHBOARD</h2>
+              <h2>Dashboard</h2>
               <div className="dashboard-date">{new Date().toDateString()}</div>
             </div>
           </div>

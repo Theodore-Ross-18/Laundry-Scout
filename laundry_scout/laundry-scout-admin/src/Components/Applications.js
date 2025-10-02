@@ -167,7 +167,7 @@ function Applications() {
         <header className="applications-header">
           <div className="applications-header-left">
             <div>
-              <h2 className="applications-title">APPLICATIONS</h2>
+              <h2 className="applications-title">Applications</h2>
               <p className="applications-subtitle">
                 All the Applicants Businesses waiting to be reviewed and Approved
               </p>

@@ -127,7 +127,7 @@ function Feedback() {
         <header className="feedback-header">
           <div>
             <h2 className="feedback-title">Feedback</h2>
-            <p className="feedback-subtitle">Showing all feedback from users and businesses</p>
+            <p className="feedback-subtitle">Showing all feedback from users and businesses here.</p>
           </div>
 
           {/* Notifications + Profile */}

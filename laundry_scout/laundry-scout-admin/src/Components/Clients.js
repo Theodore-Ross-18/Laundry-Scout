@@ -84,7 +84,7 @@ function Clients() {
         <header className="clients-header">
           <div className="clients-header-left">
             <div>
-              <h1 className="clients-title">CLIENTS</h1>
+              <h1 className="clients-title">Clients</h1>
               <p className="clients-subtitle">All Approved Laundry Businesses</p>
             </div>
           </div>

@@ -90,8 +90,8 @@ function History() {
         <header className="history-header">
           <div className="history-header-left">
             <div>
-              <h2 className="history-title">HISTORY</h2>
-              <p className="history-subtitle">Track all approval and rejection records</p>
+              <h2 className="history-title">History</h2>
+              <p className="history-subtitle">Track all approval and rejection records here.</p>
             </div>
           </div>
 

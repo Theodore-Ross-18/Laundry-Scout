@@ -31,13 +31,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
+  width: 100%;
+  padding: 0px 0px 12px 0px; 
   border-bottom: 1px solid var(--border-color);
 }
 
 .dashboard-header-left h2 {
-  margin: 0;
-  font-size: 1.6rem;
+  color: #000000;
+  margin: 0 0 5px 0;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-color);
 }
@@ -50,7 +52,9 @@
 .dashboard-header-icons {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 18px;
+  margin-left: auto;
+  position: relative;
 }
 
 /* Profile dropdown */

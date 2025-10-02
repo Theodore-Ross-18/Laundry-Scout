@@ -23,7 +23,7 @@
   align-items: center;
   width: 100%;
   border-bottom: 1px solid #c9c9c9;
-  padding: 12px 0px; 
+  padding: 0px 0px 12px 0px; 
 }
 .applications-header-left {
   display: flex;
@@ -33,7 +33,7 @@
 
 .applications-title {
   color: #000000;
-  margin: 0;
+  margin: 0 0 5px 0;
   font-size: 1.5rem;
   font-weight: 700;
 }
