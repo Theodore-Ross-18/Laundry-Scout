@@ -33,22 +33,25 @@ class OwnerOrderDetailsScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Order ID',
-                      style: TextStyle(fontSize: 16, color: Colors.black),
-                    ),
-                    Text(
-                      '#${order['order_number']}',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Order ID',
+                        style: TextStyle(fontSize: 16, color: Colors.black),
                       ),
-                    ),
-                  ],
+                      Text(
+                        '#${order['order_number']}',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -104,6 +107,7 @@ class OwnerOrderDetailsScreen extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         );
                       },
@@ -136,6 +140,7 @@ class OwnerOrderDetailsScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 10),
                       const Text(
@@ -149,6 +154,7 @@ class OwnerOrderDetailsScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 10),
                       const Text(
@@ -162,6 +168,7 @@ class OwnerOrderDetailsScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -181,6 +188,7 @@ class OwnerOrderDetailsScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 10),
                       const Text(
@@ -194,6 +202,7 @@ class OwnerOrderDetailsScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -219,6 +228,7 @@ class OwnerOrderDetailsScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -238,6 +248,7 @@ class OwnerOrderDetailsScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -256,6 +267,7 @@ class OwnerOrderDetailsScreen extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 TextButton(
