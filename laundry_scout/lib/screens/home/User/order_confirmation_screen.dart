@@ -11,6 +11,8 @@ class OrderConfirmationScreen extends StatefulWidget {
   final String termsAndConditions; // New
   final double? latitude; // New
   final double? longitude; // New
+  final String? firstName; // New
+  final String? lastName; // New
 
   const OrderConfirmationScreen({
     super.key,
@@ -22,6 +24,8 @@ class OrderConfirmationScreen extends StatefulWidget {
     required this.termsAndConditions, // New
     this.latitude, // New
     this.longitude, // New
+    this.firstName, // New
+    this.lastName, // New
   });
 
   @override
@@ -268,6 +272,32 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                               ),
                             ),
                             const SizedBox(height: 24),
+                            const Text(
+                              'Delivery Address',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '${widget.firstName ?? ''} ${widget.lastName ?? ''}', // Customer Name
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                            const SizedBox(height: 4), // Small space between name and address
+                            Text(
+                              widget.address,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
                             
                             // Status
                             const Text(
@@ -349,7 +379,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                           ),
                                         ),
                                         Text(
-                                          '₱${_servicePrices[service]?.toStringAsFixed(0)}',
+                                          '₱${_servicePrices[service.split(' (')[0]]?.toStringAsFixed(0)}',
                                           style: const TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
@@ -489,9 +519,11 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         'order_number': orderId,
         'user_id': userId,
         'business_id': businessId,
+        'customer_name': '${widget.firstName ?? ''} ${widget.lastName ?? ''}', // New
 
         // 'user_name': userName, // Removed as it's not in the schema
         'pickup_address': widget.address,
+        'delivery_address': widget.address, // Set delivery address
         'items': widget.services, // Store services as JSON in 'items'
         'pickup_schedule': widget.schedule['pickup'], // Store pickup schedule as string
         'dropoff_schedule': widget.schedule['dropoff'], // Store dropoff schedule as string

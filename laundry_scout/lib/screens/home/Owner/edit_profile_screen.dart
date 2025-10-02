@@ -6,6 +6,8 @@ import 'dart:io'; // Import for File class
 import '../../../widgets/optimized_image.dart';
 import 'package:laundry_scout/screens/home/Owner/owner_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:laundry_scout/screens/home/User/business_detail_screen.dart'; // Import for BusinessDetailScreen
+import 'package:flutter/foundation.dart' show kIsWeb; // Import for kIsWeb
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -24,6 +26,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _longitudeController = TextEditingController();
   final _aboutUsController = TextEditingController();
   final _termsAndConditionsController = TextEditingController(); // New controller for Terms and Conditions
+  final _customServiceController = TextEditingController(); // Controller for custom service input
   
   // Services Offered
   final List<String> _availableServices = [
@@ -88,6 +91,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _longitudeController.dispose();
     _aboutUsController.dispose();
     _termsAndConditionsController.dispose();
+    _customServiceController.dispose();
     // Removed _serviceNameController.dispose() and _priceController.dispose() as per user request.
     // _serviceNameController.dispose();
     // _priceController.dispose();
@@ -486,7 +490,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  Widget _buildServiceChip(String service) {
+  Widget _buildServiceChip(String service, [bool isCustom = false]) {
     final isSelected = _selectedServices.contains(service);
     
     return GestureDetector(
@@ -519,6 +523,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 fontSize: 14,
               ),
             ),
+            if (isCustom) // Show delete icon only for custom services
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _availableServices.remove(service);
+                    _selectedServices.remove(service);
+                    _pricelist.removeWhere((item) => item['service'] == service);
+                  });
+                },
+                child: const Padding(
+                  padding: EdgeInsets.only(left: 4.0),
+                  child: Icon(
+                    Icons.cancel,
+                    size: 16,
+                    color: Colors.redAccent,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -826,6 +848,55 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           icon: const Icon(Icons.arrow_back, color: Color(0xFF7B61FF)),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // Create a temporary businessData map for preview
+              final Map<String, dynamic> previewBusinessData = {
+                'id': _businessProfile!['id'],
+                'business_name': _businessNameController.text.trim(),
+                'business_address': _businessAddressController.text.trim(),
+                'latitude': _latitude,
+                'longitude': _longitude,
+                'about_business': _aboutUsController.text.trim(),
+                'does_delivery': _deliveryAvailable,
+                'terms_and_conditions': _termsAndConditionsController.text.trim(),
+                'services_offered': _selectedServices,
+                'service_prices': _pricelist,
+                'open_hours_text': _openHoursController.text.trim(),
+                'available_pickup_time_slots': _pickupSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
+                'available_dropoff_time_slots': _dropoffSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
+                'cover_photo_url': _coverPhotoUrl, // Pass existing URL
+                // Pass the selected image file for preview if available
+                '_coverPhotoFile': _selectedImageFile != null
+                    ? PlatformFile(
+                        name: _selectedImageFile!.path.split('/').last,
+                        size: _selectedImageFile!.lengthSync(),
+                        path: _selectedImageFile!.path,
+                        bytes: kIsWeb ? _selectedImageBytes : null,
+                      )
+                    : null,
+              };
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BusinessDetailScreen(
+                    businessData: previewBusinessData,
+                  ),
+                ),
+              );
+            },
+            child: const Text(
+              'Preview',
+              style: TextStyle(
+                color: Color(0xFF7B61FF),
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -1073,7 +1144,43 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     const SizedBox(height: 12),
                     Wrap(
-                      children: _availableServices.map((service) => _buildServiceChip(service)).toList(),
+                      spacing: 8.0, // Space between chips
+                      runSpacing: 8.0, // Space between lines of chips
+                      children: _availableServices.map((service) => _buildServiceChip(service, true)).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    // Custom Service Input
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _customServiceController,
+                            decoration: InputDecoration(
+                              labelText: 'Add Custom Service',
+                              labelStyle: const TextStyle(color: Colors.black),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            style: const TextStyle(color: Colors.black),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.add_circle, color: Color(0xFF7B61FF), size: 36),
+                          onPressed: () {
+                            final String newService = _customServiceController.text.trim();
+                            if (newService.isNotEmpty && !_availableServices.contains(newService)) {
+                              setState(() {
+                                _availableServices.add(newService);
+                                _selectedServices.add(newService);
+                                _pricelist.add({'service': newService, 'price': '0.00'});
+                                _customServiceController.clear();
+                              });
+                            }
+                          },
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 32),
                     

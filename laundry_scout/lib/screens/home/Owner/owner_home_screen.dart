@@ -197,26 +197,28 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Welcome',
-                                  style: TextStyle(
-                                    color: Color(0xFF7B61FF),
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w400,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Welcome',
+                                    style: TextStyle(
+                                      color: Color(0xFF7B61FF),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w400,
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  _businessProfile!["business_name"] ?? 'Business Name',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
+                                  Text(
+                                    _businessProfile!["business_name"] ?? 'Business Name',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                             GestureDetector(
                               onTap: () {

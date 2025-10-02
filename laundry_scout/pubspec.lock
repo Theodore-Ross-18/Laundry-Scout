@@ -334,6 +334,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.28"
+  flutter_svg:
+    dependency: "direct main"
+    description:
+      name: flutter_svg
+      sha256: b9c2ad5872518a27507ab432d1fb97e8813b05f0fc693f9d40fad06d073e0678
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.1"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -500,10 +508,10 @@ packages:
     dependency: "direct main"
     description:
       name: intl
-      sha256: d6f56758b7d3014a48af9701c085700aac781a92a87a62b1333b46d8879661cf
+      sha256: "3df61194eb431efc39c4ceba583b95633a403f46c9fd341e550ce0bfa50e9aa5"
       url: "https://pub.dev"
     source: hosted
-    version: "0.19.0"
+    version: "0.20.2"
   json_annotation:
     dependency: transitive
     description:
@@ -640,6 +648,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  open_route_service:
+    dependency: "direct main"
+    description:
+      name: open_route_service
+      sha256: dfe963c374c8b2f42de25dd3721a717b33886a99c06dde5cc6f64e8c3dff95a4
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.7"
   package_info_plus:
     dependency: transitive
     description:
@@ -1157,6 +1173,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.5.1"
+  vector_graphics:
+    dependency: transitive
+    description:
+      name: vector_graphics
+      sha256: a4f059dc26fc8295b5921376600a194c4ec7d55e72f2fe4c7d2831e103d461e6
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.19"
+  vector_graphics_codec:
+    dependency: transitive
+    description:
+      name: vector_graphics_codec
+      sha256: "99fd9fbd34d9f9a32efd7b6a6aae14125d8237b10403b422a6a6dfeac2806146"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.13"
+  vector_graphics_compiler:
+    dependency: transitive
+    description:
+      name: vector_graphics_compiler
+      sha256: d354a7ec6931e6047785f4db12a1f61ec3d43b207fc0790f863818543f8ff0dc
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.19"
   vector_math:
     dependency: transitive
     description:
@@ -1247,4 +1287,4 @@ packages:
     version: "2.1.0"
 sdks:
   dart: ">=3.8.0-0 <4.0.0"
-  flutter: ">=3.27.0"
+  flutter: ">=3.29.0"

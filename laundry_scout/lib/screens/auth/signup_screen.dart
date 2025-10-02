@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'verification_screen.dart';
 import 'select_user.dart';
 // Consider importing a package for social icons like font_awesome_flutter
 // import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -212,8 +213,8 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    title: const Text('Signup Successful'),
-                    content: const Text('Please check your email and click the confirmation link to complete signup.', style: TextStyle(color: Colors.black)),
+                    title: const Text('Signup Successful', style: TextStyle(color: Colors.black)),
+                    content: const Text('Please check your email and enter the verification code to complete signup.', style: TextStyle(color: Colors.black)),
                     actions: <Widget>[
                       TextButton(
                         child: const Text('OK', style: TextStyle(color: Colors.black)),
@@ -221,7 +222,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                           Navigator.of(context).pop();
                           Navigator.pushReplacement(
                             context,
-                            _createFadeRoute(SelectUserScreen(username: _usernameController.text.trim())),
+                            _createFadeRoute(VerificationScreen(email: _emailController.text.trim())),
                           );
                         },
                       ),

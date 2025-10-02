@@ -28,10 +28,12 @@ dependencies:
   latlong2: ^0.9.1
   geocoding: ^3.0.0
   http: ^1.1.0
-  intl: ^0.19.0
+  intl: ^0.20.2
   pdf: ^3.10.4
   printing: ^5.11.0
   geolocator_web: ^4.0.0 # Added geolocator_web dependency
+  flutter_svg: ^2.0.10+1
+  open_route_service: ^1.2.2
 
 dev_dependencies:
   flutter_test:
@@ -53,6 +55,8 @@ flutter:
     - lib/assets/user/slides/second.png
     - lib/assets/user/slides/third.png
     - lib/assets/promo_example.png
+    - lib/assets/laundry_logo.svg
+    - lib/assets/icons/laundry-machine.svg
   
   fonts:
     - family: Poppins

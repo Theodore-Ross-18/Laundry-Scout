@@ -19,7 +19,7 @@ class _LocationScreenState extends State<LocationScreen> {
   List<Map<String, dynamic>> _businessProfiles = [];
   final MapController _mapController = MapController();
   double _searchRadius = 1.0; // Initial search radius in kilometers
-  bool _foundLaundryShops = false; // Track if any shops are found within the radius
+  // bool _foundLaundryShops = false; // Track if any shops are found within the radius
 
   @override
   void initState() {
@@ -32,7 +32,7 @@ class _LocationScreenState extends State<LocationScreen> {
 
     if (permission == LocationPermission.denied) {
       setState(() {
-        _locationPermissionMessage = "Location permissions are denied. Please allow location access to view the map.";
+        _locationPermissionMessage = "Please allow location access to view the nearby laundry shops in the map";
         _isLoading = false;
       });
     } else if (permission == LocationPermission.deniedForever) {
@@ -64,13 +64,16 @@ class _LocationScreenState extends State<LocationScreen> {
     });
     try {
       Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
+          desiredAccuracy: LocationAccuracy.best);
       setState(() {
         _currentPosition = position;
       });
-      print('Current Location: Latitude: ${_currentPosition!.latitude}, Longitude: ${_currentPosition!.longitude}');
+      print('Current Location: Latitude: ${_currentPosition!.latitude}, Longitude: ${_currentPosition!.longitude}, Accuracy: ${position.accuracy}m');
       _mapController.move(LatLng(_currentPosition!.latitude, _currentPosition!.longitude), 14.0); // Move map to current location and set zoom
-      _fetchBusinessProfiles(radius: _searchRadius);
+      await _fetchBusinessProfiles(radius: _searchRadius);
+      setState(() {
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() {
         _locationPermissionMessage = "Could not get your location: $e";
@@ -80,9 +83,6 @@ class _LocationScreenState extends State<LocationScreen> {
   }
 
   Future<void> _fetchBusinessProfiles({double? radius}) async {
-    setState(() {
-      _isLoading = true;
-    });
     try {
       final response = await Supabase.instance.client
           .from('business_profiles')
@@ -105,6 +105,9 @@ class _LocationScreenState extends State<LocationScreen> {
               lng,
             );
             if (distance <= (radius ?? _searchRadius)) {
+              // Fetch average rating for the business
+              final averageRating = await _getAverageRating(business['id']);
+              business['average_rating'] = averageRating; // Add rating to business data
               filteredProfiles.add(business);
             }
           }
@@ -113,13 +116,11 @@ class _LocationScreenState extends State<LocationScreen> {
 
       setState(() {
         _businessProfiles = filteredProfiles;
-        _isLoading = false;
-        _foundLaundryShops = filteredProfiles.isNotEmpty;
+        // _foundLaundryShops = filteredProfiles.isNotEmpty;
       });
     } catch (e) {
       setState(() {
         _locationPermissionMessage = "Error fetching business profiles: $e";
-        _isLoading = false;
       });
     }
   }
@@ -128,226 +129,362 @@ class _LocationScreenState extends State<LocationScreen> {
     return Geolocator.distanceBetween(lat1, lon1, lat2, lon2) / 1000; // Distance in kilometers
   }
 
-  void _onTapBusinessMarker(Map<String, dynamic> businessData) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                businessData['business_name'] ?? 'Unknown Business',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
-              ),
-              const SizedBox(height: 8),
-              Text(businessData['business_address'] ?? 'No address provided', style: const TextStyle(color: Colors.black)),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context); // Close the bottom sheet
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => BusinessDetailScreen(businessData: businessData),
-                    ),
-                  );
-                },
-                child: const Text('View Details'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  Future<double> _getAverageRating(String businessId) async {
+    try {
+      final response = await Supabase.instance.client
+          .from('feedback')
+          .select('rating')
+          .eq('business_id', businessId);
+
+      if (response.isEmpty) {
+        return 0.0;
+      }
+
+      double totalRating = 0;
+      for (var feedback in response) {
+        totalRating += (feedback['rating'] as int).toDouble();
+      }
+      return totalRating / response.length;
+    } catch (e) {
+      print('Error fetching average rating for business $businessId: $e');
+      return 0.0;
+    }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Nearby Laundry Shops'),
-        backgroundColor: const Color(0xFF6F5ADC),
-        foregroundColor: Colors.white,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _currentPosition == null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+  void _onTapBusinessMarker(Map<String, dynamic> businessData) {
+      showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return SingleChildScrollView( // Wrap with SingleChildScrollView
+            child: Container(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                if (businessData['cover_photo_url'] != null && businessData['cover_photo_url'].isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8.0),
+                    child: Image.network(
+                      businessData['cover_photo_url'],
+                      height: 150,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 150,
+                        color: Colors.grey[300],
+                        child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
+                      ),
+                    ),
+                  ),
+                if (businessData['cover_photo_url'] != null && businessData['cover_photo_url'].isNotEmpty)
+                  const SizedBox(height: 16),
+                Text(
+                  businessData['business_name'] ?? 'Unknown Business',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text(businessData['business_address'] ?? 'No address provided', style: const TextStyle(color: Colors.black)),
+                    if (businessData['average_rating'] != null && businessData['average_rating'] > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.star, color: Colors.amber, size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${businessData['average_rating'].toStringAsFixed(1)}/5.0',
+                              style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (businessData['services_offered'] != null && (businessData['services_offered'] as List).isNotEmpty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(_locationPermissionMessage, textAlign: TextAlign.center),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: _requestLocationPermission,
-                        child: const Text('Allow Location Access'),
+                      const Text(
+                        'Services:',
+                        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 8.0, // gap between adjacent chips
+                        runSpacing: 4.0, // gap between lines
+                        children: (businessData['services_offered'] as List).map((service) {
+                          IconData iconData;
+                          Color iconColor = Colors.blueGrey; // Default color
+
+                          switch (service.toLowerCase()) {
+                            case 'wash':
+                              iconData = Icons.local_laundry_service;
+                              break;
+                            case 'dry':
+                              iconData = Icons.dry_cleaning;
+                              break;
+                            case 'fold':
+                              iconData = Icons.folder_special; // Placeholder, consider a more specific icon
+                              break;
+                            case 'iron':
+                              iconData = Icons.iron;
+                              break;
+                            case 'delivery':
+                              iconData = Icons.delivery_dining;
+                              break;
+                            default:
+                              iconData = Icons.help_outline; // Default icon for unknown services
+                          }
+                          return Chip(
+                            avatar: Icon(iconData, color: iconColor, size: 18),
+                            label: Text(service, style: const TextStyle(color: Colors.black)),
+                            backgroundColor: Colors.grey[200],
+                          );
+                        }).toList(),
                       ),
                     ],
                   ),
-                )
-              : Stack(
-                  children: [
-                    Column(
+                // Removed the ratings display as there is no 'ratings' column in the schema
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close the bottom sheet
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BusinessDetailScreen(businessData: businessData),
+                      ),
+                    );
+                  },
+                  child: const Text('View Details'),
+                ),
+              ],
+            ), // Closing bracket for Column
+          ), // Closing bracket for Container
+        ); // Closing bracket for SingleChildScrollView
+        },
+      );
+    }
+
+    @override
+    Widget build(BuildContext context) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF6F5ADC),
+        appBar: AppBar(
+          title: const Text('Nearby Laundry Shops'),
+          backgroundColor: const Color(0xFF6F5ADC),
+          foregroundColor: Colors.white,
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _currentPosition == null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Expanded(
-                          child: FlutterMap(
-                              key: ValueKey(_currentPosition), // Add key to force rebuild on location change
-                              mapController: _mapController,
-                              options: MapOptions(
-                                center: _currentPosition != null
-                                    ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
-                                    : LatLng(0, 0), // Default to (0,0) or a sensible fallback
-                                zoom: 13.0,
-                                minZoom: 10.0,
-                                maxZoom: 18.0,
-                                initialZoom: 14.0,
-                              ),
-                              children: [
-                                TileLayer(
-                                  urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                                  subdomains: const ['a', 'b', 'c'],
-                                ),
-                                if (_currentPosition != null)
-                                  CircleLayer(
-                                    circles: [
-                                      CircleMarker(
-                                        point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-                                        useRadiusInMeter: true, // ✅ use meters instead of pixels
-                                        radius: _searchRadius * 1000, // km → meters
-                                        color: const Color(0xFF6F5ADC).withOpacity(0.2),
-                                        borderColor: const Color(0xFF6F5ADC),
-                                        borderStrokeWidth: 2,
-                                      ),
-                                    ],
-                                  ),
-                                MarkerLayer(
-                                  markers: [
-                                    // User's current location marker
-                                    Marker(
-                                      width: 80.0,
-                                      height: 80.0,
-                                      point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-                                      child: const Icon(
-                                        Icons.my_location,
-                                        color: Colors.blue,
-                                        size: 40.0,
-                                      ),
-                                    ),
-                                    // Business markers
-                                    ..._businessProfiles.map((business) {
-                                      final lat = business['latitude'];
-                                      final lng = business['longitude'];
-                                      if (lat != null && lng != null) {
-                                        return Marker(
-                                          width: 80.0,
-                                          height: 80.0,
-                                          point: LatLng(lat, lng),
-                                          child: GestureDetector(
-                                            onTap: () => _onTapBusinessMarker(business),
-                                            child: const Icon(
-                                              Icons.local_laundry_service,
-                                              color: Colors.green,
-                                              size: 40.0,
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                      return Marker(point: LatLng(0,0), child: Container()); // Placeholder for null lat/lng
-                                    }).toList(),
-                                  ],
-                                ),
-                              ],
-                            ),
+                        Icon(
+                          Icons.location_on,
+                          color: Colors.white,
+                          size: 110.0,
+                        ),
+                        SizedBox(height: 20),
+                        Text(_locationPermissionMessage, textAlign: TextAlign.center, style: TextStyle(color: Colors.white)),
+                        const SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: _requestLocationPermission,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6F5ADC),
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Allow Location Access'),
                         ),
                       ],
                     ),
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: Container(
-                        padding: const EdgeInsets.all(8.0),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(8.0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.5),
-                              spreadRadius: 1,
-                              blurRadius: 3,
-                              offset: const Offset(0, 2), // changes position of shadow
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.my_location, color: Colors.blue, size: 20.0),
-                            const SizedBox(width: 5),
-                            const Text('You', style: TextStyle(color: Colors.black)),
-                            const SizedBox(width: 20),
-                            const Icon(Icons.local_laundry_service, color: Colors.green, size: 20.0),
-                            const SizedBox(width: 5),
-                            const Text('Laundry Shop', style: TextStyle(color: Colors.black)),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 16,
-                      left: 16,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  )
+                : Stack(
+                    children: [
+                      Column(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.9),
-                              borderRadius: BorderRadius.circular(8.0),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.5),
-                                  spreadRadius: 1,
-                                  blurRadius: 3,
-                                  offset: const Offset(0, 2),
+                          Expanded(
+                            child: FlutterMap(
+                                key: ValueKey(_currentPosition), // Add key to force rebuild on location change
+                                mapController: _mapController,
+                                options: MapOptions(
+                                  center: _currentPosition != null
+                                      ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+                                      : LatLng(0, 0), // Default to (0,0) or a sensible fallback
+                                  zoom: 13.0,
+                                  minZoom: 10.0,
+                                  maxZoom: 18.0,
+                                  initialZoom: 14.0,
                                 ),
-                              ],
-                            ),
-                            child: Text(
-                              'Search Radius: ${_searchRadius.toStringAsFixed(0)} km',
-                              style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          if (!_foundLaundryShops && _searchRadius < 6.0) // Only show button if no shops found and radius is less than max
-                            SizedBox(
-                              width: 200, // Adjust width as needed
-                              child: ElevatedButton.icon(
-                                onPressed: () {
-                                  setState(() {
-                                    _searchRadius = (_searchRadius + 1.0).clamp(1.0, 6.0);
-                                  });
-                                  _fetchBusinessProfiles(radius: _searchRadius);
-                                },
-                                icon: const Icon(Icons.search), // Add an icon to the button
-                                label: const Text('Locate Laundry'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF6F5ADC), // Use the theme color
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8.0),
+                                children: [
+                                  TileLayer(
+                                    urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                                    subdomains: const ['a', 'b', 'c'],
                                   ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), // Adjust padding
-                                ),
+                                  if (_currentPosition != null)
+                                    CircleLayer(
+                                      circles: [
+                                        CircleMarker(
+                                          point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                                          useRadiusInMeter: true, // ✅ use meters instead of pixels
+                                          radius: _searchRadius * 1000, // km → meters
+                                          color: const Color(0xFF6F5ADC).withOpacity(0.2),
+                                          borderColor: const Color(0xFF6F5ADC),
+                                          borderStrokeWidth: 2,
+                                        ),
+                                      ],
+                                    ),
+                                  MarkerLayer(
+                                    markers: [
+                                      // User's current location marker
+                                      Marker(
+                                        width: 80.0,
+                                        height: 80.0,
+                                        point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                                        child: const Icon(
+                                          Icons.my_location,
+                                          color: Colors.blue,
+                                          size: 40.0,
+                                        ),
+                                      ),
+                                      // Business markers
+                                      ..._businessProfiles.map((business) {
+                                        final lat = business['latitude'];
+                                        final lng = business['longitude'];
+                                        if (lat != null && lng != null) {
+                                          return Marker(
+                                            width: 80.0,
+                                            height: 80.0,
+                                            point: LatLng(lat, lng),
+                                            child: GestureDetector(
+                                              onTap: () => _onTapBusinessMarker(business),
+                                              child: Column(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.local_laundry_service,
+                                                    color: Colors.green,
+                                                    size: 40.0,
+                                                  ),
+                                                  if (business['average_rating'] != null && business['average_rating'] > 0)
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.white,
+                                                        borderRadius: BorderRadius.circular(4),
+                                                      ),
+                                                      child: Text(
+                                                        business['average_rating'].toStringAsFixed(1),
+                                                        style: const TextStyle(
+                                                          color: Colors.black,
+                                                          fontSize: 10,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                        return Marker(point: LatLng(0,0), child: Container()); // Placeholder for null lat/lng
+                                      }).toList(),
+                                    ],
+                                  ),
+                                ],
                               ),
-                            ),
+                          ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-    );
-  }
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: Container(
+                          padding: const EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(8.0),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.5),
+                                spreadRadius: 1,
+                                blurRadius: 3,
+                                offset: const Offset(0, 2), // changes position of shadow
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.my_location, color: Colors.blue, size: 20.0),
+                              const SizedBox(width: 5),
+                              const Text('You', style: TextStyle(color: Colors.black)),
+                              const SizedBox(width: 20),
+                              const Icon(Icons.local_laundry_service, color: Colors.green, size: 20.0),
+                              const SizedBox(width: 5),
+                              const Text('Laundry Shop', style: TextStyle(color: Colors.black)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 16,
+                        left: 16,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.9),
+                                borderRadius: BorderRadius.circular(8.0),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.5),
+                                    spreadRadius: 1,
+                                    blurRadius: 3,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                'Search Radius: ${_searchRadius.toStringAsFixed(0)} km',
+                                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            if (_searchRadius < 10.0) // Only show button if radius is less than max
+                              SizedBox(
+                                  width: 200, // Adjust width as needed
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                        setState(() {
+                                          _searchRadius = (_searchRadius + 1.0).clamp(1.0, 10.0);
+                                        });
+                                        _fetchBusinessProfiles(radius: _searchRadius);
+                                    },
+                                    icon: const Icon(Icons.search), // Add an icon to the button
+                                    label: const Text('Locate Laundry'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF6F5ADC), // Use the theme color
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8.0),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), // Adjust padding
+                                    ),
+                                  ),
+                                ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+      );
+    }
 }

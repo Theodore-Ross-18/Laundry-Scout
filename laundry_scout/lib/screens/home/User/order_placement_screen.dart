@@ -42,6 +42,9 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
   double? _longitude;
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
+  String? _firstName; // New
+  String? _lastName; // New
+  final TextEditingController _fullNameController = TextEditingController(); // New
 
   @override
   void initState() {
@@ -57,6 +60,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
     _currentAddressController.dispose();
     _latitudeController.dispose();
     _longitudeController.dispose();
+    _fullNameController.dispose(); // Dispose the new controller
     super.dispose();
   }
 
@@ -91,7 +95,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
       if (user != null) {
         final userProfile = await Supabase.instance.client
             .from('user_profiles')
-            .select('latitude, longitude')
+            .select('latitude, longitude, first_name, last_name')
             .eq('id', user.id)
             .single();
 
@@ -101,6 +105,9 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
             _longitude = userProfile['longitude'];
                   _latitudeController.text = _latitude?.toString() ?? '';
             _longitudeController.text = _longitude?.toString() ?? '';
+            _firstName = userProfile['first_name']; // New
+            _lastName = userProfile['last_name']; // New
+            _fullNameController.text = '${_firstName ?? ''} ${_lastName ?? ''}'; // Set full name
           });
         }
 
@@ -293,7 +300,29 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
             color: Colors.black,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
+        TextFormField(
+          controller: _fullNameController,
+          readOnly: true,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+          decoration: InputDecoration(
+            labelText: 'Full Name',
+            labelStyle: TextStyle(color: Colors.grey[600]),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFF6F5ADC)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
         TextFormField(
           controller: _currentAddressController,
           style: const TextStyle(color: Colors.black),
@@ -760,18 +789,27 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
   }
 
   void _continueToConfirmation() {
+    if (_currentAddressController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a delivery address.')),
+      );
+      return;
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => OrderConfirmationScreen(
           businessData: widget.businessData,
-          address: _selectedAddress!,
+          address: _currentAddressController.text,
           services: _selectedServices,
           schedule: _selectedSchedule!,
           specialInstructions: _specialInstructions,
           termsAndConditions: _businessProfile?['terms_and_conditions'] ?? 'No terms and conditions provided.', // Pass terms and conditions
           latitude: _latitude, // Pass latitude
           longitude: _longitude, // Pass longitude
+          firstName: _firstName, // Pass first name
+          lastName: _lastName, // Pass last name
         ),
       ),
     );
