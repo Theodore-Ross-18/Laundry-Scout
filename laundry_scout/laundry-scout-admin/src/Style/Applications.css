@@ -2,8 +2,9 @@
 .applications-root {
   display: flex;
   min-height: 100vh;
-  background: #f7f7fa;
+  background: var(--bg-color);
   font-family: "Poppins", sans-serif;
+  color: var(--text-color);
 }
 
 /* ===== Main Layout ===== */
@@ -14,6 +15,7 @@
   flex-direction: column;
   gap: 32px;
   transition: margin-left 0.3s ease-in-out;
+  background: var(--bg-color);
 }
 
 /* ===== Header ===== */
@@ -22,8 +24,8 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  border-bottom: 1px solid #c9c9c9;
-  padding: 0px 0px 12px 0px; 
+  padding: 0px 0px 12px 0px;
+  border-bottom: 1px solid var(--border-color);
 }
 .applications-header-left {
   display: flex;
@@ -32,15 +34,16 @@
 }
 
 .applications-title {
-  color: #000000;
-  margin: 0 0 5px 0;
+  margin: 0 0 5px 0px;
+  color: var(--text-color);
   font-size: 1.5rem;
   font-weight: 700;
+  
 }
 .applications-subtitle {
   margin: 0px;
   font-size: 0.9rem;
-  color: #888;
+  color: var(--muted-text);
 }
 .applications-toggle-sidebar {
   font-size: 1.6rem;
@@ -178,7 +181,8 @@
     flex: 1 1;
     display: flex;
     align-items: center;
-    background: #fff;
+    background: var(--card-bg);
+    color: var(--text-color);
     border: 1px solid #e5e7eb;
     border-radius: 8px;
     padding: 6px 10px;
@@ -196,8 +200,10 @@
   outline: none;
   flex: 1;
   font-size: 0.9rem;
-  background: transparent;
+  background: var(--card-bg);
+  color: var(--text-color);
 }
+
 .search-history {
   position: absolute;
   top: 110%;
@@ -238,13 +244,13 @@
 
 .a-date-btn,
 .a-all-btn {
-  background: #fff;
+  background: var(--card-bg);
   border: 1px solid #e5e7eb;
   padding: 8px 14px;
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 500;
-  color: #444;
+  color: var(--text-color);
   cursor: pointer;
   transition: background 0.2s;
 
@@ -252,7 +258,7 @@
 
 /* ===== Table ===== */
 .applications-table-wrapper {
-  background: #fff;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
@@ -263,6 +269,7 @@
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 12px;
+  color: var(--text-color) ;
 }
 .applications-table {
   width: 100%;
@@ -272,7 +279,7 @@
 .applications-table th {
   text-align: left;
   padding: 10px;
-  background: #f9fafb;
+  background: var(--card-color);
   font-weight: 600;
 }
 .applications-table td {
@@ -512,5 +519,5 @@
   to { transform: translateY(0); opacity: 1; }
 }
 .applications-table-title {
-  color: #000000;
+  color: var(--text-color);
 }
