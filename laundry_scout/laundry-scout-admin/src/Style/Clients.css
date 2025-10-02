@@ -17,6 +17,7 @@
   display: flex;
   flex-direction: column;
   gap: 32px;
+  background: var(--bg-color);
   transition: margin-left 0.3s ease-in-out;
 }
 
@@ -35,6 +36,7 @@
   margin: 0 0 5px 0;
   font-size: 1.5rem;
   font-weight: 700;
+  color: var(--text-color);
 }
 
 .clients-subtitle {
@@ -97,6 +99,7 @@
   gap: 18px;
   margin-left: auto;
   position: relative;
+  color: var(--text-color);
 }
 
 
@@ -148,24 +151,27 @@
 
 .client-card .info {
   padding: 16px;
+  background: var(--card-bg);
 }
 
 .client-card .info h2 {
   font-size: 1.1rem;
   font-weight: 600;
   margin: 0;
-  color: #222;
+  color: var(--text-color);
 }
 
 .client-card .info .address {
   font-size: 0.9rem;
   color: #6b7280;
   margin-bottom: 4px;
+  color: var(--muted-text);
 }
 
 .client-card .info .since {
   font-size: 0.85rem;
-  color: #9ca3af;
+  color: var(--muted-text);
+
 }
 
 /* 🔹 Search Box & clients Dropdown */
@@ -280,12 +286,19 @@
     border-radius: 8px;
     padding: 6px 10px;
     max-width: 320px;
+    background: var(--card-bg);
   /* display: flex;
   align-items: center;
   justify-content: 10px;
   gap: 16px;
   border-radius: 6px;
   margin-bottom: 20px; */
+}
+
+.c-search-icon {
+    font-size: 1rem;
+    color: #888;
+    margin-right: 6px;
 }
 
 .clients-search-input {
@@ -326,15 +339,16 @@
 
 .c-date-btn,
 .c-all-btn {
-  background: #fff;
+  background: var(--card-bg);
   border: 1px solid #e5e7eb;
   padding: 8px 14px;
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 500;
-  color: #444;
+  color: var(--muted-text);
   cursor: pointer;
   transition: background 0.2s;
+
 }
 
 /* Animation */
