@@ -33,9 +33,6 @@ function ClientDetail() {
     fetchClient();
   }, [id]);
 
-  if (loading) return <p className="loading-msg">Loading details...</p>;
-  if (!client) return <p className="loading-msg">No client found.</p>;
-
   return (
     <div className="client-detail-root">
       {/* Sidebar */}
@@ -43,7 +40,7 @@ function ClientDetail() {
 
       {/* Main Content */}
       <main className={`client-detail-main ${sidebarOpen ? "shifted" : ""}`}>
-        {/* Header (Pinned) */}
+        {/* Header */}
         <div className="client-detail-header">
           <div className="client-detail-header-left">
             <div>
@@ -77,94 +74,115 @@ function ClientDetail() {
 
         {/* Scrollable Details */}
         <div className="client-detail">
-          {/* Header Section */}
-          <div className="client-header">
-            <img
-              src={
-                client.cover_photo_url || "https://via.placeholder.com/600x300"
-              }
-              alt={client.business_name || client.owner_last_name || "Business"}
-              className="cover-photo"
-            />
-            <h1>
-              {client.business_name ||
-                `${client.owner_first_name || ""} ${client.owner_last_name || ""}`}
-            </h1>
-            <p className="address">📍 {client.business_address || "N/A"}</p>
-            <p className="since">
-              Member Since{" "}
-              {client?.created_at
-                ? new Date(client.created_at).toLocaleDateString()
-                : "N/A"}
-            </p>
-          </div>
+          {loading ? (
+            // Loading spinner
+            <div className="loading-spinner">
+              <div className="spinner"></div>
+              <p>Fetching client data...</p>
+            </div>
+          ) : !client ? (
+            <p className="loading-msg">No client found.</p>
+          ) : (
+            <>
+              {/* Header Section */}
+              <div className="client-header">
+                <img
+                  src={
+                    client.cover_photo_url ||
+                    "https://via.placeholder.com/600x300"
+                  }
+                  alt={
+                    client.business_name ||
+                    client.owner_last_name ||
+                    "Business"
+                  }
+                  className="cover-photo"
+                />
+                <h1>
+                  {client.business_name ||
+                    `${client.owner_first_name || ""} ${
+                      client.owner_last_name || ""
+                    }`}
+                </h1>
+                <p className="address">
+                  📍 {client.business_address || "N/A"}
+                </p>
+                <p className="since">
+                  Member Since{" "}
+                  {client?.created_at
+                    ? new Date(client.created_at).toLocaleDateString()
+                    : "N/A"}
+                </p>
+              </div>
 
-          {/* Body Sections */}
-          <div className="client-body">
-            <section>
-              <h2>Business Information</h2>
-              <p>
-                <strong>Business Name</strong>
-                {client.business_name || "N/A"}
-              </p>
-              <p>
-                <strong>Business Address</strong>
-                {client.business_address || "N/A"}
-              </p>
-              <p>
-                <strong>Business Type</strong>
-                {client.business_type || "N/A"}
-              </p>
-            </section>
-
-            <section>
-              <h2>Owner Information</h2>
-              <p>
-                <strong>First Name</strong>
-                {client.owner_first_name || "N/A"}
-              </p>
-              <p>
-                <strong>Last Name</strong>
-                {client.owner_last_name || "N/A"}
-              </p>
-              <p>
-                <strong>Email</strong>
-                {client.owner_email || "N/A"}
-              </p>
-              <p>
-                <strong>Phone</strong>
-                {client.owner_phone || "N/A"}
-              </p>
-            </section>
-
-            <section>
-              <h2>Additional Details</h2>
-              {Object.entries(client).map(([key, value]) => {
-                if (
-                  [
-                    "id",
-                    "created_at",
-                    "cover_photo_url",
-                    "business_name",
-                    "business_address",
-                    "business_type",
-                    "owner_first_name",
-                    "owner_last_name",
-                    "owner_email",
-                    "owner_phone",
-                  ].includes(key)
-                )
-                  return null;
-
-                return (
-                  <p key={key}>
-                    <strong>{key.replace(/_/g, " ")}</strong>
-                    {value && value !== "" ? value.toString() : "N/A"}
+              {/* Body Sections */}
+              <div className="client-body">
+                <section>
+                  <h2>Business Information</h2>
+                  <p>
+                    <strong>Business Name: </strong>
+                    {client.business_name || "N/A"}
                   </p>
-                );
-              })}
-            </section>
-          </div>
+                  <p>
+                    <strong>Business Address: </strong>
+                    {client.business_address || "N/A"}
+                  </p>
+                  <p>
+                    <strong>Business Type: </strong>
+                    {client.business_type || "N/A"}
+                  </p>
+                </section>
+
+                <section>
+                  <h2>Owner Information</h2>
+                  <p>
+                    <strong>First Name: </strong>
+                    {client.owner_first_name || "N/A"}
+                  </p>
+                  <p>
+                    <strong>Last Name: </strong>
+                    {client.owner_last_name || "N/A"}
+                  </p>
+                  <p>
+                    <strong>Email: </strong>
+                    {client.owner_email || "N/A"}
+                  </p>
+                  <p>
+                    <strong>Phone: </strong>
+                    {client.owner_phone || "N/A"}
+                  </p>
+                </section>
+
+                <section>
+                  <h2>Additional Details</h2>
+                  {Object.entries(client).map(([key, value]) => {
+                    if (
+                      [
+                        "id",
+                        "created_at",
+                        "cover_photo_url",
+                        "business_name",
+                        "business_address",
+                        "business_type",
+                        "owner_first_name",
+                        "owner_last_name",
+                        "owner_email",
+                        "owner_phone",
+                      ].includes(key)
+                    )
+                      return null;
+
+                    return (
+                      <p key={key}>
+                        <strong>{key.replace(/_/g, " ")}: </strong>
+                        {value && value !== "" ? value.toString() : "N/A"}
+                      </p>
+                    );
+                  })}
+                </section>
+              </div>
+            </>
+          )}
         </div>
       </main>
     </div>
