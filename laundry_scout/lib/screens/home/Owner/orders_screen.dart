@@ -229,21 +229,19 @@ class _OrdersScreenState extends State<OrdersScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    SvgPicture.asset('lib/assets/icons/laundry-machine.svg', width: 24, height: 24, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Order ID : #$orderNumber',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.black,
-                      ),
+                SvgPicture.asset('lib/assets/icons/laundry-machine.svg', width: 24, height: 24, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Order ID : #$orderNumber',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black,
                     ),
-                  ],
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -266,39 +264,39 @@ class _OrdersScreenState extends State<OrdersScreen> {
             Text(
               customerName,
               style: const TextStyle(fontSize: 14, color: Colors.black),
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 0),
+            const SizedBox(height: 4),
             Text(
               '${order['service_type'] ?? ''}',
               style: const TextStyle(fontSize: 14, color: Colors.black),
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 0),
+            const SizedBox(height: 4),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Ordered at ${DateFormat('h:mm a, MMMM dd, yyyy').format(createdAt)}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                Expanded(
+                  child: Text(
+                    'Ordered at ${DateFormat('h:mm a, MMMM dd, yyyy').format(createdAt)}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                Row(
-                  children: [
-                    if (status == 'pending' || status == 'in_progress')
-                      TextButton(
-                        onPressed: () => _setOrderAsComplete(order['id']),
-                        child: const Text('Set as Complete', style: TextStyle(color: Color(0xFF7B61FF))),
+                if (status == 'pending' || status == 'in_progress')
+                  TextButton(
+                    onPressed: () => _setOrderAsComplete(order['id']),
+                    child: const Text('Set as Complete', style: TextStyle(color: Color(0xFF7B61FF))),
+                  ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OwnerOrderDetailsScreen(order: order),
                       ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => OwnerOrderDetailsScreen(order: order),
-                          ),
-                        );
-                      },
-                      child: const Text('View', style: TextStyle(color: Colors.black)),
-                    ),
-                  ],
+                    );
+                  },
+                  child: const Text('View', style: TextStyle(color: Colors.black)),
                 ),
               ],
             ),

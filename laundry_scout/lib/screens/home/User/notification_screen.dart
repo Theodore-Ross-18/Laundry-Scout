@@ -532,21 +532,19 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    SvgPicture.asset('lib/assets/icons/laundry-machine.svg', width: 24, height: 24, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Order ID : #$orderNumber',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.black,
-                      ),
+                SvgPicture.asset('lib/assets/icons/laundry-machine.svg', width: 24, height: 24, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Order ID : #$orderNumber',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black,
                     ),
-                  ],
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -569,42 +567,42 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
             Text(
               customerName,
               style: const TextStyle(fontSize: 14, color: Colors.black),
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 0),
+            const SizedBox(height: 4),
             Text(
               '${order['service_type'] ?? ''}',
               style: const TextStyle(fontSize: 14, color: Colors.black),
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 0),
+            const SizedBox(height: 4),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Ordered at ${DateFormat('h:mm a, MMMM dd, yyyy').format(createdAt)}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                Expanded(
+                  child: Text(
+                    'Ordered at ${DateFormat('h:mm a, MMMM dd, yyyy').format(createdAt)}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                Row(
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => OrderDetailsScreen(order: order),
-                          ),
-                        );
-                      },
-                      child: const Text('View', style: TextStyle(color: Colors.black)),
-                    ),
-                    if (status == 'pending')
-                      TextButton(
-                        onPressed: () {
-                          _showCancelOrderDialog(context, order['id']);
-                        },
-                        child: const Text('Cancel Order', style: TextStyle(color: Colors.red)),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OrderDetailsScreen(order: order),
                       ),
-                  ],
+                    );
+                  },
+                  child: const Text('View', style: TextStyle(color: Colors.black)),
                 ),
+                if (status == 'pending')
+                  TextButton(
+                    onPressed: () {
+                      _showCancelOrderDialog(context, order['id']);
+                    },
+                    child: const Text('Cancel Order', style: TextStyle(color: Colors.red)),
+                  ),
               ],
             ),
           ],
