@@ -124,46 +124,32 @@ function Feedback() {
       <Sidebar isOpen={sidebarOpen} activePage="feedback" />
 
       <main className={`feedback-main ${sidebarOpen ? "" : "expanded"}`}>
-        <header className="feedback-header-left">
+        <header className="feedback-header">
           <div>
             <h2 className="feedback-title">Feedback</h2>
             <p className="feedback-subtitle">Showing all feedback from users and businesses</p>
           </div>
 
           {/* Notifications + Profile */}
-          <div className="feedback-header-icons">
-            <Notifications />
-            <img
-              src="/path-to-avatar.jpg"
-              alt="Profile"
-              className="profile-avatar"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowSettings(!showSettings);
-              }}
-            />
-            {showSettings && (
-              <div
-                className="dropdown-panel"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="dropdown-item" onClick={() => navigate("/profile")}>
-                  My Profile
-                </div>
-                <div className="dropdown-item" onClick={() => navigate("/settings")}>
-                  Settings
-                </div>
-                <div
-                  className="dropdown-item"
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    navigate("/login");
-                  }}
-                >
-                  Logout
-                </div>
-              </div>
-            )}
+          <div className="applications-header-icons">
+            <div className="notification-wrapper">
+              <Notifications />
+            </div>
+            <div className="settings-wrapper">
+              <FiSettings
+                size={22}
+                className="settings-icon"
+                onClick={() => navigate("/settings")}
+              />
+            </div>
+            <div className="dropdown-wrapper">
+              <img
+                src="https://via.placeholder.com/32"
+                alt="profile"
+                className="profile-avatar"
+                onClick={() => navigate("/profile")}
+              />
+            </div>
           </div>
         </header>
 

@@ -64,9 +64,6 @@
   cursor: pointer;
 }
 
-.dropdown-wrapper {
-  position: relative;
-}
 
 .icon {
   font-size: 1.2rem;
@@ -84,28 +81,6 @@
   border-radius: 9999px;
 }
 
-.dropdown-panel {
-  position: absolute;
-  top: 120%;
-  right: 0;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  width: 220px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  z-index: 10;
-}
-
-.dropdown-item {
-  padding: 10px 14px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.dropdown-item:hover {
-  background: #f9f9f9;
-}
 
 .notif-time {
   font-size: 12px;
@@ -114,7 +89,7 @@
 }
 
 /* Profile Avatar */
-.profile-avatar {
+/* .profile-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -122,11 +97,11 @@
   cursor: pointer;
   border: 2px solid #e5e7eb;
   transition: border 0.2s;
-}
+} */
 
-.profile-avatar:hover {
+/* .profile-avatar:hover {
   border-color: #9ca3af;
-}
+} */
 
 /* ===== Filters/Search ===== */
 .users-filters {
@@ -249,37 +224,6 @@
   font-size: 1.2rem;
 }
 
-.menu-dropdown {
-  position: absolute;
-  right: 0;
-  top: 120%;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  display: flex;
-  flex-direction: column;
-  min-width: 120px;
-  z-index: 20;
-}
-
-.menu-dropdown button {
-  padding: 10px 14px;
-  background: none;
-  border: none;
-  text-align: left;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.menu-dropdown button:hover {
-  background: #f9f9f9;
-}
-
-.menu-dropdown .danger {
-  color: #ff0000;
-}
 
 /* Delete button styling */
 .actions-cell .danger {
@@ -346,3 +290,21 @@
   color: #333;
 }
 
+.u-date-btn,
+.u-all-btn {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #444;
+  cursor: pointer;
+  transition: background 0.2s;
+
+}
+
+.users-filter-right {
+  display: flex;
+  gap: 10px;
+}

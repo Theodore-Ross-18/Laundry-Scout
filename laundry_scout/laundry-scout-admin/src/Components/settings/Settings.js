@@ -4,13 +4,14 @@ import { supabase } from "../../Supabase/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { FiSettings } from "react-icons/fi";
 import "../../Style/Settings.css";
+import Sidebar from "../Sidebar";
 
 // ✅ Translations
 const translations = {
   en: {
     back: "⬅ Back",
     title: "⚙️ Admin Settings",
-    profile: "👤 Admin Profile",
+    settings: "👤 Admin Profile",
     displayName: "Display Name",
     email: "Email",
     avatar: "Avatar URL",
@@ -40,7 +41,7 @@ const translations = {
   ph: {
     back: "⬅ Bumalik",
     title: "⚙️ Mga Setting ng Admin",
-    profile: "👤 Profile ng Admin",
+    settings: "👤 Profile ng Admin",
     displayName: "Pangalan",
     email: "Email",
     avatar: "URL ng Avatar",
@@ -80,6 +81,9 @@ function Settings() {
   const [autoApprove, setAutoApprove] = useState(false);
   const [language, setLanguage] = useState("en");
   const [message, setMessage] = useState("");
+
+  // Sidebar
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // ✅ Admin Profile states
   const [adminName, setAdminName] = useState("Admin User");
@@ -154,7 +158,7 @@ function Settings() {
     setMessage("✅ Data exported successfully!");
   };
 
-  // ✅ Update profile
+  // ✅ Update settings
   const handleUpdateProfile = () => {
     localStorage.setItem("adminName", adminName);
     localStorage.setItem("adminEmail", adminEmail);
@@ -175,106 +179,258 @@ function Settings() {
   };
 
   return (
-    <div className="page-container">
-      {/* Back Button */}
-      <button className="btn" onClick={() => navigate(-1)}>{t.back}</button>
-      <h2>{t.title}</h2>
 
-      {/* Admin Profile */}
-      <div className="card">
-        <h3>{t.profile}</h3>
-        <div className="form-group">
-          <label>{t.displayName}</label>
-          <input type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} />
+    <div className="settings-root">
+      <Sidebar isOpen={sidebarOpen} />
+      <div className="settings-main">
+        {/* ✅ Header */}
+        <div className="settings-header">
+          <div>
+            <h2 className="settings-title">Profile</h2>
+            <div className="settings-subtitle">
+              Here you have the basic information
+            </div>
+          </div>
+
+          <div className="settings-header-actions">
+            <div className="notification-wrapper">
+              <Notifications />
+            </div>
+            <div className="settings-wrapper">
+              <FiSettings
+                size={22}
+                className="settings-icon"
+                onClick={() => navigate("/settings")}
+              />
+            </div>
+            <div className="dropdown-wrapper">
+              <img
+                src={form.profile_img || "https://via.placeholder.com/32"}
+                alt="settings"
+                className="settings-avatar"
+                onClick={() => navigate("/settings")}
+              />
+            </div>
+          </div>
         </div>
-        <div className="form-group">
-          <label>{t.email}</label>
-          <input type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} />
+
+        {/* ✅ Profile Account Section */}
+        <div className="settings-account">
+          <div className="settings-left">
+            {form.profile_img && (
+              <img
+                src={form.profile_img}
+                alt="Avatar"
+                className="settings-main-avatar"
+              />
+            )}
+            <div className="settings-account-info">
+              <div className="settings-account-name">
+                {form.username || "Admin"}
+              </div>
+              <div className="settings-account-email">{form.email}</div>
+            </div>
+          </div>
+
+          <button
+            className="btn"
+            onClick={() => document.querySelector("#avatarInput").click()}
+          >
+            <FiUpload /> Upload New Avatar
+          </button>
+          <input
+            id="avatarInput"
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            style={{ display: "none" }}
+          />
         </div>
-        <div className="form-group">
-          <label>{t.avatar}</label>
-          <input type="text" value={adminAvatar} onChange={(e) => setAdminAvatar(e.target.value)} />
+
+        {/* Name */}
+        <div className="settings-name">
+          <div className="gap">
+            <span className="settings-name-label">Name </span>
+            <div className="register-name">{form.username}</div>
+          </div>
+          <button className="name-edit" onClick={() => setEditField("username")}>
+            Edit Name
+          </button>
         </div>
-        <img src={adminAvatar} alt="Admin Avatar" width="80" style={{ borderRadius: "50%" }} />
-        <button className="btn primary" onClick={handleUpdateProfile}>{t.updateProfile}</button>
+
+        {/* Email */}
+        <div className="settings-email">
+          <div className="gap">
+            <span className="settings-name-label">Email </span>
+            <div className="register-name">{form.email}</div>
+          </div>
+          <button className="name-edit" onClick={() => setEditField("email")}>
+            Edit Email
+          </button>
+        </div>
+
+        {/* Password */}
+        <div className="settings-password">
+          <div className="gap">
+            <span className="settings-name-label">Password </span>
+            <div className="register-name">********</div>
+          </div>
+          <button className="name-edit" onClick={() => setEditField("password")}>
+            Edit Password
+          </button>
+        </div>
+
+        {/* Account Security */}
+        <div className="settings-account-security">
+          <div className="gap">
+            <span className="settings-name-label">Account Security </span>
+            <div className="settings-account-security-text">
+              Manage your Account Security
+            </div>
+            <div className="delete-btn">
+              <FiTrash className="settings-account-security-trash-icon" />
+              <span>Delete Account</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ✅ Overlay Modal for Editing */}
+        {editField && (
+          <div className="overlay">
+            <div className="overlay-content">
+              <h3>Edit {editField.charAt(0).toUpperCase() + editField.slice(1)}</h3>
+
+              <div className="form-group">
+                <label>{editField}</label>
+                <input
+                  type={editField === "password" ? "password" : "text"}
+                  value={form[editField]}
+                  onChange={(e) =>
+                    setForm({ ...form, [editField]: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="form-actions">
+                <button
+                  className="btn primary"
+                  onClick={handleSave}
+                  disabled={loading}
+                >
+                  {loading ? "Saving..." : "Save"}
+                </button>
+                <button className="btn secondary" onClick={() => setEditField(null)}>
+                  Cancel
+                </button>
+              </div>
+
+              {message && <p className="message">{message}</p>}
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Logs */}
-      <div className="card">
-        <h3>{t.logs}</h3>
-        <p>{t.lastLogin}: {lastLogin}</p>
-        <p>{t.lastPassword}: {lastPasswordChange}</p>
-      </div>
-
-      {/* Security */}
-      <div className="card">
-        <h3>{t.security}</h3>
-        <div className="form-group">
-          <label>{t.newPassword}</label>
-          <input type="password" placeholder={t.newPassword} value={password} onChange={(e) => setPassword(e.target.value)} />
-        </div>
-        <button className="btn danger" onClick={handlePasswordUpdate}>{t.updatePassword}</button>
-        <div className="form-group checkbox">
-          <input type="checkbox" checked={twoFA} onChange={() => setTwoFA(!twoFA)} />
-          <label>{t.twoFA}</label>
-        </div>
-        <button className="btn" onClick={handleSignOutAll}>{t.signOutAll}</button>
-      </div>
-
-      {/* Preferences */}
-      <div className="card">
-        <h3>{t.preferences}</h3>
-        <div className="form-group">
-          <label>{t.theme}</label>
-          <select value={theme} onChange={(e) => setTheme(e.target.value)}>
-            <option value="light">🌞 Light</option>
-            <option value="dark">🌙 Dark</option>
-          </select>
-        </div>
-        <div className="form-group">
-          <label>{t.panelTitle}</label>
-          <input type="text" value={panelTitle} onChange={(e) => setPanelTitle(e.target.value)} />
-        </div>
-        <div className="form-group">
-          <label>{t.logoURL}</label>
-          <input type="text" value={panelLogo} onChange={(e) => setPanelLogo(e.target.value)} />
-        </div>
-        <div className="form-group">
-          <label>{t.language}</label>
-          <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-            <option value="en">English</option>
-            <option value="ph">Filipino</option>
-          </select>
-        </div>
-        <div className="form-group checkbox">
-          <input type="checkbox" checked={notifications} onChange={() => setNotifications(!notifications)} />
-          <label>{t.emailNotif}</label>
-        </div>
-      </div>
-
-      {/* System Controls */}
-      <div className="card">
-        <h3>{t.systemControls}</h3>
-        <div className="form-group checkbox">
-          <input type="checkbox" checked={maintenanceMode} onChange={() => setMaintenanceMode(!maintenanceMode)} />
-          <label>{t.maintenanceMode}</label>
-        </div>
-        <div className="form-group checkbox">
-          <input type="checkbox" checked={autoApprove} onChange={() => setAutoApprove(!autoApprove)} />
-          <label>{t.autoApprove}</label>
-        </div>
-        <button className="btn" onClick={handleExportData}>{t.exportData}</button>
-        <button className="btn primary" onClick={handleSaveSettings}>{t.saveSettings}</button>
-      </div>
-
-      {/* Danger Zone */}
-      <div className="card danger-zone">
-        <h3>{t.dangerZone}</h3>
-        <button className="btn danger" onClick={handleDeactivateAccount}>{t.deactivate}</button>
-      </div>
-
-      {message && <p className="message">{message}</p>}
     </div>
+
+    // <div className="page-container">
+      
+
+    //   <h2>{t.title}</h2>
+
+    //   {/* Admin Profile */}
+    //   <div className="card">
+    //     <h3>{t.settings}</h3>
+    //     <div className="form-group">
+    //       <label>{t.displayName}</label>
+    //       <input type="text" value={adminName} onChange={(e) => setAdminName(e.target.value)} />
+    //     </div>
+    //     <div className="form-group">
+    //       <label>{t.email}</label>
+    //       <input type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} />
+    //     </div>
+    //     <div className="form-group">
+    //       <label>{t.avatar}</label>
+    //       <input type="text" value={adminAvatar} onChange={(e) => setAdminAvatar(e.target.value)} />
+    //     </div>
+    //     <img src={adminAvatar} alt="Admin Avatar" width="80" style={{ borderRadius: "50%" }} />
+    //     <button className="btn primary" onClick={handleUpdateProfile}>{t.updateProfile}</button>
+    //   </div>
+
+    //   {/* Logs */}
+    //   <div className="card">
+    //     <h3>{t.logs}</h3>
+    //     <p>{t.lastLogin}: {lastLogin}</p>
+    //     <p>{t.lastPassword}: {lastPasswordChange}</p>
+    //   </div>
+
+    //   {/* Security */}
+    //   <div className="card">
+    //     <h3>{t.security}</h3>
+    //     <div className="form-group">
+    //       <label>{t.newPassword}</label>
+    //       <input type="password" placeholder={t.newPassword} value={password} onChange={(e) => setPassword(e.target.value)} />
+    //     </div>
+    //     <button className="btn danger" onClick={handlePasswordUpdate}>{t.updatePassword}</button>
+    //     <div className="form-group checkbox">
+    //       <input type="checkbox" checked={twoFA} onChange={() => setTwoFA(!twoFA)} />
+    //       <label>{t.twoFA}</label>
+    //     </div>
+    //     <button className="btn" onClick={handleSignOutAll}>{t.signOutAll}</button>
+    //   </div>
+
+    //   {/* Preferences */}
+    //   <div className="card">
+    //     <h3>{t.preferences}</h3>
+    //     <div className="form-group">
+    //       <label>{t.theme}</label>
+    //       <select value={theme} onChange={(e) => setTheme(e.target.value)}>
+    //         <option value="light">🌞 Light</option>
+    //         <option value="dark">🌙 Dark</option>
+    //       </select>
+    //     </div>
+    //     <div className="form-group">
+    //       <label>{t.panelTitle}</label>
+    //       <input type="text" value={panelTitle} onChange={(e) => setPanelTitle(e.target.value)} />
+    //     </div>
+    //     <div className="form-group">
+    //       <label>{t.logoURL}</label>
+    //       <input type="text" value={panelLogo} onChange={(e) => setPanelLogo(e.target.value)} />
+    //     </div>
+    //     <div className="form-group">
+    //       <label>{t.language}</label>
+    //       <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+    //         <option value="en">English</option>
+    //         <option value="ph">Filipino</option>
+    //       </select>
+    //     </div>
+    //     <div className="form-group checkbox">
+    //       <input type="checkbox" checked={notifications} onChange={() => setNotifications(!notifications)} />
+    //       <label>{t.emailNotif}</label>
+    //     </div>
+    //   </div>
+
+    //   {/* System Controls */}
+    //   <div className="card">
+    //     <h3>{t.systemControls}</h3>
+    //     <div className="form-group checkbox">
+    //       <input type="checkbox" checked={maintenanceMode} onChange={() => setMaintenanceMode(!maintenanceMode)} />
+    //       <label>{t.maintenanceMode}</label>
+    //     </div>
+    //     <div className="form-group checkbox">
+    //       <input type="checkbox" checked={autoApprove} onChange={() => setAutoApprove(!autoApprove)} />
+    //       <label>{t.autoApprove}</label>
+    //     </div>
+    //     <button className="btn" onClick={handleExportData}>{t.exportData}</button>
+    //     <button className="btn primary" onClick={handleSaveSettings}>{t.saveSettings}</button>
+    //   </div>
+
+    //   {/* Danger Zone */}
+    //   <div className="card danger-zone">
+    //     <h3>{t.dangerZone}</h3>
+    //     <button className="btn danger" onClick={handleDeactivateAccount}>{t.deactivate}</button>
+    //   </div>
+
+    //   {message && <p className="message">{message}</p>}
+    // </div>
   );
 }
 

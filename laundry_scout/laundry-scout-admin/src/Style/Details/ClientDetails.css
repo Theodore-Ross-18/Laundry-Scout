@@ -9,7 +9,7 @@
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Poppins", Tahoma, Geneva, Verdana, sans-serif;
   color: #333;
   transition: 0.3s ease;
 }
@@ -26,6 +26,7 @@
   transition: 0.2s;
   margin-bottom: 1rem;
   color: #333;
+  font-family: "Poppins", sans-serif;
 }
 .back-btn:hover {
   background: #eaf1fb;
@@ -39,26 +40,31 @@
   margin-bottom: 2rem;
 }
 .cover-photo {
-  width: 100%;
-  max-height: 280px;
+  width: 80%;
+  max-height: 180px;
   object-fit: cover;
   border-radius: 12px;
-  margin-bottom: 1rem;
+  margin: 0 auto 1rem auto;
+  display: block;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 .client-header h1 {
   font-size: 2rem;
   color: #2c3e50;
   margin-bottom: 0.3rem;
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
 }
 .address {
   font-size: 1rem;
   color: #555;
   margin-bottom: 0.5rem;
+  font-family: "Poppins", sans-serif;
 }
 .since {
   font-size: 0.9rem;
   color: #777;
+  font-family: "Poppins", sans-serif;
 }
 
 /* Body Section */
@@ -68,36 +74,51 @@
   gap: 2rem;
 }
 
+/* Section Cards */
+.client-body section {
+  background: #f9fbfd;
+  padding: 1.2rem 1.5rem;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: 0.2s ease-in-out;
+  font-family: "Poppins", sans-serif;
+}
+.client-body section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
 /* Section Titles */
 .client-body h2 {
   font-size: 1.25rem;
   color: #2c3e50;
   border-left: 5px solid #3498db;
   padding-left: 0.6rem;
-  margin-bottom: 0.8rem;
+  margin-bottom: 1rem;
   font-weight: 600;
+  font-family: "Poppins", sans-serif;
 }
 
-/* Paragraphs */
+/* Detail Items */
 .client-body p {
-  margin: 0.4rem 0;
+  margin: 0.6rem 0;
   font-size: 0.95rem;
   line-height: 1.6;
   color: #444;
+  background: #fff;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  font-family: "Poppins", sans-serif;
 }
 
-/* Highlight important labels */
+/* Highlight labels */
 .client-body strong {
+  display: block;
   color: #1a73e8;
   font-weight: 600;
-}
-
-/* Extra polish for sections */
-.client-body section {
-  background: #f9fbfd;
-  padding: 1rem 1.2rem;
-  border-radius: 12px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 0.2rem;
+  font-family: "Poppins", sans-serif;
 }
 
 /* Responsive Design */
@@ -107,6 +128,10 @@
   }
   .client-header h1 {
     font-size: 1.6rem;
+  }
+  .cover-photo {
+    width: 100%;
+    max-height: 150px;
   }
   .client-body h2 {
     font-size: 1.1rem;

@@ -8,6 +8,20 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Notifications from "./Notifications";
 
+// ✅ Filter Right Section as Function
+const ApplicationsFilterRight = ({ dateRange, onDateClick, onAllClick }) => {
+  return (
+    <div className="applications-filter-right">
+      <button className="a-date-btn" onClick={onDateClick}>
+        {dateRange}
+      </button>
+      <button className="a-all-btn" onClick={onAllClick}>
+        All Transactions
+      </button>
+    </div>
+  );
+};
+
 function Applications() {
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,13 +39,6 @@ function Applications() {
   const [reason, setReason] = useState("");
   const [specificReason, setSpecificReason] = useState("");
 
-  // Settings dropdown
-  const [showSettings, setShowSettings] = useState(false);
-
-  // Image states
-  const [imageErrors, setImageErrors] = useState({});
-  const [imageLoading, setImageLoading] = useState({});
-
   const navigate = useNavigate();
   const searchRef = useRef(null);
 
@@ -48,27 +55,15 @@ function Applications() {
     const imageUrl = getFileUrl(url);
     if (!url) return <span>No file uploaded</span>;
     if (!imageUrl) return <span className="error-text">Invalid image URL</span>;
-    if (imageErrors[key])
-      return (
-        <div className="error-text">
-          <span>Failed to load image</span>
-          <small>{imageUrl}</small>
-        </div>
-      );
+
     return (
-      <>
-        {imageLoading[key] && <div className="image-loading">Loading…</div>}
-        <img
-          src={imageUrl}
-          alt={alt}
-          className="doc-img"
-          style={{ display: imageLoading[key] ? "none" : "block" }}
-          onClick={() => setPreview(imageUrl)}
-          onLoad={() => setImageLoading((p) => ({ ...p, [key]: false }))}
-          onLoadStart={() => setImageLoading((p) => ({ ...p, [key]: true }))}
-          onError={() => setImageErrors((p) => ({ ...p, [key]: true }))}
-        />
-      </>
+      <img
+        src={imageUrl}
+        alt={alt}
+        className="doc-img"
+        onClick={() => setPreview(imageUrl)}
+        onError={(e) => (e.target.style.display = "none")}
+      />
     );
   };
 
@@ -187,7 +182,7 @@ function Applications() {
                 size={22}
                 className="settings-icon"
                 onClick={() => navigate("/settings")}
-                />
+              />
             </div>
             <div className="dropdown-wrapper">
               <img
@@ -195,8 +190,8 @@ function Applications() {
                 alt="profile"
                 className="profile-avatar"
                 onClick={() => navigate("/profile")}
-                />
-              </div>
+              />
+            </div>
           </div>
         </header>
 
@@ -209,6 +204,7 @@ function Applications() {
                 <span className="app-filter-label">All Applicants</span>
                 <span className="count">{filteredBusinesses.length}</span>
               </div>
+
               <div className="applications-search-box" ref={searchRef}>
                 <FiSearch className="search-icon" />
                 <input
@@ -239,15 +235,20 @@ function Applications() {
                   </ul>
                 )}
               </div>
-              <div className="applications-filter-right">
-                <button className="date-btn">19 Dec - 20 Dec 2024</button>
-                <button className="all-btn">All Transactions</button>
-              </div>
+
+              {/* ✅ New Functional Filter */}
+              <ApplicationsFilterRight
+                dateRange="19 Dec - 20 Dec 2024"
+                onDateClick={() => console.log("Date filter clicked")}
+                onAllClick={() => console.log("All Transactions clicked")}
+              />
             </div>
 
             {/* Table */}
             <div className="applications-table-wrapper">
-              <h3 className="applications-table-title">Applicants For Review</h3>
+              <h3 className="applications-table-title">
+                Applicants For Review
+              </h3>
               <table className="applications-table">
                 <thead>
                   <tr>
@@ -282,7 +283,9 @@ function Applications() {
                         <td>{biz.business_phone_number}</td>
                         <td>
                           {biz.created_at &&
-                            new Date(biz.created_at).toLocaleDateString("en-US")}
+                            new Date(biz.created_at).toLocaleDateString(
+                              "en-US"
+                            )}
                         </td>
                         <td className={`status ${biz.status || "pending"}`}>
                           {biz.status || "Pending"}
@@ -300,32 +303,65 @@ function Applications() {
           </>
         ) : (
           <div className="applications-review-panel">
-            <h3 className="applications-review-panel-title">{selectedBiz.business_name} For Review</h3>
-            <p><strong>First Name:</strong> {selectedBiz.owner_first_name}</p>
-            <p><strong>Last Name:</strong> {selectedBiz.owner_last_name}</p>
-            <p><strong>Phone Number:</strong> {selectedBiz.business_phone_number}</p>
-            <p><strong>Business Name:</strong> {selectedBiz.business_name}</p>
-            <p><strong>Business Address:</strong> {selectedBiz.business_address}</p>
+            <h3 className="applications-review-panel-title">
+              {selectedBiz.business_name} For Review
+            </h3>
+            <p>
+              <strong>First Name:</strong> {selectedBiz.owner_first_name}
+            </p>
+            <p>
+              <strong>Last Name:</strong> {selectedBiz.owner_last_name}
+            </p>
+            <p>
+              <strong>Phone Number:</strong> {selectedBiz.business_phone_number}
+            </p>
+            <p>
+              <strong>Business Name:</strong> {selectedBiz.business_name}
+            </p>
+            <p>
+              <strong>Business Address:</strong> {selectedBiz.business_address}
+            </p>
 
             <div className="review-docs">
               <div className="doc-box">
                 <p>Attach BIR Registration</p>
-                {renderDocumentImage(selectedBiz.bir_registration_url, "BIR Registration", "bir")}
+                {renderDocumentImage(
+                  selectedBiz.bir_registration_url,
+                  "BIR Registration",
+                  "bir"
+                )}
               </div>
               <div className="doc-box">
                 <p>Business Certificate</p>
-                {renderDocumentImage(selectedBiz.business_certificate_url, "Business Certificate", "certificate")}
+                {renderDocumentImage(
+                  selectedBiz.business_certificate_url,
+                  "Business Certificate",
+                  "certificate"
+                )}
               </div>
               <div className="doc-box">
                 <p>Business Mayor Permit</p>
-                {renderDocumentImage(selectedBiz.mayors_permit_url, "Mayor Permit", "mayor")}
+                {renderDocumentImage(
+                  selectedBiz.mayors_permit_url,
+                  "Mayor Permit",
+                  "mayor"
+                )}
               </div>
             </div>
 
             <div className="review-actions">
-              <button className="approve-btn" onClick={handleApprove}>Approve</button>
-              <button className="reject-btn" onClick={() => setShowRejectModal(true)}>Reject</button>
-              <button className="back-btn" onClick={() => setSelectedBiz(null)}>Back</button>
+              <button className="approve-btn" onClick={handleApprove}>
+                Approve
+              </button>
+              <button
+                className="reject-btn"
+                onClick={() => setShowRejectModal(true)}
+              >
+                Reject
+              </button>
+              <button className="back-btn" onClick={() => setSelectedBiz(null)}>
+                Back
+              </button>
             </div>
           </div>
         )}

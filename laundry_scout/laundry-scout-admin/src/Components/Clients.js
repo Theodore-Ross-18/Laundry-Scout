@@ -113,29 +113,29 @@ function Clients() {
         </header>
 
         {/* Search + Filter */}
-        <div className="applications-filters">
-          <div className="applications-filter-tab">
-            <span className="app-filter-label">All Clients</span>
+        <div className="clients-filters">
+          <div className="clients-filter-tab">
+            <span className="clients-filter-label">All Clients</span>
             <span className="count">{filteredClients.length}</span>
           </div>
-          <div className="applications-search-box" ref={searchRef}>
-            <FiSearch className="search-icon" />
+          <div className="clients-search-box" ref={searchRef}>
+            <FiSearch className="c-search-icon" />
             <input
               type="text"
               placeholder="Search Clients"
-              className="applications-search-input"
+              className="clients-search-input"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={handleKeyDown}
               onFocus={() => setShowHistory(true)}
             />
             {showHistory && searchHistory.length > 0 && (
-              <ul className="applications-search-history">
+              <ul className="clients-search-history">
                 {searchHistory.map((item, idx) => (
                   <li key={idx} onClick={() => setSearch(item)}>
                     <span>{item}</span>
                     <button
-                      className="applications-delete-history"
+                      className="clients-delete-history"
                       onClick={(e) => {
                         e.stopPropagation();
                         deleteHistory(item);
@@ -148,9 +148,9 @@ function Clients() {
               </ul>
             )}
           </div>
-          <div className="applications-filter-right">
-            <button className="date-btn">19 Dec - 20 Dec 2024</button>
-            <button className="all-btn">All Transactions</button>
+          <div className="clients-filter-right">
+            <button className="c-date-btn">19 Dec - 20 Dec 2024</button>
+            <button className="c-all-btn">All Transactions</button>
           </div>
         </div>
 

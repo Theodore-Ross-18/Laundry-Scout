@@ -8,8 +8,8 @@ import Notifications from "../Notifications";
 
 function Profile({ adminUser }) {
   const navigate = useNavigate();
-  const effectiveId = adminUser?.admin_id ?? 1; // fallback id 1
-  const adminName = adminUser?.username ?? "Admin"; // fallback name "Admin"
+  const effectiveId = adminUser?.admin_id ?? 1;
+  const adminName = adminUser?.username ?? "Admin";
 
   const [form, setForm] = useState({
     username: "",
@@ -21,10 +21,10 @@ function Profile({ adminUser }) {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [editMode, setEditMode] = useState(false);
+  const [editField, setEditField] = useState(null); // 🔑 which field to edit
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // ✅ fetch admin data from Supabase on mount or id change
+  // ✅ fetch admin data
   useEffect(() => {
     if (!effectiveId) return;
     (async () => {
@@ -48,9 +48,9 @@ function Profile({ adminUser }) {
     })();
   }, [effectiveId]);
 
-  // upload new avatar
+  // ✅ upload new avatar
   const handleFileUpload = async (e) => {
-    if (!editMode) return;
+    if (!editField) return;
     const file = e.target.files[0];
     if (!file) return;
 
@@ -70,7 +70,7 @@ function Profile({ adminUser }) {
     }
   };
 
-  // save changes
+  // ✅ save changes
   const handleSave = async () => {
     if (!effectiveId) {
       setMessage("❌ Admin ID not available yet.");
@@ -78,15 +78,13 @@ function Profile({ adminUser }) {
     }
 
     setLoading(true);
+
+    // Only update the field being edited
+    const updates = { [editField]: form[editField] };
+
     const { error: updateError } = await supabase
       .from("admin")
-      .update({
-        username: form.username,
-        password: form.password,
-        email: form.email,
-        phone_number: form.phone_number,
-        profile_img: form.profile_img,
-      })
+      .update(updates)
       .eq("admin_id", effectiveId);
 
     setLoading(false);
@@ -94,8 +92,8 @@ function Profile({ adminUser }) {
     if (updateError) {
       setMessage("❌ Save failed: " + updateError.message);
     } else {
-      setMessage("✅ Profile updated successfully!");
-      setEditMode(false);
+      setMessage("✅ " + editField + " updated successfully!");
+      setEditField(null);
       setTimeout(() => setMessage(""), 2000);
     }
   };
@@ -114,12 +112,9 @@ function Profile({ adminUser }) {
           </div>
 
           <div className="profile-header-actions">
-            {/* Notifications */}
             <div className="notification-wrapper">
               <Notifications />
             </div>
-
-            {/* Settings */}
             <div className="settings-wrapper">
               <FiSettings
                 size={22}
@@ -127,8 +122,6 @@ function Profile({ adminUser }) {
                 onClick={() => navigate("/settings")}
               />
             </div>
-
-            {/* Profile Avatar */}
             <div className="dropdown-wrapper">
               <img
                 src={form.profile_img || "https://via.placeholder.com/32"}
@@ -151,7 +144,9 @@ function Profile({ adminUser }) {
               />
             )}
             <div className="profile-account-info">
-              <div className="profile-account-name">{form.username || "Admin"}</div>
+              <div className="profile-account-name">
+                {form.username || "Admin"}
+              </div>
               <div className="profile-account-email">{form.email}</div>
             </div>
           </div>
@@ -175,21 +170,20 @@ function Profile({ adminUser }) {
         <div className="profile-name">
           <div className="gap">
             <span className="profile-name-label">Name </span>
-            <div className="register-name">{adminName}</div>
+            <div className="register-name">{form.username}</div>
           </div>
-          <button className="name-edit" onClick={() => setEditMode(true)}>
-            Edit Profile
+          <button className="name-edit" onClick={() => setEditField("username")}>
+            Edit Name
           </button>
         </div>
 
         {/* Email */}
-
         <div className="profile-email">
           <div className="gap">
             <span className="profile-name-label">Email </span>
             <div className="register-name">{form.email}</div>
           </div>
-          <button className="name-edit" onClick={() => setEditMode(true)}>
+          <button className="name-edit" onClick={() => setEditField("email")}>
             Edit Email
           </button>
         </div>
@@ -200,7 +194,7 @@ function Profile({ adminUser }) {
             <span className="profile-name-label">Password </span>
             <div className="register-name">********</div>
           </div>
-          <button className="name-edit" onClick={() => setEditMode(true)}>
+          <button className="name-edit" onClick={() => setEditField("password")}>
             Edit Password
           </button>
         </div>
@@ -209,117 +203,50 @@ function Profile({ adminUser }) {
         <div className="profile-account-security">
           <div className="gap">
             <span className="profile-name-label">Account Security </span>
-            <div className="profile-account-security-text">Manage your Account Security</div>
+            <div className="profile-account-security-text">
+              Manage your Account Security
+            </div>
             <div className="delete-btn">
-              <FiTrash 
-              className="profile-account-security-trash-icon"/>
+              <FiTrash className="profile-account-security-trash-icon" />
               <span>Delete Account</span>
             </div>
           </div>
         </div>
 
-        {/* Read-only */}
-        {/* {!editMode && (
-          <div className="card">
-            <h3>Account Details</h3>
-            {form.profile_img && (
-              <img
-                src={form.profile_img}
-                alt="Avatar"
-                className="avatar-preview"
-              />
-            )}
-            <p>
-              <strong>Username:</strong> {form.username}
-            </p>
-            <p>
-              <strong>Password:</strong> ******
-            </p>
-            <p>
-              <strong>Email:</strong> {form.email}
-            </p>
-            <p>
-              <strong>Phone Number:</strong> {form.phone_number}
-            </p>
-            <button className="btn" onClick={() => setEditMode(true)}>
-              ✏️ Edit Profile
-            </button>
-          </div>
-        )} */}
+        {/* ✅ Overlay Modal for Editing */}
+        {editField && (
+          <div className="overlay">
+            <div className="overlay-content">
+              <h3>Edit {editField.charAt(0).toUpperCase() + editField.slice(1)}</h3>
 
-        {/* Editable */}
-        {/* {editMode && (
-          <div className="profile-main">
-            <h3>Edit Profile</h3>
-            <div className="form-group">
-              <label>Profile Picture</label>
-              <input type="file" accept="image/*" onChange={handleFileUpload} />
-              {form.profile_img && (
-                <img
-                  src={form.profile_img}
-                  alt="Avatar"
-                  className="avatar-preview"
+              <div className="form-group">
+                <label>{editField}</label>
+                <input
+                  type={editField === "password" ? "password" : "text"}
+                  value={form[editField]}
+                  onChange={(e) =>
+                    setForm({ ...form, [editField]: e.target.value })
+                  }
                 />
-              )}
-            </div>
-            <div className="form-group">
-              <label>Username</label>
-              <input
-                type="text"
-                value={form.username}
-                onChange={(e) =>
-                  setForm({ ...form, username: e.target.value })
-                }
-              />
-            </div>
-            <div className="form-group">
-              <label>Password</label>
-              <input
-                type="password"
-                value={form.password}
-                onChange={(e) =>
-                  setForm({ ...form, password: e.target.value })
-                }
-              />
-            </div>
-            <div className="form-group">
-              <label>Email</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
-            </div>
-            <div className="form-group">
-              <label>Phone Number</label>
-              <input
-                type="text"
-                value={form.phone_number}
-                onChange={(e) =>
-                  setForm({ ...form, phone_number: e.target.value })
-                }
-              />
-            </div>
+              </div>
 
-            <div className="form-actions">
-              <button
-                className="btn primary"
-                onClick={handleSave}
-                disabled={loading}
-              >
-                {loading ? "Saving..." : "Save Changes"}
-              </button>
-              <button
-                className="btn secondary"
-                onClick={() => setEditMode(false)}
-              >
-                Cancel
-              </button>
+              <div className="form-actions">
+                <button
+                  className="btn primary"
+                  onClick={handleSave}
+                  disabled={loading}
+                >
+                  {loading ? "Saving..." : "Save"}
+                </button>
+                <button className="btn secondary" onClick={() => setEditField(null)}>
+                  Cancel
+                </button>
+              </div>
+
+              {message && <p className="message">{message}</p>}
             </div>
           </div>
         )}
-
-        {message && <p className="message">{message}</p>} */}
       </div>
     </div>
   );

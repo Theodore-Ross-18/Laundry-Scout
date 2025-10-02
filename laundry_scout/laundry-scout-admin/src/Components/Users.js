@@ -5,6 +5,7 @@ import {
   FiBell,
   FiSearch,
   FiMoreVertical,
+  FiSettings
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
@@ -119,39 +120,24 @@ function Users() {
                 </p>
             </div>
           </div>
-          <div className="users-header-icons">
-            <Notifications />
-            <div className="dropdown-wrapper">
+          <div className="applications-header-icons">
+            <div className="notification-wrapper">
+              <Notifications />
+            </div>
+            <div className="settings-wrapper">
+              <FiSettings
+                size={22}
+                className="settings-icon"
+                onClick={() => navigate("/settings")}
+              />
             </div>
             <div className="dropdown-wrapper">
               <img
                 src="https://via.placeholder.com/32"
-                alt="Profile"
+                alt="profile"
                 className="profile-avatar"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowSettings(!showSettings);
-                }}
+                onClick={() => navigate("/profile")}
               />
-              {showSettings && (
-                <div className="dropdown-panel" onClick={(e) => e.stopPropagation()}>
-                  <div className="dropdown-item" onClick={() => navigate("/profile")}>
-                    My Profile
-                  </div>
-                  <div className="dropdown-item" onClick={() => navigate("/settings")}>
-                    Settings
-                  </div>
-                  <div
-                    className="dropdown-item"
-                    onClick={async () => {
-                      await supabase.auth.signOut();
-                      navigate("/login");
-                    }}
-                  >
-                    Logout
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </header>
@@ -192,9 +178,9 @@ function Users() {
               </ul>
             )}
           </div>
-          <div className="applications-filter-right">
-            <button className="date-btn">19 Dec - 20 Dec 2024</button>
-            <button className="all-btn">All Transactions</button>
+          <div className="users-filter-right">
+            <button className="u-date-btn">19 Dec - 20 Dec 2024</button>
+            <button className="u-all-btn">All Transactions</button>
           </div>
         </div>
 

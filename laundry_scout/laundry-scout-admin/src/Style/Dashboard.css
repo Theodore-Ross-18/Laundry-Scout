@@ -51,36 +51,20 @@
 }
 
 /* Profile dropdown */
-.profile-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
 .dropdown-wrapper {
   position: relative;
+  width: 40px;          /* adjust size */
+  height: 40px;         /* keep it equal to width */
+  border-radius: 50%;   /* makes it circular */
+  object-fit: cover; 
 }
 
-.dropdown-panel {
-  position: absolute;
-  right: 0;
-  top: 46px;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  z-index: 20;
-}
-
-.dropdown-item {
-  padding: 10px 16px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.dropdown-item:hover {
-  background: #f1f1f7;
+.profile-avatar {
+  width: 40px;          /* adjust size */
+  height: 40px;         /* keep it equal to width */
+  border-radius: 50%;   /* makes it circular */
+  object-fit: cover; 
+  border: 1px solid #c9c9c9;
 }
 
 /* ============================
