@@ -9,7 +9,8 @@ import 'location_screen.dart';
 import 'laundry_screen.dart'; 
 import 'message_screen.dart'; 
 import 'notification_screen.dart';
-import 'business_detail_screen.dart'; 
+import 'business_detail_screen.dart';
+import 'promo_preview.dart'; 
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -1114,11 +1115,28 @@ class HomeScreenBody extends StatelessWidget {
                           itemCount: promos.length,
                           itemBuilder: (context, index) {
                             final promo = promos[index];
-                            return Container(
+                            return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PromoPreviewScreen(promoData: promo),
+                                ),
+                              );
+                            },
+                            child: Container(
                               width: 250,
                               margin: EdgeInsets.only(left: index == 0 ? 16.0 : 8.0, right: index == promos.length - 1 ? 16.0 : 0),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(15),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.2),
+                                    spreadRadius: 1,
+                                    blurRadius: 5,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(15),
@@ -1144,21 +1162,54 @@ class HomeScreenBody extends StatelessWidget {
                                             fit: BoxFit.cover,
                                           ),
                                     Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(15),
-                                  
-                                ),
-                                padding: const EdgeInsets.all(12.0),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-          
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(15),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.7),
+                                  ],
+                                  stops: const [0.5, 1.0],
                                 ),
                               ),
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (promo['promo_title'] != null)
+                                    Text(
+                                      promo['promo_title'],
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  if (promo['promo_title'] != null && promo['business_profiles']?['business_name'] != null)
+                                    const SizedBox(height: 4),
+                                  if (promo['business_profiles']?['business_name'] != null)
+                                    Text(
+                                      promo['business_profiles']['business_name'],
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 14,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                ],
+                              ),
+                            ),
                                   ],
                                 ),
                               ),
-                            );
+                            ),
+                          );
                           },
                         ),
                       ),

@@ -271,4 +271,56 @@ class NotificationService {
       print('❌ Failed to handle message notification: $e');
     }
   }
+
+  /// Creates notifications for all users when a new promo is posted
+  Future<void> createPromoNotification({
+    required String businessId,
+    required String promoTitle,
+    required String promoDescription,
+    String? promoImageUrl,
+  }) async {
+    try {
+      print('🔔 Creating promo notifications for business: $businessId');
+      
+      // Get business profile
+      final businessProfile = await _getBusinessProfile(businessId);
+      final businessName = businessProfile?['business_name'] ?? 'A laundry shop';
+      
+      // Get all users except the business owner
+      final usersResponse = await Supabase.instance.client
+          .from('user_profiles')
+          .select('id')
+          .not('id', 'eq', businessId); // Don't notify the business owner
+      
+      print('📢 Found ${usersResponse.length} users to notify about promo');
+      
+      // Create notifications for all users
+      final notifications = usersResponse.map((user) => {
+        'user_id': user['id'],
+        'title': '🎉 New Promo from $businessName!',
+        'message': promoDescription.isNotEmpty ? promoDescription : 'Check out our latest promotion',
+        'type': 'promo',
+        'is_read': false,
+        'created_at': DateTime.now().toIso8601String(),
+        'data': {
+          'business_id': businessId,
+          'business_name': businessName,
+          'promo_title': promoTitle,
+          'promo_image_url': promoImageUrl,
+          'promo_type': 'new_promo',
+        },
+      }).toList();
+      
+      // Batch insert notifications
+      if (notifications.isNotEmpty) {
+        await Supabase.instance.client
+            .from('notifications')
+            .insert(notifications);
+        
+        print('✅ Successfully created ${notifications.length} promo notifications');
+      }
+    } catch (e) {
+      print('❌ Failed to create promo notifications: $e');
+    }
+  }
 }

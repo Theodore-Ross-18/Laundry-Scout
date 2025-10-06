@@ -4,6 +4,8 @@ import 'dart:io'; // For File
 import 'package:flutter/foundation.dart' show kIsWeb; // Import kIsWeb
 import 'dart:typed_data'; // Import Uint8List
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:laundry_scout/services/notification_service.dart';
+import 'owner_promo_preview.dart';
 
 class AddPromoScreen extends StatefulWidget {
   const AddPromoScreen({super.key});
@@ -15,6 +17,16 @@ class AddPromoScreen extends StatefulWidget {
 class _AddPromoScreenState extends State<AddPromoScreen> {
   File? _selectedImageFile; // To store the selected image file for non-web
   Uint8List? _selectedImageBytes; // To store the selected image bytes for web
+  final _promoTitleController = TextEditingController();
+  final _promoDescriptionController = TextEditingController();
+  final _notificationService = NotificationService();
+
+  @override
+  void dispose() {
+    _promoTitleController.dispose();
+    _promoDescriptionController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickImage() async {
     // Use FilePicker to pick files
@@ -43,10 +55,37 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
     }
   }
 
+  String? _getImageUrlForPreview() {
+    // Return temporary image URL for preview
+    if (kIsWeb && _selectedImageBytes != null) {
+      // For web, create a data URL from bytes
+      return null; // Will show placeholder in preview
+    } else if (_selectedImageFile != null) {
+      // For mobile, create a file path URL
+      return _selectedImageFile!.path;
+    }
+    return null; // No image selected
+  }
+
   void _publishPromo() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) throw Exception('Not authenticated');
+      
+      // Validate inputs
+      if (_promoTitleController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a promo title')),
+        );
+        return;
+      }
+      
+      if (_promoDescriptionController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a promo description')),
+        );
+        return;
+      }
   
       String? imageUrlToStore; // To store the public URL
 
@@ -63,20 +102,44 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
         imageUrlToStore = Supabase.instance.client.storage
             .from('promoimages')
             .getPublicUrl(fileName);
-      } 
+      } else if (_selectedImageFile != null) {
+        // Handle mobile image upload
+        final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+        await Supabase.instance.client.storage
+            .from('promoimages')
+            .upload(
+              fileName,
+              _selectedImageFile!,
+            );
+        imageUrlToStore = Supabase.instance.client.storage
+            .from('promoimages')
+            .getPublicUrl(fileName);
+      }
 
-     
-        
-  
-      // Save promo data
-      await Supabase.instance.client.from('promos').insert({
+      // Save promo data with title and description
+      final promoData = {
         'creator_id': user.id, 
         'business_id': user.id, 
+        'promo_title': _promoTitleController.text.trim(),
+        'promo_description': _promoDescriptionController.text.trim(),
         'image_url': imageUrlToStore, // Store the public URL
         'created_at': DateTime.now().toIso8601String(),
-      });
+      };
+      
+      await Supabase.instance.client.from('promos').insert(promoData);
+      
+      // Send notifications to all users about the new promo
+      await _notificationService.createPromoNotification(
+        businessId: user.id,
+        promoTitle: _promoTitleController.text.trim(),
+        promoDescription: _promoDescriptionController.text.trim(),
+        promoImageUrl: imageUrlToStore,
+      );
   
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Promo published successfully!')),
+        );
         Navigator.pop(context);
       }
     } catch (e) {
@@ -100,8 +163,21 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              // TODO: Implement Preview functionality
-              print('Preview button tapped');
+              // Navigate to preview screen with current data
+              final previewData = {
+                'promo_title': _promoTitleController.text.trim(),
+                'promo_description': _promoDescriptionController.text.trim(),
+                'image_url': _getImageUrlForPreview(),
+              };
+              
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => OwnerPromoPreviewScreen(
+                    promoData: previewData,
+                  ),
+                ),
+              );
             },
             child: const Text(
               'Preview',
@@ -164,6 +240,43 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
               ),
             ),
             const SizedBox(height: 24),
+            // Promo Title Field
+            TextField(
+              controller: _promoTitleController,
+              style: const TextStyle(color: Colors.black),
+              decoration: InputDecoration(
+                labelText: 'Promo Title',
+                labelStyle: const TextStyle(color: Colors.black),
+                hintText: 'Enter your promo title (e.g., "Summer Special!"',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              maxLength: 50,
+            ),
+            const SizedBox(height: 16),
+            // Promo Description Field
+            TextField(
+              controller: _promoDescriptionController,
+              style: const TextStyle(color: Colors.black),
+              decoration: InputDecoration(
+                labelText: 'Promo Description',
+                labelStyle: const TextStyle(color: Colors.black),
+                hintText: 'Describe your promo offer (e.g., "20% off on all laundry services this week!")',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              maxLines: 3,
+              maxLength: 200,
+            ),
+            const SizedBox(height: 24),
             // Instructions
             const Text(
               'Instruction to achieve a good Promo Add',
@@ -193,10 +306,10 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             // Example Image Placeholder (replace with actual image asset if available)
             Container(
-              height: 157, // Adjust height as needed
+              height: 200, // Adjust height as needed
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.deepPurple, // Example background color
