@@ -163,9 +163,128 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   }
 
   void _onItemTapped(int index) {
+    if (!mounted) return;
+    
+    // If Home button (index 0) is pressed and we're already on Home screen
+    if (index == 0 && _selectedIndex == 0) {
+      // Refresh data in the background without showing loading indicators
+      _refreshDataInBackground();
+      return;
+    }
+    
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  // Background refresh method that loads all data without showing loading states
+  Future<void> _refreshDataInBackground() async {
+    try {
+      // Load all data in parallel without setting loading states
+      await Future.wait([
+        _loadBusinessProfileBackground(),
+        _loadOrderStatsBackground(),
+        _loadPromoStatsBackground(),
+        _loadReviewStatsBackground(),
+      ]);
+    } catch (e) {
+      print('Background refresh error: $e');
+      // Silently handle errors in background refresh
+    }
+  }
+
+  // Background versions of loading methods that don't set loading states
+  Future<void> _loadBusinessProfileBackground() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final businessId = await _feedbackService.getBusinessIdForOwner(user.id);
+      if (businessId == null) return;
+
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select()
+          .eq('id', businessId)
+          .single();
+
+      if (mounted) {
+        setState(() {
+          _businessProfile = response;
+        });
+      }
+    } catch (e) {
+      print('Background business profile load error: $e');
+    }
+  }
+
+  Future<void> _loadOrderStatsBackground() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final response = await Supabase.instance.client
+          .from('orders')
+          .select('status')
+          .eq('business_id', user.id);
+
+      final orders = List<Map<String, dynamic>>.from(response);
+      final stats = {
+        'total': orders.length,
+        'pending': orders.where((o) => o['status'] == 'pending').length,
+        'in_progress': orders.where((o) => o['status'] == 'in_progress').length,
+        'completed': orders.where((o) => o['status'] == 'completed').length,
+      };
+
+      if (mounted) {
+        setState(() {
+          _orderStats = stats;
+        });
+      }
+    } catch (e) {
+      print('Background order stats load error: $e');
+    }
+  }
+
+  Future<void> _loadPromoStatsBackground() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final response = await Supabase.instance.client
+          .from('promos')
+          .select('id')
+          .eq('business_id', user.id);
+
+      if (mounted) {
+        setState(() {
+          _promoCount = response.length;
+        });
+      }
+    } catch (e) {
+      print('Background promo stats load error: $e');
+    }
+  }
+
+  Future<void> _loadReviewStatsBackground() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null || _businessProfile == null) return;
+
+      final businessId = _businessProfile!['id'];
+      if (businessId == null) return;
+
+      final allFeedback = await _feedbackService.getFeedback(businessId);
+      final filteredFeedback = allFeedback.where((feedback) => feedback['user_profiles'] != null).toList();
+
+      if (mounted) {
+        setState(() {
+          _reviewCount = filteredFeedback.length;
+        });
+      }
+    } catch (e) {
+      print('Background review stats load error: $e');
+    }
   }
 
   Widget _buildBody() {
