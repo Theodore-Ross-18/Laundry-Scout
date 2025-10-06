@@ -76,4 +76,6 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
+  web:
+    generate: true
   image_path: lib/assets/lslogo.png

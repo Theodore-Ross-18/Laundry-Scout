@@ -4,6 +4,7 @@ import 'verification_screen.dart';
 import 'select_user.dart';
 // Consider importing a package for social icons like font_awesome_flutter
 // import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:laundry_scout/widgets/animated_eye_widget.dart'; // Import the animated eye widget
 
 // Helper function for creating a fade transition
 Route _createFadeRoute(Widget page) {
@@ -461,17 +462,17 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                           });
                                         },
                                       ),
-                                      IconButton(
-                                        icon: Icon(
-                                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                          size: 18.0,
-                                        ),
-                                        onPressed: () {
+                                      AnimatedEyeWidget(
+                                        isObscured: _obscurePassword,
+                                        onToggle: () {
                                           setState(() {
                                             _obscurePassword = !_obscurePassword;
                                           });
                                         },
+                                        size: 18.0,
+                                        color: Colors.white70,
                                       ),
+                                      const SizedBox(width: 8), // Add some spacing
                                     ],
                                   )
                                 : null,
@@ -524,17 +525,17 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                           });
                                         },
                                       ),
-                                      IconButton(
-                                        icon: Icon(
-                                          _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
-                                          size: 18.0,
-                                        ),
-                                        onPressed: () {
+                                      AnimatedEyeWidget(
+                                        isObscured: _obscureConfirmPassword,
+                                        onToggle: () {
                                           setState(() {
                                             _obscureConfirmPassword = !_obscureConfirmPassword;
                                           });
                                         },
+                                        size: 18.0,
+                                        color: Colors.white70,
                                       ),
+                                      const SizedBox(width: 8), // Add some spacing
                                     ],
                                   )
                                 : null,

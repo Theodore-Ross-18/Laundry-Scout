@@ -8,6 +8,7 @@ import '../home/Owner/owner_home_screen.dart';
 import 'forgotpassverify_screen.dart'; // Import the new screen
 import 'dart:async'; // Import the dart:async library
 import '../../services/notification_service.dart';
+import 'package:laundry_scout/widgets/animated_eye_widget.dart'; // Import the animated eye widget
 
 // Helper function for creating a fade transition
 Route _createFadeRoute(Widget page) {
@@ -457,18 +458,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                       });
                                     },
                                   ),
-                                  IconButton(
-                                    icon: Icon(
-                                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                      size: 18.0,
-                                      color: Colors.white70,
-                                    ),
-                                    onPressed: () {
+                                  AnimatedEyeWidget(
+                                    isObscured: _obscurePassword,
+                                    onToggle: () {
                                       setState(() {
                                         _obscurePassword = !_obscurePassword;
                                       });
                                     },
+                                    size: 18.0,
+                                    color: Colors.white70,
                                   ),
+                                  const SizedBox(width: 8), // Add some spacing
                                 ],
                               )
                             : null,
