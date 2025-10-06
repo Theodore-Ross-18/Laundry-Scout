@@ -460,6 +460,223 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// Animated Service Icon Widget
+class _AnimatedServiceIcon extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final String animationType;
+  final Color color;
+  final int? count;
+  final VoidCallback? onTap;
+
+  const _AnimatedServiceIcon({
+    required this.icon,
+    required this.label,
+    required this.animationType,
+    required this.color,
+    this.count,
+    this.onTap,
+  });
+
+  @override
+  State<_AnimatedServiceIcon> createState() => _AnimatedServiceIconState();
+}
+
+class _AnimatedServiceIconState extends State<_AnimatedServiceIcon>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    );
+    
+    // Initialize animation based on animation type
+    switch (widget.animationType) {
+      case 'bounce':
+        _animation = TweenSequence<double>([
+          TweenSequenceItem(tween: Tween(begin: 0.0, end: -10.0), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: -10.0, end: 0.0), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.0), weight: 50),
+        ]).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: Curves.easeInOut,
+          ),
+        );
+        break;
+      case 'pulse':
+        _animation = TweenSequence<double>([
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.2), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 50),
+        ]).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: Curves.easeInOut,
+          ),
+        );
+        break;
+      case 'slide':
+        _animation = TweenSequence<double>([
+          TweenSequenceItem(tween: Tween(begin: 0.0, end: 5.0), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: 5.0, end: -5.0), weight: 50),
+          TweenSequenceItem(tween: Tween(begin: -5.0, end: 0.0), weight: 25),
+        ]).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: Curves.easeInOut,
+          ),
+        );
+        break;
+    }
+    
+    // Only start animation if there are active orders
+    if ((widget.count ?? 0) > 0) {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(_AnimatedServiceIcon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // Handle animation changes when widget updates
+    if ((widget.count ?? 0) > 0 && (oldWidget.count ?? 0) == 0) {
+      // Start animation when orders become available
+      _controller.repeat();
+    } else if ((widget.count ?? 0) == 0 && (oldWidget.count ?? 0) > 0) {
+      // Stop animation when no orders
+      _controller.stop();
+      _controller.reset();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: (widget.count ?? 0) == 0
+          ? _buildStaticIcon()
+          : AnimatedBuilder(
+              animation: _animation,
+              builder: (context, child) {
+                return Column(
+                  children: [
+                    Transform.translate(
+                      offset: widget.animationType == 'bounce' || widget.animationType == 'slide'
+                          ? Offset(0, _animation.value)
+                          : Offset.zero,
+                      child: Transform.scale(
+                        scale: widget.animationType == 'pulse' ? _animation.value : 1.0,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Glow effect for active orders when count > 0
+                            if (widget.animationType == 'pulse' && (widget.count ?? 0) > 0)
+                              Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.blue.withOpacity(0.3),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.blue.withOpacity(0.5),
+                                      blurRadius: 10 * _animation.value,
+                                      spreadRadius: 2 * _animation.value,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            Icon(
+                              widget.icon,
+                              size: 40,
+                              color: widget.color,
+                            ),
+                            // Badge for active orders
+                            if (widget.animationType == 'pulse' && (widget.count ?? 0) > 0)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 16,
+                                    minHeight: 16,
+                                  ),
+                                  child: Text(
+                                    widget.count.toString(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.label,
+                      style: TextStyle(
+                        color: widget.color,
+                        fontSize: 12,
+                        fontWeight: widget.animationType == 'pulse' ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+    );
+  }
+  
+  Widget _buildStaticIcon() {
+    return Column(
+      children: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            Icon(
+              widget.icon,
+              size: 40,
+              color: widget.color,
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          widget.label,
+          style: TextStyle(
+            color: widget.color,
+            fontSize: 12,
+            fontWeight: FontWeight.normal,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class HomeScreenBody extends StatelessWidget {
   final String userName;
   final String? profileImageUrl; // Add profile image URL parameter
@@ -672,32 +889,57 @@ class HomeScreenBody extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              // Active Orders Section
+              // Active Orders Section with Animations
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    Column(
-                      children: [
-                        Icon(Icons.delivery_dining, size: 40, color: Colors.grey[700]),
-                        const SizedBox(height: 4),
-                        Text('Pick Up', style: TextStyle(color: Colors.grey[700])),
-                      ],
+                    // Pick Up Animation
+                    _AnimatedServiceIcon(
+                      icon: Icons.delivery_dining,
+                      label: 'Pick Up',
+                      animationType: 'bounce',
+                      color: Colors.grey[700]!,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const NotificationScreen(initialTabIndex: 1),
+                          ),
+                        );
+                      },
                     ),
-                    Column(
-                      children: [
-                        Icon(Icons.assignment, size: 40, color: Colors.grey[700]),
-                        const SizedBox(height: 4),
-                        Text('$activeOrdersCount Active orders', style: TextStyle(color: Colors.black)),
-                      ],
+                    // Active Orders Animation
+                    _AnimatedServiceIcon(
+                      icon: Icons.assignment,
+                      label: '$activeOrdersCount Active orders',
+                      animationType: 'pulse',
+                      color: Colors.black,
+                      count: activeOrdersCount,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const NotificationScreen(initialTabIndex: 1),
+                          ),
+                        );
+                      },
                     ),
-                    Column(
-                      children: [
-                        Icon(Icons.local_shipping, size: 40, color: Colors.grey[700]),
-                        const SizedBox(height: 4),
-                        Text('Delivery', style: TextStyle(color: Colors.grey[700])),
-                      ],
+                    // Delivery Animation
+                    _AnimatedServiceIcon(
+                      icon: Icons.local_shipping,
+                      label: 'Delivery',
+                      animationType: 'slide',
+                      color: Colors.grey[700]!,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const NotificationScreen(initialTabIndex: 1),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

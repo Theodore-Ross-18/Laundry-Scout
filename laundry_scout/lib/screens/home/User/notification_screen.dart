@@ -6,7 +6,9 @@ import 'package:intl/intl.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class NotificationScreen extends StatefulWidget {
-  const NotificationScreen({super.key});
+  final int initialTabIndex;
+  
+  const NotificationScreen({super.key, this.initialTabIndex = 0});
 
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();
@@ -24,7 +26,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 2, vsync: this, initialIndex: widget.initialTabIndex);
     _loadNotifications();
     _loadOrders();
     _setupRealtimeSubscription();

@@ -184,28 +184,26 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         const SizedBox(height: 32),
                         
                         // Profile Name
-                        Expanded(
-                          child: RichText(
-                            text: TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: (_businessProfile!["business_name"] ?? "Don Ernesto"),
-                                  style: TextStyle(
-                                    color: Color(0xFF7B61FF),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 24,
-                                  ),
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: (_businessProfile!["business_name"] ?? "Don Ernesto"),
+                                style: TextStyle(
+                                  color: Color(0xFF7B61FF),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 24,
                                 ),
-                                TextSpan(
-                                  text: "'s Profile",
-                                  style: TextStyle(
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 24,
-                                  ),
+                              ),
+                              TextSpan(
+                                text: "'s Profile",
+                                style: TextStyle(
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 24,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                         
