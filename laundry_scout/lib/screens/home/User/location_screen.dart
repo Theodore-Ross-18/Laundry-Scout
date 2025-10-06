@@ -1,9 +1,207 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'business_detail_screen.dart'; // Import the business detail screen
+
+class AnimatedLocationPin extends StatefulWidget {
+  const AnimatedLocationPin({super.key});
+
+  @override
+  State<AnimatedLocationPin> createState() => _AnimatedLocationPinState();
+}
+
+class _AnimatedLocationPinState extends State<AnimatedLocationPin>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _bounceAnimation;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _bounceAnimation = Tween<double>(begin: 0, end: -20).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _bounceAnimation.value),
+          child: Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 20,
+                    spreadRadius: 5,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.location_on,
+                color: Color(0xFF6F5ADC),
+                size: 60,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class LocationPermissionOverlay extends StatelessWidget {
+  final String message;
+  final VoidCallback onRequestPermission;
+
+  const LocationPermissionOverlay({
+    super.key,
+    required this.message,
+    required this.onRequestPermission,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // Blurred map background
+        Positioned.fill(
+          child: FlutterMap(
+            options: const MapOptions(
+              center: LatLng(14.5995, 121.0364), // Default to Manila area
+              zoom: 12.0,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                subdomains: const ['a', 'b', 'c'],
+              ),
+            ],
+          ),
+        ),
+        // Blur effect
+        Positioned.fill(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              color: Colors.black.withOpacity(0.3),
+            ),
+          ),
+        ),
+        // Content
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const AnimatedLocationPin(),
+              const SizedBox(height: 40),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                margin: const EdgeInsets.symmetric(horizontal: 32),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.95),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Location Access Required',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF6F5ADC),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[700],
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: onRequestPermission,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6F5ADC),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        elevation: 8,
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.my_location, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Allow Location Access',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class LocationScreen extends StatefulWidget {
   const LocationScreen({super.key});
@@ -282,28 +480,9 @@ class _LocationScreenState extends State<LocationScreen> {
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _currentPosition == null
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.location_on,
-                          color: Colors.white,
-                          size: 110.0,
-                        ),
-                        SizedBox(height: 20),
-                        Text(_locationPermissionMessage, textAlign: TextAlign.center, style: TextStyle(color: Colors.white)),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: _requestLocationPermission,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6F5ADC),
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('Allow Location Access'),
-                        ),
-                      ],
-                    ),
+                ? LocationPermissionOverlay(
+                    message: _locationPermissionMessage,
+                    onRequestPermission: _requestLocationPermission,
                   )
                 : Stack(
                     children: [
