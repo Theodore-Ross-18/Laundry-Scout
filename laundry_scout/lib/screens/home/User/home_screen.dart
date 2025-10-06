@@ -372,12 +372,155 @@ class _HomeScreenState extends State<HomeScreen> {
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
+      
+      // Refresh data in the background without showing loading indicators
+      _refreshDataInBackground();
       return;
     }
     
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  // Background refresh method that loads all data without showing loading states
+  Future<void> _refreshDataInBackground() async {
+    try {
+      // Load all data in parallel without setting loading states
+      await Future.wait([
+        _loadUserProfileBackground(),
+        _loadLaundryShopsBackground(),
+        _loadPromosBackground(),
+        _loadActiveOrdersCountBackground(),
+      ]);
+    } catch (e) {
+      print('Background refresh error: $e');
+      // Silently handle errors in background refresh
+    }
+  }
+
+  // Background versions of loading methods that don't set loading states
+  Future<void> _loadUserProfileBackground() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+      
+      final response = await Supabase.instance.client
+          .from('user_profiles')
+          .select('username, profile_image_url')
+          .eq('id', user.id)
+          .single();
+
+      if (mounted) {
+        setState(() {
+          _userName = response['username'] ?? 'User';
+          _profileImageUrl = response['profile_image_url'];
+        });
+      }
+    } catch (e) {
+      print('Background user profile load error: $e');
+    }
+  }
+
+  Future<void> _loadLaundryShopsBackground() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('''
+            id, 
+            business_name, 
+            exact_location, 
+            cover_photo_url, 
+            does_delivery, 
+            availability_status,
+            feedback(rating)
+          ''')
+          .eq('status', 'approved');
+
+      if (mounted) {
+        // Process the response to include average rating
+        final processedShops = response.map((shop) {
+          final feedbackList = shop['feedback'] as List<dynamic>? ?? [];
+          double averageRating = 0.0;
+          int totalReviews = 0;
+          
+          if (feedbackList.isNotEmpty) {
+            double totalRating = 0.0;
+            for (var feedback in feedbackList) {
+              if (feedback['rating'] != null) {
+                totalRating += (feedback['rating'] as num).toDouble();
+                totalReviews++;
+              }
+            }
+            if (totalReviews > 0) {
+              averageRating = totalRating / totalReviews;
+            }
+          }
+          
+          return {
+            ...shop,
+            'average_rating': averageRating,
+            'total_reviews': totalReviews,
+            'feedback': null,
+          };
+        }).toList();
+
+        setState(() {
+          _laundryShops = List<Map<String, dynamic>>.from(processedShops);
+          _applyFilters(searchQuery: _searchController.text);
+        });
+      }
+    } catch (e) {
+      print('Background laundry shops load error: $e');
+    }
+  }
+
+  Future<void> _loadPromosBackground() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('promos')
+          .select('*, business_profiles(business_name)');
+
+      if (mounted) {
+        setState(() {
+          _promos = List<Map<String, dynamic>>.from(response);
+        });
+      }
+    } catch (e) {
+      print('Background promos load error: $e');
+    }
+  }
+
+  Future<void> _loadActiveOrdersCountBackground() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) {
+        setState(() {
+          _activeOrdersCount = 0;
+        });
+        return;
+      }
+
+      final countResponse = await Supabase.instance.client
+          .from('orders')
+          .select('id')
+          .eq('user_id', user.id)
+          .inFilter('status', ['pending', 'confirmed', 'in_progress', 'ready'])
+          .count();
+
+      if (mounted) {
+        setState(() {
+          _activeOrdersCount = countResponse.count;
+        });
+      }
+    } catch (e) {
+      print('Background active orders count load error: $e');
+      if (mounted) {
+        setState(() {
+          _activeOrdersCount = 0;
+        });
+      }
+    }
   }
 
   @override
@@ -901,6 +1044,7 @@ class HomeScreenBody extends StatelessWidget {
                       label: 'Pick Up',
                       animationType: 'bounce',
                       color: Colors.grey[700]!,
+                      count: activeOrdersCount,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -932,6 +1076,7 @@ class HomeScreenBody extends StatelessWidget {
                       label: 'Delivery',
                       animationType: 'slide',
                       color: Colors.grey[700]!,
+                      count: activeOrdersCount,
                       onTap: () {
                         Navigator.push(
                           context,

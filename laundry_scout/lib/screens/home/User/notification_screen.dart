@@ -618,11 +618,11 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Cancel Order'),
-          content: const Text('Are you sure you want to cancel this order?'),
+          title: const Text('Cancel Order', style: TextStyle(color: Colors.black)),
+          content: const Text('Are you sure you want to cancel this order?', style: TextStyle(color: Colors.black)),
           actions: <Widget>[
             TextButton(
-              child: const Text('No'),
+              child: const Text('No', style: TextStyle(color: Colors.black)),
               onPressed: () {
                 Navigator.of(context).pop();
               },
