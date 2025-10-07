@@ -103,8 +103,8 @@ class LocationPermissionOverlay extends StatelessWidget {
         Positioned.fill(
           child: FlutterMap(
             options: const MapOptions(
-              center: LatLng(14.5995, 121.0364), // Default to Manila area
-              zoom: 12.0,
+              center: LatLng(12.8797, 121.7740), // Default to center of Philippines
+              zoom: 5.9,  // Zoomed out to show Philippines overview
             ),
             children: [
               TileLayer(
@@ -112,15 +112,6 @@ class LocationPermissionOverlay extends StatelessWidget {
                 subdomains: const ['a', 'b', 'c'],
               ),
             ],
-          ),
-        ),
-        // Blur effect
-        Positioned.fill(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              color: Colors.black.withOpacity(0.3),
-            ),
           ),
         ),
         // Content
@@ -495,11 +486,11 @@ class _LocationScreenState extends State<LocationScreen> {
                                 options: MapOptions(
                                   center: _currentPosition != null
                                       ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
-                                      : LatLng(0, 0), // Default to (0,0) or a sensible fallback
-                                  zoom: 13.0,
-                                  minZoom: 10.0,
+                                      : LatLng(12.8797, 121.7740), // Default to center of Philippines
+                                  zoom: _currentPosition != null ? 14.0 : 6.0, // Zoom out for Philippines view when no location
+                                  minZoom: 5.0,
                                   maxZoom: 18.0,
-                                  initialZoom: 14.0,
+                                  initialZoom: _currentPosition != null ? 14.0 : 6.0,
                                 ),
                                 children: [
                                   TileLayer(
