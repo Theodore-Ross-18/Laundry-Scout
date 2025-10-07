@@ -280,6 +280,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() { _isSubmitting = true; });
       String? birUrl, certificateUrl, permitUrl;
+      String? branchAuthId;
+
       try {
         final userId = user.id;
 
@@ -328,6 +330,23 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
         // Determine the ID to use for the business profile
         final String businessProfileId = widget.isBranch ? Uuid().v4() : user.id;
 
+        if (widget.isBranch) {
+          // Use the email from the input field for branch authentication
+          final String branchAuthEmail = _emailController.text.trim();
+          final String branchPassword = _branchPasswordController.text.trim();
+
+          final AuthResponse response = await Supabase.instance.client.auth.signUp(
+            email: branchAuthEmail,
+            password: branchPassword,
+          );
+
+          if (response.user == null) {
+            throw Exception('Failed to create Supabase user for branch.');
+          }
+          branchAuthId = response.user!.id;
+          // No need to set branchEmail here, as we use _emailController.text.trim() directly
+        }
+
         await Supabase.instance.client
             .from('business_profiles')
             .upsert({
@@ -338,6 +357,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
               'business_name': _businessNameController.text.trim(),
               'business_address': _businessAddressController.text.trim(),
               'business_phone_number': _phoneNumberController.text.trim(),
+              // Use _emailController.text.trim() directly for branches as well
               'email': _emailController.text.trim(),
               'bir_registration_url': birUrl,
               'business_certificate_url': certificateUrl,
@@ -346,7 +366,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
               'owner_id': widget.ownerId, // Set owner_id
               if (widget.isBranch) ...{
                 'branch_password': _branchPasswordController.text.trim(),
-                'branch_staff': _branchStaffController.text.trim().split(',').map((e) => e.trim()).toList(),
+                'branch_username': _branchStaffController.text.trim(),
+                'branch_auth_id': branchAuthId,
               },
             });
         if (mounted) {
@@ -609,7 +630,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 TextFormField(
                   controller: _branchStaffController,
                   decoration: InputDecoration(
-                    labelText: 'Branch Staff (Username)',
+                    labelText: 'Branch Username',
                     labelStyle: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.7)),
                     filled: true,
                     fillColor: Colors.white.withValues(alpha: 0.1),

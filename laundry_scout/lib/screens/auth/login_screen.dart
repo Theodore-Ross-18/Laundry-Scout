@@ -153,43 +153,46 @@ class _LoginScreenState extends State<LoginScreen> {
         final identifier = _emailController.text.trim();
         final password = _passwordController.text;
         String? emailToSignIn;
-        // Add a variable to track the profile type found
-        String? profileType; // 'user' or 'business'
+        String? profileType;
 
-        // Check if the input is likely an email
         if (identifier.contains('@')) {
           emailToSignIn = identifier;
-          // If it's an email, we'll need to query after successful auth
-          // to determine the profile type, or handle this differently.
-          // For now, let's assume email login defaults to user profile
-          // unless we add a separate flow or check after auth.
-          // A more robust solution might involve querying both tables by email
-          // or adding a 'type' column to the auth.users table if possible.
-          // For this fix, we'll proceed with email sign-in and then check profile.
         } else {
-          // Assume it's a username, query the user_profiles table first
-          final userProfileResponse = await Supabase.instance.client
-              .from('user_profiles')
-              .select('email')
-              .eq('username', identifier)
+          // First, try to find in business_profiles as a branch username
+          final businessProfileResponse = await Supabase.instance.client
+              .from('business_profiles')
+              .select('email, branch_username, branch_password')
+              .eq('branch_username', identifier)
               .maybeSingle();
 
-          if (userProfileResponse != null && userProfileResponse.isNotEmpty) {
-            emailToSignIn = userProfileResponse['email'] as String?;
-            profileType = 'user'; // Found in user_profiles
+          if (businessProfileResponse != null && businessProfileResponse.isNotEmpty) {
+            if (businessProfileResponse['branch_password'] == password) {
+              emailToSignIn = businessProfileResponse['email'] as String?;
+              profileType = 'business';
+            } else {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Invalid branch password')),
+                );
+              }
+              setState(() {
+                _isLoading = false;
+              });
+              return;
+            }
           } else {
-            // Username not found in user_profiles, check business_profiles
-            final businessProfileResponse = await Supabase.instance.client
-                .from('business_profiles') // Assuming your business table is named 'business_profiles'
+            // If not found in business_profiles, try to find in user_profiles as a regular username
+            final userProfileResponse = await Supabase.instance.client
+                .from('user_profiles')
                 .select('email')
                 .eq('username', identifier)
                 .maybeSingle();
 
-            if (businessProfileResponse != null && businessProfileResponse.isNotEmpty) {
-              emailToSignIn = businessProfileResponse['email'] as String?;
-              profileType = 'business'; // Found in business_profiles
+            if (userProfileResponse != null && userProfileResponse.isNotEmpty) {
+              emailToSignIn = userProfileResponse['email'] as String?;
+              profileType = 'user';
             } else {
-              // Username not found in either table
+              // If not found in either, show username not found
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Username not found in user or business profiles')),
@@ -198,12 +201,11 @@ class _LoginScreenState extends State<LoginScreen> {
               setState(() {
                 _isLoading = false;
               });
-              return; // Stop the sign-in process
+              return;
             }
           }
         }
 
-        // Proceed with sign-in using the determined email
         if (emailToSignIn != null) {
           final authResponse = await Supabase.instance.client.auth.signInWithPassword(
             email: emailToSignIn,
@@ -211,51 +213,41 @@ class _LoginScreenState extends State<LoginScreen> {
           );
 
           if (authResponse.user != null) {
-            // --- Start of added/modified logic ---
-            // If the login was via username, we already know the profile type.
-            // If the login was via email, we need to query the profiles table
-            // using the authenticated user's ID to determine the type.
             if (profileType == null) {
-               // Login was likely via email. Query profiles to find the type.
-               final userId = authResponse.user!.id;
+              final userId = authResponse.user!.id;
 
-               final userProfileCheck = await Supabase.instance.client
+              final userProfileCheck = await Supabase.instance.client
                   .from('user_profiles')
-                  .select('id') // Select any column, just checking for existence
+                  .select('id')
                   .eq('id', userId)
                   .maybeSingle();
 
-               if (userProfileCheck != null && userProfileCheck.isNotEmpty) {
-                  profileType = 'user';
-               } else {
-                  final businessProfileCheck = await Supabase.instance.client
-                     .from('business_profiles')
-                     .select('id') // Select any column
-                     .eq('id', userId)
-                     .maybeSingle();
+              if (userProfileCheck != null && userProfileCheck.isNotEmpty) {
+                profileType = 'user';
+              } else {
+                final businessProfileCheck = await Supabase.instance.client
+                    .from('business_profiles')
+                    .select('id')
+                    .eq('id', userId)
+                    .maybeSingle();
 
-                  if (businessProfileCheck != null && businessProfileCheck.isNotEmpty) {
-                     profileType = 'business';
-                  } else {
-                     // Should not happen if user exists in auth.users but not in profiles
-                     // Handle this edge case if necessary, maybe log out or show error
-                     if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                           const SnackBar(content: Text('User profile not found after login.')),
-                        );
-                        // Optionally sign out the user if profile is missing
-                        await Supabase.instance.client.auth.signOut();
-                     }
-                     setState(() { _isLoading = false; });
-                     return;
+                if (businessProfileCheck != null && businessProfileCheck.isNotEmpty) {
+                  profileType = 'business';
+                } else {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('User profile not found after login.')),
+                    );
+                    await Supabase.instance.client.auth.signOut();
                   }
-               }
+                  setState(() { _isLoading = false; });
+                  return;
+                }
+              }
             }
 
-            // Test notification system after successful login
             NotificationService().testNotificationCreation();
             
-            // Show slides based on the determined profile type
             if (mounted) {
               setState(() {
                 _userType = profileType;
@@ -264,17 +256,13 @@ class _LoginScreenState extends State<LoginScreen> {
               });
               _startSlideTimer();
             }
-            // --- End of added/modified logic ---
-
           }
-          // Supabase signInWithPassword automatically throws AuthException on failure
         } else {
-           // This case should ideally not be reached if username lookup failed
-           if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Could not determine email for login')),
-              );
-            }
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Could not determine email for login')),
+            );
+          }
         }
 
       } on AuthException catch (error) {
@@ -284,11 +272,9 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       } catch (error) {
-        // This catch block will now primarily handle errors from maybeSingle()
-        // if multiple rows are returned, or other unexpected issues.
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('An unexpected error occurred: ${error.toString()}')), // Added error details for debugging
+            SnackBar(content: Text('An unexpected error occurred: ${error.toString()}')),
           );
         }
       } finally {

@@ -286,7 +286,7 @@ class _BranchDetailScreenState extends State<BranchDetailScreen> {
         style: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Colors.black, // Changed to black
+          color: Color.fromARGB(255, 255, 255, 255), // Changed to black
         ),
       ),
     );
