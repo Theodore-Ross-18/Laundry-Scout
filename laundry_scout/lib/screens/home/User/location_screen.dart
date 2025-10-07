@@ -178,7 +178,7 @@ class LocationPermissionOverlay extends StatelessWidget {
                           SizedBox(width: 8),
                           Text(
                             'Allow Location Access',
-                            style: TextStyle(fontSize: 16),
+                            style: TextStyle(fontSize: 12),
                           ),
                         ],
                       ),
@@ -373,13 +373,18 @@ class _LocationScreenState extends State<LocationScreen> {
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
                 ),
                 const SizedBox(height: 8),
-                Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(businessData['business_address'] ?? 'No address provided', style: const TextStyle(color: Colors.black)),
+                    Text(
+                      businessData['business_address'] ?? 'No address provided', 
+                      style: const TextStyle(color: Colors.black),
+                    ),
                     if (businessData['average_rating'] != null && businessData['average_rating'] > 0)
                       Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
+                        padding: const EdgeInsets.only(top: 4.0),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(Icons.star, color: Colors.amber, size: 16),
                             const SizedBox(width: 4),
