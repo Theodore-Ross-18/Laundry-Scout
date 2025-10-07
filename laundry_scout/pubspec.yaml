@@ -34,6 +34,9 @@ dependencies:
   geolocator_web: ^4.0.0 # Added geolocator_web dependency
   flutter_svg: ^2.0.10+1
   open_route_service: ^1.2.2
+  image_gallery_saver: ^2.0.3
+  universal_html: ^2.2.2
+  image: ^4.5.4
 
 dev_dependencies:
   flutter_test:
