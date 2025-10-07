@@ -161,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
           // First, try to find in business_profiles as a branch username
           final businessProfileResponse = await Supabase.instance.client
               .from('business_profiles')
-              .select('email, branch_username, branch_password')
+              .select('email, branch_username, branch_password, username')
               .eq('branch_username', identifier)
               .maybeSingle();
 
@@ -181,27 +181,39 @@ class _LoginScreenState extends State<LoginScreen> {
               return;
             }
           } else {
-            // If not found in business_profiles, try to find in user_profiles as a regular username
-            final userProfileResponse = await Supabase.instance.client
-                .from('user_profiles')
-                .select('email')
+            // If not found in business_profiles as branch_username, try to find as regular username
+            final businessProfileUsernameResponse = await Supabase.instance.client
+                .from('business_profiles')
+                .select('email, username')
                 .eq('username', identifier)
                 .maybeSingle();
 
-            if (userProfileResponse != null && userProfileResponse.isNotEmpty) {
-              emailToSignIn = userProfileResponse['email'] as String?;
-              profileType = 'user';
+            if (businessProfileUsernameResponse != null && businessProfileUsernameResponse.isNotEmpty) {
+              emailToSignIn = businessProfileUsernameResponse['email'] as String?;
+              profileType = 'business';
             } else {
-              // If not found in either, show username not found
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Username not found in user or business profiles')),
-                );
+              // If not found in business_profiles, try to find in user_profiles as a regular username
+              final userProfileResponse = await Supabase.instance.client
+                  .from('user_profiles')
+                  .select('email')
+                  .eq('username', identifier)
+                  .maybeSingle();
+
+              if (userProfileResponse != null && userProfileResponse.isNotEmpty) {
+                emailToSignIn = userProfileResponse['email'] as String?;
+                profileType = 'user';
+              } else {
+                // If not found in either, show username not found
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Username not found in user or business profiles')),
+                  );
+                }
+                setState(() {
+                  _isLoading = false;
+                });
+                return;
               }
-              setState(() {
-                _isLoading = false;
-              });
-              return;
             }
           }
         }
