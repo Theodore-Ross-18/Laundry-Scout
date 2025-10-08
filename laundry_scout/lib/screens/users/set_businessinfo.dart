@@ -37,8 +37,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
 
   final _confirmEmailController = TextEditingController();
 
-  final _branchPasswordController = TextEditingController(); // New
-  final _branchStaffController = TextEditingController(); // New
+
 
   // Removed _birFile
   // Removed _certificateFile
@@ -155,8 +154,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     _emailController.dispose();
 
     _confirmEmailController.dispose();
-    _branchPasswordController.dispose(); // New
-    _branchStaffController.dispose(); // New
+
     _timer?.cancel(); // Cancel slide timer
     // Removed _otpTimer?.cancel();
     super.dispose();
@@ -280,7 +278,6 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() { _isSubmitting = true; });
       String? birUrl, certificateUrl, permitUrl;
-      String? branchAuthId;
 
       try {
         final userId = user.id;
@@ -330,22 +327,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
         // Determine the ID to use for the business profile
         final String businessProfileId = widget.isBranch ? Uuid().v4() : user.id;
 
-        if (widget.isBranch) {
-          // Use the email from the input field for branch authentication
-          final String branchAuthEmail = _emailController.text.trim();
-          final String branchPassword = _branchPasswordController.text.trim();
 
-          final AuthResponse response = await Supabase.instance.client.auth.signUp(
-            email: branchAuthEmail,
-            password: branchPassword,
-          );
-
-          if (response.user == null) {
-            throw Exception('Failed to create Supabase user for branch.');
-          }
-          branchAuthId = response.user!.id;
-          // No need to set branchEmail here, as we use _emailController.text.trim() directly
-        }
 
         await Supabase.instance.client
             .from('business_profiles')
@@ -364,11 +346,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
               'mayors_permit_url': permitUrl,
               'is_branch': widget.isBranch, // Set is_branch
               'owner_id': widget.ownerId, // Set owner_id
-              if (widget.isBranch) ...{
-                'branch_password': _branchPasswordController.text.trim(),
-                'branch_username': _branchStaffController.text.trim(),
-                'branch_auth_id': branchAuthId,
-              },
+
             });
         if (mounted) {
           setState(() {
@@ -626,40 +604,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 },
               ),
               const SizedBox(height: 10),
-              if (widget.isBranch) ...[
-                TextFormField(
-                  controller: _branchStaffController,
-                  decoration: InputDecoration(
-                    labelText: 'Branch Username',
-                    labelStyle: textTheme.bodyMedium?.copyWith(color: Colors.white.withValues(alpha: 0.7)),
-                    filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.1),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: BorderSide.none),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0), borderSide: const BorderSide(color: Colors.white)),
-                  ),
-                  style: textTheme.bodyMedium?.copyWith(color: Colors.white),
-                  keyboardType: TextInputType.text,
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 20),
-                _buildFormTextField(
-                  controller: _branchPasswordController,
-                  labelText: 'Branch Password',
-                  obscureText: true,
-                  textTheme: textTheme,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a password for the branch';
-                    }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-              ],
+
               _buildFormTextField(
                 controller: _confirmEmailController, // Use confirm email controller
                 labelText: 'Confirm Email Address',

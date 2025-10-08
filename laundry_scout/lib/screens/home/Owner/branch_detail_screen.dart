@@ -31,9 +31,7 @@ class _BranchDetailScreenState extends State<BranchDetailScreen> {
   final TextEditingController _operatingHoursController = TextEditingController();
   final TextEditingController _termsAndConditionsController = TextEditingController();
 
-  // Controllers for Staff Information
-  final TextEditingController _branchUsernameController = TextEditingController();
-  final TextEditingController _branchPasswordController = TextEditingController();
+
 
   @override
   void initState() {
@@ -52,8 +50,7 @@ class _BranchDetailScreenState extends State<BranchDetailScreen> {
     _availabilityStatusController.dispose();
     _operatingHoursController.dispose();
     _termsAndConditionsController.dispose();
-    _branchUsernameController.dispose();
-    _branchPasswordController.dispose();
+
     super.dispose();
   }
 
@@ -79,8 +76,7 @@ class _BranchDetailScreenState extends State<BranchDetailScreen> {
           _availabilityStatusController.text = _branchDetails!['availability_status'] ?? '';
           _operatingHoursController.text = _branchDetails!['open_hours_text'] ?? '';
           _termsAndConditionsController.text = _branchDetails!['terms_and_conditions'] ?? '';
-          _branchUsernameController.text = _branchDetails!['branch_username'] ?? '';
-          _branchPasswordController.text = _branchDetails!['branch_password'] ?? '';
+
         });
       }
     } catch (e) {
@@ -119,8 +115,7 @@ class _BranchDetailScreenState extends State<BranchDetailScreen> {
         'availability_status': _availabilityStatusController.text,
         'open_hours_text': _operatingHoursController.text,
         'terms_and_conditions': _termsAndConditionsController.text,
-        'branch_username': _branchUsernameController.text,
-        'branch_password': _branchPasswordController.text,
+
       }).eq('id', widget.branchId);
 
       if (mounted) {
@@ -250,28 +245,7 @@ class _BranchDetailScreenState extends State<BranchDetailScreen> {
                         ),
                       ),
                       // Add more fields as needed
-                      const SizedBox(height: 16),
-                      _buildSectionHeader('Staff Information'),
-                      Card(
-                        margin: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            children: [
-                              _buildDetailRow(
-                                  'Branch Username',
-                                  _branchDetails!['branch_username'],
-                                  isEditable: true,
-                                  onChanged: (value) => _branchUsernameController.text = value),
-                              _buildDetailRow(
-                                  'Branch Password',
-                                  _branchDetails!['branch_password'],
-                                  isEditable: true,
-                                  onChanged: (value) => _branchPasswordController.text = value),
-                            ],
-                          ),
-                        ),
-                      ),
+
                     ],
                   ),
                 ),

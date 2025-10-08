@@ -158,30 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (identifier.contains('@')) {
           emailToSignIn = identifier;
         } else {
-          // First, try to find in business_profiles as a branch username
-          final businessProfileResponse = await Supabase.instance.client
-              .from('business_profiles')
-              .select('email, branch_username, branch_password, username')
-              .eq('branch_username', identifier)
-              .maybeSingle();
-
-          if (businessProfileResponse != null && businessProfileResponse.isNotEmpty) {
-            if (businessProfileResponse['branch_password'] == password) {
-              emailToSignIn = businessProfileResponse['email'] as String?;
-              profileType = 'business';
-            } else {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Invalid branch password')),
-                );
-              }
-              setState(() {
-                _isLoading = false;
-              });
-              return;
-            }
-          } else {
-            // If not found in business_profiles as branch_username, try to find as regular username
+            // First, try to find in business_profiles as a regular username
             final businessProfileUsernameResponse = await Supabase.instance.client
                 .from('business_profiles')
                 .select('email, username')
@@ -216,7 +193,6 @@ class _LoginScreenState extends State<LoginScreen> {
               }
             }
           }
-        }
 
         if (emailToSignIn != null) {
           final authResponse = await Supabase.instance.client.auth.signInWithPassword(
