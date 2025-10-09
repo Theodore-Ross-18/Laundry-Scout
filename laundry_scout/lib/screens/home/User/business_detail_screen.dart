@@ -950,6 +950,8 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                               _fullBusinessData!['longitude'],
                             ),
                             initialZoom: 15.0,
+                            minZoom: 15.0,
+                            maxZoom: 15.0,
                             interactiveFlags: InteractiveFlag.none, // Make map non-interactive
                           ),
                           children: [
