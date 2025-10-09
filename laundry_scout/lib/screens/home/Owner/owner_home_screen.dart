@@ -361,7 +361,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                           borderRadius: BorderRadius.circular(16),
                           child: OptimizedImage(
                             imageUrl: _businessProfile!["cover_photo_url"],
-                            height: 120,
+                            height: 180,
                             width: double.infinity,
                             fit: BoxFit.cover,
                             placeholder: Container(

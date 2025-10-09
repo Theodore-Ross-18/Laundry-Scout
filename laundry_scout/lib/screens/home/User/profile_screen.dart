@@ -6,6 +6,7 @@ import '../../auth/login_screen.dart'; // Assuming login_screen.dart is in this 
 import '../../../widgets/optimized_image.dart';
 import '../../../services/image_service.dart';
 import '../Owner/owner_notification_screen.dart'; // Import the OwnerNotificationScreen
+import 'image_preview_screen.dart'; // Import the ImagePreviewScreen
 
 // Helper function for creating a fade transition (copied from login_screen.dart)
 Route _createFadeRoute(Widget page) {
@@ -226,6 +227,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ProfileImageWidget(
                               imageUrl: _profileImageUrl ?? '',
                               radius: 50,
+                              onTap: () {
+                                if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => ImagePreviewScreen(
+                                        imageUrl: _profileImageUrl!,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
                             ),
                             Positioned(
                               bottom: 0,

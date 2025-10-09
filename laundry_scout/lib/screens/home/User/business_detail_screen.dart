@@ -577,7 +577,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                   children: [
                     // Header with cover image and business info
                     SizedBox(
-                      height: 280,
+                      height: 300,
                       child: Stack(
                         children: [
                           // Cover Image - now fills entire header space

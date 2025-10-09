@@ -249,28 +249,33 @@ class LaundryShopImageCard extends StatelessWidget {
 class ProfileImageWidget extends StatelessWidget {
   final String imageUrl;
   final double radius;
+  final VoidCallback? onTap;
 
   const ProfileImageWidget({
     super.key,
     required this.imageUrl,
     required this.radius,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: Colors.grey[300],
-      child: ClipOval(
-        child: OptimizedImage(
-          imageUrl: imageUrl,
-          width: radius * 2,
-          height: radius * 2,
-          fit: BoxFit.cover,
-          placeholder: Icon(
-            Icons.person,
-            size: radius,
-            color: Colors.grey[600],
+    return GestureDetector(
+      onTap: onTap,
+      child: CircleAvatar(
+        radius: radius,
+        backgroundColor: Colors.grey[300],
+        child: ClipOval(
+          child: OptimizedImage(
+            imageUrl: imageUrl,
+            width: radius * 2,
+            height: radius * 2,
+            fit: BoxFit.cover,
+            placeholder: Icon(
+              Icons.person,
+              size: radius,
+              color: Colors.grey[600],
+            ),
           ),
         ),
       ),

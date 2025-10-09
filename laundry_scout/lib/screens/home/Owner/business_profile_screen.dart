@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../splash/splash_screen.dart';
 import 'changeEPP.dart'; // Import the new screen
 import 'owner_notification_screen.dart'; // Import the OwnerNotificationScreen
+import 'image_preview_screen.dart'; // Import the ImagePreviewScreen
 
 // Helper function for creating a fade transition (copied from profile_screen.dart)
 Route _createFadeRoute(Widget page) {
@@ -170,12 +171,26 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                             ),
                           ),
                           child: _businessProfile!["cover_photo_url"] != null
-                              ? ClipOval(
-                                  child: Image.network(
-                                    _businessProfile!["cover_photo_url"],
-                                    width: 120,
-                                    height: 120,
-                                    fit: BoxFit.cover,
+                              ? GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => ImagePreviewScreen(
+                                          imageUrl: _businessProfile!["cover_photo_url"],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Hero(
+                                    tag: _businessProfile!["cover_photo_url"], // Use the image URL as the hero tag
+                                    child: ClipOval(
+                                      child: Image.network(
+                                        _businessProfile!["cover_photo_url"],
+                                        width: 120,
+                                        height: 120,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
                                   ),
                                 )
                               : Icon(Icons.person, size: 60, color: Colors.white),
