@@ -733,10 +733,10 @@ class _AnimatedServiceIconState extends State<_AnimatedServiceIcon>
                                 height: 50,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Colors.blue.withOpacity(0.3),
+                                  color: Color(0xFF6F5ADC).withOpacity(0.3),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.blue.withOpacity(0.5),
+                                      color: Color(0xFF6F5ADC).withOpacity(0.5),
                                       blurRadius: 10 * _animation.value,
                                       spreadRadius: 2 * _animation.value,
                                     ),

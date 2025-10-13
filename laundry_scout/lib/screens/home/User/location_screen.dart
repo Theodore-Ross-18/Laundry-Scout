@@ -58,10 +58,10 @@ class _AnimatedLocationPinState extends State<AnimatedLocationPin>
           child: Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
-              width: 120,
-              height: 120,
+              width: 95,
+              height: 95,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withOpacity(0.7),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
@@ -125,8 +125,8 @@ class LocationPermissionOverlay extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
                 margin: const EdgeInsets.symmetric(horizontal: 32),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.95),
-                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.white.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(50),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.2),
