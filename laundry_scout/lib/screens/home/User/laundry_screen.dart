@@ -155,6 +155,12 @@ class _LaundryScreenState extends State<LaundryScreen> {
             child: Column(
               children: [
                 // Header with title
+                Image.asset(
+                  'lib/assets/lslogo.png',
+                  height: 40, // Adjust height as needed
+                  color: const Color.fromARGB(255, 255, 255, 255),
+                ),
+                const SizedBox(height: 10), // Spacing between logo and text
                 const Text(
                   'Laundry Scout',
                   textAlign: TextAlign.center,

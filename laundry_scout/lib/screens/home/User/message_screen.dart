@@ -203,15 +203,19 @@ class _MessageScreenState extends State<MessageScreen> {
         child: Column(
           children: [
             // Header with title
-            Container(
-              padding: const EdgeInsets.all(20),
-              child: const Text(
-                'Laundry Scout',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+            const SizedBox(height: 20), // Added for spacing
+            Image.asset(
+              'lib/assets/lslogo.png',
+              height: 40, // Adjust height as needed
+              color: Colors.white,
+            ),
+            const SizedBox(height: 10), // Spacing between logo and text
+            const Text(
+              'Laundry Scout',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
             ),
             // Messages section header
