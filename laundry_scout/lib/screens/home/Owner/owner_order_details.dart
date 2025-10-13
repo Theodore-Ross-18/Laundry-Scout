@@ -125,7 +125,7 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
               const Divider(height: 30, thickness: 1),
               Center(
                 child: Text(
-                  widget.order['laundry_shop_name'] ?? 'N/A',
+                  widget.order['laundry_shop_name'] ?? '',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
