@@ -287,35 +287,49 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF7B61FF),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF7B61FF),
-        elevation: 0,
-        title: const Text(
-          'Notification',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: _markAllAsRead,
-            child: const Text(
-              'Mark all as Read',
-              style: TextStyle(color: Colors.white),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(220.0), // Adjust height as needed
+        child: Column(
+          children: [
+            const SizedBox(height: 30), // Added for spacing
+            Image.asset(
+              'lib/assets/lslogo.png',
+              height: 40, // Adjust height as needed
+              color: Colors.white,
             ),
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Notifications'),
-            Tab(text: 'Orders'),
+            const SizedBox(height: 10), // Spacing between logo and text
+            const Text(
+              'Laundry Scout',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10), // Spacing between text and button
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.mark_email_read, color: Colors.white),
+                  onPressed: _markAllAsRead,
+                  tooltip: 'Mark all as read',
+                ),
+                const SizedBox(width: 16), // Add some trailing space
+              ],
+            ),
+            const Spacer(), // Pushes the TabBar to the bottom of the PreferredSize
+            TabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(text: 'Notifications'),
+                Tab(text: 'Orders'),
+              ],
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
+              indicatorColor: Colors.white,
+            ),
           ],
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
         ),
       ),
       body: TabBarView(

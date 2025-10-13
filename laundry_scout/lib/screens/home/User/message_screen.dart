@@ -218,6 +218,7 @@ class _MessageScreenState extends State<MessageScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+            const SizedBox(height: 10), // Spacing between text and button
             // Messages section header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -232,17 +233,10 @@ class _MessageScreenState extends State<MessageScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      // Mark all as read functionality
-                    },
-                    child: const Text(
-                      'Mark all as Read',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.mark_email_read, color: Colors.white),
+                    onPressed: _markAllAsRead,
+                    tooltip: 'Mark all as read',
                   ),
                 ],
               ),
@@ -427,6 +421,33 @@ class _MessageScreenState extends State<MessageScreen> {
       context: context,
       builder: (context) => const FeedbackModal(),
     );
+  }
+
+  void _markAllAsRead() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      // Placeholder for marking all messages as read.
+      // This functionality requires a database change to track message read status.
+      print('Mark all as read pressed for user: ${user.id}');
+
+      // Example of a potential database update (currently commented out as 'is_read' column doesn't exist for messages)
+      /*
+      await Supabase.instance.client
+          .from('messages')
+          .update({'is_read': true})
+          .eq('receiver_id', user.id)
+          .eq('is_read', false);
+
+      // You would also need to update the local state to reflect the changes
+      setState(() {
+        // Logic to update local message status
+      });
+      */
+    } catch (e) {
+      print('Error marking all messages as read: $e');
+    }
   }
 }
 
