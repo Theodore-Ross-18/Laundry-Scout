@@ -26,285 +26,172 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF0F2F5), // Light grey background for the whole screen
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF0F2F5), // Light grey background for app bar
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color:  Color(0xFF6F5ADC)), // Gcash blue for back icon
           onPressed: () {
             Navigator.of(context).pop();
           },
           style: IconButton.styleFrom(
-            backgroundColor: const Color(0xFF8A2BE2), // Purple color
+            backgroundColor: Colors.transparent, // No background for icon button
           ),
         ),
         title: const Text(
           "Order Details",
-          style: TextStyle(color: Colors.black), // Black color for title
+          style: TextStyle(color:  Color(0xFF6F5ADC), fontWeight: FontWeight.bold), // Gcash blue for title
         ),
+        centerTitle: true,
       ),
-      body: RepaintBoundary(
-        key: _receiptKey,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      body: SingleChildScrollView(
+        child: RepaintBoundary(
+          key: _receiptKey,
+          child: Container(
+            color: Colors.white, // White background for the receipt content
+            margin: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Order ID',
-                          style: TextStyle(fontSize: 16, color: Colors.black),
-                        ),
-                        Text(
-                          '#${widget.order['order_number']}',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Builder(
-                        builder: (context) {
-                          Color statusColor;
-                          switch (widget.order['status']) {
-                            case 'pending':
-                              statusColor = Colors.orange;
-                              break;
-                            case 'in_progress':
-                              statusColor = Colors.blue;
-                              break;
-                            case 'completed':
-                              statusColor = Colors.green;
-                              break;
-                            case 'cancelled':
-                              statusColor = Colors.red;
-                              break;
-                            default:
-                              statusColor = Colors.grey;
-                          }
-
-                          Color statusBgColor;
-                          switch (widget.order['status']) {
-                            case 'pending':
-                              statusBgColor = Colors.orange.withValues(alpha: 0.15);
-                              break;
-                            case 'in_progress':
-                              statusBgColor = Colors.blue.withValues(alpha: 0.15);
-                              break;
-                            case 'completed':
-                              statusBgColor = Colors.green.withValues(alpha: 0.15);
-                              break;
-                            case 'cancelled':
-                              statusBgColor = Colors.red.withValues(alpha: 0.15);
-                              break;
-                            default:
-                              statusBgColor = Colors.grey.withValues(alpha: 0.15);
-                          }
-
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: statusBgColor,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              (widget.order['status'] ?? 'N/A').replaceAll('_', ' ').toUpperCase(),
-                              style: TextStyle(
-                                color: statusColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          );
-                        },
+              Center(
+                child: Column(
+                  children: [
+                    ColorFiltered(
+                      colorFilter: ColorFilter.mode(Colors.black, BlendMode.srcIn),
+                      child: Image.asset(
+                        'lib/assets/lslogo.png', // Placeholder for Gcash logo
+                        height: 50,
                       ),
-                      const Text(
-                        'Status',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Customer Name',
-                          style: TextStyle(fontSize: 16, color: Colors.black),
-                        ),
-                        Text(
-                          widget.order['customer_name'] ?? 'N/A',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Type of Service',
-                          style: TextStyle(fontSize: 16, color: Colors.black),
-                        ),
-                        Text(
-                          widget.order['service_type'] ?? 'N/A',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Delivery Address',
-                          style: TextStyle(fontSize: 16, color: Colors.black),
-                        ),
-                        Text(
-                          widget.order['delivery_address'] ?? 'N/A',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
                     ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Order Date',
-                          style: TextStyle(fontSize: 16, color: Colors.black),
-                        ),
-                        Text(
-                          widget.order['created_at'] ?? 'N/A',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Note:',
-                          style: TextStyle(fontSize: 16, color: Colors.black),
-                        ),
-                        Text(
-                          widget.order['special_instructions'] ?? '...',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Paid via',
-                          style: TextStyle(fontSize: 16, color: Colors.black),
-                        ),
-                        Text(
-                          widget.order['payment_method'] ?? 'N/A',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        const Text(
-                          'Payment balance',
-                          style: TextStyle(fontSize: 16, color: Colors.black),
-                        ),
-                        Text(
-                          '₱${widget.order['total_amount'] ?? '0.00'}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.order['laundry_shop_name'] ?? 'N/A',
-                      style: const TextStyle(
-                        fontSize: 18,
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Payment Receipt',
+                      style: TextStyle(
+                        fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  TextButton(
-                    onPressed: _captureAndSaveReceipt,
-                    style: TextButton.styleFrom(
-                      backgroundColor: Colors.grey[200], // Light grey background
-                      foregroundColor: Colors.black, // Dark text
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8), // Rounded corners
+                    const SizedBox(height: 5),
+                    Text(
+                      DateFormat('MMMM dd, yyyy hh:mm a').format(DateTime.now()),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
                       ),
                     ),
-                    child: const Text('Download Receipt'),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ],
+              const Divider(height: 30, thickness: 1),
+              _buildDetailRow(
+                'Order ID',
+                '#${widget.order['order_number']}',
+                isBold: true,
+                valueColor: Colors.black,
+              ),
+              _buildDetailRow(
+                'Customer Name',
+                widget.order['customer_name'],
+              ),
+              _buildDetailRow(
+                'Service Type',
+                (widget.order['items'] as List<dynamic>).join(', '),
+              ),
+              _buildDetailRow(
+                'Delivery Address',
+                widget.order['delivery_address'],
+              ),
+              _buildDetailRow(
+                'Order Date',
+                widget.order['created_at'],
+              ),
+              _buildDetailRow(
+                'Note',
+                widget.order['special_instructions'] ?? '',
+              ),
+              _buildDetailRow(
+                'Paid via',
+                widget.order['payment_method'],
+              ),
+              const Divider(height: 30, thickness: 1),
+              _buildDetailRow(
+                'Total Amount',
+                '₱${widget.order['total_amount'] ?? '0.00'}',
+                isBold: true,
+                valueColor:  Color(0xFF6F5ADC), // Gcash blue for total amount
+              ),
+              const Divider(height: 30, thickness: 1),
+              Center(
+                child: Text(
+                  widget.order['laundry_shop_name'] ?? 'N/A',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Center(
+                child: TextButton(
+                  onPressed: _captureAndSaveReceipt,
+                  style: TextButton.styleFrom(
+                    backgroundColor: const Color(0xFF6F5ADC), // Gcash blue button
+                    foregroundColor: Colors.white, // White text
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                  child: const Text(
+                    'Download Receipt',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
+            ],),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String? value, {bool isBold = false, Color? valueColor}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value ?? 'N/A',
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+                color: valueColor ?? Colors.black,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }
