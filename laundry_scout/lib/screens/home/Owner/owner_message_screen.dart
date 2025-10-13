@@ -52,7 +52,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
       // Get conversations without showing loading state
       final conversationsResponse = await Supabase.instance.client
           .from('conversations')
-          .select('*')
+          .select('*, last_message_read_at')
           .eq('business_id', Supabase.instance.client.auth.currentUser!.id)
           .order('last_message_at', ascending: false);
   
@@ -139,7 +139,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
       // First get conversations
       final conversationsResponse = await Supabase.instance.client
           .from('conversations')
-          .select('*')
+          .select('*, last_message_read_at')
           .eq('business_id', Supabase.instance.client.auth.currentUser!.id)
           .order('last_message_at', ascending: false);
   
@@ -252,9 +252,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              // Mark all as read functionality
-            },
+            onPressed: _markAllConversationsAsRead,
             child: const Text(
               'Mark all as Read',
               style: TextStyle(color: Colors.white),
@@ -311,11 +309,28 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
                             final conversation = _filteredConversations[index];
                             final user = conversation['user_profiles'];
                             final lastMessage = conversation['last_message'];
-                            
+                            final hasUnreadMessages = lastMessage != null &&
+                                conversation['last_message_read_at'] != null &&
+                                DateTime.parse(lastMessage['created_at'])
+                                    .isAfter(DateTime.parse(conversation['last_message_read_at']));
+
                             return Container(
                               margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: hasUnreadMessages ? Colors.blue.shade50 : Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    spreadRadius: 1,
+                                    blurRadius: 5,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
                               child: InkWell(
-                                onTap: () {
+                                onTap: () async {
+                                  await _markConversationAsRead(conversation['id']);
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -377,8 +392,8 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
                                               children: [
                                                 Text(
                                   _getDisplayName(user, conversation['user_id']),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
+                                  style: TextStyle(
+                                    fontWeight: hasUnreadMessages ? FontWeight.bold : FontWeight.w600,
                                     fontSize: 16,
                                     color: Colors.black,
                                   ),
@@ -468,6 +483,49 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
       context: context,
       builder: (context) => FeedbackModal(businessId: Supabase.instance.client.auth.currentUser!.id),
     );
+  }
+
+  Future<void> _markConversationAsRead(String conversationId) async {
+    try {
+      await Supabase.instance.client
+          .from('conversations')
+          .update({'last_message_read_at': DateTime.now().toIso8601String()})
+          .eq('id', conversationId);
+      _loadConversations(); // Refresh to update UI
+    } catch (e) {
+      print('Error marking conversation as read: $e');
+    }
+  }
+
+  Future<void> _markAllConversationsAsRead() async {
+    try {
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) return;
+
+      // Get all conversation IDs for the current business
+      final conversationsToUpdate = _conversations.map((e) => e['id']).toList();
+
+      if (conversationsToUpdate.isEmpty) return;
+
+      // Update the 'last_message_read_at' for all conversations
+      await Supabase.instance.client
+          .from('conversations')
+          .update({'last_message_read_at': DateTime.now().toIso8601String()})
+          .eq('business_id', currentUser.id)
+          .inFilter('id', conversationsToUpdate);
+
+      // Refresh conversations to reflect the changes
+      _loadConversations();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All conversations marked as read!')),
+      );
+    } catch (e) {
+      print('Error marking all conversations as read: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to mark all conversations as read: $e')),
+      );
+    }
   }
 }
 
