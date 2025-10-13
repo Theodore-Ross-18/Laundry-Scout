@@ -13,6 +13,7 @@ class OrderConfirmationScreen extends StatefulWidget {
   final double? longitude; // New
   final String? firstName; // New
   final String? lastName; // New
+  final String? laundryShopName; // New
 
   const OrderConfirmationScreen({
     super.key,
@@ -26,6 +27,7 @@ class OrderConfirmationScreen extends StatefulWidget {
     this.longitude, // New
     this.firstName, // New
     this.lastName, // New
+    this.laundryShopName, // New
   });
 
   @override
@@ -520,6 +522,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         'user_id': userId,
         'business_id': businessId,
         'customer_name': '${widget.firstName ?? ''} ${widget.lastName ?? ''}', // New
+        'laundry_shop_name': widget.laundryShopName,
 
         // 'user_name': userName, // Removed as it's not in the schema
         'pickup_address': widget.address,

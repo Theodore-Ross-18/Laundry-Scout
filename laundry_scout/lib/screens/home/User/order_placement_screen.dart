@@ -810,6 +810,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
           longitude: _longitude, // Pass longitude
           firstName: _firstName, // Pass first name
           lastName: _lastName, // Pass last name
+          laundryShopName: _businessProfile?['business_name'],
         ),
       ),
     );

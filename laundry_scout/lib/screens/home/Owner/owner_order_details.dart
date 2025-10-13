@@ -123,12 +123,14 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
                 valueColor:  Color(0xFF6F5ADC), // Gcash blue for total amount
               ),
               const Divider(height: 30, thickness: 1),
+              const SizedBox(height: 20),
+              const SizedBox(height: 20),
               Center(
                 child: Text(
                   widget.order['laundry_shop_name'] ?? '',
                   style: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    fontStyle: FontStyle.italic,
                     color: Colors.black,
                   ),
                   textAlign: TextAlign.center,
@@ -144,7 +146,7 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
                     backgroundColor: const Color(0xFF6F5ADC), // Gcash blue button
                     foregroundColor: Colors.white, // White text
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(15),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   ),
