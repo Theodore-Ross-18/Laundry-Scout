@@ -376,147 +376,173 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
     }
   }
 
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF7B61FF),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF7B61FF),
-        elevation: 0,
-        title: const Text(
-          'Notifications',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: _markAllAsRead,
-            child: const Text(
-              'Mark all as Read',
-              style: TextStyle(color: Colors.white),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header with title
+            const SizedBox(height: 20), // Added for spacing
+            Image.asset(
+              'lib/assets/lslogo.png',
+              height: 40, // Adjust height as needed
+              color: Colors.white,
             ),
-          ),
-        ],
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(25),
-            topRight: Radius.circular(25),
-          ),
-        ),
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _notifications.isEmpty
-                ? const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.notifications_none,
-                          size: 64,
-                          color: Colors.grey,
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'No notifications yet',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
+            const SizedBox(height: 10), // Spacing between logo and text
+            const Text(
+              'Laundry Scout',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10), // Spacing between text and button
+            // Notifications section header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Notifications',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.only(top: 20),
-                    itemCount: _notifications.length,
-                    itemBuilder: (context, index) {
-                      final notification = _notifications[index];
-                      final isRead = notification['is_read'] ?? false;
-                      
-                      return Container(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isRead ? Colors.white : Colors.blue.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isRead ? Colors.grey.withOpacity(0.2) : Colors.blue.withOpacity(0.2),
-                          ),
-                        ),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: _getNotificationColor(notification['type'] ?? 'general').withOpacity(0.1),
-                            child: Icon(
-                              _getNotificationIcon(notification['type'] ?? 'general'),
-                              color: _getNotificationColor(notification['type'] ?? 'general'),
-                              size: 20,
-                            ),
-                          ),
-                          title: Text(
-                            _getDisplayTitle(notification),
-                            style: TextStyle(
-                              fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-                              color: Colors.black,
-                              fontSize: 16,
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 4),
-                              Text(
-                                notification['message'] ?? '',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.mark_email_read, color: Colors.white),
+                    onPressed: _markAllAsRead,
+                    tooltip: 'Mark all as read',
+                  ),
+                ],
+              ),
+            ),
+            // Notifications list
+            Expanded(
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(25),
+                    topRight: Radius.circular(25),
+                  ),
+                ),
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _notifications.isEmpty
+                        ? const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.notifications_none,
+                                  size: 64,
+                                  color: Colors.grey,
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _formatTime(notification['created_at']),
-                                style: TextStyle(
-                                  color: Colors.grey[500],
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                          trailing: !isRead
-                              ? Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF7B61FF),
-                                    shape: BoxShape.circle,
+                                SizedBox(height: 16),
+                                Text(
+                                  'No notifications yet',
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 16,
                                   ),
-                                )
-                              : null,
-                          onTap: () {
-                            if (!isRead) {
-                              _markAsRead(notification['id']);
-                            }
-                            if (notification['type'] == 'profile_setup') {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const EditProfileScreen(),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.only(top: 20),
+                            itemCount: _notifications.length,
+                            itemBuilder: (context, index) {
+                              final notification = _notifications[index];
+                              final isRead = notification['is_read'] ?? false;
+                              
+                              return Container(
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isRead ? Colors.white : Colors.blue.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isRead ? Colors.grey.withOpacity(0.2) : Colors.blue.withOpacity(0.2),
+                                  ),
+                                ),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: _getNotificationColor(notification['type'] ?? 'general').withOpacity(0.1),
+                                    child: Icon(
+                                      _getNotificationIcon(notification['type'] ?? 'general'),
+                                      color: _getNotificationColor(notification['type'] ?? 'general'),
+                                      size: 20,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    _getDisplayTitle(notification),
+                                    style: TextStyle(
+                                      fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                                      color: Colors.black,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        notification['message'] ?? '',
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 14,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        _formatTime(notification['created_at']),
+                                        style: TextStyle(
+                                          color: Colors.grey[500],
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  trailing: !isRead
+                                      ? Container(
+                                          width: 8,
+                                          height: 8,
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFF7B61FF),
+                                            shape: BoxShape.circle,
+                                          ),
+                                        )
+                                      : null,
+                                  onTap: () {
+                                    if (!isRead) {
+                                      _markAsRead(notification['id']);
+                                    }
+                                    if (notification['type'] == 'profile_setup') {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) => const EditProfileScreen(),
+                                        ),
+                                      );
+                                    }
+                                  },
                                 ),
                               );
-                            }
-                          },
-                        ),
-                      );
-                    },
-                  ),
+                            },
+                          ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
