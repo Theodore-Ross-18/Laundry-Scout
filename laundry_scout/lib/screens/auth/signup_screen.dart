@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'verification_screen.dart';
 import 'select_user.dart';
+import 'package:laundry_scout/screens/users/set_businessinfo.dart';
 // Consider importing a package for social icons like font_awesome_flutter
 // import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:laundry_scout/widgets/animated_eye_widget.dart'; // Import the animated eye widget
@@ -21,7 +22,8 @@ Route _createFadeRoute(Widget page) {
 }
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({super.key});
+  final bool isBranchSignup;
+  const SignupScreen({super.key, this.isBranchSignup = false});
 
   @override
   _SignupScreenState createState() => _SignupScreenState();
@@ -223,7 +225,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                           Navigator.of(context).pop();
                           Navigator.pushReplacement(
                             context,
-                            _createFadeRoute(VerificationScreen(email: _emailController.text.trim())),
+                            _createFadeRoute(VerificationScreen(email: _emailController.text.trim(), isBranchSignup: widget.isBranchSignup)),
                           );
                         },
                       ),
@@ -235,10 +237,17 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
           } else {
             // User is immediately signed in (email confirmation disabled)
             if (mounted) {
-              Navigator.pushReplacement(
-                context,
-                _createFadeRoute(SelectUserScreen(username: _usernameController.text.trim())),
-              );
+              if (widget.isBranchSignup) {
+                Navigator.pushReplacement(
+                  context,
+                  _createFadeRoute(SetBusinessInfoScreen(username: _usernameController.text.trim(), isBranch: true, ownerId: response.user!.id)),
+                );
+              } else {
+                Navigator.pushReplacement(
+                  context,
+                  _createFadeRoute(SelectUserScreen(username: _usernameController.text.trim())),
+                );
+              }
             }
           }
         } else {

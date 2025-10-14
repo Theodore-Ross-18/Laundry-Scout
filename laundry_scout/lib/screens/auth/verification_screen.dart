@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'select_user.dart';
+import 'package:laundry_scout/screens/users/set_businessinfo.dart';
 import 'dart:async'; // Import the dart:async library
 
 // Helper function for creating a fade transition
@@ -19,8 +20,10 @@ Route _createFadeRoute(Widget page) {
 
 class VerificationScreen extends StatefulWidget {
   final String email;
+  final bool isBranchSignup;
+  final String? ownerId;
 
-  const VerificationScreen({super.key, required this.email});
+  const VerificationScreen({super.key, required this.email, this.isBranchSignup = false, this.ownerId});
 
   @override
   _VerificationScreenState createState() => _VerificationScreenState();
@@ -138,10 +141,17 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
           }
 
           if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              _createFadeRoute(SelectUserScreen(username: username)),
-            );
+            if (widget.isBranchSignup) {
+              Navigator.pushReplacement(
+                context,
+                _createFadeRoute(SetBusinessInfoScreen(username: username, isBranch: true, ownerId: user.id)),
+              );
+            } else {
+              Navigator.pushReplacement(
+                context,
+                _createFadeRoute(SelectUserScreen(username: username, isBranchSignup: widget.isBranchSignup, ownerId: user.id)),
+              );
+            }
           }
         } else {
           if (mounted) {

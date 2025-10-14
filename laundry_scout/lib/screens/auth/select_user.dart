@@ -2,13 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:laundry_scout/screens/users/set_businessinfo.dart'; // Import the new screen
 import 'package:laundry_scout/screens/users/set_userinfo.dart'; // Import the new screen
 
+// Helper function for creating a fade transition
+Route _createFadeRoute(Widget page) {
+  return PageRouteBuilder(
+    pageBuilder: (context, animation, secondaryAnimation) => page,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(
+        opacity: animation,
+        child: child,
+      );
+    },
+    transitionDuration: const Duration(milliseconds: 300), // Adjust duration as needed
+  );
+}
+
 // Convert StatelessWidget to StatefulWidget
 class SelectUserScreen extends StatefulWidget {
-  // Add a field to receive the username
-  final String? username;
+  final String username;
+  final bool isBranchSignup;
+  final String? ownerId;
 
-  // Update the constructor to require the username
-  const SelectUserScreen({super.key, this.username});
+  const SelectUserScreen({super.key, required this.username, this.isBranchSignup = false, this.ownerId});
 
   @override
   State<SelectUserScreen> createState() => _SelectUserScreenState();
@@ -18,18 +32,20 @@ class _SelectUserScreenState extends State<SelectUserScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'User verified successfully!',
-            style: TextStyle(color: Colors.black),
-          ),
-          backgroundColor: Colors.white,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    });
+    if (widget.isBranchSignup) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacement(
+          context,
+          _createFadeRoute(SetBusinessInfoScreen(username: widget.username, isBranch: true, ownerId: widget.ownerId)),
+        );
+      });
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User verified successfully!')),
+        );
+      });
+    }
   }
 
   @override
