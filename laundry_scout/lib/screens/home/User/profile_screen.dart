@@ -162,6 +162,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _signOut() async {
     try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null) {
+        await Supabase.instance.client
+            .from('user_profiles')
+            .update({'is_logged_in': false})
+            .eq('id', userId);
+      }
       await Supabase.instance.client.auth.signOut();
       if (mounted) {
         Navigator.pushReplacement(

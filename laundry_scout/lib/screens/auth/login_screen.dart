@@ -161,22 +161,44 @@ class _LoginScreenState extends State<LoginScreen> {
             // First, try to find in business_profiles as a regular username
             final businessProfileUsernameResponse = await Supabase.instance.client
                 .from('business_profiles')
-                .select('email, username')
+                .select('email, username, is_logged_in')
                 .eq('username', identifier)
                 .maybeSingle();
 
             if (businessProfileUsernameResponse != null && businessProfileUsernameResponse.isNotEmpty) {
+              if (businessProfileUsernameResponse['is_logged_in'] == true) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Business already logged in on another device.')),
+                  );
+                }
+                setState(() {
+                  _isLoading = false;
+                });
+                return;
+              }
               emailToSignIn = businessProfileUsernameResponse['email'] as String?;
               profileType = 'business';
             } else {
               // If not found in business_profiles, try to find in user_profiles as a regular username
               final userProfileResponse = await Supabase.instance.client
-                  .from('user_profiles')
-                  .select('email')
-                  .eq('username', identifier)
-                  .maybeSingle();
+                .from('user_profiles')
+                .select('email, is_logged_in')
+                .eq('username', identifier)
+                .maybeSingle();
 
               if (userProfileResponse != null && userProfileResponse.isNotEmpty) {
+                if (userProfileResponse['is_logged_in'] == true) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('User already logged in on another device.')),
+                    );
+                  }
+                  setState(() {
+                    _isLoading = false;
+                  });
+                  return;
+                }
                 emailToSignIn = userProfileResponse['email'] as String?;
                 profileType = 'user';
               } else {
@@ -201,26 +223,47 @@ class _LoginScreenState extends State<LoginScreen> {
           );
 
           if (authResponse.user != null) {
-            if (profileType == null) {
-              final userId = authResponse.user!.id;
+            final userId = authResponse.user!.id;
+            String? determinedProfileType = profileType;
 
+            if (determinedProfileType == null) {
               final userProfileCheck = await Supabase.instance.client
                   .from('user_profiles')
-                  .select('id')
+                  .select('id, is_logged_in')
                   .eq('id', userId)
                   .maybeSingle();
 
               if (userProfileCheck != null && userProfileCheck.isNotEmpty) {
-                profileType = 'user';
+                if (userProfileCheck['is_logged_in'] == true) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('User already logged in on another device.')),
+                    );
+                  }
+                  await Supabase.instance.client.auth.signOut(); // Sign out the current session
+                  setState(() { _isLoading = false; });
+                  return;
+                }
+                determinedProfileType = 'user';
               } else {
                 final businessProfileCheck = await Supabase.instance.client
                     .from('business_profiles')
-                    .select('id')
+                    .select('id, is_logged_in')
                     .eq('id', userId)
                     .maybeSingle();
 
                 if (businessProfileCheck != null && businessProfileCheck.isNotEmpty) {
-                  profileType = 'business';
+                  if (businessProfileCheck['is_logged_in'] == true) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Business already logged in on another device.')),
+                      );
+                    }
+                    await Supabase.instance.client.auth.signOut(); // Sign out the current session
+                    setState(() { _isLoading = false; });
+                    return;
+                  }
+                  determinedProfileType = 'business';
                 } else {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -234,11 +277,24 @@ class _LoginScreenState extends State<LoginScreen> {
               }
             }
 
+            // Update is_logged_in status
+            if (determinedProfileType == 'user') {
+              await Supabase.instance.client
+                  .from('user_profiles')
+                  .update({'is_logged_in': true})
+                  .eq('id', userId);
+            } else if (determinedProfileType == 'business') {
+              await Supabase.instance.client
+                  .from('business_profiles')
+                  .update({'is_logged_in': true})
+                  .eq('id', userId);
+            }
+
             NotificationService().testNotificationCreation();
             
             if (mounted) {
               setState(() {
-                _userType = profileType;
+                _userType = determinedProfileType;
                 _showSlides = true;
                 _isLoading = false;
               });

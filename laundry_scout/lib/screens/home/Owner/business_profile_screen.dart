@@ -65,12 +65,28 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
   }
 
   void _signOut() async {
-    await Supabase.instance.client.auth.signOut();
-    if (mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        _createFadeRoute(const SplashScreen()),
-        (route) => false,
-      );
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null) {
+        await Supabase.instance.client
+            .from('business_profiles')
+            .update({'is_logged_in': false})
+            .eq('id', userId);
+      }
+      await Supabase.instance.client.auth.signOut();
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          _createFadeRoute(const SplashScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      print('Error signing out: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error signing out: $e')),
+        );
+      }
     }
   }
 
