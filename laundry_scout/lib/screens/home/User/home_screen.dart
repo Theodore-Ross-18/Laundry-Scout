@@ -59,6 +59,11 @@ class _HomeScreenState extends State<HomeScreen> {
         loadLaundryShops: _loadLaundryShops,
         loadPromos: _loadPromos,
         activeOrdersCount: _activeOrdersCount, // Add this line
+        onNavigateToNotifications: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
       ),
       const LocationScreen(),
       const LaundryScreen(),
@@ -90,6 +95,11 @@ class _HomeScreenState extends State<HomeScreen> {
         loadLaundryShops: _loadLaundryShops,
         loadPromos: _loadPromos,
         activeOrdersCount: _activeOrdersCount, // Add this line
+        onNavigateToNotifications: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
       );
     });
   }
@@ -542,6 +552,11 @@ class _HomeScreenState extends State<HomeScreen> {
         loadLaundryShops: _loadLaundryShops,
         loadPromos: _loadPromos,
         activeOrdersCount: _activeOrdersCount, // Add this line
+        onNavigateToNotifications: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
       );
 
     final user = Supabase.instance.client.auth.currentUser;
@@ -823,7 +838,7 @@ class _AnimatedServiceIconState extends State<_AnimatedServiceIcon>
 
 class HomeScreenBody extends StatelessWidget {
   final String userName;
-  final String? profileImageUrl; // Add profile image URL parameter
+  final String? profileImageUrl;
   final bool isLoading;
   final TextEditingController searchController;
   final ScrollController scrollController;
@@ -835,12 +850,13 @@ class HomeScreenBody extends StatelessWidget {
   final Future<void> Function() loadUserProfile;
   final Future<void> Function() loadLaundryShops;
   final Future<void> Function() loadPromos;
-  final int activeOrdersCount; // Add this line
+  final int activeOrdersCount;
+  final Function(int) onNavigateToNotifications; // Add this line
 
   const HomeScreenBody({
     super.key,
     required this.userName,
-    this.profileImageUrl, // Add profile image URL parameter (optional)
+    this.profileImageUrl,
     required this.isLoading,
     required this.searchController,
     required this.scrollController,
@@ -852,7 +868,8 @@ class HomeScreenBody extends StatelessWidget {
     required this.loadUserProfile,
     required this.loadLaundryShops,
     required this.loadPromos,
-    required this.activeOrdersCount, // Add this line
+    required this.activeOrdersCount,
+    required this.onNavigateToNotifications, // Add this line
   });
 
   Widget _buildAvailabilityStatus(String? availabilityStatus) {
@@ -999,7 +1016,7 @@ class HomeScreenBody extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 12.0),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(18),
                             ),
                             child: TextField(
                               controller: searchController, // Use passed controller
@@ -1022,7 +1039,7 @@ class HomeScreenBody extends StatelessWidget {
                             padding: const EdgeInsets.all(12.0),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: BorderRadius.circular(18),
                             ),
                             child: const Icon(Icons.tune, color: Color(0xFF7B61FF)),
                           ),
@@ -1047,12 +1064,7 @@ class HomeScreenBody extends StatelessWidget {
                       color: Colors.grey[700]!,
                       count: activeOrdersCount,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const NotificationScreen(initialTabIndex: 1),
-                          ),
-                        );
+                        onNavigateToNotifications(3); // Navigate to Messages (index 3)
                       },
                     ),
                     // Active Orders Animation
@@ -1063,12 +1075,7 @@ class HomeScreenBody extends StatelessWidget {
                       color: Colors.black,
                       count: activeOrdersCount,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const NotificationScreen(initialTabIndex: 1),
-                          ),
-                        );
+                        onNavigateToNotifications(4); // Navigate to Notifications (index 4)
                       },
                     ),
                     // Delivery Animation
@@ -1079,12 +1086,7 @@ class HomeScreenBody extends StatelessWidget {
                       color: Colors.grey[700]!,
                       count: activeOrdersCount,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const NotificationScreen(initialTabIndex: 1),
-                          ),
-                        );
+                        onNavigateToNotifications(3); // Navigate to Messages (index 3)
                       },
                     ),
                   ],
