@@ -6,6 +6,21 @@ import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'business_detail_screen.dart'; // Import the business detail screen
 
+String _getTileLayerUrlTemplate(MapType mapType) {
+  switch (mapType) {
+    case MapType.satellite:
+      // Unofficial Google Maps Satellite tiles - Use at your own risk and responsibility.
+      // Google's terms of service prohibit direct access to their map tiles outside of their official APIs.
+      return "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}";
+    case MapType.terrain:
+      // Unofficial Google Maps Terrain tiles - Use at your own risk and responsibility.
+      // Google's terms of service prohibit direct access to their map tiles outside of their official APIs.
+      return "https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}";
+    case MapType.defaultMap:
+      return "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+  }
+}
+
 class AnimatedLocationPin extends StatefulWidget {
   const AnimatedLocationPin({super.key});
 
@@ -88,11 +103,13 @@ class _AnimatedLocationPinState extends State<AnimatedLocationPin>
 class LocationPermissionOverlay extends StatelessWidget {
   final String message;
   final VoidCallback onRequestPermission;
+  final MapType selectedMapType;
 
   const LocationPermissionOverlay({
     super.key,
     required this.message,
     required this.onRequestPermission,
+    required this.selectedMapType,
   });
 
   @override
@@ -108,7 +125,7 @@ class LocationPermissionOverlay extends StatelessWidget {
             ),
             children: [
               TileLayer(
-                urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                urlTemplate: _getTileLayerUrlTemplate(selectedMapType),
                 subdomains: const ['a', 'b', 'c'],
               ),
             ],
@@ -194,6 +211,12 @@ class LocationPermissionOverlay extends StatelessWidget {
   }
 }
 
+enum MapType {
+  defaultMap,
+  satellite,
+  terrain,
+}
+
 class LocationScreen extends StatefulWidget {
   const LocationScreen({super.key});
 
@@ -208,7 +231,15 @@ class _LocationScreenState extends State<LocationScreen> {
   List<Map<String, dynamic>> _businessProfiles = [];
   final MapController _mapController = MapController();
   double _searchRadius = 1.0; // Initial search radius in kilometers
-  // bool _foundLaundryShops = false; // Track if any shops are found within the radius
+  MapType _selectedMapType = MapType.defaultMap; // Default map type
+
+  void _onMapTypeChanged(MapType? newMapType) {
+    if (newMapType != null) {
+      setState(() {
+        _selectedMapType = newMapType;
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -472,6 +503,29 @@ class _LocationScreenState extends State<LocationScreen> {
           title: const Text('Nearby Laundry Shops'),
           backgroundColor: const Color(0xFF6F5ADC),
           foregroundColor: Colors.white,
+          actions: [
+            DropdownButton<MapType>(
+              value: _selectedMapType,
+              dropdownColor: const Color(0xFF6F5ADC),
+              icon: const Icon(Icons.map, color: Colors.white),
+              onChanged: _onMapTypeChanged,
+              items: const [
+                DropdownMenuItem(
+                  value: MapType.defaultMap,
+                  child: Text('Default', style: TextStyle(color: Colors.white)),
+                ),
+                DropdownMenuItem(
+                  value: MapType.satellite,
+                  child: Text('Satellite', style: TextStyle(color: Colors.white)),
+                ),
+                DropdownMenuItem(
+                  value: MapType.terrain,
+                  child: Text('Terrain', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+          ],
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -479,6 +533,7 @@ class _LocationScreenState extends State<LocationScreen> {
                 ? LocationPermissionOverlay(
                     message: _locationPermissionMessage,
                     onRequestPermission: _requestLocationPermission,
+                    selectedMapType: _selectedMapType,
                   )
                 : Stack(
                     children: [
@@ -499,7 +554,7 @@ class _LocationScreenState extends State<LocationScreen> {
                                 ),
                                 children: [
                                   TileLayer(
-                                    urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                                    urlTemplate: _getTileLayerUrlTemplate(_selectedMapType),
                                     subdomains: const ['a', 'b', 'c'],
                                   ),
                                   if (_currentPosition != null)
