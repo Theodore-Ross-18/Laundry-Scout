@@ -14,6 +14,7 @@ function ClientDetail() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("info");
+  const [modalImage, setModalImage] = useState(null); // for permit lightbox
 
   useEffect(() => {
     const fetchClient = async () => {
@@ -198,7 +199,7 @@ function ClientDetail() {
                       </div>
                       <div className="permit-image-wrap">
                         {client.bir_registration_url ? (
-                          <img src={client.bir_registration_url} alt="BIR Registration" className="permit-image" />
+                          <img src={client.bir_registration_url} alt="BIR Registration" className="permit-image" onClick={() => setModalImage(client.bir_registration_url)} />
                         ) : (
                           <div className="permit-image placeholder" />
                         )}
@@ -212,7 +213,7 @@ function ClientDetail() {
                       </div>
                       <div className="permit-image-wrap">
                         {client.business_certificate_url ? (
-                          <img src={client.business_certificate_url} alt="Business Certificate" className="permit-image" />
+                          <img src={client.business_certificate_url} alt="Business Certificate" className="permit-image" onClick={() => setModalImage(client.business_certificate_url)} />
                         ) : (
                           <div className="permit-image placeholder" />
                         )}
@@ -226,7 +227,7 @@ function ClientDetail() {
                       </div>
                       <div className="permit-image-wrap">
                         {client.mayors_permit_url ? (
-                          <img src={client.mayors_permit_url} alt="Mayor's Permit" className="permit-image" />
+                          <img src={client.mayors_permit_url} alt="Mayor's Permit" className="permit-image" onClick={() => setModalImage(client.mayors_permit_url)} />
                         ) : (
                           <div className="permit-image placeholder" />
                         )}
@@ -241,7 +242,14 @@ function ClientDetail() {
                       <div className="info-col">
                         <div className="info-item">
                           <div className="label">Services Offered</div>
-                          <div className="value">{client.services_offered || "N/A"}</div>
+                          <div className="value">
+                            {Array.isArray(client.services_offered)
+                              ? client.services_offered
+                                  .map((s) => (typeof s === "string" ? s.trim() : String(s)))
+                                  .filter(Boolean)
+                              .join(", ")
+                              : (client.services_offered || "N/A")}
+                          </div>
                         </div>
                         <div className="info-item">
                           <div className="label">Exact Location</div>
@@ -281,6 +289,7 @@ function ClientDetail() {
 
                 {activeTab === "terms" && (
                   <div className="terms-card">
+                    <div className="terms-header">Terms & Conditions</div>
                     <div className="terms-content">
                       {client.terms_and_conditions || "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum id felis ullamcorper, efficitur nisi varius, mollis odio. Praesent quis interdum felis, a placerat purus. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos."}
                     </div>
@@ -290,6 +299,16 @@ function ClientDetail() {
             </>
           )}
         </div>
+      {/* Clicking Image - Permits */}
+      {/* Centered image modal */}
+      {modalImage && (
+        <div className="image-modal" onClick={() => setModalImage(null)}>
+          <div className="image-modal-inner" onClick={(e) => e.stopPropagation()}>
+            <img src={modalImage} alt="Permit" className="image-modal-img" />
+            <button className="image-modal-close" aria-label="Close" onClick={() => setModalImage(null)}>×</button>
+          </div>
+        </div>
+      )}
       </main>
     </div>
   );
