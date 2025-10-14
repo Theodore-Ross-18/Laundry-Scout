@@ -547,10 +547,10 @@ class _LocationScreenState extends State<LocationScreen> {
                                   center: _currentPosition != null
                                       ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
                                       : LatLng(12.8797, 121.7740), // Default to center of Philippines
-                                  zoom: _currentPosition != null ? 14.0 : 6.0, // Zoom out for Philippines view when no location
+                                  zoom: _currentPosition != null ? 16.0 : 6.0, // Zoom out for Philippines view when no location
                                   minZoom: 5.0,
-                                  maxZoom: 18.0,
-                                  initialZoom: _currentPosition != null ? 14.0 : 6.0,
+                                  maxZoom: 20.0,
+                                  initialZoom: _currentPosition != null ? 16.0 : 6.0,
                                 ),
                                 children: [
                                   TileLayer(
