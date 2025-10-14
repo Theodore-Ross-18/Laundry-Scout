@@ -16,9 +16,10 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 20px 20px 40px 20px; /* extra bottom padding to show spacing */
   height: 100vh;
-  overflow: hidden; /* keep header pinned */
+  overflow-x: hidden; /* prevent horizontal scroll */
+  overflow-y: visible; /* allow bottom padding to be visible */
   transition: margin-left 0.3s ease;
 }
 
@@ -42,7 +43,7 @@
   font-size: 1.4rem;
   font-weight: 700;
   margin: 0;
-  color: #2c3e50;
+  color: #6c63ff; /* match header title color */
 }
 
 .client-detail-subtitle {
@@ -54,11 +55,13 @@
 .client-detail {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
-  margin-top: 12px;
+  padding: 20px 20px 20px 20px; /* increase bottom padding to match design */
+  margin-top: 20px;
+  margin-bottom: 40px; /* ensure visible spacing below the white container */
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  min-height: 0; /* allow flex child to respect parent's bottom padding */
 }
 
 /* Custom Scrollbar */
@@ -103,12 +106,172 @@
   color: #777;
 }
 
+/* NEW */
+/* Summary Header (new layout) */
+.client-summary {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e6ecf2; /* thin divider line under header */
+  padding-bottom: 12px;
+}
+
+.summary-left .summary-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #6f5cf6;
+  margin: 0 0 4px 0;
+}
+.summary-left .summary-address {
+  font-size: 0.95rem;
+  color: #555;
+  margin: 0;
+}
+.summary-left .summary-since {
+  font-size: 0.9rem;
+  color: #777;
+  margin-top: 4px;
+}
+
+.summary-right .summary-cover {
+  width: 240px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+}
+
+/* Tabs */
+.client-tabs {
+  display: flex;
+  justify-content: flex-start; /* align labels to the left */
+  align-items: center;
+  gap: clamp(12px, 3vw, 32px); /* tighter, responsive spacing */
+  width: 100%; /* stay within parent padding to avoid overlap */
+  box-sizing: border-box; /* include border in width to avoid right overflow */
+  background: #f6f6fb; /* light strip background */
+  border: 1px solid #e5eaf2; /* soft border */
+  border-radius: 15px; /* rounded container corners */
+  padding: 10px 14px ; /* container height matches screenshot */
+  margin: 8px 0 16px; /* no negative margins; align inside safely */
+}
+
+.client-tab {
+  background: transparent; /* inactive tabs are just text */
+  color: #111; /* bold dark text like screenshot */
+  border: none;
+  border-radius: 16px; /* pill shape */
+  padding: 10px 20px; /* slightly tighter pill spacing */
+  font-weight: 700; /* stronger weight */
+  font-size: 14px; /* slightly smaller to reduce spread */
+  line-height: 1; 
+  white-space: nowrap; /* keep labels on one line */
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease, box-shadow .2s ease;
+}
+.client-tab.active {
+  background: #6f5cf6; /* purple active pill closer to screenshot */
+  color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(111, 92, 246, 0.35); /* subtle elevation */
+}
+
+/* Card blocks */
+.info-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0);
+}
+.info-columns {
+  display: grid;
+  grid-template-columns: 1fr 8px 1fr; /* middle column reserved for vertical separator */
+  align-items: start;
+}
+.divider {
+  width: 1px;
+  background: #e6ecf2;
+  border-radius: 1px;
+  align-self: stretch; /* make the divider span full column height */
+  justify-self: center; /* center the 1px line in the 8px middle column */
+}
+.info-col { padding: 16px 20px; }
+.info-item { margin: 10px 0 16px; }
+.label {
+  font-size: 0.8rem;
+  color: #8b8e99;
+  margin-bottom: 4px;
+}
+.value {
+  font-size: 0.95rem;
+  color: #1f2937;
+}
+.value.bold { font-weight: 600; }
+.value.status { font-weight: 600; }
+.value.status.approved { color: #2ecc71; }
+.value.status.pending { color: #f39c12; }
+.value.status.rejected { color: #e74c3c; }
+
+/* Permits grid */
+.permits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  align-items: stretch; /* ensure cards align in height for consistent separators */
+}
+.permit-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0);
+  padding: 14px 16px;
+  position: relative;
+  border-right: 1px solid #e6ecf2; /* vertical separator between permit cards */
+}
+.permit-card:last-child { border-right: none; }
+.permit-header { margin-bottom: 10px; }
+.permit-index {
+  display: block;
+  font-size: 0.76rem;
+  color: #8b8e99;
+}
+.permit-title {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+.permit-image-wrap { margin-top: 8px; }
+.permit-image {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 10px;
+  background: #f0f2f6;
+}
+.permit-image.placeholder { background: #e9edf3; }
+
+/* Terms card */
+.terms-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.terms-content { padding: 18px 22px; color: #1f2937; line-height: 1.6; }
 /* Body Section */
 .client-body {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 1.5rem;
 }
+
+/* Grid layout for Business and Owner Information */
+.client-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+/* NEW */
 
 .client-body section {
   background: #f9fbfd;
@@ -136,4 +299,34 @@
   display: block;
   color: #1a73e8;
   margin-bottom: 2px;
+}
+
+/* NEW */
+/* Media Queries for Responsive Design */
+@media (max-width: 768px) {
+  .client-info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .client-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .client-detail-main {
+    padding: 15px;
+  }
+  
+  .client-detail {
+    padding: 15px;
+  }
+  
+  .client-header h1 {
+    font-size: 1.4rem;
+  }
+/* NEW */
+
 }

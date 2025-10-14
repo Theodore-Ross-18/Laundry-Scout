@@ -13,6 +13,7 @@ function ClientDetail() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState("info");
 
   useEffect(() => {
     const fetchClient = async () => {
@@ -84,102 +85,207 @@ function ClientDetail() {
             <p className="loading-msg">No client found.</p>
           ) : (
             <>
-              {/* Header Section */}
-              <div className="client-header">
-                <img
-                  src={
-                    client.cover_photo_url ||
-                    "https://via.placeholder.com/600x300"
-                  }
-                  alt={
-                    client.business_name ||
-                    client.owner_last_name ||
-                    "Business"
-                  }
-                  className="cover-photo"
-                />
-                <h1>
-                  {client.business_name ||
-                    `${client.owner_first_name || ""} ${
-                      client.owner_last_name || ""
-                    }`}
-                </h1>
-                <p className="address">
-                  📍 {client.business_address || "N/A"}
-                </p>
-                <p className="since">
-                  Member Since{" "}
-                  {client?.created_at
-                    ? new Date(client.created_at).toLocaleDateString()
-                    : "N/A"}
-                </p>
+              {/* Summary Header (new layout) */}
+              <div className="client-summary">
+                <div className="summary-left">
+                  <h1 className="summary-title">
+                    {client.business_name ||
+                      `${client.owner_first_name || ""} ${
+                        client.owner_last_name || ""
+                      }`}
+                  </h1>
+                  <p className="summary-address">
+                    {client.business_address || "N/A"}
+                  </p>
+                  <p className="summary-since">
+                    Member Since {client?.created_at
+                      ? new Date(client.created_at).toLocaleDateString()
+                      : "N/A"}
+                  </p>
+                </div>
+                <div className="summary-right">
+                  <img
+                    src={
+                      client.cover_photo_url ||
+                      "https://via.placeholder.com/360x120"
+                    }
+                    alt={client.business_name || "Business"}
+                    className="summary-cover"
+                  />
+                </div>
+              </div>
+
+              {/* Tabs */}
+              <div className="client-tabs">
+                <button
+                  className={`client-tab ${activeTab === "info" ? "active" : ""}`}
+                  onClick={() => setActiveTab("info")}
+                >
+                  Business & Owner Information
+                </button>
+                <button
+                  className={`client-tab ${activeTab === "permits" ? "active" : ""}`}
+                  onClick={() => setActiveTab("permits")}
+                >
+                  Permits
+                </button>
+                <button
+                  className={`client-tab ${activeTab === "service" ? "active" : ""}`}
+                  onClick={() => setActiveTab("service")}
+                >
+                  Service Details
+                </button>
+                <button
+                  className={`client-tab ${activeTab === "terms" ? "active" : ""}`}
+                  onClick={() => setActiveTab("terms")}
+                >
+                  Terms & Conditions
+                </button>
               </div>
 
               {/* Body Sections */}
               <div className="client-body">
-                <section>
-                  <h2>Business Information</h2>
-                  <p>
-                    <strong>Business Name: </strong>
-                    {client.business_name || "N/A"}
-                  </p>
-                  <p>
-                    <strong>Business Address: </strong>
-                    {client.business_address || "N/A"}
-                  </p>
-                  <p>
-                    <strong>Business Type: </strong>
-                    {client.business_type || "N/A"}
-                  </p>
-                </section>
+                {activeTab === "info" && (
+                  <div className="info-card">
+                    <div className="info-columns">
+                      <div className="info-col">
+                        <div className="info-item">
+                          <div className="label">Business Name</div>
+                          <div className="value bold">{client.business_name || "N/A"}</div>
+                        </div>
+                        <div className="info-item">
+                          <div className="label">Business Address</div>
+                          <div className="value">{client.business_address || "N/A"}</div>
+                        </div>
+                        <div className="info-item">
+                          <div className="label">Business Type</div>
+                          <div className="value">{client.business_type || "N/A"}</div>
+                        </div>
+                      </div>
+                      <div className="divider" />
+                      <div className="info-col">
+                        <div className="info-item">
+                          <div className="label">First Name</div>
+                          <div className="value">{client.owner_first_name || "N/A"}</div>
+                        </div>
+                        <div className="info-item">
+                          <div className="label">Last Name</div>
+                          <div className="value">{client.owner_last_name || "N/A"}</div>
+                        </div>
+                        <div className="info-item">
+                          <div className="label">Email</div>
+                          <div className="value">{client.owner_email || "N/A"}</div>
+                        </div>
+                        <div className="info-item">
+                          <div className="label">Contact Number</div>
+                          <div className="value">{client.owner_phone || "N/A"}</div>
+                        </div>
+                        <div className="info-item">
+                          <div className="label">Owner ID</div>
+                          <div className="value">{client.id || "N/A"}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-                <section>
-                  <h2>Owner Information</h2>
-                  <p>
-                    <strong>First Name: </strong>
-                    {client.owner_first_name || "N/A"}
-                  </p>
-                  <p>
-                    <strong>Last Name: </strong>
-                    {client.owner_last_name || "N/A"}
-                  </p>
-                  <p>
-                    <strong>Email: </strong>
-                    {client.owner_email || "N/A"}
-                  </p>
-                  <p>
-                    <strong>Phone: </strong>
-                    {client.owner_phone || "N/A"}
-                  </p>
-                </section>
+                {activeTab === "permits" && (
+                  <div className="permits-grid">
+                    <div className="permit-card">
+                      <div className="permit-header">
+                        <span className="permit-index">Business Permit 1</span>
+                        <span className="permit-title">BIR Registration</span>
+                      </div>
+                      <div className="permit-image-wrap">
+                        {client.bir_registration_url ? (
+                          <img src={client.bir_registration_url} alt="BIR Registration" className="permit-image" />
+                        ) : (
+                          <div className="permit-image placeholder" />
+                        )}
+                      </div>
+                    </div>
 
-                <section>
-                  <h2>Additional Details</h2>
-                  {Object.entries(client).map(([key, value]) => {
-                    if (
-                      [
-                        "id",
-                        "created_at",
-                        "cover_photo_url",
-                        "business_name",
-                        "business_address",
-                        "business_type",
-                        "owner_first_name",
-                        "owner_last_name",
-                        "owner_email",
-                        "owner_phone",
-                      ].includes(key)
-                    )
-                      return null;
+                    <div className="permit-card">
+                      <div className="permit-header">
+                        <span className="permit-index">Business Permit 2</span>
+                        <span className="permit-title">Business Certificate</span>
+                      </div>
+                      <div className="permit-image-wrap">
+                        {client.business_certificate_url ? (
+                          <img src={client.business_certificate_url} alt="Business Certificate" className="permit-image" />
+                        ) : (
+                          <div className="permit-image placeholder" />
+                        )}
+                      </div>
+                    </div>
 
-                    return (
-                      <p key={key}>
-                        <strong>{key.replace(/_/g, " ")}: </strong>
-                        {value && value !== "" ? value.toString() : "N/A"}
-                      </p>
-                    );
-                  })}
-                </section>
+                    <div className="permit-card">
+                      <div className="permit-header">
+                        <span className="permit-index">Business Permit 3</span>
+                        <span className="permit-title">Mayors Permit</span>
+                      </div>
+                      <div className="permit-image-wrap">
+                        {client.mayors_permit_url ? (
+                          <img src={client.mayors_permit_url} alt="Mayor's Permit" className="permit-image" />
+                        ) : (
+                          <div className="permit-image placeholder" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === "service" && (
+                  <div className="info-card">
+                    <div className="info-columns">
+                      <div className="info-col">
+                        <div className="info-item">
+                          <div className="label">Services Offered</div>
+                          <div className="value">{client.services_offered || "N/A"}</div>
+                        </div>
+                        <div className="info-item">
+                          <div className="label">Exact Location</div>
+                          <div className="value">{client.exact_location || client.business_name + ", " + (client.business_address || "")}</div>
+                        </div>
+                        <div className="info-item">
+                          <div className="label">Business Contact Number</div>
+                          <div className="value">{client.business_phone_number || client.owner_phone || "N/A"}</div>
+                        </div>
+                        <div className="info-item">
+                          <div className="label">Open Hours</div>
+                          <div className="value">{client.open_hours || "N/A"}</div>
+                        </div>
+                        <div className="info-item">
+                          <div className="label">Availability Status</div>
+                          <div className="value">{client.availability_status || "N/A"}</div>
+                        </div>
+                      </div>
+                      <div className="divider" />
+                      <div className="info-col">
+                        <div className="info-item">
+                          <div className="label">About the Business</div>
+                          <div className="value">{client.about_business || "N/A"}</div>
+                        </div>
+                        <div className="info-item">
+                          <div className="label">Last Active</div>
+                          <div className="value">{client.last_active || (client.updated_at ? new Date(client.updated_at).toISOString().slice(0,10) : "N/A")}</div>
+                        </div>
+                        <div className="info-item">
+                          <div className="label">Status</div>
+                          <div className={`value status ${String(client.status || "Approved").toLowerCase()}`}>{client.status || "Approved"}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTab === "terms" && (
+                  <div className="terms-card">
+                    <div className="terms-content">
+                      {client.terms_and_conditions || "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum id felis ullamcorper, efficitur nisi varius, mollis odio. Praesent quis interdum felis, a placerat purus. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos."}
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}
