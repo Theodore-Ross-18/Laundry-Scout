@@ -19,8 +19,9 @@ Route _createFadeRoute(Widget page) {
 
 class VerificationScreen extends StatefulWidget {
   final String email;
+  final String username;
 
-  const VerificationScreen({super.key, required this.email});
+  const VerificationScreen({super.key, required this.email, required this.username});
 
   @override
   _VerificationScreenState createState() => _VerificationScreenState();
@@ -125,16 +126,19 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
               .eq('id', user.id)
               .maybeSingle();
 
-          String username = ''; // Default empty username
+          String username = widget.username; // Use the username passed to the screen
 
           if (usernameResponse == null) {
-            // If no profile exists, create one
+            // If no profile exists, create one with the provided username
             await Supabase.instance.client
                 .from('user_profiles')
-                .insert({'id': user.id, 'username': ''}); // Insert with empty username
-            // Now, username is still empty, but a profile exists.
-          } else if (usernameResponse['username'] != null) {
-            username = usernameResponse['username'] as String;
+                .insert({'id': user.id, 'username': username});
+          } else if (usernameResponse['username'] == null || (usernameResponse['username'] as String).isEmpty) {
+            // If profile exists but username is null or empty, update it
+            await Supabase.instance.client
+                .from('user_profiles')
+                .update({'username': username})
+                .eq('id', user.id);
           }
 
           if (mounted) {
@@ -193,11 +197,20 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
       );
       _startTimer(); // Restart the timer when OTP is resent
       if (mounted) {
-        _showErrorDialog('New OTP has been sent to your email.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('New OTP has been sent to your email.'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     } on AuthException catch (error) {
       if (mounted) {
-        _showErrorDialog('Error resending OTP: ${error.message}');
+        if (error.message.contains('rate limit') || error.message.contains('too many requests')) {
+          _showErrorDialog('Too many resend requests. Please wait a moment before trying again.');
+        } else {
+          _showErrorDialog('Error resending OTP: ${error.message}');
+        }
       }
     } catch (error) {
       if (mounted) {

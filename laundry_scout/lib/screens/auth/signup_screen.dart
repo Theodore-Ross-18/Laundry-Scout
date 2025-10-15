@@ -223,7 +223,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                           Navigator.of(context).pop();
                           Navigator.pushReplacement(
                             context,
-                            _createFadeRoute(VerificationScreen(email: _emailController.text.trim())),
+                            _createFadeRoute(VerificationScreen(email: _emailController.text.trim(), username: _usernameController.text.trim())),
                           );
                         },
                       ),

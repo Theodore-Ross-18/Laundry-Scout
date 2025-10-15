@@ -11,11 +11,11 @@ import '../home/Owner/owner_home_screen.dart';
 import 'package:uuid/uuid.dart'; // Import the uuid package
 
 class SetBusinessInfoScreen extends StatefulWidget {
-  final String? username;
+  final String username;
   final bool isBranch; // New parameter
   final String? ownerId; // New parameter
 
-  const SetBusinessInfoScreen({super.key, this.username, this.isBranch = false, this.ownerId});
+  const SetBusinessInfoScreen({super.key, required this.username, this.isBranch = false, this.ownerId});
 
   @override
   _SetBusinessInfoScreenState createState() => _SetBusinessInfoScreenState();
