@@ -95,6 +95,10 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                             ),
                             title: Text(branch['business_name'] ?? 'N/A'),
                             subtitle: Text('Status: ${branch['status'] ?? 'Pending'}'),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _confirmDeleteBranch(branch['id']),
+                            ),
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -108,5 +112,51 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                       },
                     ),
     );
+  }
+
+  void _confirmDeleteBranch(String branchId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Delete', style: TextStyle(color: Colors.black)),
+          content: const Text(
+            'Are you sure you want to delete this branch?',
+            style: TextStyle(color: Colors.black),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel', style: TextStyle(color: Colors.black)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Delete', style: TextStyle(color: Colors.black)),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteBranch(branchId);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteBranch(String branchId) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      await _businessProfileService.deleteBranchProfile(branchId);
+      _fetchBranchProfiles();
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to delete branch: $e';
+        _isLoading = false;
+      });
+    }
   }
 }

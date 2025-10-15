@@ -32,4 +32,12 @@ class BusinessProfileService {
       return [];
     }
   }
+
+  Future<void> deleteBranchProfile(String branchId) async {
+    try {
+      await _supabase.from('business_profiles').delete().eq('id', branchId);
+    } catch (e) {
+      throw Exception('Error deleting branch profile: $e');
+    }
+  }
 }
