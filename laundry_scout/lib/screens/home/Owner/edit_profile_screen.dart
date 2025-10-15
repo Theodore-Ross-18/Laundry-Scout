@@ -398,6 +398,65 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  Future<void> _deleteCoverPhoto() async {
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      if (_coverPhotoUrl != null) {
+        final uri = Uri.parse(_coverPhotoUrl!);
+        final segments = uri.pathSegments;
+        final profilesIndex = segments.indexOf('profiles');
+        String? filePath;
+        if (profilesIndex != -1 && profilesIndex + 1 < segments.length) {
+          filePath = segments.sublist(profilesIndex + 1).join('/');
+        }
+
+        if (filePath != null) {
+          await Supabase.instance.client.storage.from('profiles').remove([filePath]);
+        }
+      }
+
+      await Supabase.instance.client
+          .from('business_profiles')
+          .update({'cover_photo_url': null})
+          .eq('id', user.id);
+
+      if (mounted) {
+        setState(() {
+          _coverPhotoUrl = null;
+          _selectedImageFile = null;
+          _selectedImageBytes = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cover photo deleted successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting cover photo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -921,23 +980,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                ),
                                child: Stack(
                                  children: [
-                                   if (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty)
-                                     ...[ // Wrap in a list and use spread operator
-                                       Positioned.fill(
-                                         child: ClipRRect(
-                                           borderRadius: BorderRadius.circular(12),
-                                           child: OptimizedImage(
-                                             imageUrl: _coverPhotoUrl!,
-                                             fit: BoxFit.cover,
-                                           ),
+                                   if (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty) ...[
+                                     Positioned.fill(
+                                       child: ClipRRect(
+                                         borderRadius: BorderRadius.circular(12),
+                                         child: OptimizedImage(
+                                           imageUrl: _coverPhotoUrl!,
+                                           fit: BoxFit.cover,
                                          ),
                                        ),
-                                     ]
-                                   else if (_selectedImageBytes != null)
-                                     ...[ // Wrap in a list and use spread operator
-                                       Positioned.fill(
-                                         child: ClipRRect(
-                                           borderRadius: BorderRadius.circular(12),
+                                     ),
+                                     Positioned(
+                                       top: 8,
+                                       right: 8,
+                                       child: IconButton(
+                                         icon: const Icon(Icons.delete_forever, color: Colors.red, size: 30),
+                                         onPressed: _deleteCoverPhoto,
+                                       ),
+                                     ),
+                                   ] else if (_selectedImageBytes != null) ...[
+                                     Positioned.fill(
+                                       child: ClipRRect(
+                                         borderRadius: BorderRadius.circular(12),
                                            child: Image.memory(
                                              _selectedImageBytes!,
                                              fit: BoxFit.cover,
@@ -981,6 +1045,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                        ),
                                      ),
                                    ),
+                                   if (_coverPhotoUrl != null || _selectedImageFile != null || _selectedImageBytes != null)
+                                     Positioned(
+                                       top: 8,
+                                       right: 8,
+                                       child: IconButton(
+                                         icon: const Icon(Icons.delete_forever, color: Colors.red, size: 30),
+                                         onPressed: _deleteCoverPhoto,
+                                       ),
+                                     ),
                                    ],
                                  ),
                                ),
