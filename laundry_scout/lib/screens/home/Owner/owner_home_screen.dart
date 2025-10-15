@@ -25,6 +25,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   Map<String, dynamic>? _businessProfile;
   bool _isLoading = true;
   int _selectedIndex = 0;
+  bool _isBranch = false; // New variable to store branch status
   Map<String, int> _orderStats = {
     'total': 0,
     'pending': 0,
@@ -69,6 +70,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       if (mounted) {
         setState(() {
           _businessProfile = response;
+          _isBranch = _businessProfile!['is_branch'] ?? false; // Set _isBranch
           _isLoading = false;
         });
         _loadReviewStats(); // Load review stats after business profile is loaded
@@ -211,6 +213,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       if (mounted) {
         setState(() {
           _businessProfile = response;
+          _isBranch = _businessProfile!['is_branch'] ?? false; // Set _isBranch
         });
       }
     } catch (e) {
@@ -494,31 +497,32 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                             ),
                             const SizedBox(height: 16),
                             // Row 3: Add Branch | Add Staff
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(builder: (context) => const AddBranchScreen()),
-                                      );
-                                    },
-                                    child: _actionCard(Icons.add, 'Add Branch', Colors.blue),
+                            if (!_isBranch) // Only show if not a branch
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(builder: (context) => const AddBranchScreen()),
+                                        );
+                                      },
+                                      child: _actionCard(Icons.add, 'Add Branch', Colors.blue),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(builder: (context) => const AddStaffScreen()),
-                                      );
-                                    },
-                                    child: _actionCard(Icons.person_add, 'Add Staff', Colors.green),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(builder: (context) => const AddStaffScreen()),
+                                        );
+                                      },
+                                      child: _actionCard(Icons.person_add, 'Add Staff', Colors.green),
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                ],
+                              ),
                           ],
                         ),
                       ),
