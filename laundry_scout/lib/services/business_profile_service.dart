@@ -22,7 +22,7 @@ class BusinessProfileService {
     try {
       final response = await _supabase
           .from('business_profiles')
-          .select('id, business_name, owner_first_name, owner_last_name, cover_photo_url')
+          .select('*')
           .eq('is_branch', true)
           .eq('owner_first_name', ownerFirstName)
           .eq('owner_last_name', ownerLastName);
