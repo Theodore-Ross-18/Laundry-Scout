@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:laundry_scout/services/business_profile_service.dart';
+import 'package:laundry_scout/screens/home/Owner/branch_detail_screen.dart';
 
 class AddBranchScreen extends StatefulWidget {
   const AddBranchScreen({super.key});
@@ -87,12 +88,24 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                       itemBuilder: (context, index) {
                         final branch = _branchProfiles[index];
                         return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                           child: ListTile(
-                            title: Text(branch['business_name'] ?? 'Unknown Branch'),
-                            subtitle: Text(
-                                '${branch['owner_first_name'] ?? ''} ${branch['owner_last_name'] ?? ''}'),
-                            // You can add more details or actions here
+                            title: Text(branch['business_name'] ?? 'N/A'),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(branch['business_address'] ?? 'N/A'),
+                                Text('Status: ${branch['status'] ?? 'Pending'}'),
+                              ],
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => BranchDetailScreen(branch: branch),
+                                ),
+                              );
+                            },
                           ),
                         );
                       },
