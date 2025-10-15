@@ -308,7 +308,8 @@ class _LocationScreenState extends State<LocationScreen> {
           .from('business_profiles')
           .select('*')
           .not('latitude', 'is', null)
-          .not('longitude', 'is', null);
+          .not('longitude', 'is', null)
+          .eq('status', 'approved');
 
       List<Map<String, dynamic>> allBusinessProfiles = List<Map<String, dynamic>>.from(response);
       List<Map<String, dynamic>> filteredProfiles = [];
