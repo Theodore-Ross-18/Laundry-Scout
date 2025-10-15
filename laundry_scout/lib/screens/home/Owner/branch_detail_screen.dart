@@ -160,6 +160,7 @@ class BranchDetailScreen extends StatelessWidget {
                   ),
                   const Divider(),
                   _buildDetailRow('Username', branch['username']),
+                  _buildDetailRow('Password Hint', 'Capital the Username'),
                   _buildDetailRow('Status', branch['status']),
                   _buildDetailRow('Rejection Reason', branch['rejection_reason']),
                   _buildDetailRow('Rejection Notes', branch['rejection_notes']),
@@ -183,7 +184,7 @@ class BranchDetailScreen extends StatelessWidget {
                   ),
                   const Divider(),
                   _buildDetailRow('Cover Photo URL', branch['cover_photo_url']),
-                  _buildDetailRow('Terms and Conditions', branch['terms_and_conditions']),
+                  _buildExpandableTextWithDialog(context, 'Terms and Conditions', branch['terms_and_conditions']),
                 ],
               ),
             ),
@@ -210,6 +211,74 @@ class BranchDetailScreen extends StatelessWidget {
             child: Text(
               value?.toString() ?? 'N/A',
               style: const TextStyle(color: Colors.black),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExpandableTextWithDialog(BuildContext context, String label, String? value) {
+    final String text = value ?? 'N/A';
+    final int trimLength = 150; // You can adjust this length
+
+    String displayableText = text;
+    bool isTruncated = false;
+
+    if (text.length > trimLength) {
+      displayableText = '${text.substring(0, trimLength)}...';
+      isTruncated = true;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 150,
+            child: Text(
+              '$label:',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayableText,
+                  style: const TextStyle(color: Colors.black),
+                ),
+                if (isTruncated)
+                  TextButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: Text(label, style: TextStyle(color: Colors.black)),
+                            content: SingleChildScrollView(
+                              child: Text(text, style: TextStyle(color: Colors.black)),
+                            ),
+                            actions: <Widget>[
+                              TextButton(
+                                child: const Text('Close', style: TextStyle(color: Colors.black)),
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    child: Text(
+                      'View More',
+                      style: TextStyle(color: Colors.black),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
