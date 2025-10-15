@@ -90,14 +90,11 @@ class _AddBranchScreenState extends State<AddBranchScreen> {
                         return Card(
                           margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                           child: ListTile(
-                            title: Text(branch['business_name'] ?? 'N/A'),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(branch['business_address'] ?? 'N/A'),
-                                Text('Status: ${branch['status'] ?? 'Pending'}'),
-                              ],
+                            leading: CircleAvatar(
+                              backgroundImage: NetworkImage(branch['cover_photo_url'] ?? 'https://via.placeholder.com/150'), // Placeholder image
                             ),
+                            title: Text(branch['business_name'] ?? 'N/A'),
+                            subtitle: Text('Status: ${branch['status'] ?? 'Pending'}'),
                             onTap: () {
                               Navigator.push(
                                 context,

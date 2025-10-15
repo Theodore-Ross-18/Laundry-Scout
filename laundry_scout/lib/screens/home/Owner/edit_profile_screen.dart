@@ -441,14 +441,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         if (_selectedImageFile != null) {
           // For mobile/desktop
           final Uint8List imageBytes = await _selectedImageFile!.readAsBytes();
-          await Supabase.instance.client.storage.from('business_photos').uploadBinary(
+          await Supabase.instance.client.storage.from('profiles').uploadBinary(
                 path,
                 imageBytes,
                 fileOptions: const FileOptions(upsert: true),
               );
         } else if (_selectedImageBytes != null) {
           // For web
-          await Supabase.instance.client.storage.from('business_photos').uploadBinary(
+          await Supabase.instance.client.storage.from('profiles').uploadBinary(
                 path,
                 _selectedImageBytes!,
                 fileOptions: const FileOptions(upsert: true),
@@ -456,7 +456,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
 
         final String publicUrl = Supabase.instance.client.storage
-            .from('business_photos')
+            .from('profiles')
             .getPublicUrl(path);
         updateData['cover_photo_url'] = publicUrl;
       }
