@@ -39,7 +39,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
     try {
       final response = await Supabase.instance.client
           .from('business_profiles')
-          .select('id, business_name, exact_location, cover_photo_url, does_delivery')
+          .select('id, business_name, business_address, cover_photo_url, does_delivery')
           .eq('status', 'approved'); // Only fetch approved businesses
 
       if (mounted) {
@@ -369,14 +369,14 @@ class _LaundryScreenState extends State<LaundryScreen> {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          shop['exact_location'] ?? 'Location not available',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                                    shop['business_address'] ?? 'Location not available',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                       ),
                     ],
                   ),

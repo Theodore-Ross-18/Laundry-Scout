@@ -160,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
           .select('''
             id, 
             business_name, 
-            exact_location, 
+            business_address, 
             cover_photo_url, 
             does_delivery, 
             availability_status,
@@ -1357,7 +1357,7 @@ class HomeScreenBody extends StatelessWidget {
                                             const SizedBox(width: 2),
                                             Expanded(
                                               child: Text(
-                                                shop['exact_location'] ?? 'Address',
+                                                shop['business_address'] ?? 'Location not available',
                                                 style: const TextStyle(fontSize: 11, color: Colors.grey),
                                                 overflow: TextOverflow.ellipsis,
                                               ),

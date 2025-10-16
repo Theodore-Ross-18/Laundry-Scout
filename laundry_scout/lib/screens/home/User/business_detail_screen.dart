@@ -201,7 +201,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     try {
         final response = await Supabase.instance.client
             .from('business_profiles')
-            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours_text, available_pickup_time_slots, available_dropoff_time_slots, does_delivery, latitude, longitude') // Add new columns here
+            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours_text, available_pickup_time_slots, available_dropoff_time_slots, does_delivery, latitude, longitude, business_address') // Add new columns here
             .eq('id', widget.businessData['id'])
             .single();
       
@@ -663,7 +663,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
-                                          _fullBusinessData!['exact_location'] ?? 'Location not available',
+                                          _fullBusinessData!['business_address'] ?? 'Location not available',
                                           style: const TextStyle(
                                             fontSize: 14,
                                             color: Colors.grey,
