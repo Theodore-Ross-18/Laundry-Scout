@@ -8,14 +8,13 @@ import 'package:flutter/foundation.dart' show kIsWeb; // Add this import
 import 'package:mime/mime.dart'; 
 import '../../services/form_persistence_service.dart';
 import '../home/Owner/owner_home_screen.dart';
-import 'package:uuid/uuid.dart'; // Import the uuid package
 
 class SetBusinessInfoScreen extends StatefulWidget {
   final String username;
-  final bool isBranch; // New parameter
+
   final String? ownerId; // New parameter
 
-  const SetBusinessInfoScreen({super.key, required this.username, this.isBranch = false, this.ownerId});
+  const SetBusinessInfoScreen({super.key, required this.username,  this.ownerId});
 
   @override
   _SetBusinessInfoScreenState createState() => _SetBusinessInfoScreenState();
@@ -72,9 +71,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.isBranch) {
-      _showForm = true; // Skip slides if adding a branch
-    }
+
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null && user.email != null) {
       _emailController.text = user.email!;
@@ -112,9 +109,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
 
   // Load saved form data
   Future<void> _loadSavedFormData() async {
-    if (widget.isBranch) {
-      return; // Do not load saved data if adding a branch
-    }
+
     final savedData = await FormPersistenceService.loadBusinessInfoData();
     if (savedData != null && mounted) {
       setState(() {
@@ -283,10 +278,10 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
         final userId = user.id;
 
         // Helper function for uploading
-        Future<String?> uploadDocument(PlatformFile? file, String docType) async {
+        Future<String?> uploadDocument(PlatformFile? file, String docType, String businessName) async {
           if (file == null) return null; // file is promoted to non-nullable PlatformFile after this
           final String fileExtension = file.extension ?? 'bin';
-          final String fileName = '${docType}_${userId}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+          final String fileName = '${businessName}/${docType}_${userId}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
 
           if (kIsWeb) {
             if (file.bytes == null) {
@@ -311,9 +306,9 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
           return Supabase.instance.client.storage.from('businessdocuments').getPublicUrl(fileName);
         }
 
-        birUrl = await uploadDocument(_birFile, 'bir');
-        certificateUrl = await uploadDocument(_certificateFile, 'certificate');
-        permitUrl = await uploadDocument(_permitFile, 'permit');
+        birUrl = await uploadDocument(_birFile, 'bir', _businessNameController.text.trim());
+        certificateUrl = await uploadDocument(_certificateFile, 'certificate', _businessNameController.text.trim());
+        permitUrl = await uploadDocument(_permitFile, 'permit', _businessNameController.text.trim());
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -325,7 +320,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
       }
       try {
         // Determine the ID to use for the business profile
-        final String businessProfileId = widget.isBranch ? Uuid().v4() : user.id;
+        final String businessProfileId = user.id;
 
 
 
@@ -339,12 +334,12 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
               'business_name': _businessNameController.text.trim(),
               'business_address': _businessAddressController.text.trim(),
               'business_phone_number': _phoneNumberController.text.trim(),
-              // Use _emailController.text.trim() directly for branches as well
+    
               'email': _emailController.text.trim(),
               'bir_registration_url': birUrl,
               'business_certificate_url': certificateUrl,
               'mayors_permit_url': permitUrl,
-              'is_branch': widget.isBranch, // Set is_branch
+
               'owner_id': widget.ownerId, // Set owner_id
 
             });
@@ -353,9 +348,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
             _isSubmitting = false;
             _submissionComplete = true;
           });
-          if (widget.isBranch) {
-            Navigator.of(context).pop(true); // Go back to AddBranchScreen and indicate success
-          }
+
         }
       } catch (error) {
         if (mounted) {
@@ -392,7 +385,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     }
     return Scaffold(
       appBar: AppBar(
-        leading: widget.isBranch ? const BackButton() : null,
+        leading: null,
         title: const Text(''),
         actions: _showForm && !_isSubmitting && !_submissionComplete
             ? null

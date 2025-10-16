@@ -60,7 +60,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
   bool _deliveryAvailable = false;
-  bool _isBranch = false; // New variable for branch status
+
   Map<String, dynamic>? _businessProfile;
   Map<String, String>? _selectedSchedule;
 
@@ -155,7 +155,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _aboutUsController.text = _businessProfile!['about_business'] ?? '';
           _termsAndConditionsController.text = _businessProfile!['terms_and_conditions'] ?? ''; // Load terms and conditions
           _deliveryAvailable = _businessProfile!['does_delivery'] ?? false;
-          _isBranch = _businessProfile!['is_branch'] ?? false; // Load branch status
+
           
           // Load cover photo URL
           _coverPhotoUrl = _businessProfile!['cover_photo_url'];
@@ -480,7 +480,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'services_offered': _selectedServices,
         'service_prices': _pricelist,
         'open_hours_text': _openHoursController.text.trim(), // Save open hours
-        'is_branch': _isBranch, // Save branch status
+
         'available_pickup_time_slots': _pickupSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
         'available_dropoff_time_slots': _dropoffSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
       };
@@ -1181,29 +1181,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         }
                         return null;
                       },
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        const Text(
-                          'Are you a branch?',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const Spacer(),
-                        Switch(
-                          value: _isBranch,
-                          onChanged: (value) {
-                            setState(() {
-                              _isBranch = value;
-                            });
-                          },
-                          activeColor: const Color(0xFF7B61FF),
-                        ),
-                      ],
                     ),
                     const SizedBox(height: 16),
                     Row(

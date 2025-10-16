@@ -11,8 +11,7 @@ import 'edit_profile_screen.dart'; // Import the edit profile screen
 import 'availability_screen.dart'; // Import the availability screen
 import 'orders_screen.dart'; // Import the orders screen
 import '../../../services/feedback_service.dart'; // Import FeedbackService
-import 'add_branch_screen.dart'; // Import the new screen
-import 'add_staff_screen.dart'; // Import the new screen
+
 
 class OwnerHomeScreen extends StatefulWidget {
   const OwnerHomeScreen({super.key});
@@ -25,7 +24,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   Map<String, dynamic>? _businessProfile;
   bool _isLoading = true;
   int _selectedIndex = 0;
-  bool _isBranch = false; // New variable to store branch status
   Map<String, int> _orderStats = {
     'total': 0,
     'pending': 0,
@@ -55,7 +53,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
         print('No business ID found for user: ${user.id}');
         if (mounted) {
           setState(() {
-            _isLoading = false;
+ _isLoading = false;
           });
         }
         return;
@@ -70,7 +68,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       if (mounted) {
         setState(() {
           _businessProfile = response;
-          _isBranch = _businessProfile!['is_branch'] ?? false; // Set _isBranch
           _isLoading = false;
         });
         _loadReviewStats(); // Load review stats after business profile is loaded
@@ -213,7 +210,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       if (mounted) {
         setState(() {
           _businessProfile = response;
-          _isBranch = _businessProfile!['is_branch'] ?? false; // Set _isBranch
+
         });
       }
     } catch (e) {
@@ -496,33 +493,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                               ],
                             ),
                             const SizedBox(height: 16),
-                            // Row 3: Add Branch | Add Staff
-                            if (!_isBranch) // Only show if not a branch
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(builder: (context) => const AddBranchScreen()),
-                                        );
-                                      },
-                                      child: _actionCard(Icons.add, 'Branches', Colors.blue),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute(builder: (context) => const AddStaffScreen()),
-                                        );
-                                      },
-                                      child: _actionCard(Icons.person_add, 'Staff', Colors.green),
-                                    ),
-                                  ),
-                                ],
-                              ),
+
                           ],
                         ),
                       ),

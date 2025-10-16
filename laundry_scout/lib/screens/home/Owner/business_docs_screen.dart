@@ -102,12 +102,12 @@ class _BusinessDocsScreenState extends State<BusinessDocsScreen> {
     }
   }
 
-  Future<String?> _uploadDocument(PlatformFile? file, String docType) async {
+  Future<String?> _uploadDocument(PlatformFile? file, String docType, String businessName) async {
     if (file == null) return null;
     final String fileExtension = file.extension ?? 'bin';
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return null;
-    final String fileName = '${docType}_${user.id}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+    final String fileName = '${businessName}/${docType}_${user.id}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
 
     if (kIsWeb) {
       if (file.bytes == null) {
@@ -137,10 +137,6 @@ class _BusinessDocsScreenState extends State<BusinessDocsScreen> {
     String? birUrl, certificateUrl, permitUrl;
 
     try {
-      birUrl = await _uploadDocument(_birFile, 'bir');
-      certificateUrl = await _uploadDocument(_certificateFile, 'certificate');
-      permitUrl = await _uploadDocument(_permitFile, 'permit');
-
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) {
         if (mounted) {
@@ -151,6 +147,18 @@ class _BusinessDocsScreenState extends State<BusinessDocsScreen> {
         setState(() { _isSubmitting = false; });
         return;
       }
+
+      final businessProfile = await Supabase.instance.client
+          .from('business_profiles')
+          .select('business_name')
+          .eq('owner_id', user.id)
+          .single();
+      
+      final String businessName = businessProfile['business_name'] ?? 'unknown_business';
+
+      birUrl = await _uploadDocument(_birFile, 'bir', businessName);
+      certificateUrl = await _uploadDocument(_certificateFile, 'certificate', businessName);
+      permitUrl = await _uploadDocument(_permitFile, 'permit', businessName);
 
       await Supabase.instance.client
           .from('business_profiles')
