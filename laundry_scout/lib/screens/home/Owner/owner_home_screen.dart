@@ -448,7 +448,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                         MaterialPageRoute(builder: (context) => const AddPromoScreen()),
                                       );
                                     },
-                                    child: _actionCard(Icons.local_offer, 'Add Promo', Colors.deepPurple),
+                                    child: _actionCard(Icons.local_offer, 'Promos', Colors.deepPurple),
                                     ),
                                 ),
                                 const SizedBox(width: 12),
@@ -507,7 +507,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                           MaterialPageRoute(builder: (context) => const AddBranchScreen()),
                                         );
                                       },
-                                      child: _actionCard(Icons.add, 'Add Branch', Colors.blue),
+                                      child: _actionCard(Icons.add, 'Branches', Colors.blue),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -518,7 +518,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                           MaterialPageRoute(builder: (context) => const AddStaffScreen()),
                                         );
                                       },
-                                      child: _actionCard(Icons.person_add, 'Add Staff', Colors.green),
+                                      child: _actionCard(Icons.person_add, 'Staff', Colors.green),
                                     ),
                                   ),
                                 ],
