@@ -4,6 +4,7 @@ import '../../splash/splash_screen.dart';
 import 'changeEPP.dart'; // Import the new screen
 import 'owner_notification_screen.dart'; // Import the OwnerNotificationScreen
 import 'image_preview_screen.dart'; // Import the ImagePreviewScreen
+import 'business_docs_screen.dart'; // Import the BusinessDocsScreen
 
 // Helper function for creating a fade transition (copied from profile_screen.dart)
 Route _createFadeRoute(Widget page) {
@@ -262,6 +263,10 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         const SizedBox(height: 12),
                         _modernSettingsTile('Push Notifications', Icons.notifications_none, hasTrailing: true, onTap: () {
                           Navigator.of(context).push(_createFadeRoute(const OwnerNotificationScreen()));
+                        }),
+                        const SizedBox(height: 12),
+                        _modernSettingsTile('Update BIR, Business Permit, Business Cert', Icons.business_center_outlined, hasTrailing: true, onTap: () {
+                          Navigator.of(context).push(_createFadeRoute(const BusinessDocsScreen()));
                         }),
                         
                         const SizedBox(height: 40),
