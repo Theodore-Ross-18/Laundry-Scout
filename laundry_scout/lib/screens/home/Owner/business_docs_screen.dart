@@ -33,7 +33,15 @@ class _BusinessDocsScreenState extends State<BusinessDocsScreen> {
           .from('business_profiles')
           .select('bir_registration_url, business_certificate_url, mayors_permit_url')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
+
+      if (response == null) {
+        // Handle case where no business profile is found for the user
+        // For example, you might want to initialize _birFile, _certificateFile, _permitFile to null
+        // or show a message to the user that no profile exists.
+        // For now, we'll just return, as the files would already be null.
+        return;
+      }
 
       if (mounted) {
         setState(() {
@@ -151,9 +159,19 @@ class _BusinessDocsScreenState extends State<BusinessDocsScreen> {
       final businessProfile = await Supabase.instance.client
           .from('business_profiles')
           .select('business_name')
-          .eq('owner_id', user.id)
-          .single();
+          .eq('id', user.id)
+          .maybeSingle();
       
+      if (businessProfile == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Business profile not found.')),
+          );
+        }
+        setState(() { _isSubmitting = false; });
+        return;
+      }
+
       final String businessName = businessProfile['business_name'] ?? 'unknown_business';
 
       birUrl = await _uploadDocument(_birFile, 'bir', businessName);
