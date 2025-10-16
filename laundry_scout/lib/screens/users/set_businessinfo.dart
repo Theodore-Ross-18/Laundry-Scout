@@ -384,8 +384,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
       bodyContent = _buildBusinessInfoForm(textTheme);
     }
     return Scaffold(
-      appBar: AppBar(
-        leading: null,
+      appBar: AppBar( 
+        automaticallyImplyLeading: false, // Remove the back button
         title: const Text(''),
         actions: _showForm && !_isSubmitting && !_submissionComplete
             ? null
