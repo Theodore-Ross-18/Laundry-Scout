@@ -28,45 +28,19 @@ class BusinessProfileScreen extends StatefulWidget {
   State<BusinessProfileScreen> createState() => _BusinessProfileScreenState();
 }
 
-class _BusinessProfileScreenState extends State<BusinessProfileScreen> with WidgetsBindingObserver {
+class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
   Map<String, dynamic>? _businessProfile;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _loadBusinessProfile();
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
-      _updateLoggedInStatus(false);
-    }
-  }
-
-  Future<void> _updateLoggedInStatus(bool status) async {
-    try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user != null) {
-        print('Attempting to update is_logged_in to $status for user ${user.id}');
-        await Supabase.instance.client
-            .from('business_profiles')
-            .update({'is_logged_in': status})
-            .eq('id', user.id);
-        print('Successfully updated is_logged_in to $status for user ${user.id}');
-      }
-    } catch (e) {
-      print('Error updating logged in status: $e');
-    }
   }
 
   Future<void> _loadBusinessProfile() async {
@@ -98,7 +72,6 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> with Widg
 
   void _signOut() async {
     try {
-      await _updateLoggedInStatus(false); // Update status before signing out
       await Supabase.instance.client.auth.signOut();
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
