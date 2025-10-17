@@ -96,14 +96,21 @@ class MyApp extends StatelessWidget {
           hintStyle: TextStyle(color: Colors.white70, fontFamily: 'Poppins'),
           border: OutlineInputBorder(
             borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+            borderRadius: BorderRadius.all(Radius.circular(18.0)),
           ),
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(color: Colors.white70),
+            borderRadius: BorderRadius.all(Radius.circular(18.0)),
           ),
           focusedBorder: OutlineInputBorder(
             borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+            borderRadius: BorderRadius.all(Radius.circular(18.0)),
           ),
           errorStyle: TextStyle(fontFamily: 'Poppins', color: Colors.yellowAccent), // Example error color
+          errorBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Color(0xFFFFFFFF)),
+            borderRadius: BorderRadius.all(Radius.circular(18.0)),
+          ),
           iconColor: Color(0xFFFFFFFF),
           prefixIconColor: Color(0xFFFFFFFF),
           suffixIconColor: Color(0xFFFFFFFF),
