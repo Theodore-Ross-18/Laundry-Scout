@@ -183,9 +183,9 @@ class _LaundryScreenState extends State<LaundryScreen> {
                         padding: const EdgeInsets.all(12.0),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(18),
                         ),
-                        child: const Icon(Icons.tune, color: Color(0xFF5A35E3)),
+                        child: Image.asset('lib/assets/icons/filter.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
                       ),
                     ),
                   ],

@@ -58,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
         loadUserProfile: _loadUserProfile,
         loadLaundryShops: _loadLaundryShops,
         loadPromos: _loadPromos,
-        activeOrdersCount: _activeOrdersCount, 
+        activeOrdersCount: _activeOrdersCount,
         onNavigateToNotifications: (index) {
           setState(() {
             _selectedIndex = index;
@@ -92,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
         loadUserProfile: _loadUserProfile,
         loadLaundryShops: _loadLaundryShops,
         loadPromos: _loadPromos,
-        activeOrdersCount: _activeOrdersCount, 
+        activeOrdersCount: _activeOrdersCount,
         onNavigateToNotifications: (index) {
           setState(() {
             _selectedIndex = index;
@@ -561,39 +561,39 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         items: <BottomNavigationBarItem>[
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
+          BottomNavigationBarItem(
+            icon: Image.asset('lib/assets/navbars/home.png', width: 24, height: 24, color: Colors.black),
+            activeIcon: Image.asset('lib/assets/navbars/home.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
             label: 'Home',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.location_on_outlined),
-            activeIcon: Icon(Icons.location_on),
+          BottomNavigationBarItem(
+            icon: Image.asset('lib/assets/navbars/location.png', width: 24, height: 24, color: Colors.black),
+            activeIcon: Image.asset('lib/assets/navbars/location.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
             label: 'Location',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.local_laundry_service_outlined),
-            activeIcon: Icon(Icons.local_laundry_service),
+          BottomNavigationBarItem(
+            icon: Image.asset('lib/assets/navbars/laundry.png', width: 24, height: 24, color: Colors.black),
+            activeIcon: Image.asset('lib/assets/navbars/laundry.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
             label: 'Laundry',
           ),
           BottomNavigationBarItem(
             icon: user != null 
                 ? MessageBadge(
                     userId: user.id,
-                    child: const Icon(Icons.chat_bubble_outline),
+                    child: Image.asset('lib/assets/navbars/message.png', width: 24, height: 24, color: Colors.black),
                   )
-                : const Icon(Icons.chat_bubble_outline),
+                : Image.asset('lib/assets/navbars/message.png', width: 24, height: 24, color: Colors.black),
             activeIcon: user != null 
                 ? MessageBadge(
                     userId: user.id,
-                    child: const Icon(Icons.chat_bubble),
+                    child: Image.asset('lib/assets/navbars/message.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
                   )
-                : const Icon(Icons.chat_bubble),
+                : Image.asset('lib/assets/navbars/message.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
             label: 'Messages',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_none_outlined),
-            activeIcon: Icon(Icons.notifications),
+          BottomNavigationBarItem(
+            icon: Image.asset('lib/assets/navbars/notification.png', width: 24, height: 24, color: Colors.black),
+            activeIcon: Image.asset('lib/assets/navbars/notification.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
             label: 'Notification',
           ),
         ],
@@ -611,7 +611,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _AnimatedServiceIcon extends StatefulWidget {
-  final IconData icon;
+  final Widget icon;
   final String label;
   final String animationType;
   final Color color;
@@ -719,113 +719,169 @@ class _AnimatedServiceIconState extends State<_AnimatedServiceIcon>
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: widget.onTap,
-      child: (widget.count ?? 0) == 0
-          ? _buildStaticIcon()
-          : AnimatedBuilder(
-              animation: _animation,
-              builder: (context, child) {
-                return Column(
-                  children: [
-                    Transform.translate(
-                      offset: widget.animationType == 'bounce' || widget.animationType == 'slide'
-                          ? Offset(0, _animation.value)
-                          : Offset.zero,
-                      child: Transform.scale(
-                        scale: widget.animationType == 'pulse' ? _animation.value : 1.0,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            
-                            if (widget.animationType == 'pulse' && (widget.count ?? 0) > 0)
-                              Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Color(0xFF5A35E3).withOpacity(0.3),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Color(0xFF5A35E3).withOpacity(0.5),
-                                      blurRadius: 10 * _animation.value,
-                                      spreadRadius: 2 * _animation.value,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            Icon(
-                              widget.icon,
-                              size: 40,
-                              color: widget.color,
+      child: Column(
+        children: [
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              if (widget.animationType == 'bounce') {
+                return Transform.translate(
+                  offset: Offset(0, _animation.value),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      SizedBox(
+                        child: widget.icon,
+                      ),
+                      if (widget.count != null && widget.count! > 0)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
                             ),
-                            
-                            if (widget.animationType == 'pulse' && (widget.count ?? 0) > 0)
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  constraints: const BoxConstraints(
-                                    minWidth: 16,
-                                    minHeight: 16,
-                                  ),
-                                  child: Text(
-                                    widget.count.toString(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              widget.count.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
                               ),
-                          ],
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              } else if (widget.animationType == 'pulse') {
+                return Transform.scale(
+                  scale: _animation.value,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      SizedBox(
+                        child: widget.icon,
+                      ),
+                      if (widget.count != null && widget.count! > 0)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              widget.count.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              } else if (widget.animationType == 'slide') {
+                return Transform.translate(
+                  offset: Offset(_animation.value, 0),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      SizedBox(
+                        child: widget.icon,
+                      ),
+                      if (widget.count != null && widget.count! > 0)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              widget.count.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              }
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  SizedBox(
+                    child: widget.icon,
+                  ),
+                  if (widget.count != null && widget.count! > 0)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          widget.count.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.label,
-                      style: TextStyle(
-                        color: widget.color,
-                        fontSize: 12,
-                        fontWeight: widget.animationType == 'pulse' ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-    );
-  }
-  
-  Widget _buildStaticIcon() {
-    return Column(
-      children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            Icon(
-              widget.icon,
-              size: 40,
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 4),
+          Text(
+            widget.label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
               color: widget.color,
             ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          widget.label,
-          style: TextStyle(
-            color: widget.color,
-            fontSize: 12,
-            fontWeight: FontWeight.normal,
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -1035,7 +1091,7 @@ class HomeScreenBody extends StatelessWidget {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(18),
                             ),
-                            child: const Icon(Icons.tune, color: Color(0xFF5A35E3)),
+                            child: Image.asset('lib/assets/icons/filter.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
                           ),
                         ),
                       ],
@@ -1052,35 +1108,33 @@ class HomeScreenBody extends StatelessWidget {
                   children: [
                     // Pick Up Animation
                     _AnimatedServiceIcon(
-                      icon: Icons.delivery_dining,
-                      label: 'Pick Up',
-                      animationType: '',
-                      color: Colors.grey[700]!,
-                      count: activeOrdersCount,
+                      icon: Image.asset('lib/assets/orders/pickup.png', width: 50, height: 50),
+                      label: '',
+                      animationType: 'bounce',
+                      color: const Color(0xFF5A35E3),
                       onTap: () {
-                        onNavigateToNotifications(3); 
+                        // Handle tap
                       },
                     ),
                     // Active Orders Animation
                     _AnimatedServiceIcon(
-                      icon: Icons.assignment,
-                      label: '$activeOrdersCount Active orders',
+                      icon: Image.asset('lib/assets/orders/orders.png', width: 44, height: 44),
+                      label: '$activeOrdersCount Active Orders',
                       animationType: '',
                       color: Colors.black,
                       count: activeOrdersCount,
                       onTap: () {
-                        onNavigateToNotifications(4); 
+                        onNavigateToNotifications(4);
                       },
                     ),
                     
                     _AnimatedServiceIcon(
-                      icon: Icons.local_shipping,
-                      label: 'Delivery',
-                      animationType: '',
-                      color: Colors.grey[700]!,
-                      count: activeOrdersCount,
+                      icon: Image.asset('lib/assets/orders/delivery.png', width: 60, height: 60),
+                      label: '',
+                      animationType: 'slide',
+                      color: Colors.black,
                       onTap: () {
-                        onNavigateToNotifications(3); 
+                        // Handle tap
                       },
                     ),
                   ],

@@ -61,6 +61,15 @@ flutter:
     - lib/assets/laundry_logo.svg
     - lib/assets/official.png
     - lib/assets/icons/laundry-machine.svg
+    - lib/assets/icons/filter.png
+    - lib/assets/orders/pickup.png
+    - lib/assets/orders/orders.png
+    - lib/assets/orders/delivery.png
+    - lib/assets/navbars/home.png
+    - lib/assets/navbars/location.png
+    - lib/assets/navbars/laundry.png
+    - lib/assets/navbars/message.png
+    - lib/assets/navbars/notification.png
   
   fonts:
     - family: Poppins

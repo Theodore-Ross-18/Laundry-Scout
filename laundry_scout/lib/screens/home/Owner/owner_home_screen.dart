@@ -502,21 +502,29 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       body: _buildBody(),
       bottomNavigationBar: BottomNavigationBar(
         items: <BottomNavigationBarItem>[
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+          BottomNavigationBarItem(
+            icon: Image.asset('lib/assets/navbars/home.png', width: 24, height: 24, color: Colors.black),
+            activeIcon: Image.asset('lib/assets/navbars/home.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
             label: 'Home',
           ),
           BottomNavigationBarItem(
             icon: user != null 
                 ? MessageBadge(
                     userId: user.id,
-                    child: const Icon(Icons.message_outlined),
+                    child: Image.asset('lib/assets/navbars/message.png', width: 24, height: 24, color: Colors.black),
                   )
-                : const Icon(Icons.message_outlined),
+                : Image.asset('lib/assets/navbars/message.png', width: 24, height: 24, color: Colors.black),
+            activeIcon: user != null 
+                ? MessageBadge(
+                    userId: user.id,
+                    child: Image.asset('lib/assets/navbars/message.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
+                  )
+                : Image.asset('lib/assets/navbars/message.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
             label: 'Messages',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_none),
+          BottomNavigationBarItem(
+            icon: Image.asset('lib/assets/navbars/notification.png', width: 24, height: 24, color: Colors.black),
+            activeIcon: Image.asset('lib/assets/navbars/notification.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
             label: 'Notification',
           ),
         ],
