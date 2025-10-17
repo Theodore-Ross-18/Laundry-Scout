@@ -604,10 +604,10 @@ Widget _slotAnalyticsCard(String availabilityStatus) {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Container(
-          width: 18,
-          height: 18,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
+          width: 24, // Increased width to accommodate the image
+          height: 24, // Increased height to accommodate the image
+          child: Image.asset(
+            'lib/assets/owner/slot.png',
             color: dotColor,
           ),
         ),
