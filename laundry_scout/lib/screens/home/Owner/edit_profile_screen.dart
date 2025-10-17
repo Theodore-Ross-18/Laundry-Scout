@@ -22,8 +22,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _businessAddressController = TextEditingController();
   double? _latitude;
   double? _longitude;
-  final TextEditingController _latitudeController = TextEditingController();
-  final TextEditingController _longitudeController = TextEditingController();
   final _aboutUsController = TextEditingController();
   final _termsAndConditionsController = TextEditingController();
   final _customServiceController = TextEditingController();
@@ -77,8 +75,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void dispose() {
     _businessNameController.dispose();
     _businessAddressController.dispose();
-    _latitudeController.dispose();
-    _longitudeController.dispose();
     _aboutUsController.dispose();
     _termsAndConditionsController.dispose();
     _customServiceController.dispose();
@@ -128,9 +124,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _businessNameController.text = _businessProfile!['business_name'] ?? '';
           _businessAddressController.text = _businessProfile!['business_address'] ?? ''; // Load business address
           _latitude = _businessProfile!['latitude'];
-          _longitude = _businessProfile!['longitude'];
-          _latitudeController.text = _latitude?.toString() ?? '';
-          _longitudeController.text = _longitude?.toString() ?? '';
+      _longitude = _businessProfile!['longitude'];
       
           _aboutUsController.text = _businessProfile!['about_business'] ?? '';
           _termsAndConditionsController.text = _businessProfile!['terms_and_conditions'] ?? ''; // Load terms and conditions
@@ -1041,73 +1035,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               setState(() {
                                 _latitude = selectedLocation.latitude;
                                 _longitude = selectedLocation.longitude;
-                                _latitudeController.text = _latitude?.toString() ?? '';
-                                _longitudeController.text = _longitude?.toString() ?? '';
                               });
                             }
                           },
                         ),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your business address';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    // Latitude Field
-                    TextFormField(
-                      controller: _latitudeController,
-                      style: const TextStyle(color: Colors.black),
-                      decoration: const InputDecoration(
-                        labelText: 'Latitude',
-                        labelStyle: TextStyle(color: Colors.black),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.black),
-                        ),
-                        prefixIcon: Icon(Icons.location_on, color: Colors.black54),
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter latitude';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Please enter a valid number';
-                        }
-                        return null;
-                      },
-                      onChanged: (value) {
-                        _latitude = double.tryParse(value);
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _longitudeController,
-                      style: const TextStyle(color: Colors.black),
-                      decoration: const InputDecoration(
-                        labelText: 'Longitude',
-                        labelStyle: TextStyle(color: Colors.black),
-                        border: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.black),
-                        ),
-                        prefixIcon: Icon(Icons.location_on, color: Colors.black54),
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter longitude';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Please enter a valid number';
-                        }
-                        return null;
-                      },
-                      onChanged: (value) {
-                        _longitude = double.tryParse(value);
-                      },
-                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your business address';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
                     const SizedBox(height: 20),
                     _buildTextField(
                       controller: _aboutUsController,

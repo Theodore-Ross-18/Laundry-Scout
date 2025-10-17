@@ -595,10 +595,10 @@ class _LocationScreenState extends State<LocationScreen> {
                                               onTap: () => _onTapBusinessMarker(business),
                                               child: Column(
                                                 children: [
-                                                  const Icon(
-                                                    Icons.local_laundry_service,
-                                                    color: Colors.green,
-                                                    size: 40.0,
+                                                  Image.asset(
+                                                    'lib/assets/official.png',
+                                                    width: 40.0,
+                                                    height: 40.0,
                                                   ),
                                                   if (business['average_rating'] != null && business['average_rating'] > 0)
                                                     Container(
@@ -654,7 +654,7 @@ class _LocationScreenState extends State<LocationScreen> {
                               const SizedBox(width: 5),
                               const Text('You', style: TextStyle(color: Colors.black)),
                               const SizedBox(width: 20),
-                              const Icon(Icons.local_laundry_service, color: Colors.green, size: 20.0),
+                              Image.asset('lib/assets/official.png', width: 20.0, height: 20.0),
                               const SizedBox(width: 5),
                               const Text('Laundry Shop', style: TextStyle(color: Colors.black)),
                             ],

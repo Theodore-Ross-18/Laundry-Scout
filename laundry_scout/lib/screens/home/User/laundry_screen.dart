@@ -153,20 +153,6 @@ class _LaundryScreenState extends State<LaundryScreen> {
             child: Column(
               children: [
                
-                Image.asset(
-                  'lib/assets/lslogo.png',
-                  height: 40, 
-                ),
-                const SizedBox(height: 10), 
-                const Text(
-                  'Laundry Scout',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
                 const SizedBox(height: 20),
                 // Search Bar
                 Row(

@@ -199,20 +199,6 @@ class _MessageScreenState extends State<MessageScreen> {
         child: Column(
           children: [
          
-            const SizedBox(height: 20),
-            Image.asset(
-              'lib/assets/lslogo.png',
-              height: 40, 
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Laundry Scout',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
             const SizedBox(height: 10),
            
             Container(

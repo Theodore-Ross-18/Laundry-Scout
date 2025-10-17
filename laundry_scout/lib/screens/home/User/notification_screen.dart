@@ -285,24 +285,10 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
     return Scaffold(
       backgroundColor: const Color(0xFF5A35E3),
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(210), 
+        preferredSize: const Size.fromHeight(100), 
         child: Column(
           children: [
-            const SizedBox(height: 30), 
-            Image.asset(
-              'lib/assets/lslogo.png',
-              height: 40, 
-            ),
-            const SizedBox(height: 10), 
-            const Text(
-              'Laundry Scout',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10), 
+            const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -314,7 +300,6 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                 const SizedBox(width: 16), 
               ],
             ),
-            const Spacer(), 
             TabBar(
               controller: _tabController,
               tabs: const [

@@ -346,64 +346,6 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
           },
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                controller: _latitudeController,
-                style: const TextStyle(color: Colors.black),
-                decoration: InputDecoration(
-                  labelText: 'Latitude',
-                  labelStyle: TextStyle(color: Colors.grey[600]),
-                  hintText: 'e.g., 14.5995',
-                  hintStyle: TextStyle(color: Colors.grey[400]),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF5A35E3)),
-                  ),
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  setState(() {
-                    _latitude = double.tryParse(value);
-                  });
-                },
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextFormField(
-                controller: _longitudeController,
-                style: const TextStyle(color: Colors.black),
-                decoration: InputDecoration(
-                  labelText: 'Longitude',
-                  labelStyle: TextStyle(color: Colors.grey[600]),
-                  hintText: 'e.g., 120.9842',
-                  hintStyle: TextStyle(color: Colors.grey[400]),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF5A35E3)),
-                  ),
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  setState(() {
-                    _longitude = double.tryParse(value);
-                  });
-                },
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
@@ -549,7 +491,10 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
         );
         if (result != null) {
           setState(() {
-            _selectedSchedule = Map<String, String>.from(result);
+            _selectedSchedule = {
+              if (result['pickup'] != null) 'pickup': result['pickup'] as String,
+              if (result['dropoff'] != null) 'dropoff': result['dropoff'] as String,
+            };
           });
         }
       },

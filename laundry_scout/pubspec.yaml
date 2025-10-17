@@ -59,6 +59,7 @@ flutter:
     - lib/assets/user/slides/third.png
     - lib/assets/promo_example.png
     - lib/assets/laundry_logo.svg
+    - lib/assets/official.png
     - lib/assets/icons/laundry-machine.svg
   
   fonts:

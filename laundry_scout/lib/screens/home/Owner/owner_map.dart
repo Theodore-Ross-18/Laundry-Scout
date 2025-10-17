@@ -199,44 +199,7 @@ class _OwnerMapScreenState extends State<OwnerMapScreen> {
             ),
           ),
         ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          margin: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white30),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Selected Location:',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              if (_selectedPosition != null) ...[
-                Text(
-                  'Latitude: ${_selectedPosition!.latitude.toStringAsFixed(6)}',
-                  style: const TextStyle(color: Colors.white70),
-                ),
-                Text(
-                  'Longitude: ${_selectedPosition!.longitude.toStringAsFixed(6)}',
-                  style: const TextStyle(color: Colors.white70),
-                ),
-              ] else
-                const Text(
-                  'Tap on the map to select a location',
-                  style: TextStyle(color: Colors.white70),
-                ),
-            ],
-          ),
-        ),
+      const SizedBox(height: 16),
       ],
     );
   }

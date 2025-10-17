@@ -30,6 +30,7 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
       _selectedPickupTime = widget.selectedSchedule!['pickup'];
       _selectedDropoffTime = widget.selectedSchedule!['dropoff'];
     }
+    print('initState: _selectedPickupTime = $_selectedPickupTime, _selectedDropoffTime = $_selectedDropoffTime');
   }
 
   @override
@@ -85,15 +86,21 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
                             ..._pickupTimes.map((time) => _buildTimeSlot(
                               time,
                               _selectedPickupTime == time,
+                              true, // isPickup
                               () {
                                 setState(() {
-                                  _selectedPickupTime = time;
+                                  if (_selectedPickupTime == time) {
+                                    _selectedPickupTime = null;
+                                    print('Pickup time unselected: $time');
+                                  } else {
+                                    _selectedPickupTime = time;
+                                    print('Pickup time selected: $time');
+                                  }
                                 });
                               },
                             )),
                             const SizedBox(height: 32),
                             
-                            // Drop-Off Schedule Section
                             const Text(
                               'Drop-Off Schedule',
                               style: TextStyle(
@@ -106,9 +113,16 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
                             ..._dropoffTimes.map((time) => _buildTimeSlot(
                               time,
                               _selectedDropoffTime == time,
+                              false, // isPickup
                               () {
                                 setState(() {
-                                  _selectedDropoffTime = time;
+                                  if (_selectedDropoffTime == time) {
+                                    _selectedDropoffTime = null;
+                                    print('Dropoff time unselected: $time');
+                                  } else {
+                                    _selectedDropoffTime = time;
+                                    print('Dropoff time selected: $time');
+                                  }
                                 });
                               },
                             )),
@@ -120,11 +134,12 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: (_selectedPickupTime != null && _selectedDropoffTime != null)
+                        onPressed: (_selectedPickupTime != null || _selectedDropoffTime != null)
                             ? () {
+                                print('Done button pressed: _selectedPickupTime = $_selectedPickupTime, _selectedDropoffTime = $_selectedDropoffTime');
                                 Navigator.pop(context, {
-                                  'pickup': _selectedPickupTime!,
-                                  'dropoff': _selectedDropoffTime!,
+                                  'pickup': _selectedPickupTime,
+                                  'dropoff': _selectedDropoffTime,
                                 });
                               }
                             : null,
@@ -156,11 +171,13 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
     );
   }
 
-  Widget _buildTimeSlot(String time, bool isSelected, VoidCallback onTap) {
+  Widget _buildTimeSlot(String time, bool isSelected, bool isPickup, VoidCallback onTap) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
-        onTap: onTap,
+        onTap: () {
+          onTap();
+        },
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(

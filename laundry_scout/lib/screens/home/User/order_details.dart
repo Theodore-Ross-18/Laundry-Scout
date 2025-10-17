@@ -209,6 +209,16 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 'Order Date',
                 widget.order['created_at'],
               ),
+              if ((widget.order['items'] as List<dynamic>).contains('Pick Up') && widget.order['pickup_time'] != null)
+                _buildDetailRow(
+                  'Pick Up Time',
+                  widget.order['pickup_time'],
+                ),
+              if ((widget.order['items'] as List<dynamic>).contains('Drop Off') && widget.order['dropoff_time'] != null)
+                _buildDetailRow(
+                  'Drop Off Time',
+                  widget.order['dropoff_time'],
+                ),
               _buildDetailRow(
                 'Note',
                 widget.order['special_instructions'] ?? '',

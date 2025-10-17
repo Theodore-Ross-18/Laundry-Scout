@@ -228,22 +228,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
         child: Column(
           children: [
            
-            const SizedBox(height: 20), 
-            Image.asset(
-              'lib/assets/lslogo.png',
-              height: 40,
-              color: Colors.white,
-            ),
-            const SizedBox(height: 10), // Spacing between logo and text
-            const Text(
-              'Laundry Scout',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10), // Spacing between text and button
+            const SizedBox(height: 10),
             // Messages section header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),

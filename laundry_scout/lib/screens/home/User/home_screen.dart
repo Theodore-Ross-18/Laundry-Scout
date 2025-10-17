@@ -644,47 +644,51 @@ class _AnimatedServiceIconState extends State<_AnimatedServiceIcon>
       vsync: this,
     );
     
-    switch (widget.animationType) {
-      case 'bounce':
-        _animation = TweenSequence<double>([
-          TweenSequenceItem(tween: Tween(begin: 0.0, end: -10.0), weight: 25),
-          TweenSequenceItem(tween: Tween(begin: -10.0, end: 0.0), weight: 25),
-          TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.0), weight: 50),
-        ]).animate(
-          CurvedAnimation(
-            parent: _controller,
-            curve: Curves.easeInOut,
-          ),
-        );
-        break;
-      case 'pulse':
-        _animation = TweenSequence<double>([
-          TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.2), weight: 25),
-          TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0), weight: 25),
-          TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 50),
-        ]).animate(
-          CurvedAnimation(
-            parent: _controller,
-            curve: Curves.easeInOut,
-          ),
-        );
-        break;
-      case 'slide':
-        _animation = TweenSequence<double>([
-          TweenSequenceItem(tween: Tween(begin: 0.0, end: 5.0), weight: 25),
-          TweenSequenceItem(tween: Tween(begin: 5.0, end: -5.0), weight: 50),
-          TweenSequenceItem(tween: Tween(begin: -5.0, end: 0.0), weight: 25),
-        ]).animate(
-          CurvedAnimation(
-            parent: _controller,
-            curve: Curves.easeInOut,
-          ),
-        );
-        break;
-    }
-    
-    if ((widget.count ?? 0) > 0) {
-      _controller.repeat();
+    if (widget.animationType.isNotEmpty) {
+      switch (widget.animationType) {
+        case 'bounce':
+          _animation = TweenSequence<double>([
+            TweenSequenceItem(tween: Tween(begin: 0.0, end: -10.0), weight: 25),
+            TweenSequenceItem(tween: Tween(begin: -10.0, end: 0.0), weight: 25),
+            TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.0), weight: 50),
+          ]).animate(
+            CurvedAnimation(
+              parent: _controller,
+              curve: Curves.easeInOut,
+            ),
+          );
+          break;
+        case 'pulse':
+          _animation = TweenSequence<double>([
+            TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.2), weight: 25),
+            TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0), weight: 25),
+            TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 50),
+          ]).animate(
+            CurvedAnimation(
+              parent: _controller,
+              curve: Curves.easeInOut,
+            ),
+          );
+          break;
+        case 'slide':
+          _animation = TweenSequence<double>([
+            TweenSequenceItem(tween: Tween(begin: 0.0, end: 5.0), weight: 25),
+            TweenSequenceItem(tween: Tween(begin: 5.0, end: -5.0), weight: 50),
+            TweenSequenceItem(tween: Tween(begin: -5.0, end: 0.0), weight: 25),
+          ]).animate(
+            CurvedAnimation(
+              parent: _controller,
+              curve: Curves.easeInOut,
+            ),
+          );
+          break;
+      }
+      
+      if ((widget.count ?? 0) > 0) {
+        _controller.repeat();
+      }
+    } else {
+      _animation = AlwaysStoppedAnimation(0.0);
     }
   }
 
@@ -692,12 +696,14 @@ class _AnimatedServiceIconState extends State<_AnimatedServiceIcon>
   void didUpdateWidget(_AnimatedServiceIcon oldWidget) {
     super.didUpdateWidget(oldWidget);
     
-   
-    if ((widget.count ?? 0) > 0 && (oldWidget.count ?? 0) == 0) {
-     
-      _controller.repeat();
-    } else if ((widget.count ?? 0) == 0 && (oldWidget.count ?? 0) > 0) {
-      
+    if (widget.animationType.isNotEmpty) {
+      if ((widget.count ?? 0) > 0 && (oldWidget.count ?? 0) == 0) {
+        _controller.repeat();
+      } else if ((widget.count ?? 0) == 0 && (oldWidget.count ?? 0) > 0) {
+        _controller.stop();
+        _controller.reset();
+      }
+    } else {
       _controller.stop();
       _controller.reset();
     }
@@ -1048,7 +1054,7 @@ class HomeScreenBody extends StatelessWidget {
                     _AnimatedServiceIcon(
                       icon: Icons.delivery_dining,
                       label: 'Pick Up',
-                      animationType: 'bounce',
+                      animationType: '',
                       color: Colors.grey[700]!,
                       count: activeOrdersCount,
                       onTap: () {
@@ -1059,7 +1065,7 @@ class HomeScreenBody extends StatelessWidget {
                     _AnimatedServiceIcon(
                       icon: Icons.assignment,
                       label: '$activeOrdersCount Active orders',
-                      animationType: 'pulse',
+                      animationType: '',
                       color: Colors.black,
                       count: activeOrdersCount,
                       onTap: () {
@@ -1070,7 +1076,7 @@ class HomeScreenBody extends StatelessWidget {
                     _AnimatedServiceIcon(
                       icon: Icons.local_shipping,
                       label: 'Delivery',
-                      animationType: 'slide',
+                      animationType: '',
                       color: Colors.grey[700]!,
                       count: activeOrdersCount,
                       onTap: () {

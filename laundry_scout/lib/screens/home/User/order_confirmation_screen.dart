@@ -201,8 +201,10 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            const Text(
-                                              'Pickup at',
+                                            Text(
+                                              widget.schedule['pickup'] != null && widget.schedule['dropoff'] == null
+                                                  ? 'Pickup only'
+                                                  : 'Pickup at',
                                               style: TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w500,
@@ -210,7 +212,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                               ),
                                             ),
                                             Text(
-                                              '${DateFormat('MMM dd, yyyy').format(pickupDate)} | ${widget.schedule['pickup']}',
+                                              '${DateFormat('MMM dd, yyyy').format(pickupDate)} | ${widget.schedule['pickup'] ?? ''}',
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 color: Colors.grey[600],
@@ -241,8 +243,10 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            const Text(
-                                              'Drop off',
+                                            Text(
+                                              widget.schedule['dropoff'] != null && widget.schedule['pickup'] == null
+                                                  ? 'Drop off only'
+                                                  : 'Drop off',
                                               style: TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w500,
@@ -250,7 +254,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                               ),
                                             ),
                                             Text(
-                                              '${DateFormat('MMM dd, yyyy').format(dropoffDate)} | ${widget.schedule['dropoff']}',
+                                              '${DateFormat('MMM dd, yyyy').format(dropoffDate)} | ${widget.schedule['dropoff'] ?? ''}',
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 color: Colors.grey[600],
