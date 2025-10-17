@@ -588,8 +588,12 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                             Navigator.pop(context); // Assuming SignupScreen was pushed on top of LoginScreen
                           },
                           child: const Text(
-                            'Login',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            'Sign In',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.none,
+                            ),
                           ),
                         ),
                       ],
