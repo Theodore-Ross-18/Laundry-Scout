@@ -116,10 +116,10 @@ class _FilterModalState extends State<FilterModal> {
         margin: const EdgeInsets.only(right: 8, bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[100],
+          color: isSelected ? const Color(0xFF5A35E3) : Colors.grey[100],
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[300]!,
+            color: isSelected ? const Color(0xFF5A35E3) : Colors.grey[300]!,
             width: 1,
           ),
         ),
@@ -167,10 +167,10 @@ class _FilterModalState extends State<FilterModal> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[400]!,
+                  color: isSelected ? const Color(0xFF5A35E3) : Colors.grey[400]!,
                   width: 2,
                 ),
-                color: isSelected ? const Color(0xFF7B61FF) : Colors.transparent,
+                color: isSelected ? const Color(0xFF5A35E3) : Colors.transparent,
               ),
               child: isSelected
                   ? const Icon(
@@ -232,7 +232,7 @@ class _FilterModalState extends State<FilterModal> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: const BoxDecoration(
-                color: Color(0xFF7B61FF),
+                color: Color(0xFF5A35E3),
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
@@ -311,12 +311,12 @@ class _FilterModalState extends State<FilterModal> {
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: _filters['useCurrentLocation'] 
-                                      ? const Color(0xFF7B61FF) 
+                                      ? const Color(0xFF5A35E3) 
                                       : Colors.grey[400]!,
                                   width: 2,
                                 ),
                                 color: _filters['useCurrentLocation'] 
-                                    ? const Color(0xFF7B61FF) 
+                                    ? const Color(0xFF5A35E3) 
                                     : Colors.transparent,
                               ),
                               child: _filters['useCurrentLocation']
@@ -358,12 +358,12 @@ class _FilterModalState extends State<FilterModal> {
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: !_filters['useCurrentLocation'] 
-                                      ? const Color(0xFF7B61FF) 
+                                      ? const Color(0xFF5A35E3) 
                                       : Colors.grey[400]!,
                                   width: 2,
                                 ),
                                 color: !_filters['useCurrentLocation'] 
-                                    ? const Color(0xFF7B61FF) 
+                                    ? const Color(0xFF5A35E3) 
                                     : Colors.transparent,
                               ),
                               child: !_filters['useCurrentLocation']
@@ -460,7 +460,7 @@ class _FilterModalState extends State<FilterModal> {
                       height: 50,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF7B61FF), Color(0xFF9C88FF)],
+                          colors: [Color(0xFF5A35E3), Color(0xFF7A53E3)], 
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                         ),

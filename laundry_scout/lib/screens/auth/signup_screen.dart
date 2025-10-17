@@ -345,7 +345,6 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                     Center( 
                       child: SizedBox(
                         width: 298,
-                        height: 57,
                         child: TextFormField(
                           controller: _usernameController,
                           decoration: InputDecoration(
@@ -387,7 +386,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                     Center( 
                       child: SizedBox(
                         width: 298,
-                        height: 57,
+                        // height: 57, // Removed fixed height
                         child: TextFormField(
                           controller: _emailController,
                           decoration: InputDecoration(
@@ -431,7 +430,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                     Center( 
                       child: SizedBox(
                         width: 298,
-                        height: 57,
+                        // height: 57, // Removed fixed height
                         child: TextFormField(
                           controller: _passwordController,
                           decoration: InputDecoration(
@@ -494,7 +493,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                     Center( 
                       child: SizedBox(
                         width: 298,
-                        height: 57,
+                        // height: 57, // Removed fixed height
                         child: TextFormField(
                           controller: _confirmPasswordController,
                           decoration: InputDecoration(

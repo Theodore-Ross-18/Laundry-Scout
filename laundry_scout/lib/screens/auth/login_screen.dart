@@ -362,7 +362,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 Center(
                   child: SizedBox(
                     width: 298,
-                    height: 57,
                     child: TextFormField(
                       controller: _emailController,
                       decoration: InputDecoration(
@@ -405,7 +404,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Center(
                   child: SizedBox(
                     width: 298,
-                    height: 57,
+                    // height: 57, // Removed fixed height
                     child: TextFormField(
                       controller: _passwordController,
                       decoration: InputDecoration(
