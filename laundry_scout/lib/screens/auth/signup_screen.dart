@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'verification_screen.dart';
 import 'select_user.dart';
-// Consider importing a package for social icons like font_awesome_flutter
-// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:laundry_scout/widgets/animated_eye_widget.dart'; // Import the animated eye widget
+import 'package:laundry_scout/widgets/animated_eye_widget.dart'; 
 
-// Helper function for creating a fade transition
+
 Route _createFadeRoute(Widget page) {
   return PageRouteBuilder(
     pageBuilder: (context, animation, secondaryAnimation) => page,
@@ -16,7 +14,7 @@ Route _createFadeRoute(Widget page) {
         child: child,
       );
     },
-    transitionDuration: const Duration(milliseconds: 300), // Adjust duration as needed
+    transitionDuration: const Duration(milliseconds: 300), 
   );
 }
 
@@ -52,7 +50,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
     );
     _animationController.forward();
 
-    // Add listeners to controllers to update UI for suffixIcon visibility
+  
     _usernameController.addListener(() {
       if (mounted) {
         setState(() {});
@@ -92,9 +90,9 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
       });
 
       try {
-        // Check if username already exists in the profiles table
+        
         final existingUsername = await Supabase.instance.client
-            .from('user_profiles') // Changed from 'profiles' to 'user_profiles'
+            .from('user_profiles') 
             .select('username')
             .eq('username', _usernameController.text.trim())
             .limit(1)
@@ -123,10 +121,10 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
           setState(() {
             _isLoading = false;
           });
-          return; // Stop the signup process if username exists
+          return; 
         }
 
-        // Check if email already exists in user_profiles table
+        
         final existingUserEmail = await Supabase.instance.client
             .from('user_profiles')
             .select('email')
@@ -157,10 +155,10 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
           setState(() {
             _isLoading = false;
           });
-          return; // Stop the signup process if email exists
+          return; 
         }
 
-        // Check if email already exists in business_profiles table
+        
         final existingBusinessEmail = await Supabase.instance.client
             .from('business_profiles')
             .select('email')
@@ -191,14 +189,14 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
           setState(() {
             _isLoading = false;
           });
-          return; // Stop the signup process if email exists
+          return; 
         }
 
-        // Proceed with Supabase auth signup (handles email uniqueness)
+        
         final response = await Supabase.instance.client.auth.signUp(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
-          emailRedirectTo: 'com.yourapp.laundryscout://email-confirm', // Add your app's deep link
+          emailRedirectTo: 'com.yourapp.laundryscout://email-confirm', 
           data: {
             'username': _usernameController.text.trim(),
             'email_confirm': true,
@@ -206,9 +204,9 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
         );
 
         if (response.user != null) {
-          // Check if email confirmation is required
+         
           if (response.session == null) {
-            // Email confirmation required
+           
             if (mounted) {
               showDialog(
                 context: context,
@@ -233,7 +231,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
               );
             }
           } else {
-            // User is immediately signed in (email confirmation disabled)
+            
             if (mounted) {
               Navigator.pushReplacement(
                 context,
@@ -242,7 +240,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
             }
           }
         } else {
-           // Handle cases where auth.signUp succeeds but response.user is null (less common)
+           
            if (mounted) {
               showDialog(
                 context: context,
@@ -377,7 +375,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                             if (value == null || value.isEmpty) {
                               return 'Please enter a username';
                             }
-                            // You can add more username validation if needed
+                           
                             return null;
                           },
                           style: textTheme.bodyLarge,
@@ -429,7 +427,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Password Field
+                
                     Center( 
                       child: SizedBox(
                         width: 298,
@@ -472,7 +470,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                         size: 18.0,
                                         color: Colors.white70,
                                       ),
-                                      const SizedBox(width: 8), // Add some spacing
+                                      const SizedBox(width: 8), 
                                     ],
                                   )
                                 : null,
@@ -492,7 +490,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Confirm Password Field
+                    
                     Center( 
                       child: SizedBox(
                         width: 298,
@@ -535,7 +533,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                         size: 18.0,
                                         color: Colors.white70,
                                       ),
-                                      const SizedBox(width: 8), // Add some spacing
+                                      const SizedBox(width: 8), 
                                     ],
                                   )
                                 : null,
@@ -558,9 +556,9 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                     ElevatedButton(
                       onPressed: _isLoading ? null : _signUp,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF543CDC),
+                        backgroundColor: const Color(0xFF5A35E3),
                         foregroundColor: Colors.white,
-                        minimumSize: const Size(298, 57), // Ensure button has a good size
+                        minimumSize: const Size(298, 57),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 16),
                         shape: RoundedRectangleBorder(

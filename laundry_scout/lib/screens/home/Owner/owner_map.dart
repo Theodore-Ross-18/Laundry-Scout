@@ -95,7 +95,7 @@ class _OwnerMapScreenState extends State<OwnerMapScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Select Shop Location'),
-        backgroundColor: const Color(0xFF6F5ADC),
+        backgroundColor: const Color(0xFF5A35E3),
         actions: [
           IconButton(
             icon: const Icon(Icons.check),
@@ -169,7 +169,7 @@ class _OwnerMapScreenState extends State<OwnerMapScreen> {
               borderRadius: BorderRadius.circular(12),
               child: FlutterMap(
                 options: MapOptions(
-                  initialCenter: _selectedPosition ?? _currentPosition ?? const LatLng(14.5995, 120.9842), // Default to Manila
+                  initialCenter: _selectedPosition ?? _currentPosition ?? const LatLng(14.5995, 120.9842),
                   initialZoom: 15.0,
                   onTap: _onMapTap,
                 ),

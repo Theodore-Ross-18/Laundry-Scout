@@ -77,7 +77,6 @@ class _OwnerPromoPreviewScreenState extends State<OwnerPromoPreviewScreen> {
       );
     }
     
-    // For network URLs, use OptimizedImage
     return OptimizedImage(
       imageUrl: imageUrl,
       fit: BoxFit.cover,
@@ -143,7 +142,6 @@ class _OwnerPromoPreviewScreenState extends State<OwnerPromoPreviewScreen> {
                   ),
                   const SizedBox(height: 8),
                   
-                  // Promo Title
                   Text(
                     promoTitle,
                     style: const TextStyle(
@@ -154,7 +152,6 @@ class _OwnerPromoPreviewScreenState extends State<OwnerPromoPreviewScreen> {
                   ),
                   const SizedBox(height: 16),
                   
-                  // Promo Description
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -176,14 +173,13 @@ class _OwnerPromoPreviewScreenState extends State<OwnerPromoPreviewScreen> {
                   ),
                   const SizedBox(height: 32),
                   
-                  // Valid Until Info
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF6F5ADC).withValues(alpha: 0.1),
+                      color: const Color(0xFF5A35E3).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: const Color(0xFF6F5ADC).withValues(alpha: 0.2),
+                        color: const Color(0xFF5A35E3).withValues(alpha: 0.2),
                         width: 1,
                       ),
                     ),
@@ -191,14 +187,14 @@ class _OwnerPromoPreviewScreenState extends State<OwnerPromoPreviewScreen> {
                       children: [
                         Icon(
                           Icons.access_time,
-                          color: const Color(0xFF6F5ADC),
+                          color: const Color(0xFF5A35E3),
                           size: 20,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'Valid until further notice',
                           style: TextStyle(
-                            color: const Color(0xFF6F5ADC),
+                            color: const Color(0xFF5A35E3),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -211,10 +207,10 @@ class _OwnerPromoPreviewScreenState extends State<OwnerPromoPreviewScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF6F5ADC).withValues(alpha: 0.05),
+                      color: const Color(0xFF5A35E3).withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: const Color(0xFF6F5ADC).withValues(alpha: 0.2),
+                        color: const Color(0xFF5A35E3).withValues(alpha: 0.2),  
                         width: 1,
                       ),
                     ),
@@ -225,14 +221,14 @@ class _OwnerPromoPreviewScreenState extends State<OwnerPromoPreviewScreen> {
                           children: [
                             Icon(
                               Icons.info_outline,
-                              color: const Color(0xFF6F5ADC),
+                              color: const Color(0xFF5A35E3),
                               size: 20,
                             ),
                             const SizedBox(width: 8),
                             Text(
                               'Preview Mode',
                               style: TextStyle(
-                                color: const Color(0xFF6F5ADC),
+                                color: const Color(0xFF5A35E3),
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),

@@ -26,21 +26,21 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F2F5), // Light grey background for the whole screen
+      backgroundColor: const Color(0xFFF0F2F5), 
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF0F2F5), // Light grey background for app bar
+        backgroundColor: const Color(0xFFF0F2F5),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color:  Color(0xFF6F5ADC)), // Gcash blue for back icon
+          icon: const Icon(Icons.arrow_back, color:  Color(0xFF5A35E3)),
           onPressed: () {
             Navigator.of(context).pop();
           },
           style: IconButton.styleFrom(
-            backgroundColor: Colors.transparent, // No background for icon button
+            backgroundColor: Colors.transparent, 
           ),
         ),
         title: const Text(
           "Order Details",
-          style: TextStyle(color:  Color(0xFF6F5ADC), fontWeight: FontWeight.bold), // Gcash blue for title
+          style: TextStyle(color:  Color(0xFF5A35E3), fontWeight: FontWeight.bold), 
         ),
         centerTitle: true,
       ),
@@ -48,7 +48,7 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
         child: RepaintBoundary(
           key: _receiptKey,
           child: Container(
-            color: Colors.white, // White background for the receipt content
+            color: Colors.white,
             margin: const EdgeInsets.all(16.0),
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -60,7 +60,7 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
                     ColorFiltered(
                       colorFilter: ColorFilter.mode(Colors.black, BlendMode.srcIn),
                       child: Image.asset(
-                        'lib/assets/lslogo.png', // Placeholder for Gcash logo
+                        'lib/assets/lslogo.png',
                         height: 50,
                       ),
                     ),
@@ -120,7 +120,7 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
                 'Total Amount',
                 '₱${widget.order['total_amount'] ?? '0.00'}',
                 isBold: true,
-                valueColor:  Color(0xFF6F5ADC), // Gcash blue for total amount
+                valueColor:  Color(0xFF5A35E3),
               ),
               const Divider(height: 30, thickness: 1),
               const SizedBox(height: 20),
@@ -143,8 +143,8 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
                 child: TextButton(
                   onPressed: _captureAndSaveReceipt,
                   style: TextButton.styleFrom(
-                    backgroundColor: const Color(0xFF6F5ADC), // Gcash blue button
-                    foregroundColor: Colors.white, // White text
+                    backgroundColor: const Color(0xFF6F5ADC),
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
                     ),
@@ -241,7 +241,7 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
       return;
     }
     try {
-      // Request storage permission
+      
       final status = await Permission.storage.request();
       if (!status.isGranted) {
         if (mounted) {
@@ -252,7 +252,6 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
         return;
       }
 
-      // Capture the widget as an image
       final RenderRepaintBoundary boundary = _receiptKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
       final ui.Image image = await boundary.toImage(pixelRatio: 3.0);
       final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
@@ -266,7 +265,6 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
       );
       final Uint8List jpegBytes = img.encodeJpg(imageJpg);
 
-      // Get the downloads directory
       final directory = await getDownloadsDirectory();
       if (directory == null) {
         if (mounted) {
@@ -277,13 +275,11 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
         return;
       }
 
-      // Create filename with order number and timestamp
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
       final orderNumber = widget.order['order_number'] ?? 'unknown';
       final fileName = 'Laundry-Scout_${orderNumber}_$timestamp.jpeg';
       final filePath = '${directory.path}/$fileName';
 
-      // Save the file
       final file = File(filePath);
       await file.writeAsBytes(jpegBytes);
 
@@ -293,7 +289,6 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
         );
       }
     } catch (e) {
-      // debugPrint('Error saving receipt: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error saving receipt: $e')),

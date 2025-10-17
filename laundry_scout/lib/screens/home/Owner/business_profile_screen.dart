@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../splash/splash_screen.dart';
-import 'changeEPP.dart'; // Import the new screen
-import 'owner_notification_screen.dart'; // Import the OwnerNotificationScreen
-import 'image_preview_screen.dart'; // Import the ImagePreviewScreen
-import 'business_docs_screen.dart'; // Import the BusinessDocsScreen
+import 'changeEPP.dart'; 
+import 'owner_notification_screen.dart'; 
+import 'image_preview_screen.dart'; 
+import 'business_docs_screen.dart'; 
 
-// Helper function for creating a fade transition (copied from profile_screen.dart)
 Route _createFadeRoute(Widget page) {
   return PageRouteBuilder(
     pageBuilder: (context, animation, secondaryAnimation) => page,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      // Use FadeTransition for a fade-in/fade-out effect
+      
       return FadeTransition(
         opacity: animation,
         child: child,
       );
     },
-    transitionDuration: const Duration(milliseconds: 300), // Adjust duration as needed
+    transitionDuration: const Duration(milliseconds: 300), 
   );
 }
 
@@ -147,7 +146,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    color: Color(0xFF7B61FF),
+                                    color: Color(0xFF5A35E3),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(Icons.arrow_back, color: Colors.white, size: 20),
@@ -158,7 +157,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                                   child: Text(
                                     'Business Profile',
                                     style: TextStyle(
-                                      color: Color(0xFF7B61FF),
+                                      color: Color(0xFF5A35E3),
                                       fontWeight: FontWeight.bold,
                                       fontSize: 20,
                                     ),
@@ -170,7 +169,6 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                           ),
                         ),
                         
-                        // Avatar Section
                         Container(
                           width: 120,
                           height: 120,
@@ -180,8 +178,8 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                Color(0xFFB8A9FF),
-                                Color(0xFF7B61FF),
+                                Color(0xFFA693E3),
+                                Color(0xFF5A35E3),
                               ],
                             ),
                           ),
@@ -269,13 +267,13 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                         
                         const SizedBox(height: 40),
                         
-                        // Sign Out Button
+                      
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: _signOut,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFF7B61FF),
+                              backgroundColor: Color(0xFF5A35E3),
                               foregroundColor: Colors.white,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
@@ -292,12 +290,12 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 32), // Add bottom padding for scroll
+                        const SizedBox(height: 32), 
                       ],
                     ),
                   ),
                 ),
               ),
     );
-  } // End of _BusinessProfileScreenState class
-} // End of BusinessProfileScreen class
+  }
+}

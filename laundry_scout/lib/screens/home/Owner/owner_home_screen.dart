@@ -3,14 +3,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../widgets/optimized_image.dart';
 import '../../../widgets/message_badge.dart';
 import 'business_profile_screen.dart';
-import 'add_promo_screen.dart'; // Import the new screen
-import 'owner_message_screen.dart'; // Import the new message screen
-import 'owner_notification_screen.dart'; // Import the new notification screen
-import 'owner_feedback_screen.dart'; // Import the feedback screen
-import 'edit_profile_screen.dart'; // Import the edit profile screen
-import 'availability_screen.dart'; // Import the availability screen
-import 'orders_screen.dart'; // Import the orders screen
-import '../../../services/feedback_service.dart'; // Import FeedbackService
+import 'add_promo_screen.dart';
+import 'owner_message_screen.dart';
+import 'owner_notification_screen.dart';
+import 'owner_feedback_screen.dart';
+import 'edit_profile_screen.dart';
+import 'availability_screen.dart';
+import 'orders_screen.dart';
+import '../../../services/feedback_service.dart';
 
 
 class OwnerHomeScreen extends StatefulWidget {
@@ -40,7 +40,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     _loadBusinessProfile();
     _loadOrderStats();
     _loadPromoStats();
-    // _loadReviewStats(); // Removed as it's now called after _loadBusinessProfile
   }
 
   Future<void> _loadBusinessProfile() async {
@@ -62,7 +61,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       final response = await Supabase.instance.client
           .from('business_profiles')
           .select()
-          .eq('id', businessId) // Use the fetched businessId
+          .eq('id', businessId) 
           .single();
 
       if (mounted) {
@@ -70,7 +69,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
           _businessProfile = response;
           _isLoading = false;
         });
-        _loadReviewStats(); // Load review stats after business profile is loaded
+        _loadReviewStats();
       }
     } catch (e) {
       if (mounted) {
@@ -126,7 +125,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
         setState(() {
           _promoCount = response.length;
         });
-        print('Promo count: $_promoCount'); // Add this line for debugging
+        print('Promo count: $_promoCount');
       }
     } catch (e) {
       print('Error loading promo stats: $e');
@@ -136,7 +135,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   Future<void> _loadReviewStats() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
-      if (user == null || _businessProfile == null) return; // Ensure _businessProfile is loaded
+      if (user == null || _businessProfile == null) return; 
 
       final businessId = _businessProfile!['id'];
       if (businessId == null) {
@@ -144,17 +143,15 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
         return;
       }
 
-      // Use FeedbackService to get feedback, which includes user_profiles
       final allFeedback = await _feedbackService.getFeedback(businessId);
 
-      // Filter feedback to only count those with user_profiles
       final filteredFeedback = allFeedback.where((feedback) => feedback['user_profiles'] != null).toList();
 
       if (mounted) {
         setState(() {
           _reviewCount = filteredFeedback.length;
         });
-        print('Review count: $_reviewCount'); // Add this line for debugging
+        print('Review count: $_reviewCount');
       }
     } catch (e) {
       print('Error loading review stats: $e');
@@ -164,9 +161,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   void _onItemTapped(int index) {
     if (!mounted) return;
     
-    // If Home button (index 0) is pressed and we're already on Home screen
     if (index == 0 && _selectedIndex == 0) {
-      // Refresh data in the background without showing loading indicators
       _refreshDataInBackground();
       return;
     }
@@ -176,10 +171,8 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     });
   }
 
-  // Background refresh method that loads all data without showing loading states
   Future<void> _refreshDataInBackground() async {
     try {
-      // Load all data in parallel without setting loading states
       await Future.wait([
         _loadBusinessProfileBackground(),
         _loadOrderStatsBackground(),
@@ -188,11 +181,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       ]);
     } catch (e) {
       print('Background refresh error: $e');
-      // Silently handle errors in background refresh
     }
   }
 
-  // Background versions of loading methods that don't set loading states
   Future<void> _loadBusinessProfileBackground() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
@@ -290,7 +281,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   Widget _buildBody() {
     switch (_selectedIndex) {
       case 0:
-        return _buildHomeScreenContent(); // Your existing home screen content
+        return _buildHomeScreenContent();
       case 1:
         return const OwnerMessageScreen();
       case 2:
@@ -323,7 +314,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                   Text(
                                     'Welcome',
                                     style: TextStyle(
-                                      color: Color(0xFF7B61FF),
+                                      color: Color(0xFF5A35E3),
                                       fontSize: 18,
                                       fontWeight: FontWeight.w400,
                                     ),
@@ -348,7 +339,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                               child: CircleAvatar(
                                 radius: 24,
                                 backgroundColor: Colors.white,
-                                child: Icon(Icons.person, color: Color(0xFF7B61FF), size: 32),
+                                child: Icon(Icons.person, color: Color(0xFF5A35E3), size: 32),
                               ),
                             ),
                           ],
@@ -408,18 +399,18 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                             MaterialPageRoute(builder: (context) => const OrdersScreen()),
                                           );
                                         },
-                                        child: _analyticsCard(Icons.history, '${_orderStats['total']}', 'Order History', Color(0xFF7B61FF)),
+                                        child: _analyticsCard(Icons.history, '${_orderStats['total']}', 'Order History', Color(0xFF5A35E3)),
                                       ),
                                     ),
-                                    const SizedBox(width: 8), // Add some spacing between cards
+                                    const SizedBox(width: 8),
                                     Expanded(
-                                      child: _analyticsCard(Icons.local_offer, '$_promoCount', 'Promos', Color(0xFF7B61FF)),
+                                      child: _analyticsCard(Icons.local_offer, '$_promoCount', 'Promos', Color(0xFF5A35E3)),
                                     ),
-                                    const SizedBox(width: 8), // Add some spacing between cards
+                                    const SizedBox(width: 8), 
                                     Expanded(
-                                      child: _analyticsCard(Icons.star_outline, '$_reviewCount', 'Reviews', Color(0xFF7B61FF)),
+                                      child: _analyticsCard(Icons.star_outline, '$_reviewCount', 'Reviews', Color(0xFF5A35E3)),
                                     ),
-                                    const SizedBox(width: 8), // Add some spacing between cards
+                                    const SizedBox(width: 8), 
                                     Expanded(
                                       child: _slotAnalyticsCard(_businessProfile?['availability_status'] ?? 'Open Slots'),
                                     ),
@@ -435,7 +426,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
                         child: Column(
                           children: [
-                            // Row 1: Add Promo | Edit Profile
+                         
                             Row(
                               children: [
                                 Expanded(
@@ -456,13 +447,12 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                         MaterialPageRoute(builder: (context) => const EditProfileScreen()),
                                       );
                                     },
-                                    child: _actionCard(Icons.edit, 'Edit Profile', Colors.deepPurple),
+                                    child: _actionCard(Icons.edit, 'Edit Profile', Color(0xFF5A35E3)),
                                   ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 16),
-                            // Row 2: Reviews | Set Availability
                             Row(
                               children: [
                                 Expanded(
@@ -482,7 +472,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                       final result = await Navigator.of(context).push(
                                         MaterialPageRoute(builder: (context) => const AvailabilityScreen()),
                                       );
-                                      // If availability was updated, refresh the business profile
+                                      
                                       if (result == true) {
                                         _loadBusinessProfile();
                                       }
@@ -531,7 +521,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Color(0xFF7B61FF),
+        selectedItemColor: Color(0xFF5A35E3),
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
@@ -541,8 +531,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     );
   }
 
-
-  // Helper method for availability card
   Widget _availabilityCard() {
     return _actionCard(Icons.calendar_today, 'Set Availability', Colors.deepPurple);
   }
@@ -568,8 +556,6 @@ Widget _actionCard(IconData icon, String label, Color iconColor) {
 }
 
 
-
-// Helper method for analytics box
 Widget _analyticsCard(IconData icon, String value, String label, Color iconColor) {
   return Container(
     width: 80,

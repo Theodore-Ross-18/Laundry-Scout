@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:laundry_scout/screens/users/set_businessinfo.dart'; // Import the new screen
-import 'package:laundry_scout/screens/users/set_userinfo.dart'; // Import the new screen
+import 'package:laundry_scout/screens/users/set_businessinfo.dart'; 
+import 'package:laundry_scout/screens/users/set_userinfo.dart'; 
 
-// Convert StatelessWidget to StatefulWidget
+
 class SelectUserScreen extends StatefulWidget {
-  // Add a field to receive the username
+
   final String username;
 
-  // Update the constructor to require the username
+  
   const SelectUserScreen({super.key, required this.username});
 
   @override
@@ -37,7 +37,7 @@ class _SelectUserScreenState extends State<SelectUserScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF6F5ADC), // Set the background color
+      backgroundColor: const Color(0xFF5A35E3), 
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30.0),
@@ -45,13 +45,13 @@ class _SelectUserScreenState extends State<SelectUserScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Add the logo here
+              
               Image.asset(
-                'lib/assets/lslogo.png', // Adjust the path if necessary
-                height: 50, // Adjust size as needed
-                width: 50, // Adjust size as needed
+                'lib/assets/lslogo.png', 
+                height: 50,
+                width: 50, 
               ),
-              const SizedBox(height: 10), // Add spacing after the logo
+              const SizedBox(height: 10),
               Text(
                 'Select User',
                 textAlign: TextAlign.center,
@@ -61,11 +61,11 @@ class _SelectUserScreenState extends State<SelectUserScreen> {
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 20), // Adjusted spacing
+              const SizedBox(height: 20),
               _buildUserSelectionCard(
                 context: context,
                 avatarImagePath: 'lib/assets/user/user.png',
-                title: 'Laundry Service User',
+                title: 'Laundry Shop User',
                 onTap: () {
                   Navigator.push(
                     context,
@@ -75,29 +75,29 @@ class _SelectUserScreenState extends State<SelectUserScreen> {
                   );
                 },
               ),
-              const SizedBox(height: 20), // Adjusted spacing
+              const SizedBox(height: 20), 
               Text(
                 'Or',
                 textAlign: TextAlign.center,
                 style: textTheme.titleMedium?.copyWith(color: Colors.white.withOpacity(0.8)),
               ),
-              const SizedBox(height: 20), // Adjusted spacing
+              const SizedBox(height: 20), 
               _buildUserSelectionCard(
                 context: context,
                 avatarImagePath: 'lib/assets/user/owner.png',
-                title: 'Business Owner',
+                title: 'Laundry Shop Owner',
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => SetBusinessInfoScreen(username: widget.username,), // Pass the nullable username
+                      builder: (context) => SetBusinessInfoScreen(username: widget.username,),
                     ),
                   );
                 },
               ),
-              const Spacer(), // Pushes footer to the bottom
-              Padding( // Added Padding for the footer
-                padding: const EdgeInsets.only(bottom: 20.0), // Adjusted bottom padding
+              const Spacer(),
+              Padding( 
+                padding: const EdgeInsets.only(bottom: 20.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -106,7 +106,7 @@ class _SelectUserScreenState extends State<SelectUserScreen> {
                       textAlign: TextAlign.center,
                       style: textTheme.bodySmall?.copyWith(color: Colors.white.withOpacity(0.7)),
                     ),
-                    const SizedBox(height: 4), // Small space between the two lines
+                    const SizedBox(height: 4), 
                     Text(
                       'Laundry app Management',
                       textAlign: TextAlign.center,
@@ -136,17 +136,17 @@ class _SelectUserScreenState extends State<SelectUserScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 30.0, horizontal: 20.0),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15), // Slightly transparent white or light purple
+          color: Colors.white.withOpacity(0.15),
           borderRadius: BorderRadius.circular(15.0),
           border: Border.all(color: Colors.white.withOpacity(0.3)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Use Image.asset if avatarImagePath is provided
+            
             if (avatarImagePath != null)
               Image.asset(avatarImagePath, height: 80, width: 80)
-            // Fallback to Icon if avatar is provided (though we are using images now)
+           
             else if (avatar != null)
               Icon(avatar, size: 70, color: Colors.white),
             const SizedBox(height: 15),

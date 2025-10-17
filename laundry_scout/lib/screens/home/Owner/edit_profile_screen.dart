@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:file_picker/file_picker.dart'; // Import file_picker
-import 'dart:typed_data'; // Import for Uint8List
-import 'dart:io'; // Import for File class
+import 'package:file_picker/file_picker.dart'; 
+import 'dart:typed_data';
+import 'dart:io';
 import '../../../widgets/optimized_image.dart';
 import 'package:laundry_scout/screens/home/Owner/owner_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:laundry_scout/screens/home/User/business_detail_screen.dart'; // Import for BusinessDetailScreen
-import 'package:flutter/foundation.dart' show kIsWeb; // Import for kIsWeb
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -25,10 +25,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
   final _aboutUsController = TextEditingController();
-  final _termsAndConditionsController = TextEditingController(); // New controller for Terms and Conditions
-  final _customServiceController = TextEditingController(); // Controller for custom service input
+  final _termsAndConditionsController = TextEditingController();
+  final _customServiceController = TextEditingController();
   
-  // Services Offered
   final List<String> _availableServices = [
     'Drop Off',
     'Wash & Fold',
@@ -40,18 +39,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   ];
   List<String> _selectedServices = [];
   
-  // Pricelist - Make it final since it's modified through methods
-  final List<Map<String, dynamic>> _pricelist = [];
-  // Removed _serviceNameController and _priceController as per user request.
-  // final _serviceNameController = TextEditingController();
-  // final _priceController = TextEditingController();
   
-  // Controllers for editing existing pricelist items
+  final List<Map<String, dynamic>> _pricelist = [];
   final Map<int, TextEditingController> _editServiceControllers = {};
   final Map<int, TextEditingController> _editPriceControllers = {};
   final Set<int> _editingIndices = {};
-  
-  // Weekly Schedule (currently not shown in UI)
   List<Map<String, dynamic>> _weeklySchedule = [];
   final Map<String, TextEditingController> _openControllers = {};
   final Map<String, TextEditingController> _closeControllers = {};
@@ -64,19 +56,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Map<String, dynamic>? _businessProfile;
   Map<String, String>? _selectedSchedule;
 
-  // Add a controller for open hours
   final _openHoursController = TextEditingController();
   final _pickupTimeController = TextEditingController();
   final _dropoffTimeController = TextEditingController();
 
-  // New lists of controllers for dynamic time slots
   final List<TextEditingController> _pickupSlotControllers = [];
   final List<TextEditingController> _dropoffSlotControllers = [];
 
-  // For image upload
-  File? _selectedImageFile; // To store the selected image file for non-web
-  Uint8List? _selectedImageBytes; // To store the selected image bytes for web
-  String? _coverPhotoUrl; // To store the current cover photo URL
+  File? _selectedImageFile; 
+  Uint8List? _selectedImageBytes; 
+  String? _coverPhotoUrl; 
 
   @override
   void initState() {
@@ -93,11 +82,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _aboutUsController.dispose();
     _termsAndConditionsController.dispose();
     _customServiceController.dispose();
-    // Removed _serviceNameController.dispose() and _priceController.dispose() as per user request.
-    // _serviceNameController.dispose();
-    // _priceController.dispose();
-    
-    // Dispose editing controllers
+   
     for (var controller in _editServiceControllers.values) {
       controller.dispose();
     }
@@ -105,21 +90,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       controller.dispose();
     }
     
-    // Dispose schedule controllers
     for (var c in _openControllers.values) {
       c.dispose();
     }
     for (var c in _closeControllers.values) {
       c.dispose();
     }
-    // removed weekly schedule controllers
     
-    // Dispose the new open hours controller
     _openHoursController.dispose();
     _pickupTimeController.dispose();
     _dropoffTimeController.dispose();
 
-    // Dispose new dynamic time slot controllers
     for (var controller in _pickupSlotControllers) {
       controller.dispose();
     }
@@ -150,23 +131,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _longitude = _businessProfile!['longitude'];
           _latitudeController.text = _latitude?.toString() ?? '';
           _longitudeController.text = _longitude?.toString() ?? '';
-          
-          // Load laundry information
+      
           _aboutUsController.text = _businessProfile!['about_business'] ?? '';
           _termsAndConditionsController.text = _businessProfile!['terms_and_conditions'] ?? ''; // Load terms and conditions
           _deliveryAvailable = _businessProfile!['does_delivery'] ?? false;
 
-          
-          // Load cover photo URL
           _coverPhotoUrl = _businessProfile!['cover_photo_url'];
           _coverPhotoUrl = _businessProfile!['cover_photo_url'];
 
-          // Load open hours
           _openHoursController.text = _businessProfile!['open_hours_text'] ?? '';
-
-          // Load available pickup and dropoff time slots
-          // _pickupTimeController.text = _businessProfile!['available_pickup_time_slots']?.join(', ') ?? '';
-          // _dropoffTimeController.text = _businessProfile!['available_dropoff_time_slots']?.join(', ') ?? '';
 
           _pickupSlotControllers.clear();
           final List<String> pickupSlots = List<String>.from(_businessProfile!['available_pickup_time_slots'] ?? []);
@@ -180,10 +153,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             _dropoffSlotControllers.add(TextEditingController(text: slot));
           }
 
-          // Load services offered
           final servicesOffered = _businessProfile!['services_offered'];
           if (servicesOffered is List) {
-            // Normalize service names when loading from database and remove duplicates
+           
             _selectedServices = List<String>.from(servicesOffered.map((service) {
               if (service is String) {
                 return service.toLowerCase() == 'deliver' ? 'Delivery' : service;
@@ -194,7 +166,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             _selectedServices = [servicesOffered.toLowerCase() == 'deliver' ? 'Delivery' : servicesOffered];
           }
           
-          // Load pricelist
           final pricelistData = _businessProfile!['service_prices'];
           if (pricelistData is List) {
             _pricelist.clear();
@@ -204,12 +175,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 String serviceName = item['service'] ?? '';
                 double price = double.tryParse(item['price'].toString()) ?? 0.0;
 
-                // Normalize service names when loading from database
                 if (serviceName.toLowerCase() == 'deliver') {
                   serviceName = 'Delivery';
                 }
 
-                // Only add service if price is greater than 0.0
                 if (price > 0.0) {
                   uniquePricelist[serviceName] = {
                     'service': serviceName,
@@ -221,7 +190,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             _pricelist.addAll(uniquePricelist.values);
           }
           
-          // Load schedule if available
           if (_businessProfile!['pickup_schedule'] != null && _businessProfile!['dropoff_schedule'] != null) {
             _selectedSchedule = {
               'pickup': _businessProfile!['pickup_schedule'],
@@ -229,18 +197,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             };
           }
           
-          // Sync services with pricelist to ensure all selected services have prices
           _syncServicesWithPricelist();
           
-          
-          // Initialize controllers for schedule
           for (var schedule in _weeklySchedule) {
             String day = schedule['day'];
             _openControllers[day] = TextEditingController(text: schedule['open']);
             _closeControllers[day] = TextEditingController(text: schedule['close']);
             _closedDays[day] = schedule['closed'] ?? false;
           }
-          // Removed loading of weekly schedule
           _isLoading = false;
         });
       }
@@ -259,24 +223,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   
 
   void _toggleService(String service) {
-    // Normalize service name before processing
+  
     String normalizedService = service.toLowerCase() == 'deliver' ? 'Delivery' : service;
 
     setState(() {
       if (_selectedServices.contains(normalizedService)) {
-        // Remove service from selected services
+       
         _selectedServices.remove(normalizedService);
         
-        // Also remove from pricelist if it exists
+      
         _pricelist.removeWhere((item) => item['service'] == normalizedService);
       } else {
-        // Add service to selected services
+        
         _selectedServices.add(normalizedService);
         
-        // Check if service already exists in pricelist
+        
         bool serviceExists = _pricelist.any((item) => item['service'] == normalizedService);
         
-        // If not exists, add it with default price of 0.00
+       
         if (!serviceExists) {
           _pricelist.add({
             'service': normalizedService,
@@ -287,24 +251,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
   }
 
-  // Removed _addPricelistItem function as per user request.
-  // void _addPricelistItem() {
-  //   if (_serviceNameController.text.trim().isNotEmpty && _priceController.text.trim().isNotEmpty) {
-  //     setState(() {
-  //       _pricelist.add({
-  //         'service': _serviceNameController.text.trim(),
-  //         'price': _priceController.text.trim(),
-  //       });
-  //       _serviceNameController.clear();
-  //       _priceController.clear();
-  //     });
-  //   }
-  // }
-
   void _removePricelistItem(int index) {
     setState(() {
       _pricelist.removeAt(index);
-      // Clean up editing controllers if they exist
       _editServiceControllers.remove(index);
       _editPriceControllers.remove(index);
       _editingIndices.remove(index);
@@ -345,12 +294,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   void _syncServicesWithPricelist() {
     setState(() {
-      // Create a set of services that already have prices
+      
       Set<String> existingServices = _pricelist.map((item) => item['service'] as String).toSet();
       
-      // Add any missing selected services to pricelist with default price
       for (String service in _selectedServices) {
-        // Normalize service name before checking/adding
+     
         String normalizedService = service.toLowerCase() == 'deliver' ? 'Delivery' : service;
 
         if (!existingServices.contains(normalizedService)) {
@@ -361,31 +309,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
       }
       
-      // Remove any services from pricelist that are no longer selected
-      // Ensure comparison is done with normalized names
       _pricelist.removeWhere((item) => !_selectedServices.contains(item['service']));
     });
   }
 
-  // Function to pick an image
+  
   Future<void> _pickImage() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.image, // Specify that we only want image files
+        type: FileType.image, 
         allowMultiple: false,
-        withData: true, // For web, get bytes
+        withData: true,
       );
 
       if (result != null) {
         setState(() {
           if (result.files.single.bytes != null) {
-            // Web platform
+            
             _selectedImageBytes = result.files.single.bytes;
-            _selectedImageFile = null; // Clear file reference for web
+            _selectedImageFile = null; 
           } else {
-            // Mobile/Desktop platforms
+            
             _selectedImageFile = File(result.files.single.path!);
-            _selectedImageBytes = null; // Clear bytes reference for non-web
+            _selectedImageBytes = null;
           }
         });
       }
@@ -468,37 +414,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
-      // Prepare update data
       Map<String, dynamic> updateData = {
         'business_name': _businessNameController.text.trim(),
-        'business_address': _businessAddressController.text.trim(), // Save business address
+        'business_address': _businessAddressController.text.trim(), 
         'latitude': _latitude,
         'longitude': _longitude,
         'about_business': _aboutUsController.text.trim(),
         'does_delivery': _deliveryAvailable,
-        'terms_and_conditions': _termsAndConditionsController.text.trim(), // Save terms and conditions
-        'services_offered': _selectedServices,
+        'terms_and_conditions': _termsAndConditionsController.text.trim(),
         'service_prices': _pricelist,
-        'open_hours_text': _openHoursController.text.trim(), // Save open hours
+        'open_hours_text': _openHoursController.text.trim(),
 
         'available_pickup_time_slots': _pickupSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
         'available_dropoff_time_slots': _dropoffSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
       };
 
-      // Add schedule if selected
       if (_selectedSchedule != null) {
         updateData['pickup_schedule'] = _selectedSchedule!['pickup'];
         updateData['dropoff_schedule'] = _selectedSchedule!['dropoff'];
       }
 
-      // Upload new cover photo if selected
       if (_selectedImageFile != null || _selectedImageBytes != null) {
         final String fileExtension = _selectedImageFile?.path.split('.').last ?? 'png';
         final String fileName = '${user.id}/cover_photo.$fileExtension';
         final String path = fileName;
 
         if (_selectedImageFile != null) {
-          // For mobile/desktop
+       
           final Uint8List imageBytes = await _selectedImageFile!.readAsBytes();
           await Supabase.instance.client.storage.from('profiles').uploadBinary(
                 path,
@@ -506,7 +448,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 fileOptions: const FileOptions(upsert: true),
               );
         } else if (_selectedImageBytes != null) {
-          // For web
+        
           await Supabase.instance.client.storage.from('profiles').uploadBinary(
                 path,
                 _selectedImageBytes!,
@@ -561,10 +503,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         margin: const EdgeInsets.only(right: 8, bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[100],
+          color: isSelected ? const Color(0xFF5A35E3): Colors.grey[100],
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[300]!,
+            color: isSelected ? const Color(0xFF5A35E3) : Colors.grey[300]!,
             width: 1,
           ),
         ),
@@ -585,7 +527,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 fontSize: 14,
               ),
             ),
-            if (isCustom) // Show delete icon only for custom services
+            if (isCustom)
               GestureDetector(
                 onTap: () {
                   setState(() {
@@ -609,7 +551,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  // New method to build editable pricelist item
   Widget _buildEditablePricelistItem(int index) {
     final item = _pricelist[index];
     final isEditing = _editingIndices.contains(index);
@@ -740,7 +681,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF7B61FF)),
+          borderSide: const BorderSide(color: Color(0xFF5A35E3)),
         ),
         filled: true,
         fillColor: Colors.white,
@@ -763,7 +704,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  // Editable schedule section for owner
   Widget _buildEditableScheduleSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -781,7 +721,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           },
         ),
         const SizedBox(height: 24),
-        if (_deliveryAvailable) // Conditionally render based on _deliveryAvailable
+        if (_deliveryAvailable)
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -824,8 +764,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
-                  icon: const Icon(Icons.add, color: Color(0xFF7B61FF)),
-                  label: const Text('Add Pickup Slot', style: TextStyle(color: Color(0xFF7B61FF))),
+                  icon: const Icon(Icons.add, color: Color(0xFF5A35E3)),
+                  label: const Text('Add Pickup Slot', style: TextStyle(color: Color(0xFF5A35E3))),
                   onPressed: () {
                     setState(() {
                       _pickupSlotControllers.add(TextEditingController());
@@ -873,8 +813,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
-                  icon: const Icon(Icons.add, color: Color(0xFF7B61FF)),
-                  label: const Text('Add Drop-Off Slot', style: TextStyle(color: Color(0xFF7B61FF))),
+                  icon: const Icon(Icons.add, color: Color(0xFF5A35E3)),
+                  label: const Text('Add Drop-Off Slot', style: TextStyle(color: Color(0xFF5A35E3))),
                   onPressed: () {
                     setState(() {
                       _dropoffSlotControllers.add(TextEditingController());
@@ -900,20 +840,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         title: const Text(
           'Business Profile',
           style: TextStyle(
-            color: Color(0xFF7B61FF),
+            color: Color(0xFF5A35E3),
             fontWeight: FontWeight.bold,
           ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF7B61FF)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF5A35E3)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
           TextButton(
             onPressed: () {
-              // Create a temporary businessData map for preview
+            
               final Map<String, dynamic> previewBusinessData = {
                 'id': _businessProfile!['id'],
                 'business_name': _businessNameController.text.trim(),
@@ -928,8 +868,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 'open_hours_text': _openHoursController.text.trim(),
                 'available_pickup_time_slots': _pickupSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
                 'available_dropoff_time_slots': _dropoffSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
-                'cover_photo_url': _coverPhotoUrl, // Pass existing URL
-                // Pass the selected image file for preview if available
+                'cover_photo_url': _coverPhotoUrl,
                 '_coverPhotoFile': _selectedImageFile != null
                     ? PlatformFile(
                         name: _selectedImageFile!.path.split('/').last,
@@ -952,7 +891,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             child: const Text(
               'Preview',
               style: TextStyle(
-                color: Color(0xFF7B61FF),
+                color: Color(0xFF5A35E3),
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -969,8 +908,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Profile Photo Section
-                    // Cover Photo Section
+                    
                              Container(
                                height: 200,
                                width: double.infinity,
@@ -1010,7 +948,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                        ),
                                      ]
                                    else if (_selectedImageFile != null)
-                                     ...[ // Wrap in a list and use spread operator
+                                     ...[
                                        Positioned.fill(
                                          child: ClipRRect(
                                            borderRadius: BorderRadius.circular(12),
@@ -1022,7 +960,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                        ),
                                      ]
                                    else if (_coverPhotoUrl == null && _selectedImageBytes == null && _selectedImageFile == null)
-                                     ...[ // Wrap in a list and use spread operator
+                                     ...[ 
                                        Center(
                                          child: Icon(
                                            Icons.photo,
@@ -1030,18 +968,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                            color: Colors.grey[400],
                                          ),
                                        ),
-                                     ], // Corrected comma placement: after the closing ']'
-                                   Positioned.fill( // Make the button fill the entire container
+                                     ], 
+                                   Positioned.fill( 
                                      child: ElevatedButton.icon(
                                        onPressed: _pickImage,
                                        icon: const Icon(Icons.camera_alt, color: Colors.white),
                                        label: const Text('Change Cover Photo', style: TextStyle(color: Colors.white)),
                                        style: ElevatedButton.styleFrom(
-                                         backgroundColor: Colors.grey.withOpacity(0.5), // Changed to grey with 50% opacity
+                                         backgroundColor: Colors.grey.withOpacity(0.5),
                                          shape: RoundedRectangleBorder(
-                                           borderRadius: BorderRadius.circular(12), // Match parent border radius
+                                           borderRadius: BorderRadius.circular(12),
                                          ),
-                                         padding: EdgeInsets.zero, // Remove default padding to fill completely
+                                         padding: EdgeInsets.zero,
                                        ),
                                      ),
                                    ),
@@ -1075,7 +1013,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 24),
                     _buildSectionHeader('Your Shop\'s Exact Location'),
                     const SizedBox(height: 16),
-                    // Business Address Field
+                    
                     TextFormField(
                       controller: _businessAddressController,
                       style: const TextStyle(color: Colors.black),
@@ -1177,7 +1115,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       maxLines: 3,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return null; // Not required anymore
+                          return null;
                         }
                         return null;
                       },
@@ -1201,14 +1139,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               _deliveryAvailable = value;
                             });
                           },
-                          activeColor: const Color(0xFF7B61FF),
+                          activeColor: const Color(0xFF5A35E3),
                         ),
                       ],
                     ),
 
                     const SizedBox(height: 32),
                     
-                    // 3. Services Offered Section
                     _buildSectionHeader('Services Offered'),
                     const SizedBox(height: 16),
                     const Text(
@@ -1220,12 +1157,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     const SizedBox(height: 12),
                     Wrap(
-                      spacing: 8.0, // Space between chips
-                      runSpacing: 8.0, // Space between lines of chips
+                      spacing: 8.0,
+                      runSpacing: 8.0,
                       children: _availableServices.map((service) => _buildServiceChip(service, true)).toList(),
                     ),
                     const SizedBox(height: 16),
-                    // Custom Service Input
+                  
                     Row(
                       children: [
                         Expanded(
@@ -1243,7 +1180,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         const SizedBox(width: 8),
                         IconButton(
-                          icon: const Icon(Icons.add_circle, color: Color(0xFF7B61FF), size: 36),
+                          icon: const Icon(Icons.add_circle, color: Color(0xFF5A35E3), size: 36),
                           onPressed: () {
                             final String newService = _customServiceController.text.trim();
                             if (newService.isNotEmpty && !_availableServices.contains(newService)) {
@@ -1266,7 +1203,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     _buildEditableScheduleSection(),
                     const SizedBox(height: 32),
                     
-                    // 5. Pricelist Section - Now Editable
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -1280,21 +1216,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     const SizedBox(height: 16),
                     
-                    // Removed input fields for service name and price, and the 'Plus' button
-                    // as per user request. The sync button is kept for now.
-                    // Row(
-                    //   children: [
-                    //     const Spacer(), // To push the sync button to the right if needed
-                    //     IconButton(
-                    //       icon: const Icon(Icons.sync, color: Colors.blue),
-                    //       onPressed: _syncServicesWithPricelist,
-                    //       tooltip: 'Sync services with pricelist',
-                    //     ),
-                    //   ],
-                    // ),
-                    // const SizedBox(height: 16),
-                    
-                    // Display editable pricelist
+                   
                     if (_pricelist.isNotEmpty) ...[
                       ListView.builder(
                         shrinkWrap: true,
@@ -1321,8 +1243,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                       ),
                     const SizedBox(height: 32),
-                    
-                    // Terms and Conditions Section
+            
                     _buildSectionHeader('Terms and Conditions'),
                     const SizedBox(height: 16),
                     _buildTextField(
@@ -1330,18 +1251,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       label: 'Terms and Conditions',
                       maxLines: 5,
                       validator: (value) {
-                        return null; // Optional field
+                        return null; 
                       },
                     ),
                     const SizedBox(height: 16),
 
-                    // 6. Save Button
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: _isSaving ? null : _saveProfile,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF7B61FF),
+                          backgroundColor: const Color(0xFF5A35E3),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),

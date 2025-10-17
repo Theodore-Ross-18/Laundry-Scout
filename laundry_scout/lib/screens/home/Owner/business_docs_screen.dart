@@ -36,25 +36,21 @@ class _BusinessDocsScreenState extends State<BusinessDocsScreen> {
           .maybeSingle();
 
       if (response == null) {
-        // Handle case where no business profile is found for the user
-        // For example, you might want to initialize _birFile, _certificateFile, _permitFile to null
-        // or show a message to the user that no profile exists.
-        // For now, we'll just return, as the files would already be null.
+        
         return;
       }
 
       if (mounted) {
         setState(() {
-          // Here you would ideally fetch the file name from the URL if needed
-          // For now, we'll just check if the URL exists to indicate a file is present
+          
           if (response['bir_registration_url'] != null) {
-            _birFile = PlatformFile(name: 'BIR_Registration.pdf', size: 0); // Placeholder
+            _birFile = PlatformFile(name: 'BIR_Registration.pdf', size: 0); 
           }
           if (response['business_certificate_url'] != null) {
-            _certificateFile = PlatformFile(name: 'Business_Certificate.pdf', size: 0); // Placeholder
+            _certificateFile = PlatformFile(name: 'Business_Certificate.pdf', size: 0); 
           }
           if (response['mayors_permit_url'] != null) {
-            _permitFile = PlatformFile(name: 'Mayors_Permit.pdf', size: 0); // Placeholder
+            _permitFile = PlatformFile(name: 'Mayors_Permit.pdf', size: 0); 
           }
         });
       }
@@ -184,7 +180,7 @@ class _BusinessDocsScreenState extends State<BusinessDocsScreen> {
             'bir_registration_url': birUrl,
             'business_certificate_url': certificateUrl,
             'mayors_permit_url': permitUrl,
-            'status': 'pending', // Set status to pending
+            'status': 'pending', 
           })
           .eq('id', user.id);
 
@@ -330,7 +326,7 @@ class _BusinessDocsScreenState extends State<BusinessDocsScreen> {
             ElevatedButton(
               onPressed: _isSubmitting ? null : _submitDocuments,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF7B61FF),
+                backgroundColor: const Color(0xFF5A35E3),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),

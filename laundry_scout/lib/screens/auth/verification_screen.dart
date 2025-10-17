@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'select_user.dart';
-import 'dart:async'; // Import the dart:async library
+import 'dart:async'; 
 
-// Helper function for creating a fade transition
+
 Route _createFadeRoute(Widget page) {
   return PageRouteBuilder(
     pageBuilder: (context, animation, secondaryAnimation) => page,
@@ -13,7 +13,7 @@ Route _createFadeRoute(Widget page) {
         child: child,
       );
     },
-    transitionDuration: const Duration(milliseconds: 300), // Adjust duration as needed
+    transitionDuration: const Duration(milliseconds: 300), 
   );
 }
 
@@ -34,9 +34,9 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  // OTP Timer variables
+ 
   late Timer _timer;
-  int _countdown = 60; // 60 seconds for OTP to expire
+  int _countdown = 60;
 
   @override
   void initState() {
@@ -61,7 +61,7 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
         if (_otpControllers[i].text.isEmpty && i > 0) {
           _otpFocusNodes[i - 1].requestFocus();
         }
-        setState(() {}); // To update the UI for clear button visibility
+        setState(() {}); 
       });
     }
   }
@@ -80,7 +80,7 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
   }
 
   void _startTimer() {
-    _countdown = 60; // Reset countdown
+    _countdown = 60; 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_countdown > 0) {
         setState(() {
@@ -88,7 +88,7 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
         });
       } else {
         _timer.cancel();
-        // Optionally, disable OTP input fields or show a message that OTP has expired
+        
       }
     });
   }
@@ -126,15 +126,15 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
               .eq('id', user.id)
               .maybeSingle();
 
-          String username = widget.username; // Use the username passed to the screen
+          String username = widget.username; 
 
           if (usernameResponse == null) {
-            // If no profile exists, create one with the provided username
+
             await Supabase.instance.client
                 .from('user_profiles')
                 .insert({'id': user.id, 'username': username});
           } else if (usernameResponse['username'] == null || (usernameResponse['username'] as String).isEmpty) {
-            // If profile exists but username is null or empty, update it
+           
             await Supabase.instance.client
                 .from('user_profiles')
                 .update({'username': username})
@@ -192,10 +192,10 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
 
     try {
       await Supabase.instance.client.auth.resend(
-        type: OtpType.signup, // Changed from OtpType.email to OtpType.signup
+        type: OtpType.signup, 
         email: widget.email,
       );
-      _startTimer(); // Restart the timer when OTP is resent
+      _startTimer(); 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -267,7 +267,7 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
                     style: textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 40,
-                      color: Colors.white, // Changed to white as per request
+                      color: Colors.white, 
                     ),
                   ),
                   const SizedBox(height: 50),
@@ -298,9 +298,9 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
                               borderSide: BorderSide.none,
                             ),
                             filled: true,
-                            fillColor: Color(0xFF543CDC), // Changed to a darker color
+                            fillColor: Color(0xFF5A35E3), 
                           ),
-                          style: const TextStyle(color: Colors.white, fontSize: 24.0), // Changed to white
+                          style: const TextStyle(color: Colors.white, fontSize: 24.0), 
                           onChanged: (value) {
                             if (value.isNotEmpty && index < _otpControllers.length - 1) {
                               _otpFocusNodes[index + 1].requestFocus();
@@ -330,7 +330,7 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _verifyOtp,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF543CDC),
+                        backgroundColor: const Color(0xFF5A35E3),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18.0),
                         ),

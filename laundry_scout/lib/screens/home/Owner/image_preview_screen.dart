@@ -24,7 +24,7 @@ class ImagePreviewScreen extends StatelessWidget {
             Navigator.of(context).pop();
           },
           child: Hero(
-            tag: imageUrl, // Use the image URL as the hero tag
+            tag: imageUrl,
             child: Image.network(
               imageUrl,
               fit: BoxFit.contain,

@@ -65,7 +65,6 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
           _businessProfile = Map<String, dynamic>.from(response);
           _selectedStatus = _businessProfile!['availability_status'] ?? 'Open Slots';
           
-          // Parse operating hours if available
           final operatingHours = _businessProfile!['operating_hours'];
           if (operatingHours != null && operatingHours is Map) {
             final openHour = operatingHours['open_hour'] ?? 8;
@@ -123,7 +122,7 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop(true); // Return true to indicate data was updated
+        Navigator.of(context).pop(true); 
       }
     } catch (e) {
       if (mounted) {
@@ -168,14 +167,14 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
         title: const Text(
           'Set Availability',
           style: TextStyle(
-            color: Color(0xFF7B61FF),
+            color: Color(0xFF5A35E3),
             fontWeight: FontWeight.bold,
           ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF7B61FF)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF5A35E3)),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -186,7 +185,7 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Current Status Display
+                
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
@@ -239,7 +238,6 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
                   ),
                   const SizedBox(height: 24),
                   
-                  // Availability Status Options
                   const Text(
                     'Availability Status',
                     style: TextStyle(
@@ -254,7 +252,6 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
                   
                   const SizedBox(height: 32),
                   
-                  // Operating Hours
                   const Text(
                     'Operating Hours',
                     style: TextStyle(
@@ -289,14 +286,13 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
                   
                   const SizedBox(height: 40),
                   
-                  // Save Button
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
                       onPressed: _isSaving ? null : _saveAvailability,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF7B61FF),
+                        backgroundColor: const Color(0xFF5A35E3),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -409,16 +405,16 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFF7B61FF).withOpacity(0.1),
+              color: const Color(0xFF5A35E3).withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF7B61FF)),
+              border: Border.all(color: const Color(0xFF5A35E3)),
             ),
             child: Text(
               time.format(context),
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF7B61FF),
+                color: Color(0xFF5A35E3),
               ),
             ),
           ),

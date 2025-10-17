@@ -3,25 +3,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'signup_screen.dart';
 import '../home/User/home_screen.dart';
 import '../home/Owner/owner_home_screen.dart'; 
-// Consider importing a package for social icons like font_awesome_flutter
-// import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'forgotpassverify_screen.dart'; // Import the new screen
-import 'dart:async'; // Import the dart:async library
+import 'forgotpassverify_screen.dart';
+import 'dart:async'; 
 import '../../services/notification_service.dart';
-import 'package:laundry_scout/widgets/animated_eye_widget.dart'; // Import the animated eye widget
+import 'package:laundry_scout/widgets/animated_eye_widget.dart';
 
-// Helper function for creating a fade transition
 Route _createFadeRoute(Widget page) {
   return PageRouteBuilder(
     pageBuilder: (context, animation, secondaryAnimation) => page,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      // Use FadeTransition for a fade-in/fade-out effect
       return FadeTransition(
         opacity: animation,
         child: child,
       );
     },
-    transitionDuration: const Duration(milliseconds: 300), // Adjust duration as needed
+    transitionDuration: const Duration(milliseconds: 300),
   );
 }
 
@@ -37,16 +33,16 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
-  bool _obscurePassword = true; // Added for password visibility
+  bool _obscurePassword = true; 
 
-  // Add slide-related variables
+
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _showSlides = false;
-  String? _userType; // 'user' or 'business'
-  Timer? _timer; // Add a Timer variable
+  String? _userType; 
+  Timer? _timer; 
 
-  // Define slides for different user types
+  
   List<Map<String, String>> get userSlides => [
     {
       'image': 'lib/assets/user/slides/first.png',
@@ -88,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _pageController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _timer?.cancel(); // Cancel the timer in dispose
+    _timer?.cancel(); 
     super.dispose();
   }
 
@@ -101,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
           curve: Curves.easeIn,
         );
       } else {
-        // If on the last page, stop the timer and navigate to home
+        
         timer.cancel();
         _navigateToHome();
       }
@@ -116,13 +112,13 @@ class _LoginScreenState extends State<LoginScreen> {
         curve: Curves.easeIn,
       );
     } else {
-      // If on the last page, navigate to home
+      
       _navigateToHome();
     }
   }
 
   void _skipSlides() {
-    // Cancel the timer when skipping slides
+   
     _timer?.cancel();
     _navigateToHome();
   }
@@ -158,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (identifier.contains('@')) {
           emailToSignIn = identifier;
         } else {
-            // First, try to find in business_profiles as a regular username
+            
             final businessProfileUsernameResponse = await Supabase.instance.client
                 .from('business_profiles')
                 .select('email, username')
@@ -169,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
               emailToSignIn = businessProfileUsernameResponse['email'] as String?;
               profileType = 'business';
             } else {
-              // If not found in business_profiles, try to find in user_profiles as a regular username
+              
               final userProfileResponse = await Supabase.instance.client
                 .from('user_profiles')
                 .select('email')
@@ -180,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 emailToSignIn = userProfileResponse['email'] as String?;
                 profileType = 'user';
               } else {
-                // If not found in either, show username not found
+                
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Username not found in user or business profiles')),
@@ -291,19 +287,18 @@ class _LoginScreenState extends State<LoginScreen> {
         automaticallyImplyLeading: false,
         title: const Text(''),
         actions: [
-          // Responsive Skip button with View All design
+         
           LayoutBuilder(
             builder: (context, constraints) {
-              // Check if screen width is small (mobile)
+           
               bool isMobile = MediaQuery.of(context).size.width < 600;
               
               if (isMobile) {
-                // For mobile: Use a more compact button
                 return Container(
                   margin: const EdgeInsets.only(right: 16),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6F5ADC),
+                    color: const Color(0xFF5A35E3),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: InkWell(
@@ -319,7 +314,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 );
               } else {
-                // For larger screens: Use the original TextButton
+                
                 return TextButton(
                   onPressed: _skipSlides,
                   child: const Text(
@@ -449,7 +444,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     size: 18.0,
                                     color: Colors.white70,
                                   ),
-                                  const SizedBox(width: 8), // Add some spacing
+                                  const SizedBox(width: 8),
                                 ],
                               )
                             : null,
@@ -501,7 +496,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _signIn,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF543CDC),
+                      backgroundColor: const Color(0xFF5A35E3),
                       foregroundColor: Colors.white,
                       fixedSize: const Size(120, 52),
                       textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 16),
@@ -619,7 +614,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ElevatedButton(
                   onPressed: _navigateToHome,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6F5ADC),
+                    backgroundColor: const Color(0xFF5A35E3),
                     foregroundColor: const Color(0xFFFFFFFF),
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(
@@ -635,7 +630,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ElevatedButton(
                    onPressed: _nextPage,
                    style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6F5ADC),
+                    backgroundColor: const Color(0xFF5A35E3),
                     foregroundColor: const Color(0xFFFFFFFF),
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'login_screen.dart'; // Import the login screen
+import 'login_screen.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
-  final String resetToken; // Token received from the verification screen
+  final String resetToken;
 
   const ResetPasswordScreen({super.key, required this.resetToken});
 
@@ -24,9 +24,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       });
 
       try {
-        // Ensure the user is authenticated after the recovery verification.
-        // The verifyOTP(type: OtpType.recovery) call on the previous screen
-        // should have established a session.
+      
         final user = Supabase.instance.client.auth.currentUser;
 
         if (user == null) {
@@ -35,31 +33,29 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 const SnackBar(content: Text('User not authenticated for password reset.')),
               );
            }
-           return; // Stop if user is not authenticated
+           return; 
         }
 
-        // Use the updateUser method with a UserAttributes object containing the new password.
-        // The authorization comes from the session established by the recovery flow.
+        
         final response = await Supabase.instance.client.auth.updateUser(
-          UserAttributes(password: _passwordController.text), // Corrected line
+          UserAttributes(password: _passwordController.text), 
         );
 
-        // Check if the update was successful by looking at the user in the response
+      
         if (response.user != null) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Password reset successfully!')),
             );
-            // Navigate back to the login screen and remove all other routes
+          
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const LoginScreen()),
-              (Route<dynamic> route) => false, // Remove all routes below LoginScreen
+              (Route<dynamic> route) => false, 
             );
           }
         } else {
-           // This case might be rare if updateUser throws on failure,
-           // but good to handle explicitly.
+          
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Password reset failed.')),
@@ -96,7 +92,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return Scaffold(
        appBar: AppBar(
         title: const Text('Reset Password'),
-        backgroundColor: const Color(0xFF543CDC), // Match theme
+        backgroundColor: const Color(0xFF5A35E3), 
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -141,7 +137,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your new password';
                       }
-                      // Add more password strength validation if needed
+                      
                       return null;
                     },
                     style: textTheme.bodyLarge,

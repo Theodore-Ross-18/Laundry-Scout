@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
-import 'package:laundry_scout/screens/home/Owner/edit_profile_screen.dart'; // Add this line
-import 'package:collection/collection.dart'; // Add this line
+import 'package:laundry_scout/screens/home/Owner/edit_profile_screen.dart';
+import 'package:collection/collection.dart';
 
 class OwnerNotificationScreen extends StatefulWidget {
   const OwnerNotificationScreen({super.key});
@@ -15,7 +15,7 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
   late RealtimeChannel _notificationsSubscription;
-  final Map<String, String> _userNames = {}; // Cache for user names
+  final Map<String, String> _userNames = {};
 
   @override
   void initState() {
@@ -42,8 +42,7 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
           .order('created_at', ascending: false);
 
       final notifications = List<Map<String, dynamic>>.from(response);
-      
-      // Fetch user names for message notifications
+   
       await _fetchUserNamesForNotifications(notifications);
 
       if (mounted) {
@@ -53,7 +52,6 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
         });
       }
 
-      // After loading existing notifications, check for profile completeness
       await _checkAndAddProfileSetupNotification();
 
     } catch (e) {
@@ -85,8 +83,7 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
     }
     
     print('🔍 [OWNER] Total sender IDs to fetch: ${senderIds.length}');
-    
-    // Fetch user profiles for all sender IDs
+  
     for (final senderId in senderIds) {
       if (!_userNames.containsKey(senderId)) {
         try {
@@ -185,7 +182,7 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
         return Icons.star;
       case 'system':
         return Icons.settings;
-      case 'profile_setup': // New case for profile setup notification
+      case 'profile_setup': 
         return Icons.person_add;
       default:
         return Icons.notifications;
@@ -202,8 +199,8 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
         return Colors.orange;
       case 'system':
         return Colors.grey;
-      case 'profile_setup': // New case for profile setup notification
-        return Colors.purple;
+      case 'profile_setup':
+        return Color(0xFF5A35E3);
       default:
         return const Color(0xFF7B61FF);
     }
@@ -235,7 +232,6 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
 
       print('✅ [OWNER] _checkAndAddProfileSetupNotification: User ID: ${user.id}');
 
-      // Fetch business profile data
       final businessProfileResponse = await Supabase.instance.client
           .from('business_profiles')
           .select()
@@ -247,7 +243,6 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
       final profileData = businessProfileResponse;
       print('🔍 [OWNER] _checkAndAddProfileSetupNotification: Profile Data: $profileData');
 
-      // Determine if profile is complete
       bool isProfileComplete = true;
       String missingField = '';
 
@@ -378,18 +373,18 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
 
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF7B61FF),
+      backgroundColor: const Color(0xFF5A35E3),
       body: SafeArea(
         child: Column(
           children: [
-            // Header with title
-            const SizedBox(height: 20), // Added for spacing
+           
+            const SizedBox(height: 20), 
             Image.asset(
               'lib/assets/lslogo.png',
-              height: 40, // Adjust height as needed
+              height: 40,
               color: Colors.white,
             ),
-            const SizedBox(height: 10), // Spacing between logo and text
+            const SizedBox(height: 10), 
             const Text(
               'Laundry Scout',
               style: TextStyle(
@@ -398,8 +393,8 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 10), // Spacing between text and button
-            // Notifications section header
+            const SizedBox(height: 10),
+           
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Row(
@@ -421,7 +416,6 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
                 ],
               ),
             ),
-            // Notifications list
             Expanded(
               child: Container(
                 decoration: const BoxDecoration(
@@ -518,7 +512,7 @@ class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
                                           width: 8,
                                           height: 8,
                                           decoration: const BoxDecoration(
-                                            color: Color(0xFF7B61FF),
+                                            color: Color(0xFF5A35E3),
                                             shape: BoxShape.circle,
                                           ),
                                         )

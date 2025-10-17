@@ -33,7 +33,6 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
     super.dispose();
   }
 
-  /// Initialize and subscribe to feedback
   Future<void> _initializeFeedback() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
@@ -177,7 +176,7 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
           style: const TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF7B61FF),
+            color: Color(0xFF5A35E3),
           ),
         ),
         const SizedBox(height: 6),
@@ -202,7 +201,6 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
     );
   }
 
-  /// Empty state when no feedback
   Widget _buildEmptyState() {
     return ListView(
       children: [
@@ -235,7 +233,6 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
     );
   }
 
-  /// Feedback list (polished cards)
   Widget _buildFeedbackList() {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -268,7 +265,7 @@ class _OwnerFeedbackScreenState extends State<OwnerFeedbackScreen> {
                 children: [
                   CircleAvatar(
                     radius: 22,
-                    backgroundColor: const Color(0xFF7B61FF),
+                    backgroundColor: const Color(0xFF5A35E3),
                     child: Text(
                       _getInitials(feedback),
                       style: const TextStyle(

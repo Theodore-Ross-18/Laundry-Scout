@@ -28,14 +28,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
-      // Get orders for this business owner
       final response = await Supabase.instance.client
           .from('orders')
-          .select('*') // Fetch all order data
+          .select('*')
           .eq('business_id', user.id)
           .order('created_at', ascending: false);
 
-      // Now, for each order, fetch the user_profile data
       List<Map<String, dynamic>> ordersWithUserDetails = [];
       for (var order in response) {
         final userId = order['user_id'];
@@ -45,7 +43,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               .select('first_name, last_name')
               .eq('id', userId)
               .single();
-          order['user_profiles'] = userProfileResponse; // Attach user profile to the order
+          order['user_profiles'] = userProfileResponse; 
         }
         ordersWithUserDetails.add(order);
       }
@@ -74,7 +72,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
           .from('orders')
           .update({'status': 'completed'})
           .eq('id', orderId);
-      _loadOrders(); // Refresh the list after updating
+      _loadOrders();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -92,7 +90,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       return _orders.where((order) =>
           order['status'] == 'completed' || order['status'] == 'cancelled').toList();
     }
-    return []; // Should not happen with current filters
+    return [];
   }
 
 
@@ -103,14 +101,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
       backgroundColor: const Color(0xFFF8F8F8),
       appBar: AppBar(
         leading: const BackButton(color: Colors.black),
-        title: const Text('Orders'),
+        title: const Text('Orders', style: TextStyle(color: Color(0xFF5A35E3))),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
       ),
       body: Column(
         children: [
-          // Filter tabs
           Container(
             color: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -123,7 +120,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               ],
             ),
           ),
-          // Orders list
+      
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -131,7 +128,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     ? const Center(
                         child: Text(
                           'No orders found',
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                          style: TextStyle(fontSize: 16, color: Color(0xFF5A35E3)),
                         ),
                       )
                     : RefreshIndicator(
@@ -162,7 +159,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF7B61FF) : Colors.grey[200],
+          color: isSelected ? const Color(0xFF5A35E3) : Colors.grey[200],
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -285,7 +282,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 if (status == 'pending' || status == 'in_progress')
                   TextButton(
                     onPressed: () => _setOrderAsComplete(order['id']),
-                    child: const Text('Set as Complete', style: TextStyle(color: Color(0xFF7B61FF))),
+                    child: const Text('Set as Complete', style: TextStyle(color: Color(0xFF5A35E3))),
                   ),
                 TextButton(
                   onPressed: () {

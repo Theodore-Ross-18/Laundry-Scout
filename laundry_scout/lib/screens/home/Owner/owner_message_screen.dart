@@ -19,25 +19,23 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
   late RealtimeChannel _messagesSubscription;
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredConversations = [];
-  Timer? _backgroundRefreshTimer; // Add background refresh timer
+  Timer? _backgroundRefreshTimer;
 
   @override
   void initState() {
     super.initState();
     _loadConversations();
     _setupRealtimeSubscription();
-    _startBackgroundRefresh(); // Start background refresh
+    _startBackgroundRefresh();
   }
 
   @override
   void dispose() {
     _messagesSubscription.unsubscribe();
-    _backgroundRefreshTimer?.cancel(); // Cancel timer on dispose
+    _backgroundRefreshTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
-
-  // Add background refresh method
   void _startBackgroundRefresh() {
     _backgroundRefreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) { // Changed from 2 seconds to 10
       if (mounted) {
@@ -45,20 +43,15 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
       }
     });
   }
-
-  // Background refresh method that doesn't show loading indicator
   Future<void> _refreshConversationsInBackground() async {
     try {
-      // Get conversations without showing loading state
       final conversationsResponse = await Supabase.instance.client
           .from('conversations')
           .select('*')
           .eq('business_id', Supabase.instance.client.auth.currentUser!.id)
           .order('last_message_at', ascending: false);
   
-      // Process conversations
       for (var conversation in conversationsResponse) {
-        // Get user profile
         final userProfile = await Supabase.instance.client
             .from('user_profiles')
             .select('username, first_name, last_name, profile_image_url')
@@ -76,7 +69,6 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
           conversation['user_profiles'] = userProfile;
         }
 
-        // Get last message for each conversation
         final lastMessage = await Supabase.instance.client
             .from('messages')
             .select('content, created_at, sender_id')
@@ -92,7 +84,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
       if (mounted) {
         setState(() {
           _conversations = List<Map<String, dynamic>>.from(conversationsResponse);
-          // Preserve search filter
+         
           if (_searchController.text.isEmpty) {
             _filteredConversations = _conversations;
           } else {
@@ -102,22 +94,20 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
       }
     } catch (e) {
       print('Background refresh error: $e');
-      // Don't show error to user for background refresh
+     
     }
   }
 
-  /// Helper function to generate better display names with fallback logic
+  
   String _getDisplayName(Map<String, dynamic>? user, String userId) {
     if (user == null) {
       return 'User${userId.substring(0, 8)}';
     }
     
-    // Try to construct full name
     final firstName = user['first_name']?.toString() ?? '';
     final lastName = user['last_name']?.toString() ?? '';
     final fullName = '$firstName $lastName'.trim();
     
-    // Use fallback hierarchy: full name -> username -> email prefix -> fallback
     if (fullName.isNotEmpty) {
       return fullName;
     } else if (user['username'] != null && user['username'].toString().isNotEmpty) {
@@ -136,29 +126,25 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
         _isLoading = true;
       });
   
-      // First get conversations
       final conversationsResponse = await Supabase.instance.client
           .from('conversations')
           .select('*')
           .eq('business_id', Supabase.instance.client.auth.currentUser!.id)
           .order('last_message_at', ascending: false);
   
-      // Then manually fetch user profiles for each conversation
       for (var conversation in conversationsResponse) {
-        print('Conversation user_id: ${conversation['user_id']}'); // Debug print
+        print('Conversation user_id: ${conversation['user_id']}');
         
-        // Get user profile with email for better fallback
         final userProfile = await Supabase.instance.client
             .from('user_profiles')
             .select('username, first_name, last_name, profile_image_url, email')
             .eq('id', conversation['user_id'])
             .maybeSingle();
         
-        print('User profile result: $userProfile'); // Debug print
+        print('User profile result: $userProfile');
         
-        // Handle missing user profile gracefully
         if (userProfile == null) {
-          // Simply use fallback username without trying to create database record
+         
           conversation['user_profiles'] = {
             'username': 'User${conversation['user_id'].substring(0, 8)}',
             'first_name': null,
@@ -170,7 +156,6 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
           conversation['user_profiles'] = userProfile;
         }
 
-        // Get last message for each conversation
         final lastMessage = await Supabase.instance.client
             .from('messages')
             .select('content, created_at, sender_id')
@@ -202,7 +187,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
 
   void _setupRealtimeSubscription() {
     _messagesSubscription = Supabase.instance.client
-        .channel('messages_global') // Changed from 'owner_messages'
+        .channel('messages_global')
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
@@ -238,15 +223,15 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF7B61FF),
+      backgroundColor: const Color(0xFF5A35E3),
       body: SafeArea(
         child: Column(
           children: [
-            // Header with title
-            const SizedBox(height: 20), // Added for spacing
+           
+            const SizedBox(height: 20), 
             Image.asset(
               'lib/assets/lslogo.png',
-              height: 40, // Adjust height as needed
+              height: 40,
               color: Colors.white,
             ),
             const SizedBox(height: 10), // Spacing between logo and text
@@ -832,7 +817,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                       mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        // User avatar (left side for incoming messages)
+                        
                         if (!isMe) ...[
                           CircleAvatar(
                             radius: 16,
@@ -852,12 +837,12 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                           const SizedBox(width: 8),
                         ],
                         
-                        // Message content
+                       
                         Flexible(
                           child: Column(
                             crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                             children: [
-                              // Sender name for both incoming and outgoing messages
+                              
                               Padding(
                                 padding: EdgeInsets.only(
                                   bottom: 4,
@@ -874,11 +859,11 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                                 ),
                               ),
                               
-                              // Message bubble
+                            
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                 decoration: BoxDecoration(
-                                  color: isMe ? const Color(0xFF7B61FF) : Colors.grey[200],
+                                  color: isMe ? const Color(0xFF5A35E3) : Colors.grey[200],
                                   borderRadius: BorderRadius.only(
                                     topLeft: const Radius.circular(20),
                                     topRight: const Radius.circular(20),
@@ -895,7 +880,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                                 ),
                               ),
                               
-                              // Time and delivery status
+                            
                               Padding(
                                 padding: const EdgeInsets.only(top: 4),
                                 child: Row(
@@ -923,12 +908,12 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                           ),
                         ),
                         
-                        // Owner avatar (right side for outgoing messages)
+
                         if (isMe) ...[
                           const SizedBox(width: 8),
                           CircleAvatar(
                             radius: 16,
-                            backgroundColor: const Color(0xFF7B61FF),
+                            backgroundColor: const Color(0xFF5A35E3),
                             child: Text(
                               user?.userMetadata?['full_name']?.substring(0, 1).toUpperCase() ?? 'O',
                               style: const TextStyle(
@@ -949,7 +934,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF7B61FF) ,
+              color: const Color(0xFF5A35E3) ,
               boxShadow: [
                 BoxShadow(
                   color: Colors.grey.withOpacity(0.2),
@@ -988,7 +973,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: const BoxDecoration(
-                      color: Color(0xFF7B61FF),
+                      color: Color(0xFF5A35E3),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -1011,7 +996,6 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
-    // Convert to 12-hour format
     int hour = dateTime.hour;
     String period = hour >= 12 ? 'PM' : 'AM';
     if (hour == 0) {
@@ -1086,13 +1070,12 @@ class _FeedbackModalState extends State<FeedbackModal> {
         return;
       }
 
-      // SQL query to insert admin feedback from message screen
       await Supabase.instance.client.from('feedback').insert({
         'user_id': user.id,
         'business_id': widget.businessId,
         'rating': _rating,
         'comment': _feedbackController.text.trim(),
-        'feedback_type': 'business', // Identify as business feedback for message screen
+        'feedback_type': 'business',
         'created_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       });
@@ -1157,7 +1140,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
                 ),
               ),
               const SizedBox(height: 8),
-              // Star rating display
+             
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(5, (index) {
@@ -1179,7 +1162,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              // Interactive star rating
+              
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(5, (index) {
@@ -1201,7 +1184,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
                 }),
               ),
               const SizedBox(height: 24),
-              // Feedback text area
+             
               Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFF7FAFC),
@@ -1230,7 +1213,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
                 ),
               ),
               const SizedBox(height: 30),
-              // Action buttons
+             
               Row(
                 children: [
                   Expanded(
@@ -1268,13 +1251,13 @@ class _FeedbackModalState extends State<FeedbackModal> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(25),
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF7B61FF), Color(0xFF9C88FF)],
+                          colors: [Color(0xFF5A35E3), Color(0xFF5A35E3)],
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF7B61FF).withOpacity(0.3),
+                            color: const Color(0xFF5A35E3).withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),

@@ -38,7 +38,7 @@ class _ChangeEPPScreenState extends State<ChangeEPPScreen> {
       if (user == null) return;
 
       final response = await Supabase.instance.client
-          .from('business_profiles') // Assuming business_profiles also stores email/phone
+          .from('business_profiles')
           .select('email, business_phone_number')
           .eq('id', user.id)
           .single();
@@ -69,7 +69,7 @@ class _ChangeEPPScreenState extends State<ChangeEPPScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
-      // Update email and phone in business_profiles table
+     
       await Supabase.instance.client
           .from('business_profiles')
           .update({
@@ -78,7 +78,7 @@ class _ChangeEPPScreenState extends State<ChangeEPPScreen> {
           })
           .eq('id', user.id);
 
-      // Update password if provided
+     
       if (_passwordController.text.isNotEmpty) {
         await Supabase.instance.client.auth.updateUser(
           UserAttributes(password: _passwordController.text.trim()),
@@ -118,7 +118,7 @@ class _ChangeEPPScreenState extends State<ChangeEPPScreen> {
       appBar: AppBar(
         title: const Text('Change Email, Phone & Password'),
       ),
-      backgroundColor: Colors.white, // Set background color to white
+      backgroundColor: Colors.white, 
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -238,6 +238,7 @@ class _ChangeEPPScreenState extends State<ChangeEPPScreen> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _updateProfile,
                 child: _isLoading
+                    
                     ? const CircularProgressIndicator()
                     : const Text('Update Profile'),
               ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart'; // Use file_picker
-import 'dart:io'; // For File
-import 'package:flutter/foundation.dart' show kIsWeb; // Import kIsWeb
-import 'dart:typed_data'; // Import Uint8List
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:laundry_scout/services/notification_service.dart';
 import 'owner_promo_preview.dart';
@@ -15,13 +15,13 @@ class AddPromoScreen extends StatefulWidget {
 }
 
 class _AddPromoScreenState extends State<AddPromoScreen> {
-  File? _selectedImageFile; // To store the selected image file for non-web
-  Uint8List? _selectedImageBytes; // To store the selected image bytes for web
+  File? _selectedImageFile;
+  Uint8List? _selectedImageBytes;
   final _promoTitleController = TextEditingController();
   final _promoDescriptionController = TextEditingController();
   final _notificationService = NotificationService();
   
-  // New state variables for existing promos
+
   List<dynamic> _existingPromos = [];
   bool _isLoadingPromos = false;
   String? _editingPromoId;
@@ -41,42 +41,42 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
   }
 
   Future<void> _pickImage() async {
-    // Use FilePicker to pick files
+  
     FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.image, // Specify that we only want image files
-      allowMultiple: false, // Only allow picking a single file
+      type: FileType.image,
+      allowMultiple: false,
     );
 
     if (result != null && result.files.single.path != null) {
       if (kIsWeb) {
-        // For web, get the bytes
+      
         setState(() {
           _selectedImageBytes = result.files.single.bytes;
-          _selectedImageFile = null; // Clear file reference for web
+          _selectedImageFile = null; 
         });
       } else {
-        // For mobile/desktop, get the file path
+      
         setState(() {
           _selectedImageFile = File(result.files.single.path!);
-          _selectedImageBytes = null; // Clear bytes reference for non-web
+          _selectedImageBytes = null;
         });
       }
     } else {
-      // User canceled the picker or failed to pick
+     
       print('User canceled the picker or no file selected');
     }
   }
 
   String? _getImageUrlForPreview() {
-    // Return temporary image URL for preview
+   
     if (kIsWeb && _selectedImageBytes != null) {
-      // For web, create a data URL from bytes
-      return null; // Will show placeholder in preview
+      
+      return null; 
     } else if (_selectedImageFile != null) {
-      // For mobile, create a file path URL
+     
       return _selectedImageFile!.path;
     }
-    return null; // No image selected
+    return null;
   }
 
   Future<void> _fetchExistingPromos() async {
@@ -116,14 +116,14 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
       _isEditing = true;
       _promoTitleController.text = promo['promo_title'] ?? '';
       _promoDescriptionController.text = promo['promo_description'] ?? '';
-      // Clear image selections when editing
+      
       _selectedImageFile = null;
       _selectedImageBytes = null;
     });
     
-    // Scroll to top to show the form
+   
     if (mounted) {
-      // The form is at the top, so user will see it
+     
     }
   }
 
@@ -140,7 +140,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
 
   Future<void> _deletePromo(String promoId) async {
     try {
-      // Show confirmation dialog
+      
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -168,9 +168,8 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Promo deleted successfully!')),
         );
-        _fetchExistingPromos(); // Refresh the list
+        _fetchExistingPromos(); 
         
-        // If we were editing this promo, cancel the edit
         if (_editingPromoId == promoId) {
           _cancelEdit();
         }
@@ -189,7 +188,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) throw Exception('Not authenticated');
       
-      // Validate inputs
+    
       if (_promoTitleController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please enter a promo title')),
@@ -204,23 +203,23 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
         return;
       }
   
-      String? imageUrlToStore; // To store the public URL
+      String? imageUrlToStore;
 
       if (kIsWeb && _selectedImageBytes != null) {
         final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-        // Upload the binary data
+        
         await Supabase.instance.client.storage
             .from('promoimages')
             .uploadBinary(
               fileName,
               _selectedImageBytes!,
             );
-        // Get the public URL after successful upload
+        
         imageUrlToStore = Supabase.instance.client.storage
             .from('promoimages')
             .getPublicUrl(fileName);
       } else if (_selectedImageFile != null) {
-        // Handle mobile image upload
+        
         final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
         await Supabase.instance.client.storage
             .from('promoimages')
@@ -234,13 +233,12 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
       }
 
       if (_isEditing && _editingPromoId != null) {
-        // Update existing promo
+        
         final updateData = {
           'promo_title': _promoTitleController.text.trim(),
           'promo_description': _promoDescriptionController.text.trim(),
         };
         
-        // Only update image URL if a new image was selected
         if (imageUrlToStore != null) {
           updateData['image_url'] = imageUrlToStore;
         }
@@ -257,19 +255,19 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
           _cancelEdit();
         }
       } else {
-        // Create new promo
+        
         final promoData = {
           'creator_id': user.id, 
           'business_id': user.id, 
           'promo_title': _promoTitleController.text.trim(),
           'promo_description': _promoDescriptionController.text.trim(),
-          'image_url': imageUrlToStore, // Store the public URL
+          'image_url': imageUrlToStore, 
           'created_at': DateTime.now().toIso8601String(),
         };
         
         await Supabase.instance.client.from('promos').insert(promoData);
         
-        // Send notifications to all users about the new promo
+       
         await _notificationService.createPromoNotification(
           businessId: user.id,
           promoTitle: _promoTitleController.text.trim(),
@@ -284,9 +282,9 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
         }
       }
       
-      _fetchExistingPromos(); // Refresh the list
+      _fetchExistingPromos();
       
-      // Clear form after successful operation
+     
       if (!_isEditing) {
         _promoTitleController.clear();
         _promoDescriptionController.clear();
@@ -302,13 +300,13 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
     }
   }
 
-  // Add text fields to the build method:
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8), // Background color
+      backgroundColor: const Color(0xFFF8F8F8), 
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF8F8F8), // AppBar background color
+        backgroundColor: const Color(0xFFF8F8F8), 
         elevation: 0, // No shadow
         leading: const BackButton(color: Colors.black),
         actions: [
@@ -323,7 +321,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
           else
             TextButton(
               onPressed: () {
-                // Navigate to preview screen with current data
+               
                 final previewData = {
                   'promo_title': _promoTitleController.text.trim(),
                   'promo_description': _promoDescriptionController.text.trim(),
@@ -341,14 +339,14 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
               },
               child: const Text(
                 'Preview',
-                style: TextStyle(color: Color(0xFF7B61FF), fontSize: 16), // Purple color
+                style: TextStyle(color: Color(0xFF7B61FF), fontSize: 16), 
               ),
             ),
         ],
         title: Text(
           _isEditing ? 'Edit Promo' : 'Promote your Business',
           style: const TextStyle(
-            color: Color(0xFF7B61FF), // Purple color
+            color: Color(0xFF7B61FF), 
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -360,11 +358,11 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Upload Area
+        
             GestureDetector(
               onTap: _pickImage,
               child: Container(
-                height: 180, // Adjust height as needed
+                height: 180, 
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.grey[200],
@@ -400,7 +398,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            // Promo Title Field
+           
             TextField(
               controller: _promoTitleController,
               style: const TextStyle(color: Colors.black),
@@ -418,7 +416,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
               maxLength: 50,
             ),
             const SizedBox(height: 16),
-            // Promo Description Field
+        
             TextField(
               controller: _promoDescriptionController,
               style: const TextStyle(color: Colors.black),
@@ -437,7 +435,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
               maxLength: 200,
             ),
             const SizedBox(height: 24),
-            // Instructions
+           
             const Text(
               'Instruction to achieve a good Promo Add',
               style: TextStyle(
@@ -457,7 +455,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
               style: TextStyle(color: Colors.black87, fontSize: 14),
             ),
             const SizedBox(height: 24),
-            // Example
+         
             const Text(
               'Example:',
               style: TextStyle(
@@ -467,20 +465,20 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            // Example Image Placeholder (replace with actual image asset if available)
+           
             Container(
-              height: 200, // Adjust height as needed
+              height: 200, 
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.deepPurple, // Example background color
+                color: Color(0xFF5A35E3), 
                 borderRadius: BorderRadius.circular(12),
-                // You can add a background image here if you have the example image asset
+               
                 image: const DecorationImage(
-                   image: AssetImage('lib/assets/promo_example.png'), // Corrected asset path
+                   image: AssetImage('lib/assets/promo_example.png'),
                    fit: BoxFit.cover,
                 ),
               ),
-              // You can add the text overlay here if needed
+              
               child: const Padding(
                 padding: EdgeInsets.all(16.0),
                 child: Column(
@@ -491,12 +489,12 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            // Published Button
+            
             Center(
               child: ElevatedButton(
                 onPressed: _publishPromo,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF7B61FF), // Purple color
+                  backgroundColor: const Color(0xFF5A35E3), 
                   padding: const EdgeInsets.symmetric(horizontal: 64, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
@@ -510,11 +508,10 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
             ),
             
             const SizedBox(height: 32),
-            // Divider
+        
             const Divider(height: 1, color: Colors.grey),
             const SizedBox(height: 24),
             
-            // Existing Promos Section
             const Text(
               'Your Existing Promos',
               style: TextStyle(
@@ -525,7 +522,6 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
             ),
             const SizedBox(height: 16),
             
-            // Existing Promos List
             if (_isLoadingPromos)
               const Center(child: CircularProgressIndicator())
             else if (_existingPromos.isEmpty)
@@ -622,7 +618,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
                             IconButton(
                               icon: Icon(
                                 isCurrentlyEditing ? Icons.edit : Icons.edit_outlined,
-                                color: isCurrentlyEditing ? const Color(0xFF7B61FF) : Colors.grey,
+                                color: isCurrentlyEditing ? const Color(0xFF5A35E3) : Colors.grey,
                               ),
                               onPressed: () => _editPromo(promo),
                               tooltip: 'Edit Promo',
