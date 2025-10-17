@@ -44,11 +44,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Laundry Scout',
       theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xFF6F5ADC),
-        primaryColor: const Color(0xFF6F5ADC),
+        scaffoldBackgroundColor: const Color(0xFF5A35E3),
+        primaryColor: const Color(0xFF5A35E3),
         fontFamily: 'Poppins', // Default font
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF6F5ADC),
+          backgroundColor: Color(0xFF5A35E3),
           elevation: 0,
           titleTextStyle: TextStyle(
             color: Color(0xFFFFFFFF),
@@ -80,7 +80,7 @@ class MyApp extends StatelessWidget {
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFFFFFFF), // White background for buttons
-            foregroundColor: const Color(0xFF6F5ADC), // Purple text for buttons
+            foregroundColor: const Color(0xFF5A35E3), // Purple text for buttons
             textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold),
             minimumSize: const Size(double.infinity, 50), // Keep existing minimum size if desired
           ),
