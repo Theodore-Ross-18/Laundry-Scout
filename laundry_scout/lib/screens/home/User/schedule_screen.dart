@@ -25,11 +25,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF6F5ADC),
+      backgroundColor: const Color(0xFF5A35E3),
       body: SafeArea(
         child: Column(
           children: [
-            // Header
             Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
@@ -69,7 +68,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 20),
-                      // Pick-Up Schedule Section
                       const Text(
                         'Pick-Up Schedule',
                         style: TextStyle(
@@ -89,7 +87,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         },
                       )).toList()),
                       const SizedBox(height: 30),
-                      // Drop-Off Schedule Section
                       const Text(
                         'Drop-Off Schedule',
                         style: TextStyle(
@@ -123,7 +120,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         child: ElevatedButton(
                           onPressed: _canProceed() ? _saveSchedule : null,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6F5ADC),
+                            backgroundColor: const Color(0xFF5A35E3),
                             disabledBackgroundColor: Colors.grey[300],
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
@@ -161,10 +158,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF6F5ADC).withOpacity(0.1) : Colors.grey[50],
+            color: isSelected ? const Color(0xFF5A35E3).withOpacity(0.1) : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? const Color(0xFF6F5ADC) : Colors.grey[200]!,
+              color: isSelected ? const Color(0xFF5A35E3) : Colors.grey[200]!,
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -172,7 +169,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             children: [
               Icon(
                 Icons.access_time,
-                color: isSelected ? const Color(0xFF6F5ADC) : Colors.grey[600],
+                color: isSelected ? const Color(0xFF5A35E3) : Colors.grey[600],
                 size: 20,
               ),
               const SizedBox(width: 12),
@@ -182,14 +179,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: isSelected ? const Color(0xFF6F5ADC) : Colors.black87,
+                    color: isSelected ? const Color(0xFF5A35E3) : Colors.black87,
                   ),
                 ),
               ),
               if (isSelected)
                 const Icon(
                   Icons.check_circle,
-                  color: Color(0xFF6F5ADC),
+                  color: Color(0xFF5A35E3),
                   size: 20,
                 ),
             ],

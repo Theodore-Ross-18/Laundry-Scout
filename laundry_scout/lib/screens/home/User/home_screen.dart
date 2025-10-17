@@ -21,16 +21,16 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _userName = 'User'; 
-  String? _profileImageUrl; // Add profile image URL state
+  String? _profileImageUrl;
   bool _isLoading = true;
   List<Map<String, dynamic>> _laundryShops = []; 
   List<Map<String, dynamic>> _promos = []; 
   List<Map<String, dynamic>> _filteredLaundryShops = []; 
   Map<String, dynamic> _currentFilters = {};
-  int _activeOrdersCount = 0; // Add this line
+  int _activeOrdersCount = 0; 
 
   final TextEditingController _searchController = TextEditingController(); 
-  final ScrollController _scrollController = ScrollController(); // Add this line
+  final ScrollController _scrollController = ScrollController(); 
   bool _isSearching = false; 
   int _selectedIndex = 0; 
 
@@ -46,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _widgetOptions = <Widget>[
       HomeScreenBody(
         userName: _userName,
-        profileImageUrl: _profileImageUrl, // Add profile image URL parameter
+        profileImageUrl: _profileImageUrl, 
         isLoading: _isLoading,
         searchController: _searchController,
         scrollController: _scrollController,
@@ -58,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
         loadUserProfile: _loadUserProfile,
         loadLaundryShops: _loadLaundryShops,
         loadPromos: _loadPromos,
-        activeOrdersCount: _activeOrdersCount, // Add this line
+        activeOrdersCount: _activeOrdersCount, 
         onNavigateToNotifications: (index) {
           setState(() {
             _selectedIndex = index;
@@ -70,13 +70,11 @@ class _HomeScreenState extends State<HomeScreen> {
       const MessageScreen(),
       const NotificationScreen(),
     ];
-     // Add listener to update HomeScreenBody when _userName changes, for example
-    // This is a simplified way; for more complex state updates, consider a state management solution
-    // or ensure data is passed reactively.
-    _loadActiveOrdersCount(); // Call the new function
+    
+    _loadActiveOrdersCount(); 
   }
 
-  // Method to update HomeScreenBody when data changes
+
   void _updateHomeScreenBodyState() {
     if (!mounted) return;
     setState(() {
@@ -94,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
         loadUserProfile: _loadUserProfile,
         loadLaundryShops: _loadLaundryShops,
         loadPromos: _loadPromos,
-        activeOrdersCount: _activeOrdersCount, // Add this line
+        activeOrdersCount: _activeOrdersCount, 
         onNavigateToNotifications: (index) {
           setState(() {
             _selectedIndex = index;
@@ -107,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
-    _scrollController.dispose(); // Add this line
+    _scrollController.dispose(); 
     super.dispose();
   }
 
@@ -128,21 +126,21 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       final response = await Supabase.instance.client
           .from('user_profiles')
-          .select('username, profile_image_url') // Add profile_image_url to select
+          .select('username, profile_image_url') 
           .eq('id', user.id)
           .single();
 
       if (mounted) {
         _userName = response['username'] ?? 'User';
-        _profileImageUrl = response['profile_image_url']; // Store profile image URL
+        _profileImageUrl = response['profile_image_url']; 
         _isLoading = false;
-        _updateHomeScreenBodyState(); // Update HomeScreenBody
+        _updateHomeScreenBodyState(); 
       }
     } catch (e) {
       print('Error loading user profile: $e');
       if (mounted) {
         _isLoading = false;
-        _updateHomeScreenBodyState(); // Update HomeScreenBody even on error
+        _updateHomeScreenBodyState(); 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error loading user profile: $e')),
         );
@@ -152,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadLaundryShops() async {
      setState(() {
-      // Potentially set a loading state for shops if you have one
+      
     });
     try {
       final response = await Supabase.instance.client
@@ -166,10 +164,10 @@ class _HomeScreenState extends State<HomeScreen> {
             availability_status,
             feedback(rating)
           ''')
-          .eq('status', 'approved'); // Only fetch approved businesses
+          .eq('status', 'approved'); 
 
       if (mounted) {
-        // Process the response to include average rating
+       
         final processedShops = response.map((shop) {
           final feedbackList = shop['feedback'] as List<dynamic>? ?? [];
           double averageRating = 0.0;
@@ -192,20 +190,20 @@ class _HomeScreenState extends State<HomeScreen> {
             ...shop,
             'average_rating': averageRating,
             'total_reviews': totalReviews,
-            'feedback': null, // Remove the raw feedback data to avoid confusion
+            'feedback': null, 
           };
         }).toList();
 
         _laundryShops = List<Map<String, dynamic>>.from(processedShops);
         _filteredLaundryShops = _laundryShops;
         
-        _updateHomeScreenBodyState(); // Update HomeScreenBody
+        _updateHomeScreenBodyState(); 
       }
     } catch (e) {
       print('Error loading laundry shops: $e');
       if (mounted) {
-        // Potentially update loading state for shops
-         _updateHomeScreenBodyState(); // Update HomeScreenBody
+       
+         _updateHomeScreenBodyState(); 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error loading laundry shops: $e')),
         );
@@ -219,14 +217,14 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _isSearching = false;
         _applyFilters();
-        _updateHomeScreenBodyState(); // Update HomeScreenBody
+        _updateHomeScreenBodyState(); 
       });
     } else {
       if (!mounted) return;
       setState(() {
         _isSearching = true;
         _applyFilters(searchQuery: query);
-        _updateHomeScreenBodyState(); // Update HomeScreenBody
+        _updateHomeScreenBodyState(); 
       });
     }
   }
@@ -234,7 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _applyFilters({String? searchQuery}) {
     List<Map<String, dynamic>> filtered = List.from(_laundryShops);
     
-    // Apply search filter
+   
     if (searchQuery != null && searchQuery.isNotEmpty) {
       final lowerCaseQuery = searchQuery.toLowerCase();
       filtered = filtered.where((shop) {
@@ -244,19 +242,19 @@ class _HomeScreenState extends State<HomeScreen> {
       }).toList();
     }
     
-    // Apply service filters
+    
     if (_currentFilters['selectedServices'] != null && 
         (_currentFilters['selectedServices'] as List).isNotEmpty) {
       filtered = filtered.where((shop) {
         List<String> selectedServices = List<String>.from(_currentFilters['selectedServices']);
         
-        // Get the services offered by this shop
+        
         List<String> shopServices = [];
         if (shop['services_offered'] != null) {
           shopServices = List<String>.from(shop['services_offered']);
         }
         
-        // Check if shop offers any of the selected services
+       
         bool hasService = false;
         
         for (String service in selectedServices) {
@@ -280,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }).toList();
     }
     
-    // Apply rating filter using actual average rating
+   
     if (_currentFilters['minimumRating'] != null && 
         _currentFilters['minimumRating'] > 0) {
       filtered = filtered.where((shop) {
@@ -312,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadPromos() async {
     setState(() {
-      // Potentially set a loading state for promos if you have one
+      
     });
     try {
       final response = await Supabase.instance.client
@@ -321,13 +319,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (mounted) {
         _promos = List<Map<String, dynamic>>.from(response);
-        _updateHomeScreenBodyState(); // Update HomeScreenBody
+        _updateHomeScreenBodyState(); 
       }
     } catch (e) {
       print('Error loading promos: $e');
       if (mounted) {
-        // Potentially update loading state for promos
-        _updateHomeScreenBodyState(); // Update HomeScreenBody
+       
+        _updateHomeScreenBodyState(); 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error loading promos: $e')),
         );
@@ -375,16 +373,13 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onItemTapped(int index) {
     if (!mounted) return;
     
-    // If Home button (index 0) is pressed and we're already on Home screen
     if (index == 0 && _selectedIndex == 0) {
-      // Scroll to top
       _scrollController.animateTo(
         0,
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
       
-      // Refresh data in the background without showing loading indicators
       _refreshDataInBackground();
       return;
     }
@@ -394,10 +389,8 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // Background refresh method that loads all data without showing loading states
   Future<void> _refreshDataInBackground() async {
     try {
-      // Load all data in parallel without setting loading states
       await Future.wait([
         _loadUserProfileBackground(),
         _loadLaundryShopsBackground(),
@@ -406,11 +399,9 @@ class _HomeScreenState extends State<HomeScreen> {
       ]);
     } catch (e) {
       print('Background refresh error: $e');
-      // Silently handle errors in background refresh
     }
   }
 
-  // Background versions of loading methods that don't set loading states
   Future<void> _loadUserProfileBackground() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
@@ -449,7 +440,7 @@ class _HomeScreenState extends State<HomeScreen> {
           .eq('status', 'approved');
 
       if (mounted) {
-        // Process the response to include average rating
+       
         final processedShops = response.map((shop) {
           final feedbackList = shop['feedback'] as List<dynamic>? ?? [];
           double averageRating = 0.0;
@@ -536,7 +527,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Rebuild _widgetOptions if _isLoading has changed to pass the latest state to HomeScreenBody
+    
     _widgetOptions[0] = HomeScreenBody(
         userName: _userName,
         profileImageUrl: _profileImageUrl,
@@ -551,7 +542,7 @@ class _HomeScreenState extends State<HomeScreen> {
         loadUserProfile: _loadUserProfile,
         loadLaundryShops: _loadLaundryShops,
         loadPromos: _loadPromos,
-        activeOrdersCount: _activeOrdersCount, // Add this line
+        activeOrdersCount: _activeOrdersCount,
         onNavigateToNotifications: (index) {
           setState(() {
             _selectedIndex = index;
@@ -607,7 +598,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF7B61FF),
+        selectedItemColor: const Color(0xFF5A35E3),
         unselectedItemColor: Colors.grey[600],
         onTap: _onItemTapped,
         showSelectedLabels: true,
@@ -619,7 +610,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Animated Service Icon Widget
 class _AnimatedServiceIcon extends StatefulWidget {
   final IconData icon;
   final String label;
@@ -654,7 +644,6 @@ class _AnimatedServiceIconState extends State<_AnimatedServiceIcon>
       vsync: this,
     );
     
-    // Initialize animation based on animation type
     switch (widget.animationType) {
       case 'bounce':
         _animation = TweenSequence<double>([
@@ -694,7 +683,6 @@ class _AnimatedServiceIconState extends State<_AnimatedServiceIcon>
         break;
     }
     
-    // Only start animation if there are active orders
     if ((widget.count ?? 0) > 0) {
       _controller.repeat();
     }
@@ -704,12 +692,12 @@ class _AnimatedServiceIconState extends State<_AnimatedServiceIcon>
   void didUpdateWidget(_AnimatedServiceIcon oldWidget) {
     super.didUpdateWidget(oldWidget);
     
-    // Handle animation changes when widget updates
+   
     if ((widget.count ?? 0) > 0 && (oldWidget.count ?? 0) == 0) {
-      // Start animation when orders become available
+     
       _controller.repeat();
     } else if ((widget.count ?? 0) == 0 && (oldWidget.count ?? 0) > 0) {
-      // Stop animation when no orders
+      
       _controller.stop();
       _controller.reset();
     }
@@ -741,17 +729,17 @@ class _AnimatedServiceIconState extends State<_AnimatedServiceIcon>
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            // Glow effect for active orders when count > 0
+                            
                             if (widget.animationType == 'pulse' && (widget.count ?? 0) > 0)
                               Container(
                                 width: 50,
                                 height: 50,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Color(0xFF6F5ADC).withOpacity(0.3),
+                                  color: Color(0xFF5A35E3).withOpacity(0.3),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Color(0xFF6F5ADC).withOpacity(0.5),
+                                      color: Color(0xFF5A35E3).withOpacity(0.5),
                                       blurRadius: 10 * _animation.value,
                                       spreadRadius: 2 * _animation.value,
                                     ),
@@ -763,7 +751,7 @@ class _AnimatedServiceIconState extends State<_AnimatedServiceIcon>
                               size: 40,
                               color: widget.color,
                             ),
-                            // Badge for active orders
+                            
                             if (widget.animationType == 'pulse' && (widget.count ?? 0) > 0)
                               Positioned(
                                 right: 0,
@@ -851,7 +839,7 @@ class HomeScreenBody extends StatelessWidget {
   final Future<void> Function() loadLaundryShops;
   final Future<void> Function() loadPromos;
   final int activeOrdersCount;
-  final Function(int) onNavigateToNotifications; // Add this line
+  final Function(int) onNavigateToNotifications; 
 
   const HomeScreenBody({
     super.key,
@@ -869,7 +857,7 @@ class HomeScreenBody extends StatelessWidget {
     required this.loadLaundryShops,
     required this.loadPromos,
     required this.activeOrdersCount,
-    required this.onNavigateToNotifications, // Add this line
+    required this.onNavigateToNotifications, 
   });
 
   Widget _buildAvailabilityStatus(String? availabilityStatus) {
@@ -932,24 +920,24 @@ class HomeScreenBody extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
     return SafeArea(
-      child: RefreshIndicator( // Added RefreshIndicator
+      child: RefreshIndicator( 
         onRefresh: () async {
-          // Call all load methods to refresh data
+      
           await loadUserProfile();
           await loadLaundryShops();
           await loadPromos();
         },
         child: SingleChildScrollView(
-          controller: scrollController, // Add this line
-          physics: const AlwaysScrollableScrollPhysics(), // Ensure scroll even when content is small
+          controller: scrollController,
+          physics: const AlwaysScrollableScrollPhysics(), 
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Top Section: Welcome, Name, Profile Picture, Filter Icon
+
               Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF7B61FF), // Purple background
+                  color: Color(0xFF5A35E3), 
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(30),
                     bottomRight: Radius.circular(30),
@@ -999,10 +987,10 @@ class HomeScreenBody extends StatelessWidget {
                                       width: 50,
                                       height: 50,
                                       fit: BoxFit.cover,
-                                      errorWidget: const Icon(Icons.person, color: Color(0xFF7B61FF)),
+                                      errorWidget: const Icon(Icons.person, color: Color(0xFF5A35E3)),
                                     ),
                                   )
-                                : const Icon(Icons.person, color: Color(0xFF6F5ADC)),
+                                : const Icon(Icons.person, color: Color(0xFF5A35E3)),
                           ),
                         ),
                       ],
@@ -1019,10 +1007,10 @@ class HomeScreenBody extends StatelessWidget {
                               borderRadius: BorderRadius.circular(18),
                             ),
                             child: TextField(
-                              controller: searchController, // Use passed controller
-                              onSubmitted: filterLaundryShops, // Use passed function
-                              onChanged: filterLaundryShops, // Add this line to handle real-time changes
-                              style: const TextStyle(color: Colors.black), // Add this line to fix text color
+                              controller: searchController, 
+                              onSubmitted: filterLaundryShops, 
+                              onChanged: filterLaundryShops, 
+                              style: const TextStyle(color: Colors.black), 
                               decoration: const InputDecoration(
                                 hintText: 'Search Here',
                                 hintStyle: TextStyle(color: Colors.grey),
@@ -1041,7 +1029,7 @@ class HomeScreenBody extends StatelessWidget {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(18),
                             ),
-                            child: const Icon(Icons.tune, color: Color(0xFF7B61FF)),
+                            child: const Icon(Icons.tune, color: Color(0xFF5A35E3)),
                           ),
                         ),
                       ],
@@ -1050,7 +1038,7 @@ class HomeScreenBody extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              // Active Orders Section with Animations
+            
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
@@ -1064,7 +1052,7 @@ class HomeScreenBody extends StatelessWidget {
                       color: Colors.grey[700]!,
                       count: activeOrdersCount,
                       onTap: () {
-                        onNavigateToNotifications(3); // Navigate to Messages (index 3)
+                        onNavigateToNotifications(3); 
                       },
                     ),
                     // Active Orders Animation
@@ -1075,10 +1063,10 @@ class HomeScreenBody extends StatelessWidget {
                       color: Colors.black,
                       count: activeOrdersCount,
                       onTap: () {
-                        onNavigateToNotifications(4); // Navigate to Notifications (index 4)
+                        onNavigateToNotifications(4); 
                       },
                     ),
-                    // Delivery Animation
+                    
                     _AnimatedServiceIcon(
                       icon: Icons.local_shipping,
                       label: 'Delivery',
@@ -1086,7 +1074,7 @@ class HomeScreenBody extends StatelessWidget {
                       color: Colors.grey[700]!,
                       count: activeOrdersCount,
                       onTap: () {
-                        onNavigateToNotifications(3); // Navigate to Messages (index 3)
+                        onNavigateToNotifications(3); 
                       },
                     ),
                   ],
@@ -1216,7 +1204,7 @@ class HomeScreenBody extends StatelessWidget {
                         ),
                       ),
               const SizedBox(height: 20),
-              // Nearest Laundry Shop's Section
+              
               if (!isSearching)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -1233,23 +1221,23 @@ class HomeScreenBody extends StatelessWidget {
                               ),
                         ),
                       ),
-                      // Responsive View All button
+                      
                       LayoutBuilder(
                         builder: (context, constraints) {
-                          // Check if screen width is small (mobile)
+                          
                           bool isMobile = MediaQuery.of(context).size.width < 600;
                           
                           if (isMobile) {
-                            // For mobile: Use a more compact button
+                            
                             return Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF6F5ADC),
+                                color: const Color(0xFF5A35E3),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: InkWell(
                                 onTap: () {
-                                // Switch to Laundry tab (index 2)
+                                
                                 final homeScreenState = context.findAncestorStateOfType<_HomeScreenState>();
                                 if (homeScreenState != null && homeScreenState.mounted) {
                                   homeScreenState._onItemTapped(2);
@@ -1266,10 +1254,10 @@ class HomeScreenBody extends StatelessWidget {
                               ),
                             );
                           } else {
-                            // For larger screens: Use the original TextButton
+                           
                             return TextButton(
                               onPressed: () {
-                                // Switch to Laundry tab (index 2)
+                               
                                 final homeScreenState = context.findAncestorStateOfType<_HomeScreenState>();
                                 if (homeScreenState != null && homeScreenState.mounted) {
                                   homeScreenState._onItemTapped(2);
@@ -1277,7 +1265,7 @@ class HomeScreenBody extends StatelessWidget {
                               },
                               child: const Text(
                                 'View All',
-                                style: TextStyle(color: Color(0xFF7B61FF)),
+                                style: TextStyle(color: Color(0xFF5A35E3)),
                               ),
                             );
                           }
@@ -1288,14 +1276,14 @@ class HomeScreenBody extends StatelessWidget {
                 ),
               if (!isSearching)
                 const SizedBox(height: 10),
-              // Horizontal list of laundry shops
+              
               SizedBox(
                 height: 200,
-                child: filteredLaundryShops.isEmpty // Use passed filteredLaundryShops
+                child: filteredLaundryShops.isEmpty 
                     ? Center(
                         child: Text(
                           isSearching ? 'No laundry shops found for this search.' : 'No laundry shops available.',
-                          style: const TextStyle(color: Colors.black), // Add this line to make text black
+                          style: const TextStyle(color: Colors.black), 
                         ),
                       )
                     : ListView.builder(
@@ -1303,7 +1291,7 @@ class HomeScreenBody extends StatelessWidget {
                         itemCount: filteredLaundryShops.length,
                         itemBuilder: (context, index) {
                           final shop = filteredLaundryShops[index];
-                          return GestureDetector( // Wrap with GestureDetector
+                          return GestureDetector( 
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -1391,7 +1379,7 @@ class HomeScreenBody extends StatelessWidget {
                         },
                       ),
               ),
-              const SizedBox(height: 20), // Add some padding at the bottom
+              const SizedBox(height: 20), 
             ],
           ),
         ),

@@ -4,17 +4,15 @@ import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'business_detail_screen.dart'; // Import the business detail screen
+import 'business_detail_screen.dart';
 
 String _getTileLayerUrlTemplate(MapType mapType) {
   switch (mapType) {
     case MapType.satellite:
-      // Unofficial Google Maps Satellite tiles - Use at your own risk and responsibility.
-      // Google's terms of service prohibit direct access to their map tiles outside of their official APIs.
+      
       return "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}";
     case MapType.terrain:
-      // Unofficial Google Maps Terrain tiles - Use at your own risk and responsibility.
-      // Google's terms of service prohibit direct access to their map tiles outside of their official APIs.
+      
       return "https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}";
     case MapType.defaultMap:
       return "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -89,7 +87,7 @@ class _AnimatedLocationPinState extends State<AnimatedLocationPin>
               ),
               child: const Icon(
                 Icons.location_on,
-                color: Color(0xFF6F5ADC),
+                color: Color(0xFF5A35E3),
                 size: 60,
               ),
             ),
@@ -116,12 +114,12 @@ class LocationPermissionOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Blurred map background
+        
         Positioned.fill(
           child: FlutterMap(
             options: const MapOptions(
-              center: LatLng(12.8797, 121.7740), // Default to center of Philippines
-              zoom: 5.9,  // Zoomed out to show Philippines overview
+              center: LatLng(12.8797, 121.7740), 
+              zoom: 5.9, 
             ),
             children: [
               TileLayer(
@@ -160,7 +158,7 @@ class LocationPermissionOverlay extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF6F5ADC),
+                        color: Color(0xFF5A35E3),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -177,7 +175,7 @@ class LocationPermissionOverlay extends StatelessWidget {
                     ElevatedButton(
                       onPressed: onRequestPermission,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6F5ADC),
+                        backgroundColor: const Color(0xFF5A35E3),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 32,
@@ -230,8 +228,8 @@ class _LocationScreenState extends State<LocationScreen> {
   String _locationPermissionMessage = "Location permission not granted.";
   List<Map<String, dynamic>> _businessProfiles = [];
   final MapController _mapController = MapController();
-  double _searchRadius = 1.0; // Initial search radius in kilometers
-  MapType _selectedMapType = MapType.defaultMap; // Default map type
+  double _searchRadius = 1.0; 
+  MapType _selectedMapType = MapType.defaultMap; 
 
   void _onMapTypeChanged(MapType? newMapType) {
     if (newMapType != null) {
@@ -326,9 +324,9 @@ class _LocationScreenState extends State<LocationScreen> {
               lng,
             );
             if (distance <= (radius ?? _searchRadius)) {
-              // Fetch average rating for the business
+             
               final averageRating = await _getAverageRating(business['id']);
-              business['average_rating'] = averageRating; // Add rating to business data
+              business['average_rating'] = averageRating; 
               filteredProfiles.add(business);
             }
           }
@@ -337,7 +335,7 @@ class _LocationScreenState extends State<LocationScreen> {
 
       setState(() {
         _businessProfiles = filteredProfiles;
-        // _foundLaundryShops = filteredProfiles.isNotEmpty;
+      
       });
     } catch (e) {
       setState(() {
@@ -347,7 +345,7 @@ class _LocationScreenState extends State<LocationScreen> {
   }
 
   double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-    return Geolocator.distanceBetween(lat1, lon1, lat2, lon2) / 1000; // Distance in kilometers
+    return Geolocator.distanceBetween(lat1, lon1, lat2, lon2) / 1000; 
   }
 
   Future<double> _getAverageRating(String businessId) async {
@@ -376,7 +374,7 @@ class _LocationScreenState extends State<LocationScreen> {
       showModalBottomSheet(
         context: context,
         builder: (context) {
-          return SingleChildScrollView( // Wrap with SingleChildScrollView
+          return SingleChildScrollView( 
             child: Container(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -440,11 +438,11 @@ class _LocationScreenState extends State<LocationScreen> {
                       ),
                       const SizedBox(height: 4),
                       Wrap(
-                        spacing: 8.0, // gap between adjacent chips
-                        runSpacing: 4.0, // gap between lines
+                        spacing: 8.0, 
+                        runSpacing: 4.0, 
                         children: (businessData['services_offered'] as List).map((service) {
                           IconData iconData;
-                          Color iconColor = Colors.blueGrey; // Default color
+                          Color iconColor = Colors.blueGrey;
 
                           switch (service.toLowerCase()) {
                             case 'wash':
@@ -454,7 +452,7 @@ class _LocationScreenState extends State<LocationScreen> {
                               iconData = Icons.dry_cleaning;
                               break;
                             case 'fold':
-                              iconData = Icons.folder_special; // Placeholder, consider a more specific icon
+                              iconData = Icons.folder_special; 
                               break;
                             case 'iron':
                               iconData = Icons.iron;
@@ -463,7 +461,7 @@ class _LocationScreenState extends State<LocationScreen> {
                               iconData = Icons.delivery_dining;
                               break;
                             default:
-                              iconData = Icons.help_outline; // Default icon for unknown services
+                              iconData = Icons.help_outline; 
                           }
                           return Chip(
                             avatar: Icon(iconData, color: iconColor, size: 18),
@@ -474,11 +472,11 @@ class _LocationScreenState extends State<LocationScreen> {
                       ),
                     ],
                   ),
-                // Removed the ratings display as there is no 'ratings' column in the schema
+               
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context); // Close the bottom sheet
+                    Navigator.pop(context); 
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -489,9 +487,9 @@ class _LocationScreenState extends State<LocationScreen> {
                   child: const Text('View Details'),
                 ),
               ],
-            ), // Closing bracket for Column
-          ), // Closing bracket for Container
-        ); // Closing bracket for SingleChildScrollView
+            ), 
+          ), 
+        ); 
         },
       );
     }
@@ -499,15 +497,15 @@ class _LocationScreenState extends State<LocationScreen> {
     @override
     Widget build(BuildContext context) {
       return Scaffold(
-        backgroundColor: const Color(0xFF6F5ADC),
+        backgroundColor: const Color(0xFF5A35E3),
         appBar: AppBar(
           title: const Text('Nearby Laundry Shops'),
-          backgroundColor: const Color(0xFF6F5ADC),
+          backgroundColor: const Color(0xFF5A35E3),
           foregroundColor: Colors.white,
           actions: [
             DropdownButton<MapType>(
               value: _selectedMapType,
-              dropdownColor: const Color(0xFF6F5ADC),
+              dropdownColor: const Color(0xFF5A35E3),
               icon: const Icon(Icons.map, color: Colors.white),
               onChanged: _onMapTypeChanged,
               items: const [
@@ -542,13 +540,13 @@ class _LocationScreenState extends State<LocationScreen> {
                         children: [
                           Expanded(
                             child: FlutterMap(
-                                key: ValueKey(_currentPosition), // Add key to force rebuild on location change
+                                key: ValueKey(_currentPosition), 
                                 mapController: _mapController,
                                 options: MapOptions(
                                   center: _currentPosition != null
                                       ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
-                                      : LatLng(12.8797, 121.7740), // Default to center of Philippines
-                                  zoom: _currentPosition != null ? 16.0 : 6.0, // Zoom out for Philippines view when no location
+                                      : LatLng(12.8797, 121.7740), 
+                                  zoom: _currentPosition != null ? 16.0 : 6.0, 
                                   minZoom: 5.0,
                                   maxZoom: 20.0,
                                   initialZoom: _currentPosition != null ? 16.0 : 6.0,
@@ -563,17 +561,17 @@ class _LocationScreenState extends State<LocationScreen> {
                                       circles: [
                                         CircleMarker(
                                           point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-                                          useRadiusInMeter: true, // ✅ use meters instead of pixels
-                                          radius: _searchRadius * 1000, // km → meters
-                                          color: const Color(0xFF6F5ADC).withOpacity(0.2),
-                                          borderColor: const Color(0xFF6F5ADC),
+                                          useRadiusInMeter: true, 
+                                          radius: _searchRadius * 1000,
+                                          color: const Color(0xFF5A35E3).withOpacity(0.2),
+                                          borderColor: const Color(0xFF5A35E3),
                                           borderStrokeWidth: 2,
                                         ),
                                       ],
                                     ),
                                   MarkerLayer(
                                     markers: [
-                                      // User's current location marker
+                                    
                                       Marker(
                                         width: 80.0,
                                         height: 80.0,
@@ -584,7 +582,7 @@ class _LocationScreenState extends State<LocationScreen> {
                                           size: 40.0,
                                         ),
                                       ),
-                                      // Business markers
+                                   
                                       ..._businessProfiles.map((business) {
                                         final lat = business['latitude'];
                                         final lng = business['longitude'];
@@ -645,7 +643,7 @@ class _LocationScreenState extends State<LocationScreen> {
                                 color: Colors.grey.withOpacity(0.5),
                                 spreadRadius: 1,
                                 blurRadius: 3,
-                                offset: const Offset(0, 2), // changes position of shadow
+                                offset: const Offset(0, 2), 
                               ),
                             ],
                           ),
@@ -689,9 +687,9 @@ class _LocationScreenState extends State<LocationScreen> {
                               ),
                             ),
                             const SizedBox(height: 10),
-                            if (_searchRadius < 10.0) // Only show button if radius is less than max
+                            if (_searchRadius < 10.0) 
                               SizedBox(
-                                  width: 200, // Adjust width as needed
+                                  width: 200, 
                                   child: ElevatedButton.icon(
                                     onPressed: () {
                                         setState(() {
@@ -699,15 +697,15 @@ class _LocationScreenState extends State<LocationScreen> {
                                         });
                                         _fetchBusinessProfiles(radius: _searchRadius);
                                     },
-                                    icon: const Icon(Icons.search), // Add an icon to the button
+                                    icon: const Icon(Icons.search), 
                                     label: const Text('Locate Laundry'),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF6F5ADC), // Use the theme color
+                                      backgroundColor: const Color(0xFF5A35E3), 
                                       foregroundColor: Colors.white,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8.0),
                                       ),
-                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), // Adjust padding
+                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), 
                                     ),
                                   ),
                                 ),

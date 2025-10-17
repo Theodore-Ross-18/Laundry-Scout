@@ -3,9 +3,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:open_route_service/open_route_service.dart';
-// import 'package:permission_handler/permission_handler.dart'; // Unused import
-// import 'package:http/http.dart' as http; // Unused import
-// import 'dart:convert'; // Unused import
 
 class GetDirectionScreen extends StatefulWidget {
   final double destinationLatitude;
@@ -28,7 +25,7 @@ class _GetDirectionScreenState extends State<GetDirectionScreen> {
   String _distance = 'Calculating...';
   bool _isLoading = true;
   String _errorMessage = '';
-  List<LatLng> _routePoints = []; // New state variable to store route polyline points
+  List<LatLng> _routePoints = [];
   String _openRouteServiceApiKey = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImRhZDU5OTdjOGJmMDQ4Nzg4YjMyZDhjM2EzNTUzODkwIiwiaCI6Im11cm11cjY0In0=';
 
   @override
@@ -41,7 +38,6 @@ class _GetDirectionScreenState extends State<GetDirectionScreen> {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Test if location services are enabled.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       setState(() {
@@ -76,7 +72,7 @@ class _GetDirectionScreenState extends State<GetDirectionScreen> {
       setState(() {
         _currentLocation = LatLng(position.latitude, position.longitude);
       });
-      await _getRoute(); // Call _getRoute after current location is determined
+      await _getRoute(); 
       _isLoading = false;
     } catch (e) {
       setState(() {
@@ -97,7 +93,6 @@ class _GetDirectionScreenState extends State<GetDirectionScreen> {
         endCoordinate: ORSCoordinate(latitude: widget.destinationLatitude, longitude: widget.destinationLongitude),
       );
 
-      // Convert ORSCoordinate to LatLng for flutter_map
       List<LatLng> points = routeCoordinates.map((coordinate) => LatLng(coordinate.latitude, coordinate.longitude)).toList();
 
       double totalDistance = 0.0;
@@ -121,21 +116,6 @@ class _GetDirectionScreenState extends State<GetDirectionScreen> {
     }
   }
 
-  // Removed _calculateDistance as it's now handled by _getRoute
-  // void _calculateDistance() {
-  //   if (_currentLocation != null) {
-  //     final double distanceInMeters = Geolocator.distanceBetween(
-  //       _currentLocation!.latitude,
-  //       _currentLocation!.longitude,
-  //       widget.destinationLatitude,
-  //       widget.destinationLongitude,
-  //     );
-  //     setState(() {
-  //       _distance = '${(distanceInMeters / 1000).toStringAsFixed(2)} km';
-  //     });
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -156,7 +136,6 @@ class _GetDirectionScreenState extends State<GetDirectionScreen> {
                   children: [
                     TileLayer(
                       urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      // userAgentPackageName: 'com.example.app', // Removed as it's not strictly necessary and can cause warnings
                     ),
                     MarkerLayer(
                       markers: [
@@ -188,7 +167,7 @@ class _GetDirectionScreenState extends State<GetDirectionScreen> {
                         polylines: [
                           Polyline(
                             points: _routePoints,
-                            color: Colors.blue,
+                            color: Color(0xFF5A35E3),
                             strokeWidth: 4.0,
                           ),
                         ],

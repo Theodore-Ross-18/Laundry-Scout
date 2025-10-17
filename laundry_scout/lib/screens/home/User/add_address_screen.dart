@@ -18,11 +18,11 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF6F5ADC),
+      backgroundColor: const Color(0xFF5A35E3),
       body: SafeArea(
         child: Column(
           children: [
-            // Header
+           
             Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
@@ -46,7 +46,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                 ],
               ),
             ),
-            // Content
+            
             Expanded(
               child: Container(
                 decoration: const BoxDecoration(
@@ -62,7 +62,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 20),
-                      // Address input field
+                     
                       const Text(
                         'Address',
                         style: TextStyle(
@@ -90,7 +90,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                               onPressed: _selectLocationOnMap,
                               icon: const Icon(
                                 Icons.location_on,
-                                color: Color(0xFF6F5ADC),
+                                color: Color(0xFF5A35E3),
                               ),
                             ),
                           ),
@@ -125,7 +125,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      // Landmark field
+                     
                       const Text(
                         'Landmark (Optional)',
                         style: TextStyle(
@@ -153,7 +153,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      // Address type selection
+                     
                       const Text(
                         'Address Type',
                         style: TextStyle(
@@ -173,13 +173,13 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         ],
                       ),
                       const Spacer(),
-                      // Save button
+                     
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _saveAddress,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6F5ADC),
+                            backgroundColor: const Color(0xFF5A35E3),
                             disabledBackgroundColor: Colors.grey[300],
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
@@ -228,10 +228,10 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF6F5ADC) : Colors.grey[100],
+          color: isSelected ? const Color(0xFF5A35E3) : Colors.grey[100],
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF6F5ADC) : Colors.grey[300]!,
+            color: isSelected ? const Color(0xFF5A35E3) : Colors.grey[300]!,
           ),
         ),
         child: Row(
@@ -287,7 +287,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     });
 
     try {
-      // Create address object
+     
       final address = {
         'address': _addressController.text.trim(),
         'apartment': _apartmentController.text.trim(),
@@ -295,7 +295,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         'type': _selectedAddressType,
       };
 
-      // Return the address to the previous screen
+  
       Navigator.pop(context, address);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

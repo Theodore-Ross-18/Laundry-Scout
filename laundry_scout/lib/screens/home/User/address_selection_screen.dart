@@ -17,13 +17,13 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
   String _currentAddress = 'Fetching location...';
   bool _isLoading = true;
   
-  // Map and location variables
+
   MapController? _mapController;
   LatLng? _selectedPosition;
   bool _locationPermissionGranted = false;
   List<Marker> _markers = [];
   
-  // Error handling
+
   bool _hasError = false;
   String _errorMessage = '';
 
@@ -77,30 +77,25 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
         Placemark place = placemarks[0];
         String address = '';
         
-        // Build comprehensive address with barangay information
         if (place.street != null && place.street!.isNotEmpty) {
           address += place.street!;
         }
         
-        // Add barangay/sub-locality if available
         if (place.subLocality != null && place.subLocality!.isNotEmpty) {
           if (address.isNotEmpty) address += ', ';
           address += place.subLocality!;
         }
         
-        // Add locality (city/municipality)
         if (place.locality != null && place.locality!.isNotEmpty) {
           if (address.isNotEmpty) address += ', ';
           address += place.locality!;
         }
         
-        // Add administrative area (province/state)
         if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) {
           if (address.isNotEmpty) address += ', ';
           address += place.administrativeArea!;
         }
         
-        // Add postal code if available
         if (place.postalCode != null && place.postalCode!.isNotEmpty) {
           if (address.isNotEmpty) address += ' ';
           address += place.postalCode!;
@@ -143,12 +138,12 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
         _isLoading = false;
       });
       
-      // Move map to current location
+
       if (_mapController != null && _selectedPosition != null) {
         _mapController!.move(_selectedPosition!, 16);
       }
       
-      // Create markers
+ 
       await _createMarkers();
       
     } on TimeoutException catch (e) {
@@ -173,13 +168,12 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
 
     List<Marker> markers = [];
     
-    // Add selected location marker (purple pin)
     markers.add(
       Marker(
         point: _selectedPosition!,
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF6F5ADC),
+            color: const Color(0xFF5A35E3),
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 3),
           ),
@@ -219,9 +213,9 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF6F5ADC),
+      backgroundColor: const Color(0xFF5A35E3),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF6F5ADC),
+        backgroundColor: const Color(0xFF5A35E3),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -280,7 +274,7 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
                                 ),
                               ],
                             ),
-                            // Permission request overlay
+                        
                             if (!_locationPermissionGranted)
                               Container(
                                 color: Colors.black54,
@@ -297,7 +291,7 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
                                         const Icon(
                                           Icons.location_on,
                                           size: 48,
-                                          color: Color(0xFF6F5ADC),
+                                          color: Color(0xFF5A35E3),
                                         ),
                                         const SizedBox(height: 16),
                                         const Text(
@@ -320,7 +314,7 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
                                         ElevatedButton(
                                           onPressed: _requestLocationPermission,
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF6F5ADC),
+                                            backgroundColor: const Color(0xFF5A35E3),
                                             shape: RoundedRectangleBorder(
                                               borderRadius: BorderRadius.circular(12),
                                             ),
@@ -335,7 +329,7 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
                                   ),
                                 ),
                               ),
-                            // Error overlay
+                        
                             if (_hasError)
                               Container(
                                 color: Colors.black54,
@@ -375,7 +369,7 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
                                         ElevatedButton(
                                           onPressed: _getCurrentLocation,
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF6F5ADC),
+                                            backgroundColor: const Color(0xFF5A35E3),
                                             shape: RoundedRectangleBorder(
                                               borderRadius: BorderRadius.circular(12),
                                             ),
@@ -390,13 +384,13 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
                                   ),
                                 ),
                               ),
-                            // Current location button
+                          
                             Positioned(
                               top: 16,
                               right: 16,
                               child: Container(
                                 decoration: const BoxDecoration(
-                                  color: Color(0xFF6F5ADC),
+                                  color: Color(0xFF5A35E3),
                                   shape: BoxShape.circle,
                                 ),
                                 child: IconButton(
@@ -409,7 +403,7 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
                                 ),
                               ),
                             ),
-                            // Map instruction
+                            
                             if (!_hasError && _locationPermissionGranted)
                               Positioned(
                                 bottom: 16,
@@ -434,7 +428,7 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w500,
-                                      color: Color(0xFF6F5ADC),
+                                      color: Color(0xFF5A35E3),
                                     ),
                                   ),
                                 ),
@@ -444,7 +438,7 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
                       ),
                     ),
                   ),
-                  // Confirm section
+                 
                   Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
@@ -461,7 +455,7 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
                             children: [
                               const Icon(
                                 Icons.location_on,
-                                color: Color(0xFF6F5ADC),
+                                color: Color(0xFF5A35E3),
                                 size: 20,
                               ),
                               const SizedBox(width: 12),
@@ -479,7 +473,7 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        // Instruction text
+                        
                         const Text(
                           'Hold the red pin and drag it to your desired location.',
                           style: TextStyle(
@@ -490,7 +484,7 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 20),
-                        // Confirm button
+                       
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
@@ -505,7 +499,7 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
                                       }
                                     : null),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF6F5ADC),
+                              backgroundColor: const Color(0xFF5A35E3),
                               disabledBackgroundColor: Colors.grey[300],
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(

@@ -21,17 +21,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(seconds: 2), // Total duration for all animations
+      duration: const Duration(seconds: 2), 
       vsync: this,
     );
 
-    // Animation for Logo and Title: Slide from bottom and Fade In
     _logoTitleSlideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5), // Start 50% down from its final position
+      begin: const Offset(0, 0.5),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOutQuart, // A smooth easing out curve
+      curve: Curves.easeOutQuart,
     ));
 
     _logoTitleFadeAnimation = Tween<double>(
@@ -39,16 +38,15 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.0, 0.75, curve: Curves.easeIn), // Fade in during the first 75% of the animation
+      curve: const Interval(0.0, 0.75, curve: Curves.easeIn), 
     ));
 
-    // Animation for Footer: Fade In with a delay
     _footerFadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.5, 1.0, curve: Curves.easeIn), // Fade in during the last 50% of the animation
+      curve: const Interval(0.5, 1.0, curve: Curves.easeIn), 
     ));
 
     _controller.forward().then((_) {
@@ -65,23 +63,19 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       final user = Supabase.instance.client.auth.currentUser;
       
       if (user == null) {
-        // No authenticated user, navigate to login
         _navigateToLogin();
         return;
       }
       
-      // User is authenticated, check their profile type
       await _determineUserTypeAndNavigate(user.id);
     } catch (e) {
       print('Error checking authentication state: $e');
-      // On error, navigate to login for safety
       _navigateToLogin();
     }
   }
   
   Future<void> _determineUserTypeAndNavigate(String userId) async {
     try {
-      // Check if user has a business profile
       final businessResponse = await Supabase.instance.client
           .from('business_profiles')
           .select('id')
@@ -89,12 +83,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           .maybeSingle();
       
       if (businessResponse != null) {
-        // User is a business owner
         _navigateToOwnerHome();
         return;
       }
-      
-      // Check if user has a regular user profile
+
       final userResponse = await Supabase.instance.client
           .from('user_profiles')
           .select('id')
@@ -102,12 +94,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           .maybeSingle();
       
       if (userResponse != null) {
-        // User is a regular user
         _navigateToUserHome();
         return;
       }
       
-      // No profile found, navigate to login
       _navigateToLogin();
     } catch (e) {
       print('Error determining user type: $e');
@@ -178,11 +168,11 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF6F5ADC),
-      body: Column( // Use a Column to arrange content vertically
+      backgroundColor: const Color(0xFF5A35E3),
+      body: Column(
         children: [
-          Expanded( // This Expanded widget pushes the content below it to the bottom
-            child: Center( // Center the main content (logo and title)
+          Expanded( 
+            child: Center(
               child: SlideTransition(
                 position: _logoTitleSlideAnimation,
                 child: FadeTransition(
@@ -211,13 +201,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               ),
             ),
           ),
-          // Footer content at the bottom
           FadeTransition(
             opacity: _footerFadeAnimation,
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 40.0), // Add some padding from the bottom edge
+              padding: const EdgeInsets.only(bottom: 40.0), 
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.end, // Align content to the bottom
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Text(
                     'Laundry Scout © 2024',
@@ -227,7 +216,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       fontFamily: 'Poppins',
                     ),
                   ),
-                  const SizedBox(height: 1), // Small space between the two lines
+                  const SizedBox(height: 1),
                   Text(
                     'Laundry app Management',
                     style: TextStyle(

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // Import Supabase
-import 'package:laundry_scout/services/location_service.dart'; // Import LocationService
+import 'package:supabase_flutter/supabase_flutter.dart'; 
+import 'package:laundry_scout/services/location_service.dart';
 
 class PickDropMapScreen extends StatefulWidget {
   final double? initialLatitude;
@@ -21,7 +21,7 @@ class _PickDropMapScreenState extends State<PickDropMapScreen> {
   bool _isLoading = true;
   bool _hasPermission = false;
   String _permissionStatus = 'Checking permission...';
-  final MapController _mapController = MapController(); // Add MapController
+  final MapController _mapController = MapController();
 
   @override
   void initState() {
@@ -90,7 +90,6 @@ class _PickDropMapScreenState extends State<PickDropMapScreen> {
     _checkLocationPermission();
   }
 
-  // Function to save location to Supabase
   Future<void> _saveLocationToSupabase() async {
     if (_selectedPosition != null) {
       try {
@@ -123,13 +122,13 @@ class _PickDropMapScreenState extends State<PickDropMapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pick Up and Drop Off Location'), // Changed title
-        backgroundColor: const Color(0xFF6F5ADC),
+        title: const Text('Pick Up and Drop Off Location'),
+        backgroundColor: const Color(0xFF5A35E3),
         actions: [
           IconButton(
             icon: const Icon(Icons.check),
             onPressed: () {
-              _saveLocationToSupabase(); // Save location before popping
+              _saveLocationToSupabase();
               Navigator.of(context).pop(_selectedPosition);
             },
           ),
@@ -140,7 +139,7 @@ class _PickDropMapScreenState extends State<PickDropMapScreen> {
           : !_hasPermission
               ? _buildPermissionDeniedView()
               : _buildMapView(),
-      backgroundColor: const Color(0xFF6F5ADC), // Set Scaffold background color
+      backgroundColor: const Color(0xFF5A35E3),
     );
   }
 
@@ -204,7 +203,7 @@ class _PickDropMapScreenState extends State<PickDropMapScreen> {
                   zoom: 15.0,
                   onTap: _onMapTap,
                 ),
-                mapController: _mapController, // Assign the MapController
+                mapController: _mapController,
                 children: [
                   TileLayer(
                     urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',

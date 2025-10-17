@@ -20,25 +20,24 @@ class _MessageScreenState extends State<MessageScreen> {
   late RealtimeChannel _messagesSubscription;
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredConversations = [];
-  Timer? _backgroundRefreshTimer; // Add background refresh timer
+  Timer? _backgroundRefreshTimer;
 
   @override
   void initState() {
     super.initState();
     _loadConversations();
     _setupRealtimeSubscription();
-    _startBackgroundRefresh(); // Start background refresh
+    _startBackgroundRefresh();
   }
 
   @override
   void dispose() {
     _messagesSubscription.unsubscribe();
-    _backgroundRefreshTimer?.cancel(); // Cancel timer
+    _backgroundRefreshTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
-  // Add background refresh method
   void _startBackgroundRefresh() {
     _backgroundRefreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) { // Changed from 2 seconds to 10
       if (mounted) {
@@ -47,7 +46,6 @@ class _MessageScreenState extends State<MessageScreen> {
     });
   }
 
-  // Background refresh method
   Future<void> _refreshConversationsInBackground() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
@@ -65,7 +63,6 @@ class _MessageScreenState extends State<MessageScreen> {
           .eq('user_id', user.id)
           .order('last_message_at', ascending: false);
 
-      // Get last message for each conversation
       for (var conversation in response) {
         final lastMessage = await Supabase.instance.client
             .from('messages')
@@ -82,7 +79,7 @@ class _MessageScreenState extends State<MessageScreen> {
       if (mounted) {
         setState(() {
           _conversations = List<Map<String, dynamic>>.from(response);
-          // Preserve search filter
+        
           if (_searchController.text.isEmpty) {
             _filteredConversations = _conversations;
           } else {
@@ -116,7 +113,6 @@ class _MessageScreenState extends State<MessageScreen> {
           .eq('user_id', user.id)
           .order('last_message_at', ascending: false);
 
-      // Get last message for each conversation
       for (var conversation in response) {
         final lastMessage = await Supabase.instance.client
             .from('messages')
@@ -149,7 +145,7 @@ class _MessageScreenState extends State<MessageScreen> {
 
   void _setupRealtimeSubscription() {
     _messagesSubscription = Supabase.instance.client
-        .channel('messages_global') // Keep same channel name
+        .channel('messages_global') 
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
@@ -198,18 +194,17 @@ class _MessageScreenState extends State<MessageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF7B61FF),
+      backgroundColor: const Color(0xFF5A35E3),
       body: SafeArea(
         child: Column(
           children: [
-            // Header with title
-            const SizedBox(height: 20), // Added for spacing
+         
+            const SizedBox(height: 20),
             Image.asset(
               'lib/assets/lslogo.png',
-              height: 40, // Adjust height as needed
-              color: Colors.white,
+              height: 40, 
             ),
-            const SizedBox(height: 10), // Spacing between logo and text
+            const SizedBox(height: 10),
             const Text(
               'Laundry Scout',
               style: TextStyle(
@@ -218,8 +213,8 @@ class _MessageScreenState extends State<MessageScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 10), // Spacing between text and button
-            // Messages section header
+            const SizedBox(height: 10),
+           
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Row(
@@ -295,7 +290,7 @@ class _MessageScreenState extends State<MessageScreen> {
                                                     )
                                                   : const Icon(Icons.business, color: Colors.grey, size: 30),
                                             ),
-                                            // Online indicator (green dot)
+                                          
                                             Positioned(
                                               bottom: 2,
                                               right: 2,
@@ -312,7 +307,7 @@ class _MessageScreenState extends State<MessageScreen> {
                                           ],
                                         ),
                                         const SizedBox(width: 16),
-                                        // Message content
+                                        
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -367,7 +362,7 @@ class _MessageScreenState extends State<MessageScreen> {
                           ),
               ),
             ),
-            // Feedback button
+           
             Container(
               color: Colors.white,
               padding: const EdgeInsets.all(20),
@@ -376,7 +371,7 @@ class _MessageScreenState extends State<MessageScreen> {
                 child: ElevatedButton(
                   onPressed: () => _showFeedbackModal(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF7B61FF),
+                    backgroundColor: const Color(0xFF5A35E3),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
@@ -428,30 +423,14 @@ class _MessageScreenState extends State<MessageScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
-      // Placeholder for marking all messages as read.
-      // This functionality requires a database change to track message read status.
       print('Mark all as read pressed for user: ${user.id}');
 
-      // Example of a potential database update (currently commented out as 'is_read' column doesn't exist for messages)
-      /*
-      await Supabase.instance.client
-          .from('messages')
-          .update({'is_read': true})
-          .eq('receiver_id', user.id)
-          .eq('is_read', false);
-
-      // You would also need to update the local state to reflect the changes
-      setState(() {
-        // Logic to update local message status
-      });
-      */
     } catch (e) {
       print('Error marking all messages as read: $e');
     }
   }
 }
 
-// Chat Screen for individual conversations
 class ChatScreen extends StatefulWidget {
   final String businessId;
   final String businessName;
@@ -479,7 +458,7 @@ class _ChatScreenState extends State<ChatScreen> {
   late StreamSubscription _qualitySubscription;
   late StreamSubscription _messageSubscription;
   RealtimeChannel? _currentChannel;
-  Timer? _backgroundRefreshTimer; // Add background refresh timer
+  Timer? _backgroundRefreshTimer; 
 
   @override
   void initState() {
@@ -490,7 +469,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _loadMessages();
     _setupRealtimeSubscription();
     _setupQualityListener();
-    _startBackgroundRefresh(); // Start background refresh
+    _startBackgroundRefresh();
   }
 
   @override
@@ -500,13 +479,12 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageSubscription.cancel();
     _connectionService.stopMonitoring();
     _messageQueue.stopQueue();
-    _backgroundRefreshTimer?.cancel(); // Cancel timer
+    _backgroundRefreshTimer?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  // Add background refresh for messages
   void _startBackgroundRefresh() {
     _backgroundRefreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
       if (mounted) {
@@ -515,7 +493,6 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  // Background refresh method for messages
   Future<void> _refreshMessagesInBackground() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
@@ -531,7 +508,6 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         final newMessages = List<Map<String, dynamic>>.from(response);
         
-        // Only update if there are new messages
         if (newMessages.length != _messages.length || 
             (newMessages.isNotEmpty && _messages.isNotEmpty && 
              newMessages.last['id'] != _messages.last['id'])) {
@@ -557,7 +533,7 @@ class _ChatScreenState extends State<ChatScreen> {
       onMessage: (message) {
         if (mounted) {
           setState(() {
-            // Remove optimistic message if it exists
+            
             _messages.removeWhere((msg) => msg['is_sending'] == true && 
                 msg['content'] == message['content']);
             _messages.add(message);
@@ -567,11 +543,10 @@ class _ChatScreenState extends State<ChatScreen> {
       },
     );
 
-    // Listen to sent messages for optimistic update confirmation
     _messageSubscription = _messageQueue.sentMessageStream.listen((sentMessage) {
       if (mounted) {
         setState(() {
-          // Update optimistic message to confirmed
+         
           final index = _messages.indexWhere((msg) => 
               msg['tempId'] == sentMessage.tempId);
           if (index != -1) {
@@ -589,7 +564,6 @@ class _ChatScreenState extends State<ChatScreen> {
     final content = _messageController.text.trim();
     _messageController.clear();
 
-    // Optimistic update
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
       final tempId = _messageQueue.queueMessage(
@@ -687,7 +661,7 @@ class _ChatScreenState extends State<ChatScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF7B61FF),
+        backgroundColor: const Color(0xFF5A35E3),
         title: Row(
           children: [
             CircleAvatar(
@@ -769,12 +743,12 @@ class _ChatScreenState extends State<ChatScreen> {
                           const SizedBox(width: 8),
                         ],
                         
-                        // Message content
+                    
                         Flexible(
                           child: Column(
                             crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                             children: [
-                              // Sender name for both incoming and outgoing messages
+                             
                               Padding(
                                 padding: EdgeInsets.only(
                                   bottom: 4,
@@ -791,11 +765,11 @@ class _ChatScreenState extends State<ChatScreen> {
                                 ),
                               ),
                               
-                              // Message bubble
+                             
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                 decoration: BoxDecoration(
-                                  color: isMe ? const Color(0xFF7B61FF) : Colors.grey[200],
+                                  color: isMe ? const Color(0xFF5A35E3) : Colors.grey[200],
                                   borderRadius: BorderRadius.only(
                                     topLeft: const Radius.circular(20),
                                     topRight: const Radius.circular(20),
@@ -812,7 +786,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 ),
                               ),
                               
-                              // Time and delivery status
+                             
                               Padding(
                                 padding: const EdgeInsets.only(top: 4),
                                 child: Row(
@@ -840,12 +814,12 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                         ),
                         
-                        // User avatar (right side for outgoing messages)
+                      
                         if (isMe) ...[
                           const SizedBox(width: 8),
                           CircleAvatar(
                             radius: 16,
-                            backgroundColor: const Color(0xFF7B61FF),
+                            backgroundColor: const Color(0xFF5A35E3),
                             child: Text(
                               user?.userMetadata?['full_name']?.substring(0, 1).toUpperCase() ?? 'U',
                               style: const TextStyle(
@@ -866,7 +840,7 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF7B61FF),
+              color: const Color(0xFF5A35E3),
               boxShadow: [
                 BoxShadow(
                   color: const Color.fromARGB(51, 0, 0, 0),
@@ -905,7 +879,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: const BoxDecoration(
-                      color: Color(0xFF7B61FF),
+                      color: Color(0xFF5A35E3),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -961,7 +935,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
-    // Convert to 12-hour format
+  
     int hour = dateTime.hour;
     String period = hour >= 12 ? 'PM' : 'AM';
     if (hour == 0) {
@@ -981,7 +955,6 @@ class _ChatScreenState extends State<ChatScreen> {
     
 }
 
-// Feedback Modal
 class FeedbackModal extends StatefulWidget {
   const FeedbackModal({super.key});
 
@@ -1037,12 +1010,12 @@ class _FeedbackModalState extends State<FeedbackModal> {
         return;
       }
 
-      // SQL query to insert admin feedback from message screen
+    
       await Supabase.instance.client.from('feedback').insert({
         'user_id': user.id,
         'rating': _rating,
         'comment': _feedbackController.text.trim(),
-        'feedback_type': 'admin', // Identify as admin feedback for message screen
+        'feedback_type': 'admin', 
         'created_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       });
@@ -1218,13 +1191,13 @@ class _FeedbackModalState extends State<FeedbackModal> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(25),
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF7B61FF), Color(0xFF9C88FF)],
+                          colors: [Color(0xFF5A35E3), Color(0xFF9C88FF)],
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF7B61FF).withOpacity(0.3),
+                            color: const Color(0xFF5A35E3).withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),

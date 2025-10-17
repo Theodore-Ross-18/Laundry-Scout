@@ -40,7 +40,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
       final response = await Supabase.instance.client
           .from('business_profiles')
           .select('id, business_name, business_address, cover_photo_url, does_delivery')
-          .eq('status', 'approved'); // Only fetch approved businesses
+          .eq('status', 'approved');
 
       if (mounted) {
         setState(() {
@@ -68,7 +68,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
   void _applyFilters({String? searchQuery}) {
     List<Map<String, dynamic>> filtered = List.from(_laundryShops);
     
-    // Apply search filter
+   
     if (searchQuery != null && searchQuery.isNotEmpty) {
       final lowerCaseQuery = searchQuery.toLowerCase();
       filtered = filtered.where((shop) {
@@ -78,13 +78,12 @@ class _LaundryScreenState extends State<LaundryScreen> {
       }).toList();
     }
     
-    // Apply service filters
+   
     if (_currentFilters['selectedServices'] != null && 
         (_currentFilters['selectedServices'] as List).isNotEmpty) {
       filtered = filtered.where((shop) {
         List<String> selectedServices = List<String>.from(_currentFilters['selectedServices']);
-        
-        // Check if shop offers any of the selected services
+      
         bool hasService = false;
         
         for (String service in selectedServices) {
@@ -98,7 +97,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
             case 'Self Service':
             case 'Dry Clean':
             case 'Ironing':
-              // For now, assume all shops offer these basic services
+             
               hasService = true;
               break;
           }
@@ -109,11 +108,10 @@ class _LaundryScreenState extends State<LaundryScreen> {
       }).toList();
     }
     
-    // Apply rating filter (placeholder - you can implement actual rating logic)
+    
     if (_currentFilters['minimumRating'] != null && 
         _currentFilters['minimumRating'] > 0) {
-      // For now, we'll keep all shops since we don't have rating data
-      // In a real app, you would filter based on actual ratings
+      
     }
     
     _filteredLaundryShops = filtered;
@@ -142,25 +140,24 @@ class _LaundryScreenState extends State<LaundryScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Header Section
+          
           Container(
             padding: const EdgeInsets.only(top: 50, left: 16, right: 16, bottom: 20),
             decoration: const BoxDecoration(
-              color: Color(0xFF7B61FF),
+              color: Color(0xFF5A35E3),
               borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(25),
-                bottomRight: Radius.circular(25),
+                bottomLeft: Radius.circular(28),
+                bottomRight: Radius.circular(28),
               ),
             ),
             child: Column(
               children: [
-                // Header with title
+               
                 Image.asset(
                   'lib/assets/lslogo.png',
-                  height: 40, // Adjust height as needed
-                  color: const Color.fromARGB(255, 255, 255, 255),
+                  height: 40, 
                 ),
-                const SizedBox(height: 10), // Spacing between logo and text
+                const SizedBox(height: 10), 
                 const Text(
                   'Laundry Scout',
                   textAlign: TextAlign.center,
@@ -202,7 +199,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.tune, color: Color(0xFF7B61FF)),
+                        child: const Icon(Icons.tune, color: Color(0xFF5A35E3)),
                       ),
                     ),
                   ],
@@ -262,7 +259,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Section with Rating Badge
+           
             Stack(
               children: [
                 Container(
@@ -299,7 +296,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
                           ),
                   ),
                 ),
-                // Rating Badge with FutureBuilder
+                
                 Positioned(
                   top: 12,
                   left: 12,
@@ -342,13 +339,13 @@ class _LaundryScreenState extends State<LaundryScreen> {
                 ),
               ],
             ),
-            // Content Section
+            
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Shop Name
+                 
                   Text(
                     shop['business_name'] ?? 'Laundry Shop',
                     style: const TextStyle(
@@ -358,7 +355,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  // Location
+                 
                   Row(
                     children: [
                       const Icon(
@@ -381,10 +378,10 @@ class _LaundryScreenState extends State<LaundryScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // Service Badges
+                 
                   Row(
                     children: [
-                      // Status Badge
+                     
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
@@ -401,17 +398,17 @@ class _LaundryScreenState extends State<LaundryScreen> {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      // Service Type Badge
+                     
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF7B61FF).withValues(alpha: 0.1),
+                          color: const Color(0xFF5A35E3).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           shop['does_delivery'] == true ? 'Wash & Fold' : 'Drop Off',
                           style: const TextStyle(
-                            color: Color(0xFF7B61FF),
+                            color: Color(0xFF5A35E3),
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                           ),

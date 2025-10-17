@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../home/User/home_screen.dart'; // Import HomeScreen
-import 'dart:async'; // Import the dart:async library
+import '../home/User/home_screen.dart';
+import 'dart:async';
 import '../../services/form_persistence_service.dart';
 
 class SetUserInfoScreen extends StatefulWidget {
-  // Add a field to receive the username
+
   final String? username;
 
-  // Update the constructor to require the username
   const SetUserInfoScreen({super.key, this.username});
 
   @override
@@ -26,12 +25,12 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
   final _lastNameController = TextEditingController();
   final _mobileNumberController = TextEditingController();
   final _emailController = TextEditingController();
-  final _confirmEmailController = TextEditingController(); // Add controller for confirming email
+  final _confirmEmailController = TextEditingController();
 
 
 
 
-  Timer? _timer; // Add a Timer variable
+  Timer? _timer;
 
 
   final List<Map<String, String>> slides = [
@@ -57,18 +56,15 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch and pre-fill the user's email if available
+    
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null && user.email != null) {
       _emailController.text = user.email!;
-      // Check if email is already confirmed (optional, but good practice)
-      // Supabase user metadata might contain email_confirmed_at
-      // For simplicity, we\'ll assume verification is needed here regardless
+      
     }
     _usernameController.text = widget.username ?? '';
     _currentPage = 0;
 
-    // Start the auto-slide timer
     _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
       if (_currentPage < slides.length - 1) {
         _pageController.nextPage(
@@ -76,9 +72,9 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
           curve: Curves.easeIn,
         );
       } else {
-        // If on the last page, stop the timer and show the form
+     
         timer.cancel();
-        if (mounted) { // Check if the widget is still mounted before calling setState
+        if (mounted) { 
            setState(() {
              _showForm = true;
            });
@@ -94,8 +90,8 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     _lastNameController.dispose();
     _mobileNumberController.dispose();
     _emailController.dispose();
-    _confirmEmailController.dispose(); // Dispose confirm email controller
-    _timer?.cancel(); // Cancel the timer in dispose
+    _confirmEmailController.dispose();
+    _timer?.cancel();
 
     super.dispose();
   }
@@ -107,7 +103,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
         curve: Curves.easeIn,
       );
     } else {
-      // If on the last page, cancel the timer and show the form
+     
       _timer?.cancel();
       setState(() {
         _showForm = true;
@@ -116,7 +112,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
   }
 
   void _skipSlides() {
-    // Cancel the timer when skipping slides
+    
     _timer?.cancel();
     setState(() {
       _showForm = true;
@@ -128,7 +124,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
-      // Handle case where user is not logged in (shouldn't happen if flow is correct)
+      
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('User not logged in')),
       );
@@ -137,38 +133,28 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
 
 
     if (_formKey.currentState!.validate()) {
-      // Get current user ID again (though already fetched, good for clarity)
-      // final user = Supabase.instance.client.auth.currentUser; // Already defined above
-      // if (user == null) { // Already checked above
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     const SnackBar(content: Text('User not logged in')),
-      //   );
-      //   return;
-      // }
-
+     
       try {
-        // Upsert the data into the user_profiles table
-        // Upsert will insert if the row doesn't exist, or update if it does, based on the 'id'
+        
         await Supabase.instance.client
-            .from('user_profiles') // Changed from 'profiles' to 'user_profiles'
+            .from('user_profiles') 
             .upsert({
-              'id': user.id, // Ensure 'id' is included for upsert to identify the row
-              'username': widget.username, // Add the username here
+              'id': user.id, 
+              'username': widget.username, 
               'first_name': _firstNameController.text.trim(),
               'last_name': _lastNameController.text.trim(),
               'mobile_number': _mobileNumberController.text.trim(),
-              'email': _emailController.text.trim(), // Add this line
-              // 'updated_at': DateTime.now().toIso8601String(), // Supabase trigger handles this
+              'email': _emailController.text.trim(), 
             });
 
         if (mounted) {
-          // Clear saved form data on successful submission
+          
           await FormPersistenceService.clearUserInfoData();
           
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile updated successfully!')),
           );
-          // Navigate to HomeScreen
+          
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -190,24 +176,24 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false, // Add this line
-        title: const Text(''), // Empty title
+        automaticallyImplyLeading: false,
+        title: const Text(''),
         actions: _showForm
-            ? null // No actions on the form page
+            ? null 
             : [
-                // Responsive Skip button with View All design
+                
                 LayoutBuilder(
                   builder: (context, constraints) {
-                    // Check if screen width is small (mobile)
+                    
                     bool isMobile = MediaQuery.of(context).size.width < 600;
                     
                     if (isMobile) {
-                      // For mobile: Use a more compact button
+                      
                       return Container(
                         margin: const EdgeInsets.only(right: 16),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF6F5ADC),
+                          color: const Color(0xFF5A35E3),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: InkWell(
@@ -223,7 +209,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                         ),
                       );
                     } else {
-                      // For larger screens: Use the original TextButton
+                     
                       return TextButton(
                         onPressed: _skipSlides,
                         child: const Text(
@@ -260,7 +246,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                   children: [
                     Image.asset(
                       slides[index]['image']!,
-                      height: 250, // Adjust size as needed
+                      height: 250,
                     ),
                     const SizedBox(height: 40),
                     Text(
@@ -308,8 +294,8 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                 ElevatedButton(
                   onPressed: _nextPage,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6F5ADC), // Purple background
-                    foregroundColor: const Color(0xFFFFFFFF), // White text
+                    backgroundColor: const Color(0xFF5A35E3), 
+                    foregroundColor: const Color(0xFFFFFFFF),
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0),
@@ -324,8 +310,8 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                 ElevatedButton(
                    onPressed: _nextPage,
                    style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6F5ADC), // Purple background
-                    foregroundColor: const Color(0xFFFFFFFF), // White text
+                    backgroundColor: const Color(0xFF5A35E3), 
+                    foregroundColor: const Color(0xFFFFFFFF),
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0),
@@ -383,12 +369,10 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
               const SizedBox(height: 16),
                _buildTextField(
                 controller: _emailController,
-                labelText: 'Email Address', // Changed label slightly
+                labelText: 'Email Address',
                 keyboardType: TextInputType.emailAddress,
                 textTheme: textTheme,
-                // Removed readOnly: true
-                // Removed validator: null
-                 validator: (value) { // Added email validator
+                 validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your email address';
                     }
@@ -399,51 +383,14 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                     return null;
                   },
               ),
-              const SizedBox(height: 16), // Adjusted spacing, was 30
+              const SizedBox(height: 16), 
 
-              // Removed _buildTextField for _confirmEmailController
-              // Removed OTP input field and related buttons
-
-              //   Column(
-              //     children: [
-              //       const SizedBox(height: 16),
-              //       _buildTextField(
-              
-              //         labelText: \'Verification Code\',
-              //         keyboardType: TextInputType.number,
-              //         textTheme: textTheme,
-              //         validator: (value) {
-              //           if (value == null || value.isEmpty) {
-              //             return \'Please enter the verification code\';
-              //           }
-              //           return null;
-              //         },
-              //       ),
-              //       const SizedBox(height: 16),
-              //       _isVerifyingOtp
-              //           ? const CircularProgressIndicator()
-              //           : ElevatedButton(
-              //               onPressed: _verifyOtp,
-              //               child: const Text(\'Verify Email\'),
-              //             ),
-              //       const SizedBox(height: 16),
-              //       if (_isOtpTimerActive)
-              //         Text(
-              //           \'Resend OTP in \${_otpTimerDuration}s\',
-              //           style: textTheme.bodySmall?.copyWith(color: Colors.white),
-              //         )
-              //       else
-              //         TextButton(
-              //           onPressed: _resendOtp,
-              //           child: const Text(\'Resend OTP\', style: TextStyle(color: Colors.white)),
-              //         ),
-              //     ],
-              //   ),
+            
               const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: _submitUserInfo,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6F5ADC), // Purple background
+                  backgroundColor: const Color(0xFF5A35E3), // Purple background
                   foregroundColor: const Color(0xFFFFFFFF), // White text
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                   shape: RoundedRectangleBorder(
@@ -467,40 +414,40 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     required String labelText,
     TextInputType keyboardType = TextInputType.text,
     required TextTheme textTheme,
-    bool readOnly = false, // Add readOnly parameter
-    String? Function(String?)? validator, // Add validator parameter
+    bool readOnly = false, 
+    String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
-      readOnly: readOnly, // Use the readOnly parameter
-      validator: validator, // Use the validator parameter
-      style: textTheme.bodyLarge?.copyWith(color: Colors.white), // Set text color to white
+      readOnly: readOnly, 
+      validator: validator, 
+      style: textTheme.bodyLarge?.copyWith(color: Colors.white), 
       decoration: InputDecoration(
         labelText: labelText,
         labelStyle: textTheme.bodyLarge?.copyWith(color: Colors.white70),
-        border: OutlineInputBorder( // Completed InputDecoration
+        border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
           borderSide: const BorderSide(color: Colors.white70),
         ),
-        enabledBorder: OutlineInputBorder( // Add enabled border style
+        enabledBorder: OutlineInputBorder( 
           borderRadius: BorderRadius.circular(8.0),
           borderSide: const BorderSide(color: Colors.white70),
         ),
-        focusedBorder: OutlineInputBorder( // Add focused border style
+        focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
-          borderSide: const BorderSide(color: Colors.white), // Highlight color when focused
+          borderSide: const BorderSide(color: Colors.white), 
         ),
-        errorBorder: OutlineInputBorder( // Add error border style
+        errorBorder: OutlineInputBorder( 
           borderRadius: BorderRadius.circular(8.0),
-          borderSide: const BorderSide(color: Colors.redAccent), // Error color
+          borderSide: const BorderSide(color: Colors.redAccent), 
         ),
-        focusedErrorBorder: OutlineInputBorder( // Add focused error border style
+        focusedErrorBorder: OutlineInputBorder( 
           borderRadius: BorderRadius.circular(8.0),
-          borderSide: const BorderSide(color: Colors.red), // Focused error color
+          borderSide: const BorderSide(color: Colors.red),
         ),
-        filled: true, // Add filled property
-        fillColor: Colors.white.withOpacity(0.1), // Add fill color
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.1),
       ),
     );
   }

@@ -80,16 +80,16 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
       case 'delivery':
         return Colors.brown;
       default:
-        return Colors.indigo;
+        return Color(0xFF5A35E3);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF6F5ADC),
+      backgroundColor: const Color(0xFF5A35E3),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF6F5ADC),
+        backgroundColor: const Color(0xFF5A35E3),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -126,7 +126,7 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF6F5ADC),
+                        color: Color(0xFF5A35E3),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -144,7 +144,7 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: isSelected 
-                                    ? const Color(0xFF6F5ADC) 
+                                    ? const Color(0xFF5A35E3) 
                                     : Colors.grey[200]!,
                                 width: isSelected ? 2 : 1,
                               ),
@@ -186,12 +186,12 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
                                   borderRadius: BorderRadius.circular(4),
                                   border: Border.all(
                                     color: isSelected 
-                                        ? const Color(0xFF6F5ADC) 
+                                        ? const Color(0xFF5A35E3) 
                                         : Colors.grey[400]!,
                                     width: 2,
                                   ),
                                   color: isSelected 
-                                      ? const Color(0xFF6F5ADC) 
+                                      ? const Color(0xFF5A35E3) 
                                       : Colors.transparent,
                                 ),
                                 child: isSelected
@@ -224,7 +224,7 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
                             ? () => Navigator.pop(context, _selectedServices)
                             : null,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6F5ADC),
+                          backgroundColor: const Color(0xFF5A35E3),
                           disabledBackgroundColor: Colors.grey[300],
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(

@@ -41,7 +41,7 @@ class ImagePreviewScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.black,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF5A35E3)),
           onPressed: () {
             Navigator.of(context).pop();
           },
@@ -53,7 +53,7 @@ class ImagePreviewScreen extends StatelessWidget {
             Navigator.of(context).pop();
           },
           child: Hero(
-            tag: imageUrl ?? imageFile!.path!, // Use the image URL or file path as the hero tag
+            tag: imageUrl ?? imageFile!.path!, 
             child: imageWidget,
           ),
         ),

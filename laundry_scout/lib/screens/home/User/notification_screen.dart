@@ -79,7 +79,6 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
           .eq('user_id', user.id)
           .order('created_at', ascending: false);
 
-      // Now, for each order, fetch the user_profile data
       List<Map<String, dynamic>> ordersWithUserDetails = [];
       for (var order in response) {
         final userId = order['user_id'];
@@ -89,7 +88,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
               .select('first_name, last_name')
               .eq('id', userId)
               .single();
-          order['user_profiles'] = userProfileResponse; // Attach user profile to the order
+          order['user_profiles'] = userProfileResponse;
         }
         ordersWithUserDetails.add(order);
       }
@@ -113,16 +112,15 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
   Future<String> _getDisplayTitle(Map<String, dynamic> notification) async {
     String title = notification['title'] ?? 'Notification';
     
-    // Check if title contains a User ID pattern and try to replace with business name
     if (title.contains('User') && title.contains('New Message from User')) {
       try {
-        // Extract the sender ID from notification data
+  
         final data = notification['data'] as Map<String, dynamic>?;
         final senderId = data?['sender_id'];
         final businessId = data?['business_id'];
         
         if (senderId != null && businessId != null) {
-          // Try to get business information
+         
           final businessResponse = await Supabase.instance.client
               .from('business_profiles')
               .select('business_name, owner_id')
@@ -130,13 +128,12 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
               .maybeSingle();
           
           if (businessResponse != null && businessResponse['owner_id'] == senderId) {
-            // This is a business owner, use business name
+            
             final businessName = businessResponse['business_name'] ?? 'Business';
             return title.replaceAll(RegExp(r'User[a-zA-Z0-9-]+'), businessName);
           }
         }
         
-        // If not a business owner, try to get user profile
         if (senderId != null) {
           final userResponse = await Supabase.instance.client
               .from('user_profiles')
@@ -263,7 +260,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
       case 'system':
         return Colors.grey;
       default:
-        return const Color(0xFF7B61FF);
+        return const Color(0xFF5A35E3);
     }
   }
 
@@ -286,18 +283,17 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF7B61FF),
+      backgroundColor: const Color(0xFF5A35E3),
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(220.0), // Adjust height as needed
+        preferredSize: const Size.fromHeight(210), 
         child: Column(
           children: [
-            const SizedBox(height: 30), // Added for spacing
+            const SizedBox(height: 30), 
             Image.asset(
               'lib/assets/lslogo.png',
-              height: 40, // Adjust height as needed
-              color: Colors.white,
+              height: 40, 
             ),
-            const SizedBox(height: 10), // Spacing between logo and text
+            const SizedBox(height: 10), 
             const Text(
               'Laundry Scout',
               style: TextStyle(
@@ -306,7 +302,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 10), // Spacing between text and button
+            const SizedBox(height: 10), 
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -315,10 +311,10 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                   onPressed: _markAllAsRead,
                   tooltip: 'Mark all as read',
                 ),
-                const SizedBox(width: 16), // Add some trailing space
+                const SizedBox(width: 16), 
               ],
             ),
-            const Spacer(), // Pushes the TabBar to the bottom of the PreferredSize
+            const Spacer(), 
             TabBar(
               controller: _tabController,
               tabs: const [
@@ -436,7 +432,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                                       width: 8,
                                       height: 8,
                                       decoration: const BoxDecoration(
-                                        color: Color(0xFF7B61FF),
+                                        color: Color(0xFF5A35E3),
                                         shape: BoxShape.circle,
                                       ),
                                     )
@@ -660,7 +656,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
           .from('orders')
           .update({'status': 'cancelled'})
           .eq('id', orderId);
-      _loadOrders(); // Refresh the orders list
+      _loadOrders();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

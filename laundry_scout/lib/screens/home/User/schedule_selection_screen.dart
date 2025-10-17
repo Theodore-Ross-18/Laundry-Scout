@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 
 class ScheduleSelectionScreen extends StatefulWidget {
   final Map<String, String>? selectedSchedule;
-  final List<String> availablePickupTimeSlots; // New
-  final List<String> availableDropoffTimeSlots; // New
+  final List<String> availablePickupTimeSlots; 
+  final List<String> availableDropoffTimeSlots;
 
   const ScheduleSelectionScreen({
     super.key,
     this.selectedSchedule,
-    this.availablePickupTimeSlots = const [], // Initialize with empty list
-    this.availableDropoffTimeSlots = const [], // Initialize with empty list
+    this.availablePickupTimeSlots = const [], 
+    this.availableDropoffTimeSlots = const [],
   });
 
   @override
@@ -20,7 +20,6 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
   String? _selectedPickupTime;
   String? _selectedDropoffTime;
 
-  // Use widget.availablePickupTimeSlots and widget.availableDropoffTimeSlots
   List<String> get _pickupTimes => widget.availablePickupTimeSlots;
   List<String> get _dropoffTimes => widget.availableDropoffTimeSlots;
 
@@ -36,9 +35,9 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF6F5ADC),
+      backgroundColor: const Color(0xFF5A35E3),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF6F5ADC),
+        backgroundColor: const Color(0xFF5A35E3),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -74,7 +73,6 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Pick-Up Schedule Section
                             const Text(
                               'Pick-Up Schedule',
                               style: TextStyle(
@@ -131,7 +129,7 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
                               }
                             : null,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6F5ADC),
+                          backgroundColor: const Color(0xFF5A35E3),
                           disabledBackgroundColor: Colors.grey[300],
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
@@ -166,10 +164,10 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF6F5ADC).withOpacity(0.1) : Colors.grey[50],
+            color: isSelected ? const Color(0xFF5A35E3).withOpacity(0.1) : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? const Color(0xFF6F5ADC) : Colors.grey[200]!,
+              color: isSelected ? const Color(0xFF5A35E3) : Colors.grey[200]!,
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -181,14 +179,14 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: isSelected ? const Color(0xFF6F5ADC) : Colors.black87,
+                    color: isSelected ? const Color(0xFF5A35E3) : Colors.black87,
                   ),
                 ),
               ),
               if (isSelected)
                 const Icon(
                   Icons.check_circle,
-                  color: Color(0xFF6F5ADC),
+                  color: Color(0xFF5A35E3),
                   size: 24,
                 ),
             ],

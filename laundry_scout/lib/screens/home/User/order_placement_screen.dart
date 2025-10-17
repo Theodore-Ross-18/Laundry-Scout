@@ -3,19 +3,19 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'service_selection_screen.dart';
 import 'schedule_selection_screen.dart';
 import 'order_confirmation_screen.dart';
-import 'package:laundry_scout/screens/home/User/pickdropmap.dart'; // Import PickDropMapScreen
-import 'package:latlong2/latlong.dart'; // Import LatLng
+import 'package:laundry_scout/screens/home/User/pickdropmap.dart';
+import 'package:latlong2/latlong.dart'; 
 
 class OrderPlacementScreen extends StatefulWidget {
   final Map<String, dynamic> businessData;
-  final List<String> availablePickupTimeSlots; // New
-  final List<String> availableDropoffTimeSlots; // New
+  final List<String> availablePickupTimeSlots; 
+  final List<String> availableDropoffTimeSlots; 
 
   const OrderPlacementScreen({
     super.key,
     required this.businessData,
-    required this.availablePickupTimeSlots, // New
-    required this.availableDropoffTimeSlots, // New
+    required this.availablePickupTimeSlots, 
+    required this.availableDropoffTimeSlots, 
   });
 
   @override
@@ -28,29 +28,28 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
   final _specialInstructionsController = TextEditingController();
   String? _selectedAddress;
   Map<String, String>? _selectedSchedule;
-  List<String> _selectedServices = []; // Initialize _selectedServices
-  List<Map<String, dynamic>> _pricelist = []; // Initialize _pricelist
-  bool _isExpanded = false; // Initialize _isExpanded
-  String _specialInstructions = ''; // Initialize _specialInstructions
-  Map<String, dynamic>? _businessProfile; // Add this line
+  List<String> _selectedServices = []; 
+  List<Map<String, dynamic>> _pricelist = []; 
+  bool _isExpanded = false; 
+  String _specialInstructions = ''; 
+  Map<String, dynamic>? _businessProfile; 
   bool _isLoading = true;
-  bool _isTermsExpanded = false; // New state for Terms and Conditions expansion
+  bool _isTermsExpanded = false; 
   
-  // New fields for user location
   final TextEditingController _currentAddressController = TextEditingController();
   double? _latitude;
   double? _longitude;
   final TextEditingController _latitudeController = TextEditingController();
   final TextEditingController _longitudeController = TextEditingController();
-  String? _firstName; // New
-  String? _lastName; // New
-  final TextEditingController _fullNameController = TextEditingController(); // New
+  String? _firstName; 
+  String? _lastName; 
+  final TextEditingController _fullNameController = TextEditingController(); 
 
   @override
   void initState() {
     super.initState();
     _loadAddresses();
-    _loadBusinessProfile(); // Call this to load business profile
+    _loadBusinessProfile(); 
   }
 
   @override
@@ -60,7 +59,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
     _currentAddressController.dispose();
     _latitudeController.dispose();
     _longitudeController.dispose();
-    _fullNameController.dispose(); // Dispose the new controller
+    _fullNameController.dispose(); 
     super.dispose();
   }
 
@@ -105,9 +104,9 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
             _longitude = userProfile['longitude'];
                   _latitudeController.text = _latitude?.toString() ?? '';
             _longitudeController.text = _longitude?.toString() ?? '';
-            _firstName = userProfile['first_name']; // New
-            _lastName = userProfile['last_name']; // New
-            _fullNameController.text = '${_firstName ?? ''} ${_lastName ?? ''}'; // Set full name
+            _firstName = userProfile['first_name']; 
+            _lastName = userProfile['last_name'];
+            _fullNameController.text = '${_firstName ?? ''} ${_lastName ?? ''}';
           });
         }
 
@@ -245,7 +244,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Place Order'),
-        backgroundColor: const Color(0xFF6F5ADC),
+        backgroundColor: const Color(0xFF5A35E3),
         foregroundColor: Colors.white,
       ),
       backgroundColor: Colors.white,
@@ -278,7 +277,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                     const SizedBox(height: 16),
                     _buildInstructionsSection(),
                     const SizedBox(height: 16),
-                    _buildTermsAndConditionsSection(), // Add Terms and Conditions section
+                    _buildTermsAndConditionsSection(),
                     const SizedBox(height: 32),
                     _buildContinueButton(),
                   ],
@@ -318,7 +317,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF6F5ADC)),
+              borderSide: const BorderSide(color: Color(0xFF5A35E3)),
             ),
           ),
         ),
@@ -337,7 +336,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF6F5ADC)),
+              borderSide: const BorderSide(color: Color(0xFF5A35E3)),
             ),
           ),
           onChanged: (value) {
@@ -364,7 +363,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF6F5ADC)),
+                    borderSide: const BorderSide(color: Color(0xFF5A35E3)),
                   ),
                 ),
                 keyboardType: TextInputType.number,
@@ -391,7 +390,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF6F5ADC)),
+                    borderSide: const BorderSide(color: Color(0xFF5A35E3)),
                   ),
                 ),
                 keyboardType: TextInputType.number,
@@ -433,7 +432,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
               style: TextStyle(color: Colors.white, fontSize: 16),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6F5ADC),
+              backgroundColor: const Color(0xFF5A35E3),
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -489,12 +488,12 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF6F5ADC).withOpacity(0.1),
+                color: const Color(0xFF5A35E3).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
                 Icons.local_laundry_service,
-                color: Color(0xFF6F5ADC),
+                color: Color(0xFF5A35E3),
                 size: 24,
               ),
             ),
@@ -566,12 +565,12 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF6F5ADC).withOpacity(0.1),
+                color: const Color(0xFF5A35E3).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
                 Icons.schedule,
-                color: Color(0xFF6F5ADC),
+                color: Color(0xFF5A35E3),
                 size: 24,
               ),
             ),
@@ -633,12 +632,12 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6F5ADC).withOpacity(0.1),
+                    color: const Color(0xFF5A35E3).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.chat_bubble_outline,
-                    color: Color(0xFF6F5ADC),
+                    color: Color(0xFF5A35E3),
                     size: 24,
                   ),
                 ),
@@ -674,7 +673,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF6F5ADC)),
+                    borderSide: const BorderSide(color: Color(0xFF5A35E3)),
                   ),
                 ),
                 onChanged: (value) {
@@ -694,15 +693,15 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
     final bool canContinue = _selectedAddress != null && 
                             _selectedServices.isNotEmpty && 
                             _selectedSchedule != null &&
-                            _latitude != null && // Check for latitude
-                            _longitude != null; // Check for longitude
+                            _latitude != null && 
+                            _longitude != null;
     
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: canContinue ? _continueToConfirmation : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF6F5ADC),
+          backgroundColor: const Color(0xFF5A35E3),
           disabledBackgroundColor: Colors.grey[300],
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
@@ -745,12 +744,12 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6F5ADC).withOpacity(0.1),
+                    color: const Color(0xFF5A35E3).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
                     Icons.description,
-                    color: Color(0xFF6F5ADC),
+                    color: Color(0xFF5A35E3),
                     size: 24,
                   ),
                 ),
@@ -806,10 +805,10 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
           schedule: _selectedSchedule!,
           specialInstructions: _specialInstructions,
           termsAndConditions: _businessProfile?['terms_and_conditions'] ?? 'No terms and conditions provided.', // Pass terms and conditions
-          latitude: _latitude, // Pass latitude
-          longitude: _longitude, // Pass longitude
-          firstName: _firstName, // Pass first name
-          lastName: _lastName, // Pass last name
+          latitude: _latitude, 
+          longitude: _longitude,
+          firstName: _firstName,
+          lastName: _lastName,
           laundryShopName: _businessProfile?['business_name'],
         ),
       ),

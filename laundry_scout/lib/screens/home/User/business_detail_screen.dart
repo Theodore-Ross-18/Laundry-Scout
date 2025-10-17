@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'message_screen.dart'; // Import for ChatScreen
+import 'message_screen.dart';
 import '../../../widgets/optimized_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'order_placement_screen.dart';
 import '../../../services/feedback_service.dart';
-import 'package:flutter_map/flutter_map.dart'; // Import for FlutterMap
-import 'package:latlong2/latlong.dart'; // Import for LatLng
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:laundry_scout/screens/home/User/getdirection.dart';
 
 class BusinessDetailScreen extends StatefulWidget {
@@ -34,18 +34,18 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this); // Changed from 4 to 3
+    _tabController = TabController(length: 3, vsync: this); 
     _loadFullBusinessData().then((_) {
-      // Load pricelist and reviews only after business data is loaded
+
       _loadPricelist();
       _loadReviews();
-      _debugBusinessData(); // Add debug call
+      _debugBusinessData();
     });
   }
 
   Future<void> _debugBusinessData() async {
     try {
-      // Query the current business to see the actual data format
+      
       final response = await Supabase.instance.client
           .from('business_profiles')
           .select('id, business_name, services_offered, service_prices')
@@ -77,7 +77,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
         });
       }
       
-      // Also debug the loaded pricelist
+    
       print('=== LOADED PRICELIST ===');
       print('Pricelist length: ${_pricelist.length}');
       for (var item in _pricelist) {
@@ -151,12 +151,12 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   }
 
   Widget _buildCoverImage() {
-    // Check if we have a cover photo file for preview mode
+    
     final coverPhotoFile = _fullBusinessData!['_coverPhotoFile'] as PlatformFile?;
     final coverPhotoUrl = _fullBusinessData!['cover_photo_url'] as String?;
     
     if (coverPhotoFile != null) {
-      // Display image from file (preview mode)
+      
       if (kIsWeb) {
         return Image.memory(
           coverPhotoFile.bytes!,
@@ -173,7 +173,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
         );
       }
     } else if (coverPhotoUrl != null) {
-      // Display image from URL (normal mode)
+     
       return OptimizedImage(
         imageUrl: coverPhotoUrl,
         fit: BoxFit.cover,
@@ -181,7 +181,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
         height: double.infinity,
       );
     } else {
-      // Display placeholder - make it fill the space
+     
       return Container(
         width: double.infinity,
         height: double.infinity,
@@ -224,7 +224,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
         _reviews = feedback;
       });
       
-      // Setup real-time subscription for reviews
+     
       _feedbackService.subscribeToFeedback(widget.businessData['id'], (feedback) {
         if (mounted) {
           setState(() {
@@ -239,12 +239,12 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
 
   Future<void> _loadPricelist() async {
     try {
-      // First, check if we have service_prices in the business profile
+      
       final servicePricesData = _fullBusinessData?['service_prices'];
       print('DEBUG: service_prices from business profile = $servicePricesData');
       
       if (servicePricesData != null && servicePricesData is List && servicePricesData.isNotEmpty) {
-        // Format the service_prices data from business profile
+        
         List<Map<String, dynamic>> pricelist = [];
         
         for (var item in servicePricesData) {
@@ -260,7 +260,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
               priceStr = '0.00';
             }
             
-            // Only add service if price is not 0.00
+            
             if (serviceName.isNotEmpty && price > 0.0) {
               pricelist.add({
                 'service_name': serviceName,
@@ -280,7 +280,6 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
         return;
       }
       
-      // Fallback: Try to load from the dedicated pricelist table
       final pricelistResponse = await Supabase.instance.client
           .from('pricelist')
           .select('*')
@@ -290,7 +289,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
       print('DEBUG: Pricelist from database = $pricelistResponse');
       
       if (pricelistResponse.isNotEmpty) {
-        // Format the pricelist data
+        
         List<Map<String, dynamic>> pricelist = pricelistResponse.map((item) {
           String priceStr = '';
           if (item['price'] != null) {
@@ -316,7 +315,6 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
       return;
       }
       
-      // Last fallback: Create default prices for services offered
       final servicesOfferedData = _fullBusinessData?['services_offered'];
       print('DEBUG: No service_prices found, using services_offered = $servicesOfferedData');
       
@@ -327,7 +325,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
         for (var serviceName in servicesOfferedData) {
           print('DEBUG: Processing service: $serviceName (type: ${serviceName.runtimeType})');
           if (serviceName is String) {
-            // Create default pricing for each service
+           
             String defaultPrice = _getDefaultPrice(serviceName);
             String description = _getServiceDescription(serviceName);
             
@@ -378,7 +376,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   }
 
   String _getDefaultPrice(String service) {
-    // Default prices for common services
+   
     switch (service.toLowerCase()) {
       case 'wash & fold':
         return '50.00';
@@ -404,7 +402,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   }
 
   double _calculateAverageRating() {
-    // Filter reviews to only include user feedback
+    
     final userReviews = _reviews.where((review) => 
       review['user_profiles'] != null && 
       review['user_profiles']['first_name'] != null
@@ -504,7 +502,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6F5ADC),
+              backgroundColor: const Color(0xFF5A35E3),
             ),
             child: const Text('Submit', style: TextStyle(color: Colors.white)),
           ),
@@ -544,13 +542,12 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
       return;
     }
 
-    // Navigate to order placement flow
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => OrderPlacementScreen(
           businessData: _fullBusinessData!,
-          // New: Pass available time slots to OrderPlacementScreen
+         
           availablePickupTimeSlots: List<String>.from(_fullBusinessData!['available_pickup_time_slots'] ?? []),
           availableDropoffTimeSlots: List<String>.from(_fullBusinessData!['available_dropoff_time_slots'] ?? []),
         ),
@@ -575,16 +572,16 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                 )
               : Column(
                   children: [
-                    // Header with cover image and business info
+                    
                     SizedBox(
                       height: 300,
                       child: Stack(
                         children: [
-                          // Cover Image - now fills entire header space
+                          
                           Positioned.fill(
                             child: _buildCoverImage(),
                           ),
-                          // Dark overlay for better text visibility
+                         
                           Positioned.fill(
                             child: Container(
                               decoration: BoxDecoration(
@@ -600,7 +597,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                               ),
                             ),
                           ),
-                          // Back button with background
+                          
                           Positioned(
                             top: 40,
                             left: 16,
@@ -615,7 +612,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                               ),
                             ),
                           ),
-                          // Business info card - extended to fill sides
+                         
                           Positioned(
                             bottom: 0,
                             left: 0,
@@ -680,15 +677,12 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                       ),
                     ),
 
-
-
-                    // TabBar
                     Container(
                       color: Colors.white,
                       child: TabBar(
                         controller: _tabController,
-                        indicatorColor: const Color(0xFF6F5ADC),
-                        labelColor: const Color(0xFF6F5ADC),
+                        indicatorColor: const Color(0xFF5A35E3),
+                        labelColor: const Color(0xFF5A35E3),
                         unselectedLabelColor: Colors.grey,
                         tabAlignment: TabAlignment.fill,
                         tabs: const [
@@ -707,11 +701,11 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                           _buildOrderTab(),
                           _buildReviewsTab(),
                         ],
-                      ), // Closing TabBarView
-                    ), // Closing Expanded
-                  ], // Closing Column children
-                ), // Closing Column
-    ); // Closing Scaffold
+                      ),
+                    ),
+                  ], // Column children
+                ),
+    );
   }
 
   Widget _buildAboutTab() {
@@ -720,7 +714,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // About Us
+          
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -874,7 +868,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                         icon: const Icon(Icons.phone, color: Colors.white),
                         label: const Text('Call', style: TextStyle(color: Colors.white)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6F5ADC),
+                          backgroundColor: const Color(0xFF5A35E3),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -899,7 +893,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                         icon: const Icon(Icons.message, color: Colors.white),
                         label: const Text('Message', style: TextStyle(color: Colors.white)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6F5ADC),
+                          backgroundColor: const Color(0xFF5A35E3),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -1002,7 +996,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6F5ADC),
+                        backgroundColor: const Color(0xFF5A35E3),
                         padding: const EdgeInsets.symmetric(vertical: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1119,7 +1113,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF6F5ADC),
+                          color: Color(0xFF5A35E3),
                         ),
                       ),
                     ),
@@ -1135,7 +1129,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                 ? ElevatedButton(
                     onPressed: _placeOrder,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6F5ADC),
+                      backgroundColor: const Color(0xFF5A35E3),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1174,7 +1168,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   }
 
   Widget _buildReviewsTab() {
-    // Filter reviews to only show user feedback (those with user_profiles)
+    
     final userReviews = _reviews.where((review) => 
       review['user_profiles'] != null && 
       review['user_profiles']['first_name'] != null
@@ -1268,7 +1262,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                     children: [
                       CircleAvatar(
                         radius: 20,
-                        backgroundColor: const Color(0xFF6F5ADC),
+                        backgroundColor: const Color(0xFF5A35E3),
                         child: Text(
                           (review['user_profiles']?['first_name']?[0] ?? 'U').toUpperCase(),
                           style: const TextStyle(
@@ -1342,7 +1336,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
             child: ElevatedButton(
               onPressed: () => _showReviewDialog(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6F5ADC),
+                backgroundColor: const Color(0xFF5A35E3),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1362,6 +1356,4 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
       ),
     );
   }
-
-
 }

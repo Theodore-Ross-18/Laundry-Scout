@@ -3,8 +3,7 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb; // Add this import
-// For Supabase uploadBinary, you might need mime type. Add to pubspec.yaml: mime: ^1.0.4
+import 'package:flutter/foundation.dart' show kIsWeb; 
 import 'package:mime/mime.dart'; 
 import '../../services/form_persistence_service.dart';
 import '../home/Owner/owner_home_screen.dart';
@@ -12,7 +11,7 @@ import '../home/Owner/owner_home_screen.dart';
 class SetBusinessInfoScreen extends StatefulWidget {
   final String username;
 
-  final String? ownerId; // New parameter
+  final String? ownerId;
 
   const SetBusinessInfoScreen({super.key, required this.username,  this.ownerId});
 
@@ -24,7 +23,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _showForm = false;
-  Timer? _timer; // Timer for slides
+  Timer? _timer;
 
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
@@ -37,13 +36,9 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   final _confirmEmailController = TextEditingController();
 
 
-
-  // Removed _birFile
-  // Removed _certificateFile
-  // Removed _permitFile
-  PlatformFile? _birFile; // New
-  PlatformFile? _certificateFile; // New
-  PlatformFile? _permitFile; // New
+  PlatformFile? _birFile; 
+  PlatformFile? _certificateFile; 
+  PlatformFile? _permitFile; 
 
   bool _isEmailVerified = false;
   bool _isSubmitting = false;
@@ -76,13 +71,12 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     if (user != null && user.email != null) {
       _emailController.text = user.email!;
     }
-    // Set _isEmailVerified to true as email is verified in verification_screen.dart
+  
     _isEmailVerified = true;
     
-    // Load saved form data
+
     _loadSavedFormData();
-    
-    // Add listeners to save data when user types
+   
     _firstNameController.addListener(_saveFormData);
     _lastNameController.addListener(_saveFormData);
     _phoneNumberController.addListener(_saveFormData);
@@ -107,7 +101,6 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     });
   }
 
-  // Load saved form data
   Future<void> _loadSavedFormData() async {
 
     final savedData = await FormPersistenceService.loadBusinessInfoData();
@@ -124,7 +117,6 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     }
   }
 
-  // Save form data
   Future<void> _saveFormData() async {
     final formData = {
       'firstName': _firstNameController.text,
@@ -150,8 +142,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
 
     _confirmEmailController.dispose();
 
-    _timer?.cancel(); // Cancel slide timer
-    // Removed _otpTimer?.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
@@ -176,22 +167,16 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     });
   }
 
-  // Removed _verifyOtp() method
-  // Removed _startOtpTimer() method
-  // Removed _resendOtpBusiness() method
-
-
   Future<void> _pickFile(Function(PlatformFile) onFilePicked, String fileTypeLabel) async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
-        withData: kIsWeb, // Ensure bytes are loaded on web
+        withData: kIsWeb, 
       );
-      if (result != null && result.files.isNotEmpty) { // Changed condition here
-        final pickedFile = result.files.single; // Use single picked file
+      if (result != null && result.files.isNotEmpty) {
+        final pickedFile = result.files.single;
 
-        // On web, path is null, but bytes should be available if withData: true
         if (kIsWeb && pickedFile.bytes == null) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -200,7 +185,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
           }
           return;
         }
-        // On mobile, path should be available
+       
         if (!kIsWeb && pickedFile.path == null) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -227,13 +212,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   }
 
   Future<void> _submitBusinessInfo() async {
-    // Removed check if email is verified before submitting
-    // if (!_isEmailVerified) {
-    //    ScaffoldMessenger.of(context).showSnackBar(
-    //       const SnackBar(content: Text(\'Please verify your email first.\')),
-    //     );
-    //     return;
-    // }
+    
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -241,15 +220,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
       );
       return;
     }
-    // Removed check for confirmed email matching the email entered
-    // if (_confirmEmailController.text.trim() != _emailController.text.trim()) {
-    //    ScaffoldMessenger.of(context).showSnackBar(
-    //       const SnackBar(content: Text(\'Confirmed email must match your registered email.\')),
-    //     );
-    //     return;
-    // }
-
-    // Add checks for required files here
+    
     if (_birFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please upload your BIR Registration.')),
@@ -268,7 +239,6 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
       );
       return;
     }
-    // End of file checks
 
     if (_formKey.currentState!.validate()) {
       setState(() { _isSubmitting = true; });
@@ -277,9 +247,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
       try {
         final userId = user.id;
 
-        // Helper function for uploading
         Future<String?> uploadDocument(PlatformFile? file, String docType, String businessName) async {
-          if (file == null) return null; // file is promoted to non-nullable PlatformFile after this
+          if (file == null) return null; 
           final String fileExtension = file.extension ?? 'bin';
           final String fileName = '${businessName}/${docType}_${userId}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
 
@@ -319,9 +288,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
         return;
       }
       try {
-        // Determine the ID to use for the business profile
+      
         final String businessProfileId = user.id;
-
 
 
         await Supabase.instance.client
@@ -340,7 +308,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
               'business_certificate_url': certificateUrl,
               'mayors_permit_url': permitUrl,
 
-              'owner_id': widget.ownerId, // Set owner_id
+              'owner_id': widget.ownerId,
 
             });
         if (mounted) {
@@ -385,24 +353,24 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
     }
     return Scaffold(
       appBar: AppBar( 
-        automaticallyImplyLeading: false, // Remove the back button
+        automaticallyImplyLeading: false, 
         title: const Text(''),
         actions: _showForm && !_isSubmitting && !_submissionComplete
             ? null
             : (_showForm ? null : [
-                // Responsive Skip button with View All design
+          
                 LayoutBuilder(
                   builder: (context, constraints) {
-                    // Check if screen width is small (mobile)
+                  
                     bool isMobile = MediaQuery.of(context).size.width < 600;
                     
                     if (isMobile) {
-                      // For mobile: Use a more compact button
+                     
                       return Container(
                         margin: const EdgeInsets.only(right: 16),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF6F5ADC),
+                          color: const Color(0xFF5A35E3),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: InkWell(
@@ -418,7 +386,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                         ),
                       );
                     } else {
-                      // For larger screens: Use the original TextButton
+                    
                       return TextButton(
                         onPressed: _skipSlides,
                         child: const Text(
@@ -492,8 +460,8 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
               ElevatedButton(
                 onPressed: _nextPage,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6F5ADC), // Purple background
-                  foregroundColor: const Color(0xFFFFFFFF), // White text
+                  backgroundColor: const Color(0xFF5A35E3), 
+                  foregroundColor: const Color(0xFFFFFFFF),
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
                 ),
@@ -610,61 +578,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 },
               ),
               const SizedBox(height: 10),
-              // Removed OTP verification section
-              // if (!_isEmailVerified) ...[
-              //   const SizedBox(height: 16),
-              //   _buildTextField(
-              //     controller: _otpController,
-              //     labelText: \'Verification Code\',
-              //     keyboardType: TextInputType.number,
-              //     textTheme: textTheme,
-              //   ),
-              //   const SizedBox(height: 16),
-              //   ElevatedButton(
-              //     onPressed: (_isVerifyingOtp || _isOtpTimerActive) ? null : _verifyOtp,
-              //     style: ElevatedButton.styleFrom(
-              //       backgroundColor: const Color(0xFF6F5ADC),
-              //       foregroundColor: const Color(0xFFFFFFFF),
-              //       padding: const EdgeInsets.symmetric(vertical: 15),
-              //       shape: RoundedRectangleBorder(
-              //         borderRadius: BorderRadius.circular(30.0),
-              //       ),
-              //     ),
-              //     child: _isVerifyingOtp
-              //         ? const SizedBox(
-              //             height: 20,
-              //             width: 20,
-              //             child: CircularProgressIndicator(
-              //               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              //               strokeWidth: 2,
-              //             ),
-              //           )
-              //         : const Text(
-              //             \'Verify\',
-              //             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              //           ),
-              //   ),
-              //   const SizedBox(height: 10),
-              //   if (_isOtpTimerActive)
-              //     Center(
-              //       child: Text(
               
-              //         style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
-              //       ),
-              //     ),
-              //   if (!_isOtpTimerActive && !_isEmailVerified)
-              //     Center(
-              //       child: TextButton(
-              //         onPressed: _resendOtpBusiness,
-              //         child: Text(
-              //           \'Resend Code\',
-              //           style: textTheme.bodyMedium?.copyWith(color: Colors.white70),
-              //         ),
-              //       ),
-              //     ),
-              //   const SizedBox(height: 30),
-              // ],
-              // File Upload Section
               const SizedBox(height: 30),
               _buildFileUploadField(
                 label: 'Attach BIR Registration',
@@ -690,7 +604,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
               ElevatedButton(
                 onPressed: _isSubmitting ? null : _submitBusinessInfo,
                 style: ElevatedButton.styleFrom(
-                   backgroundColor: const Color(0xFF6F5ADC), // Purple background
+                   backgroundColor: const Color(0xFF5A35E3), // Purple background
                    foregroundColor: const Color(0xFFFFFFFF), // White text
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
@@ -738,7 +652,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
 
   Widget _buildFileUploadField({
     required String label,
-    required PlatformFile? file, // Changed from File?
+    required PlatformFile? file,
     required VoidCallback onTap,
     required TextTheme textTheme,
   }) {
@@ -784,7 +698,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                     ),
                   )
                 : isImage
-                    ? null // Image is shown as background
+                    ? null 
                     : Center(
                         child: Text(
                           file.name,
@@ -832,7 +746,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6F5ADC),
+                backgroundColor: const Color(0xFF5A35E3),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),

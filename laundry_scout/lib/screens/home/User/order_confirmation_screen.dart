@@ -8,12 +8,12 @@ class OrderConfirmationScreen extends StatefulWidget {
   final List<String> services;
   final Map<String, String> schedule;
   final String specialInstructions;
-  final String termsAndConditions; // New
-  final double? latitude; // New
-  final double? longitude; // New
-  final String? firstName; // New
-  final String? lastName; // New
-  final String? laundryShopName; // New
+  final String termsAndConditions; 
+  final double? latitude; 
+  final double? longitude; 
+  final String? firstName; 
+  final String? lastName; 
+  final String? laundryShopName; 
 
   const OrderConfirmationScreen({
     super.key,
@@ -22,12 +22,12 @@ class OrderConfirmationScreen extends StatefulWidget {
     required this.services,
     required this.schedule,
     required this.specialInstructions,
-    required this.termsAndConditions, // New
-    this.latitude, // New
-    this.longitude, // New
-    this.firstName, // New
-    this.lastName, // New
-    this.laundryShopName, // New
+    required this.termsAndConditions, 
+    this.latitude, 
+    this.longitude, 
+    this.firstName, 
+    this.lastName, 
+    this.laundryShopName, 
   });
 
   @override
@@ -36,11 +36,10 @@ class OrderConfirmationScreen extends StatefulWidget {
 
 class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   bool _isPlacingOrder = false;
-  bool _isTermsExpanded = false; // New state for Terms and Conditions expansion
+  bool _isTermsExpanded = false; 
+  Map<String, dynamic>? _fullBusinessData; 
 
-  Map<String, dynamic>? _fullBusinessData; // To store full business data
-
-  Map<String, double> _servicePrices = {}; // Initialize as empty map
+  Map<String, double> _servicePrices = {}; 
 
   @override
   void initState() {
@@ -76,19 +75,11 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
           });
         }
       }
-      setState(() {}); // Rebuild to reflect loaded prices
+      setState(() {}); 
     } catch (e) {
       print('Error loading business data and prices: $e');
     }
   }
-  // bool _isTermsExpanded = false; // New state for Terms and Conditions expansion // Removed duplicate
-
-  // final Map<String, double> _servicePrices = {
-  //   'Iron Only': 50.0,
-  //   'Clean & Iron': 120.0,
-  //   'Wash & Fold': 180.0,
-  //   'Carpets': 200.0,
-  // };
 
   double get _subtotal {
     return widget.services.fold(0.0, (sum, service) {
@@ -112,9 +103,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     final dropoffDate = pickupDate.add(const Duration(days: 1));
 
     return Scaffold(
-      backgroundColor: const Color(0xFF6F5ADC),
+      backgroundColor: const Color(0xFF5A35E3),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF6F5ADC),
+        backgroundColor: const Color(0xFF5A35E3),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -160,7 +151,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             ),
                             const SizedBox(height: 20),
                             
-                            // Order ID and Schedule
+                          
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
@@ -185,7 +176,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                         style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
-                                          color: Color(0xFF6F5ADC),
+                                          color: Color(0xFF5A35E3),
                                         ),
                                       ),
                                     ],
@@ -284,14 +275,14 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              '${widget.firstName ?? ''} ${widget.lastName ?? ''}', // Customer Name
+                              '${widget.firstName ?? ''} ${widget.lastName ?? ''}', 
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.grey[800],
                               ),
                             ),
-                            const SizedBox(height: 4), // Small space between name and address
+                            const SizedBox(height: 4), 
                             Text(
                               widget.address,
                               style: TextStyle(
@@ -349,7 +340,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             ),
                             const SizedBox(height: 24),
                             
-                            // Ordered Items
+                          
                             const Text(
                               'Ordered Items',
                               style: TextStyle(
@@ -439,14 +430,10 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             ),
                             const SizedBox(height: 24),
                             
-
-
-                            // Terms and Conditions
                             _buildTermsAndConditionsSection(),
 
                             const SizedBox(height: 24),
 
-                            // Place Order Button
                           ],
                         ),
                       ),
@@ -457,7 +444,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                       child: ElevatedButton(
                         onPressed: _isPlacingOrder ? null : _placeOrder,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6F5ADC),
+                          backgroundColor: const Color(0xFF5A35E3),
                           disabledBackgroundColor: Colors.grey[300],
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
@@ -502,45 +489,31 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       final supabase = Supabase.instance.client;
       final orderId = _generateOrderId();
 
-      // Fetch business ID from businessData
       final String businessId = widget.businessData['id'];
 
-      // Fetch user ID
       final String userId = supabase.auth.currentUser!.id;
 
-      // Fetch user profile to get user_name
-      // final userProfileResponse = await supabase
-      //     .from('user_profiles')
-      //     .select('username')
-      //     .eq('id', userId)
-      //     .single();
-      // final String userName = userProfileResponse['username'];
-
-      // Insert order into the 'orders' table
       await supabase.from('orders').insert({
         'order_number': orderId,
         'user_id': userId,
         'business_id': businessId,
-        'customer_name': '${widget.firstName ?? ''} ${widget.lastName ?? ''}', // New
+        'customer_name': '${widget.firstName ?? ''} ${widget.lastName ?? ''}',
         'laundry_shop_name': widget.laundryShopName,
-
-        // 'user_name': userName, // Removed as it's not in the schema
         'pickup_address': widget.address,
-        'delivery_address': widget.address, // Set delivery address
-        'items': widget.services, // Store services as JSON in 'items'
-        'pickup_schedule': widget.schedule['pickup'], // Store pickup schedule as string
-        'dropoff_schedule': widget.schedule['dropoff'], // Store dropoff schedule as string
+        'delivery_address': widget.address, 
+        'items': widget.services, 
+        'pickup_schedule': widget.schedule['pickup'], 
+        'dropoff_schedule': widget.schedule['dropoff'], 
         'special_instructions': widget.specialInstructions,
         'total_amount': _total,
-        // 'payment_method': _paymentMethod, // Removed
-        'status': 'pending', // Ensure status matches schema default
+        'status': 'pending',
         if (widget.latitude != null) 'latitude': widget.latitude,
         if (widget.longitude != null) 'longitude': widget.longitude,
 
       });
 
       if (mounted) {
-        // Show success message and navigate back
+        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Order placed successfully!')),
         );
@@ -587,7 +560,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
             ),
             trailing: Icon(
               _isTermsExpanded ? Icons.expand_less : Icons.expand_more,
-              color: const Color(0xFF6F5ADC),
+              color: const Color(0xFF5A35E3),
             ),
             onTap: () {
               setState(() {

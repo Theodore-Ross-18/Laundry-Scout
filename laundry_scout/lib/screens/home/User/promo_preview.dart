@@ -131,7 +131,7 @@ class _PromoPreviewScreenState extends State<PromoPreviewScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Business Name
+                
                   Text(
                     businessName,
                     style: const TextStyle(
@@ -142,7 +142,6 @@ class _PromoPreviewScreenState extends State<PromoPreviewScreen> {
                   ),
                   const SizedBox(height: 8),
                   
-                  // Promo Title
                   Text(
                     promoTitle,
                     style: const TextStyle(
@@ -153,7 +152,6 @@ class _PromoPreviewScreenState extends State<PromoPreviewScreen> {
                   ),
                   const SizedBox(height: 16),
                   
-                  // Promo Description
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -175,14 +173,13 @@ class _PromoPreviewScreenState extends State<PromoPreviewScreen> {
                   ),
                   const SizedBox(height: 32),
                   
-                  // Valid Until Info
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF6F5ADC).withOpacity(0.1),
+                      color: const Color(0xFF5A35E3).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: const Color(0xFF6F5ADC).withOpacity(0.2),
+                        color: const Color(0xFF5A35E3).withOpacity(0.2),
                         width: 1,
                       ),
                     ),
@@ -190,14 +187,14 @@ class _PromoPreviewScreenState extends State<PromoPreviewScreen> {
                       children: [
                         Icon(
                           Icons.access_time,
-                          color: const Color(0xFF6F5ADC),
+                          color: const Color(0xFF5A35E3),
                           size: 20,
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'Valid until further notice',
                           style: TextStyle(
-                            color: const Color(0xFF6F5ADC),
+                            color: const Color(0xFF5A35E3),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -206,14 +203,13 @@ class _PromoPreviewScreenState extends State<PromoPreviewScreen> {
                   ),
                   const SizedBox(height: 32),
                   
-                  // View Laundry Shop Button
                   SizedBox(
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _navigateToBusinessDetail,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6F5ADC),
+                        backgroundColor: const Color(0xFF5A35E3),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
