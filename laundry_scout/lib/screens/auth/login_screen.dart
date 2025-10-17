@@ -482,7 +482,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           'Forgot Password?',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.8),
-                            decoration: TextDecoration.underline,
                             fontSize: 11,
                           ),
                         ),
@@ -497,10 +496,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF5A35E3),
                       foregroundColor: Colors.white,
-                      fixedSize: const Size(120, 52),
+                      minimumSize: const Size(250, 50),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(26.0),
+                        borderRadius: BorderRadius.circular(18.0),
                       ),
                     ),
                     child: _isLoading
@@ -509,7 +509,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('Login'),
+                        : const Text('Log In'),
                   ),
                 ),
                 const SizedBox(height: 40),

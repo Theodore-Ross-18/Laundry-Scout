@@ -82,13 +82,13 @@ class MyApp extends StatelessWidget {
             backgroundColor: const Color(0xFFFFFFFF), // White background for buttons
             foregroundColor: const Color(0xFF5A35E3), // Purple text for buttons
             textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold),
-            minimumSize: const Size(double.infinity, 50), // Keep existing minimum size if desired
+            minimumSize: const Size(250, 50),
           ),
         ),
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
             foregroundColor: const Color(0xFFFFFFFF), // White text for TextButtons
-            textStyle: const TextStyle(fontFamily: 'Poppins', decoration: TextDecoration.underline),
+            textStyle: const TextStyle(fontFamily: 'Poppins', decoration: TextDecoration.none),
           ),
         ),
         inputDecorationTheme: const InputDecorationTheme(
