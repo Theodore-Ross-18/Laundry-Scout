@@ -11,8 +11,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:laundry_scout/screens/home/User/getdirection.dart';
 
-import 'package:flutter/services.dart';
-
 class BusinessDetailScreen extends StatefulWidget {
   final Map<String, dynamic> businessData;
 
@@ -32,60 +30,6 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   List<Map<String, dynamic>> _reviews = [];
   List<Map<String, dynamic>> _pricelist = [];
   final FeedbackService _feedbackService = FeedbackService();
-
-  Future<void> _showContactDetailsDialog(BuildContext context) async {
-    final phoneNumber = _fullBusinessData!['business_phone_number'] ??
-        _fullBusinessData!['contact_number'] ??
-        'No phone number available';
-
-    await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Contact Number', style: TextStyle(color: Colors.black)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    phoneNumber.toString(),
-                    style: const TextStyle(color: Colors.black, fontSize: 16),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.copy, color: Color(0xFF5A35E3)),
-                    onPressed: () async {
-                      await Clipboard.setData(ClipboardData(text: phoneNumber.toString()));
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Phone number copied to clipboard', style: TextStyle(color: Colors.white))),
-                        );
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('Close', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   @override
   void initState() {
@@ -257,7 +201,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     try {
         final response = await Supabase.instance.client
             .from('business_profiles')
-            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours_text, available_pickup_time_slots, available_dropoff_time_slots, does_delivery, latitude, longitude, business_address, contact_number') // Add new columns here
+            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours_text, available_pickup_time_slots, available_dropoff_time_slots, does_delivery, latitude, longitude, business_address') // Add new columns here
             .eq('id', widget.businessData['id'])
             .single();
       
@@ -899,7 +843,27 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          _showContactDetailsDialog(context);
+                          final phoneNumber = _fullBusinessData!['business_phone_number'] ??
+                                        _fullBusinessData!['contact_number'] ??
+                                        'No phone number available';
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text('Contact Number', style: TextStyle(color: Colors.black)),
+                                content: Text(
+                                  phoneNumber.toString(),
+                                  style: const TextStyle(color: Colors.black, fontSize: 16),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Close', style: TextStyle(color: Colors.black)),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
                         },
                         icon: const Icon(Icons.phone, color: Colors.white),
                         label: const Text('Call', style: TextStyle(color: Colors.white)),
