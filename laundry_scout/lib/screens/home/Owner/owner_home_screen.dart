@@ -399,16 +399,16 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                             MaterialPageRoute(builder: (context) => const OrdersScreen()),
                                           );
                                         },
-                                        child: _analyticsCard(Icons.history, '${_orderStats['total']}', 'Order History', Color(0xFF5A35E3)),
+                                        child: _analyticsCard(Image.asset('lib/assets/owner/history.png', width: 24, height: 24, color: Color(0xFF5A35E3)), '${_orderStats['total']}', 'Order History', Color(0xFF5A35E3)),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
-                                      child: _analyticsCard(Icons.local_offer, '$_promoCount', 'Promos', Color(0xFF5A35E3)),
+                                      child: _analyticsCard(Image.asset('lib/assets/owner/promos.png', width: 24, height: 24, color: Color(0xFF5A35E3)), '$_promoCount', 'Promos', Color(0xFF5A35E3)),
                                     ),
                                     const SizedBox(width: 8), 
                                     Expanded(
-                                      child: _analyticsCard(Icons.star_outline, '$_reviewCount', 'Reviews', Color(0xFF5A35E3)),
+                                      child: _analyticsCard(Image.asset('lib/assets/owner/reviews.png', width: 24, height: 24, color: Color(0xFF5A35E3)), '$_reviewCount', 'Reviews', Color(0xFF5A35E3)),
                                     ),
                                     const SizedBox(width: 8), 
                                     Expanded(
@@ -436,7 +436,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                         MaterialPageRoute(builder: (context) => const AddPromoScreen()),
                                       );
                                     },
-                                    child: _actionCard(Icons.local_offer, 'Promos', Colors.deepPurple),
+                                    child: _actionCard(Image.asset('lib/assets/owner/promos.png', width: 28, height: 28, color: Colors.deepPurple), 'Promos', Colors.deepPurple),
                                     ),
                                 ),
                                 const SizedBox(width: 12),
@@ -447,7 +447,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                         MaterialPageRoute(builder: (context) => const EditProfileScreen()),
                                       );
                                     },
-                                    child: _actionCard(Icons.edit, 'Edit Profile', Color(0xFF5A35E3)),
+                                    child: _actionCard(Image.asset('lib/assets/owner/editprofile.png', width: 28, height: 28, color: Color(0xFF5A35E3)), 'Edit Profile', Color(0xFF5A35E3)),
                                   ),
                                 ),
                               ],
@@ -462,7 +462,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                         MaterialPageRoute(builder: (context) => const OwnerFeedbackScreen()),
                                       );
                                     },
-                                    child: _actionCard(Icons.star_outline, 'Reviews', Colors.deepPurple),
+                                    child: _actionCard(Image.asset('lib/assets/owner/reviews.png', width: 28, height: 28, color: Colors.deepPurple), 'Reviews', Colors.deepPurple),
                                     ),
                                 ),
                                 const SizedBox(width: 12),
@@ -540,11 +540,11 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   }
 
   Widget _availabilityCard() {
-    return _actionCard(Icons.calendar_today, 'Set Availability', Colors.deepPurple);
+    return _actionCard(Image.asset('lib/assets/owner/avail.png', width: 28, height: 28, color: Color(0xFF5A35E3)), 'Set Availability', Color(0xFF5A35E3));
   }
 
 // Helper widgets:
-Widget _actionCard(IconData icon, String label, Color iconColor) {
+Widget _actionCard(Widget icon, String label, Color iconColor) {
   return Container(
     height: 70,
     decoration: BoxDecoration(
@@ -557,14 +557,14 @@ Widget _actionCard(IconData icon, String label, Color iconColor) {
       children: [
         Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
         const SizedBox(width: 10),
-        Icon(icon, color: iconColor, size: 28),
+        icon,
       ],
     ),
   );
 }
 
 
-Widget _analyticsCard(IconData icon, String value, String label, Color iconColor) {
+Widget _analyticsCard(Widget icon, String value, String label, Color iconColor) {
   return Container(
     width: 80,
     height: 90,
@@ -576,7 +576,7 @@ Widget _analyticsCard(IconData icon, String value, String label, Color iconColor
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, color: iconColor, size: 24),
+        icon,
         const SizedBox(height: 4),
         Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
         Text(label, style: const TextStyle(fontSize: 12, color: Colors.black), textAlign: TextAlign.center),
