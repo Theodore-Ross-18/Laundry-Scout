@@ -26,6 +26,9 @@ function Dashboard() {
   const [feedback, setFeedback] = useState(0);
   const [applicants, setApplicants] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // ⭐ Ratings
   const [averageRating, setAverageRating] = useState(0);

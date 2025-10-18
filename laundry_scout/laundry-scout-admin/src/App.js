@@ -10,6 +10,7 @@ import {
 import "./App.css";
 import { supabase } from "./Supabase/supabaseClient";
 
+
 // Your pages/components
 import Dashboard from "./Components/Dashboard";
 import Users from "./Components/Users";
@@ -27,7 +28,7 @@ function SplashScreen() {
     <div className="app-bg">
       <div className="splash-screen">
         <div className="splash-logo">
-          <img src="/lslogo.png" alt="Laundry Scout Logo" width="100" height="100" />
+          <img src="./laundry-logo-white.png" alt="Laundry Scout Logo" width="100" height="100" />
         </div>
         <h1 className="splash-title">Laundry Scout</h1>
       </div>
@@ -77,7 +78,7 @@ function AdminLogin({ onLogin }) {
     <div className="app-bg">
       <div className="login-container">
         <div className="login-logo">
-          <img src="/lslogo.png" alt="Laundry Scout Logo" width="60" height="60" />
+          <img src="./laundry-logo-white.png" alt="Laundry Scout Logo" width="60" height="60" />
         </div>
         <h2 className="login-title">Welcome Admin</h2>
         <form className="login-form" onSubmit={handleSubmit}>

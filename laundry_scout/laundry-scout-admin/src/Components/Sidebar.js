@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FiHome, FiFileText, FiUsers, FiUser, FiClock, FiMessageSquare, FiLogOut } from "react-icons/fi";
 import { handleLogout } from "./Services/Logout";
 import "../Style/Sidebar.css";
-import titleLogo from "../laundry-scout title-logo.png";
+import titleLogo from "../laundry-logo.png";
 
 function Sidebar({ isOpen = true, onLogout }) {
   const location = useLocation();
@@ -14,7 +14,10 @@ function Sidebar({ isOpen = true, onLogout }) {
 
   return (
     <aside className={`sidebar ${isOpen ? "" : "closed"}`}>
-      <div className="sidebar-title"><img src={titleLogo} alt="laundry-scout" width="" height=""/></div>
+      <div className="sidebar-header">
+        <div className="sidebar-logo"><img src={titleLogo} alt="laundry-scout" width="40" height="40"/></div>
+        <div className="sidebar-title">Laundry Scout</div>
+      </div>
       <div className="sidebar-content">
         <nav>
           <ul>

@@ -7,7 +7,7 @@
   display: flex;
   height: 100vh;
   font-family: "Poppins", sans-serif;
-  background: #f7f9fc;
+  background: var(--bg-color);
   overflow: hidden; /* prevent page scroll */
 }
 
@@ -50,7 +50,7 @@
 .client-detail-subtitle {
   margin: 0px;
   font-size: 0.95rem;
-  color: #6b7280;
+  color: var(--muted-text);
 }
 
 
@@ -61,7 +61,7 @@
   padding: 20px 20px 20px 20px; /* increase bottom padding to match design */
   margin-top: 20px;
   margin-bottom: 40px; /* ensure visible spacing below the white container */
-  background: #ffffff;
+  background: var(--card-bg);
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   min-height: 0; /* allow flex child to respect parent's bottom padding */
@@ -154,8 +154,8 @@
   gap: clamp(12px, 3vw, 32px); /* tighter, responsive spacing */
   width: 100%; /* stay within parent padding to avoid overlap */
   box-sizing: border-box; /* include border in width to avoid right overflow */
-  background: #f6f6fb; /* light strip background */
-  border: 1px solid #e5eaf2; /* soft border */
+  background: var(--card2-bg); /* light strip background */
+  border: 1px solid var(--border-color); /* soft border */
   border-radius: 15px; /* rounded container corners */
   padding: 10px 14px ; /* container height matches screenshot */
   margin: 8px 0 16px; /* no negative margins; align inside safely */
@@ -184,7 +184,7 @@
 
 /* Card blocks */
 .info-card {
-  background: #ffffff;
+  background: var(--card2-bg);
   border-radius: 12px;
   box-shadow: 0 1px 4px rgba(0,0,0,0);
 }
@@ -204,12 +204,12 @@
 .info-item { margin: 10px 0 16px; }
 .label {
   font-size: 0.8rem;
-  color: #8b8e99;
+  color: var(--header-text);
   margin-bottom: 4px;
 }
 .value {
   font-size: 0.95rem;
-  color: #1f2937;
+  color: var(--muted-text);
   font-weight: 500;
 }
 .value.bold { font-weight: 600; }
@@ -226,25 +226,25 @@
   align-items: stretch; /* ensure cards align in height for consistent separators */
 }
 .permit-card {
-  background: #ffffff;
+  background: var(--card2-bg);
   border-radius: 12px;
   box-shadow: 0 1px 4px rgba(0,0,0,0);
   padding: 14px 16px;
   position: relative;
-  border-right: 1px solid #e6ecf2; /* vertical separator between permit cards */
+  border-right: 1px solid var(--border2-color); /* vertical separator between permit cards */
 }
 .permit-card:last-child { border-right: none; }
 .permit-header { margin-bottom: 10px; }
 .permit-index {
   display: block;
   font-size: 0.76rem;
-  color: #8b8e99;
+  color: var(--header-text);
 }
 .permit-title {
   display: block;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--muted-text);
 }
 .permit-image-wrap { margin-top: 8px; }
 .permit-image {
@@ -297,17 +297,17 @@
 
 /* Terms card */
 .terms-card {
-  background: #ffffff;
+  background: var(--card2-bg);
   border-radius: 12px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 .terms-header {
   font-size: 0.9rem;
-  color: #8b8e99;
+  color: var(--header-text);
   font-weight: 500;
   margin: 8px 22px 0px;
 }
-.terms-content { padding: 18px 22px; color: #1f2937; line-height: 1.6; }
+.terms-content { padding: 18px 22px; color: var(--muted-text); line-height: 1.6; }
 /* Body Section */
 .client-body {
   display: grid;

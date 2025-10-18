@@ -1,10 +1,14 @@
 /* Layout */
+/* Layout */
 .clients-root {
   display: flex;
-  height: 100vh;
+  min-height: 100vh; /* ✅ allow page to grow taller */
+  height: auto;      /* ✅ remove fixed height restriction */
   font-family: "Poppins", sans-serif;
   background-color: #f9fafb;
+  overflow-y: auto;  /* ✅ allow vertical scrolling */
 }
+
 
 .logout:hover {
   background: #f9fafb;
@@ -131,7 +135,7 @@
 }
 
 .client-card {
-  background: #ffffff;
+  background: var(--card-bg);
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);

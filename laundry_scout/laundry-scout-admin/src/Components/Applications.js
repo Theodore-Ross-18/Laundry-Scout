@@ -8,14 +8,60 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Notifications from "./Notifications";
 
-// ✅ Filter Right Section as Function
-const ApplicationsFilterRight = ({ dateRange, onDateClick, onAllClick }) => {
+// ✅ Filter Right Section (with date dropdown)
+const ApplicationsFilterRight = ({
+  startDate,
+  endDate,
+  setStartDate,
+  setEndDate,
+  showDateDropdown,
+  setShowDateDropdown,
+  handleCustomDateFilter,
+  handleAllTransactions,
+}) => {
   return (
     <div className="applications-filter-right">
-      <button className="a-date-btn" onClick={onDateClick}>
-        {dateRange}
-      </button>
-      <button className="a-all-btn" onClick={onAllClick}>
+      {/* 📅 Date Button */}
+      <div className="date-dropdown-wrapper">
+        <button
+          className="a-date-btn"
+          onClick={() => setShowDateDropdown(!showDateDropdown)}
+        >
+          {startDate && endDate
+            ? `${new Date(startDate).toLocaleDateString()} - ${new Date(
+                endDate
+              ).toLocaleDateString()}`
+            : "Select Date Range"}
+        </button>
+
+        {/* ✅ Dropdown */}
+        {showDateDropdown && (
+          <div className="date-dropdown">
+            <label>
+              Start Date:
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </label>
+            <label>
+              End Date:
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </label>
+            <button className="apply-btn" onClick={handleCustomDateFilter}>
+              Apply
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* 💼 All Transactions Button */}
+      <button className="a-all-btn" onClick={handleAllTransactions}>
         All Transactions
       </button>
     </div>
@@ -38,6 +84,11 @@ function Applications() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [reason, setReason] = useState("");
   const [specificReason, setSpecificReason] = useState("");
+
+  // ✅ Date Filter States
+  const [showDateDropdown, setShowDateDropdown] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const navigate = useNavigate();
   const searchRef = useRef(null);
@@ -79,11 +130,42 @@ function Applications() {
     setLoading(false);
   };
 
+  // ✅ Custom Date Filter
+  const handleCustomDateFilter = async () => {
+    if (!startDate || !endDate) return;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const { data, error } = await supabase
+      .from("business_profiles")
+      .select("*")
+      .gte("created_at", start.toISOString())
+      .lte("created_at", end.toISOString());
+
+    if (error) {
+      console.error("Error filtering by date:", error.message);
+    } else {
+      setBusinesses(data || []);
+      setShowDateDropdown(false);
+    }
+  };
+
+  // ✅ All Transactions (reset filter)
+  const handleAllTransactions = async () => {
+    const { data, error } = await supabase.from("business_profiles").select("*");
+    if (error) {
+      console.error("Error fetching all:", error.message);
+    } else {
+      setBusinesses(data || []);
+    }
+  };
+
   // ✅ search history click outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setShowHistory(false);
+        setShowDateDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -236,11 +318,16 @@ function Applications() {
                 )}
               </div>
 
-              {/* ✅ New Functional Filter */}
+              {/* ✅ Date & Transactions Filter */}
               <ApplicationsFilterRight
-                dateRange="19 Dec - 20 Dec 2024"
-                onDateClick={() => console.log("Date filter clicked")}
-                onAllClick={() => console.log("All Transactions clicked")}
+                startDate={startDate}
+                endDate={endDate}
+                setStartDate={setStartDate}
+                setEndDate={setEndDate}
+                showDateDropdown={showDateDropdown}
+                setShowDateDropdown={setShowDateDropdown}
+                handleCustomDateFilter={handleCustomDateFilter}
+                handleAllTransactions={handleAllTransactions}
               />
             </div>
 
