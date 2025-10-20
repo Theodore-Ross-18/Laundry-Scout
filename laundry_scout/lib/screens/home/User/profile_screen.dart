@@ -232,7 +232,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
                                       builder: (context) => ImagePreviewScreen(
-                                        imageUrl: _profileImageUrl!,
+                                        imageUrls: [_profileImageUrl!],
+                                        initialIndex: 0,
                                       ),
                                     ),
                                   );

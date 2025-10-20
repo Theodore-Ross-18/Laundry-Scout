@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'message_screen.dart';
 import '../../../widgets/optimized_image.dart';
-import 'package:file_picker/file_picker.dart';
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'order_placement_screen.dart';
 import '../../../services/feedback_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:laundry_scout/screens/home/User/getdirection.dart';
+import 'image_preview_screen.dart';
 
 class BusinessDetailScreen extends StatefulWidget {
   final Map<String, dynamic> businessData;
@@ -27,6 +25,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   Map<String, dynamic>? _fullBusinessData;
   bool _isLoading = true;
   late TabController _tabController;
+  List<String> _galleryImageUrls = [];
   List<Map<String, dynamic>> _reviews = [];
   List<Map<String, dynamic>> _pricelist = [];
   final FeedbackService _feedbackService = FeedbackService();
@@ -34,7 +33,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this); 
+    _tabController = TabController(length: 4, vsync: this); 
     _loadFullBusinessData().then((_) {
 
       _loadPricelist();
@@ -152,27 +151,9 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
 
   Widget _buildCoverImage() {
     
-    final coverPhotoFile = _fullBusinessData!['_coverPhotoFile'] as PlatformFile?;
     final coverPhotoUrl = _fullBusinessData!['cover_photo_url'] as String?;
     
-    if (coverPhotoFile != null) {
-      
-      if (kIsWeb) {
-        return Image.memory(
-          coverPhotoFile.bytes!,
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: double.infinity,
-        );
-      } else {
-        return Image.file(
-          File(coverPhotoFile.path!),
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: double.infinity,
-        );
-      }
-    } else if (coverPhotoUrl != null) {
+    if (coverPhotoUrl != null) {
      
       return OptimizedImage(
         imageUrl: coverPhotoUrl,
@@ -201,12 +182,13 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     try {
         final response = await Supabase.instance.client
             .from('business_profiles')
-            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours, available_pickup_time_slots, available_dropoff_time_slots, does_delivery, latitude, longitude, business_address') // Add new columns here
+            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours, available_pickup_time_slots, available_dropoff_time_slots, does_delivery, latitude, longitude, business_address, gallery_image_urls, cover_photo_url') // Add new columns here
             .eq('id', widget.businessData['id'])
             .single();
       
       setState(() {
         _fullBusinessData = response;
+        _galleryImageUrls = List<String>.from(response['gallery_image_urls'] ?? []);
         _isLoading = false;
       });
     } catch (e) {
@@ -511,27 +493,49 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     );
   }
 
-  String _formatTimeAgo(String? createdAt) {
-      if (createdAt == null) return 'Unknown';
-    
-    try {
-      final DateTime reviewDate = DateTime.parse(createdAt);
-      final DateTime now = DateTime.now();
-      final Duration difference = now.difference(reviewDate);
-      
-      if (difference.inDays > 0) {
-        return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
-      } else if (difference.inHours > 0) {
-        return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
-      } else if (difference.inMinutes > 0) {
-        return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
-      } else {
-        return 'Just now';
-      }
-    } catch (e) {
-      return 'Unknown';
+  Widget _buildGalleryTab() {
+    if (_galleryImageUrls.isEmpty) {
+      return const Center(
+        child: Text(
+          'No gallery images available.',
+          style: TextStyle(fontSize: 16, color: Colors.black54),
+        ),
+      );
     }
+
+    return GridView.builder(
+      padding: const EdgeInsets.all(8.0),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 8.0,
+        mainAxisSpacing: 8.0,
+      ),
+      itemCount: _galleryImageUrls.length,
+      itemBuilder: (context, index) {
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ImagePreviewScreen(
+                  imageUrls: _galleryImageUrls,
+                  initialIndex: index,
+                ),
+              ),
+            );
+          },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8.0),
+            child: OptimizedImage(
+              imageUrl: _galleryImageUrls[index],
+              fit: BoxFit.cover,
+            ),
+          ),
+        );
+      },
+    );
   }
+
 
   Future<void> _placeOrder() async {
     final user = Supabase.instance.client.auth.currentUser;
@@ -551,6 +555,218 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
           availablePickupTimeSlots: List<String>.from(_fullBusinessData!['available_pickup_time_slots'] ?? []),
           availableDropoffTimeSlots: List<String>.from(_fullBusinessData!['available_dropoff_time_slots'] ?? []),
         ),
+      ),
+    );
+  }
+
+  String _formatTimeAgo(String? createdAt) {
+    if (createdAt == null) return 'Unknown';
+
+    try {
+      final DateTime reviewDate = DateTime.parse(createdAt);
+      final DateTime now = DateTime.now();
+      final Duration difference = now.difference(reviewDate);
+
+      if (difference.inDays > 0) {
+        return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
+      } else if (difference.inHours > 0) {
+        return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
+      } else if (difference.inMinutes > 0) {
+        return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
+      } else {
+        return 'Just now';
+      }
+    } catch (e) {
+      return 'Unknown';
+    }
+  }
+
+  Widget _buildReviewsTab() {
+
+    final userReviews = _reviews.where((review) =>
+      review['user_profiles'] != null &&
+      review['user_profiles']['first_name'] != null
+    ).toList();
+
+    double averageRating = _calculateAverageRating();
+    int totalReviews = userReviews.length;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  totalReviews == 1 ? 'Review' : 'Reviews',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  totalReviews > 0 ? averageRating.toStringAsFixed(1) : '0.0',
+                  style: const TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    return Icon(
+                      index < averageRating.floor() ? Icons.star : Icons.star_border,
+                      color: Colors.amber,
+                      size: 20,
+                    );
+                  }),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Based on $totalReviews ${totalReviews == 1 ? 'Review' : 'Reviews'}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          if (userReviews.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Center(
+                child: Text(
+                  'No user reviews yet',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            )
+          else
+            ...(userReviews.map((review) => Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: const Color(0xFF5A35E3),
+                        child: Text(
+                          (review['user_profiles']?['first_name']?[0] ?? 'U').toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${review['user_profiles']?['first_name'] ?? 'Anonymous'} ${review['user_profiles']?['last_name'] ?? ''}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                Row(
+                                  children: List.generate(5, (index) {
+                                    return Icon(
+                                      index < (review['rating'] ?? 0) ? Icons.star : Icons.star_border,
+                                      color: Colors.amber,
+                                      size: 16,
+                                    );
+                                  }),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  review['rating']?.toString() ?? '0',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        _formatTimeAgo(review['created_at']),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (review['comment'] != null && review['comment'].toString().isNotEmpty)
+                    Text(
+                      review['comment'],
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black,
+                        height: 1.4,
+                      ),
+                    ),
+                ],
+              ),
+            )).toList()),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => _showReviewDialog(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5A35E3),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Make a Review',
+                style: TextStyle(
+                  color: Color.fromARGB(255, 255, 255, 255),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -688,6 +904,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                         tabs: const [
                           Tab(text: 'About'),
                           Tab(text: 'Order'),
+                          Tab(text: 'Gallery'),
                           Tab(text: 'Reviews'),
                         ],
                       ),
@@ -699,6 +916,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                         children: [
                           _buildAboutTab(),
                           _buildOrderTab(),
+                          _buildGalleryTab(),
                           _buildReviewsTab(),
                         ],
                       ),
@@ -1161,196 +1379,6 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                       ),
                     ),
                   ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReviewsTab() {
-    
-    final userReviews = _reviews.where((review) => 
-      review['user_profiles'] != null && 
-      review['user_profiles']['first_name'] != null
-    ).toList();
-    
-    double averageRating = _calculateAverageRating();
-    int totalReviews = userReviews.length;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  totalReviews == 1 ? 'Review' : 'Reviews',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  totalReviews > 0 ? averageRating.toStringAsFixed(1) : '0.0',
-                  style: const TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (index) {
-                    return Icon(
-                      index < averageRating.floor() ? Icons.star : Icons.star_border,
-                      color: Colors.amber,
-                      size: 20,
-                    );
-                  }),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Based on $totalReviews ${totalReviews == 1 ? 'Review' : 'Reviews'}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          if (userReviews.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Center(
-                child: Text(
-                  'No user reviews yet',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-            )
-          else
-            ...(userReviews.map((review) => Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: const Color(0xFF5A35E3),
-                        child: Text(
-                          (review['user_profiles']?['first_name']?[0] ?? 'U').toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${review['user_profiles']?['first_name'] ?? 'Anonymous'} ${review['user_profiles']?['last_name'] ?? ''}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black,
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                Row(
-                                  children: List.generate(5, (index) {
-                                    return Icon(
-                                      index < (review['rating'] ?? 0) ? Icons.star : Icons.star_border,
-                                      color: Colors.amber,
-                                      size: 16,
-                                    );
-                                  }),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  review['rating']?.toString() ?? '0',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        _formatTimeAgo(review['created_at']),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (review['comment'] != null && review['comment'].toString().isNotEmpty)
-                    Text(
-                      review['comment'],
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black,
-                        height: 1.4,
-                      ),
-                    ),
-                ],
-              ),
-            )).toList()),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => _showReviewDialog(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5A35E3),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Make a Review',
-                style: TextStyle(
-                  color: Color.fromARGB(255, 255, 255, 255),
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
           ),
         ],
       ),
