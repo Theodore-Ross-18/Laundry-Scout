@@ -509,7 +509,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('Log In'),
+                        : const Text('LOGIN', style: TextStyle(fontStyle: FontStyle.italic)),
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -621,7 +621,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   child: Text(
-                    _userType == 'business' ? 'Start Managing' : 'Get Started',
+                    _userType == 'business' ? 'START MANAGING' : 'GET STARTED',
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 )

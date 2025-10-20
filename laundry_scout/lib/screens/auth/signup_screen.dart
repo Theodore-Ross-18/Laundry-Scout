@@ -573,7 +573,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                   width: 20,
                                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                 )
-                              : const Text('Sign Up'),
+                              : const Text('SIGN UP', style: TextStyle(fontStyle: FontStyle.italic)),
                         ),
                       ),
                     ),
