@@ -42,7 +42,7 @@ class _OwnerPromoPreviewScreenState extends State<OwnerPromoPreviewScreen> {
             business_phone_number,
             services_offered,
             service_prices,
-            open_hours_text,
+            open_hours,
             available_pickup_time_slots,
             available_dropoff_time_slots,
             latitude,

@@ -44,19 +44,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final Map<int, TextEditingController> _editServiceControllers = {};
   final Map<int, TextEditingController> _editPriceControllers = {};
   final Set<int> _editingIndices = {};
-  List<Map<String, dynamic>> _weeklySchedule = [];
-  final Map<String, TextEditingController> _openControllers = {};
-  final Map<String, TextEditingController> _closeControllers = {};
-  final Map<String, bool> _closedDays = {};
+  // List<Map<String, dynamic>> _weeklySchedule = []; // Removed
+  // final Map<String, TextEditingController> _openControllers = {}; // Removed
+  // final Map<String, TextEditingController> _closeControllers = {}; // Removed
+  // final Map<String, bool> _closedDays = {}; // Removed
   
   bool _isLoading = true;
   bool _isSaving = false;
   bool _deliveryAvailable = false;
 
   Map<String, dynamic>? _businessProfile;
-  Map<String, String>? _selectedSchedule;
+  // Map<String, String>? _selectedSchedule; // Removed
 
-  final _openHoursController = TextEditingController();
+  // final _openHoursController = TextEditingController(); // Removed
   final _pickupTimeController = TextEditingController();
   final _dropoffTimeController = TextEditingController();
 
@@ -90,14 +90,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       controller.dispose();
     }
     
-    for (var c in _openControllers.values) {
-      c.dispose();
-    }
-    for (var c in _closeControllers.values) {
-      c.dispose();
-    }
+    // for (var c in _openControllers.values) { // Removed
+    //   c.dispose(); // Removed
+    // } // Removed
+    // for (var c in _closeControllers.values) { // Removed
+    //   c.dispose(); // Removed
+    // } // Removed
     
-    _openHoursController.dispose();
+    // _openHoursController.dispose();
     _pickupTimeController.dispose();
     _dropoffTimeController.dispose();
 
@@ -139,7 +139,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _coverPhotoUrl = _businessProfile!['cover_photo_url'];
           _coverPhotoUrl = _businessProfile!['cover_photo_url'];
 
-          _openHoursController.text = _businessProfile!['open_hours_text'] ?? '';
+          // _openHoursController.text = _businessProfile!['open_hours'] ?? ''; // Removed
 
           _pickupSlotControllers.clear();
           final List<String> pickupSlots = List<String>.from(_businessProfile!['available_pickup_time_slots'] ?? []);
@@ -190,21 +190,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             _pricelist.addAll(uniquePricelist.values);
           }
           
-          if (_businessProfile!['pickup_schedule'] != null && _businessProfile!['dropoff_schedule'] != null) {
-            _selectedSchedule = {
-              'pickup': _businessProfile!['pickup_schedule'],
-              'dropoff': _businessProfile!['dropoff_schedule'],
-            };
-          }
+          // if (_businessProfile!['pickup_schedule'] != null && _businessProfile!['dropoff_schedule'] != null) { // Removed
+          //   _selectedSchedule = { // Removed
+          //     'pickup': _businessProfile!['pickup_schedule'], // Removed
+          //     'dropoff': _businessProfile!['dropoff_schedule'], // Removed
+          //   }; // Removed
+          // } // Removed
           
           _syncServicesWithPricelist();
           
-          for (var schedule in _weeklySchedule) {
-            String day = schedule['day'];
-            _openControllers[day] = TextEditingController(text: schedule['open']);
-            _closeControllers[day] = TextEditingController(text: schedule['close']);
-            _closedDays[day] = schedule['closed'] ?? false;
-          }
+          // for (var schedule in _weeklySchedule) { // Removed
+          //   String day = schedule['day']; // Removed
+          //   _openControllers[day] = TextEditingController(text: schedule['open']); // Removed
+          //   _closeControllers[day] = TextEditingController(text: schedule['close']); // Removed
+          //   _closedDays[day] = schedule['closed'] ?? false; // Removed
+          // } // Removed
           _isLoading = false;
         });
       }
@@ -423,16 +423,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'does_delivery': _deliveryAvailable,
         'terms_and_conditions': _termsAndConditionsController.text.trim(),
         'service_prices': _pricelist,
-        'open_hours_text': _openHoursController.text.trim(),
 
         'available_pickup_time_slots': _pickupSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
         'available_dropoff_time_slots': _dropoffSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
       };
 
-      if (_selectedSchedule != null) {
-        updateData['pickup_schedule'] = _selectedSchedule!['pickup'];
-        updateData['dropoff_schedule'] = _selectedSchedule!['dropoff'];
-      }
+      // if (_selectedSchedule != null) { // Removed
+      //   updateData['pickup_schedule'] = _selectedSchedule!['pickup']; // Removed
+      //   updateData['dropoff_schedule'] = _selectedSchedule!['dropoff']; // Removed
+      // } // Removed
 
       if (_selectedImageFile != null || _selectedImageBytes != null) {
         final String fileExtension = _selectedImageFile?.path.split('.').last ?? 'png';
@@ -708,18 +707,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Open Hours'),
+        
         const SizedBox(height: 16),
-        _buildTextField(
-          controller: _openHoursController,
-          label: 'Open Hours (e.g., Mon-Sat: 9AM-5PM)',
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter your open hours';
-            }
-            return null;
-          },
-        ),
         const SizedBox(height: 24),
         if (_deliveryAvailable)
           Column(
@@ -865,7 +854,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 'terms_and_conditions': _termsAndConditionsController.text.trim(),
                 'services_offered': _selectedServices,
                 'service_prices': _pricelist,
-                'open_hours_text': _openHoursController.text.trim(),
+
                 'available_pickup_time_slots': _pickupSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
                 'available_dropoff_time_slots': _dropoffSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
                 'cover_photo_url': _coverPhotoUrl,
@@ -960,7 +949,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                        ),
                                      ]
                                    else if (_coverPhotoUrl == null && _selectedImageBytes == null && _selectedImageFile == null)
-                                     ...[ 
+                                     ...[
                                        Center(
                                          child: Icon(
                                            Icons.photo,
@@ -1145,7 +1134,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 32),
                     
                     // 3. Business Schedule Section (Editable)
-                    _buildSectionHeader('Business Schedule'),
+                    
                     const SizedBox(height: 16),
                     _buildEditableScheduleSection(),
                     const SizedBox(height: 32),

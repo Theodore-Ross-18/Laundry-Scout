@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart'; // Import for DateFormat
 
 class AvailabilityScreen extends StatefulWidget {
   const AvailabilityScreen({super.key});
@@ -12,6 +13,10 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
   String _selectedStatus = 'Open Slots';
   TimeOfDay _openTime = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay _closeTime = const TimeOfDay(hour: 18, minute: 0);
+  Set<String> _selectedDays = {};
+  final List<String> _allDays = [
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
+  ];
   bool _isLoading = true;
   bool _isSaving = false;
   Map<String, dynamic>? _businessProfile;
@@ -65,16 +70,50 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
           _businessProfile = Map<String, dynamic>.from(response);
           _selectedStatus = _businessProfile!['availability_status'] ?? 'Open Slots';
           
-          final operatingHours = _businessProfile!['operating_hours'];
-          if (operatingHours != null && operatingHours is Map) {
-            final openHour = operatingHours['open_hour'] ?? 8;
-            final openMinute = operatingHours['open_minute'] ?? 0;
-            final closeHour = operatingHours['close_hour'] ?? 18;
-            final closeMinute = operatingHours['close_minute'] ?? 0;
-            
-            _openTime = TimeOfDay(hour: openHour, minute: openMinute);
-            _closeTime = TimeOfDay(hour: closeHour, minute: closeMinute);
+          // Parse open_hours to set _openTime and _closeTime, and _selectedDays
+          final String? openHours = _businessProfile!['open_hours'];
+          if (openHours != null && openHours.isNotEmpty) {
+            try {
+              final parts = openHours.split(': ');
+              if (parts.length == 2) {
+                _parseSelectedDays(parts[0]);
+                final timeParts = parts[1].split(' - ');
+                if (timeParts.length == 2) {
+                  _openTime = _parseTimeOfDay(timeParts[0]);
+                  _closeTime = _parseTimeOfDay(timeParts[1]);
+                }
+              } else { // Handle old format without days
+                final timeParts = openHours.split(' - ');
+                if (timeParts.length == 2) {
+                  _openTime = _parseTimeOfDay(timeParts[0]);
+                  _closeTime = _parseTimeOfDay(timeParts[1]);
+                }
+              }
+            } catch (e) {
+              print('Error parsing open_hours: $e');
+              // Fallback to default times if parsing fails
+              _openTime = const TimeOfDay(hour: 8, minute: 0);
+              _closeTime = const TimeOfDay(hour: 18, minute: 0);
+              _selectedDays.clear(); // Clear selected days on error
+            }
+          } else {
+            // Default times if open_hours is not set
+            _openTime = const TimeOfDay(hour: 8, minute: 0);
+            _closeTime = const TimeOfDay(hour: 18, minute: 0);
+            _selectedDays.clear(); // Clear selected days if no open_hours
           }
+
+          // Removed: operating_hours logic
+          // final operatingHours = _businessProfile!['operating_hours'];
+          // if (operatingHours != null && operatingHours is Map) {
+          //   final openHour = operatingHours['open_hour'] ?? 8;
+          //   final openMinute = operatingHours['open_minute'] ?? 0;
+          //   final closeHour = operatingHours['close_hour'] ?? 18;
+          //   final closeMinute = operatingHours['close_minute'] ?? 0;
+            
+          //   _openTime = TimeOfDay(hour: openHour, minute: openMinute);
+          //   _closeTime = TimeOfDay(hour: closeHour, minute: closeMinute);
+          // }
           
           _isLoading = false;
         });
@@ -100,18 +139,24 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
-      final operatingHours = {
-        'open_hour': _openTime.hour,
-        'open_minute': _openTime.minute,
-        'close_hour': _closeTime.hour,
-        'close_minute': _closeTime.minute,
-      };
+      // Format open and close times into a single string
+      final String formattedDays = _formatSelectedDays();
+      final String openHours = '$formattedDays: ${_formatTimeOfDay(_openTime)} - ${_formatTimeOfDay(_closeTime)}';
+
+      // Removed: operating_hours logic
+      // final operatingHours = {
+      //   'open_hour': _openTime.hour,
+      //   'open_minute': _openTime.minute,
+      //   'close_hour': _closeTime.hour,
+      //   'close_minute': _closeTime.minute,
+      // };
 
       await Supabase.instance.client
           .from('business_profiles')
           .update({
             'availability_status': _selectedStatus,
-            'operating_hours': operatingHours,
+            'open_hours': openHours, // Store formatted string
+            // Removed: 'operating_hours': operatingHours,
           })
           .eq('id', user.id);
 
@@ -249,6 +294,42 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
                   const SizedBox(height: 16),
                   
                   ..._availabilityOptions.map((option) => _buildStatusOption(option)),
+                  
+                  const SizedBox(height: 32),
+                  
+                  const Text(
+                    'Operating Days',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Wrap(
+                          spacing: 8.0, // gap between adjacent chips
+                          runSpacing: 8.0, // gap between lines
+                          children: _allDays.map((day) => _buildDayChip(day)).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
                   
                   const SizedBox(height: 32),
                   
@@ -422,4 +503,102 @@ class _AvailabilityScreenState extends State<AvailabilityScreen> {
       ],
     );
   }
+  Widget _buildDayChip(String day) {
+    final isSelected = _selectedDays.contains(day);
+    return ChoiceChip(
+      label: Text(day),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() {
+          if (selected) {
+            _selectedDays.add(day);
+          } else {
+            _selectedDays.remove(day);
+          }
+        });
+      },
+      selectedColor: const Color(0xFF5A35E3),
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : Colors.black87,
+        fontWeight: FontWeight.w500,
+      ),
+      backgroundColor: Colors.grey[200],
+      side: BorderSide(
+        color: isSelected ? const Color(0xFF5A35E3) : Colors.grey[400]!,
+      ),
+    );
+  }
+
+  String _formatSelectedDays() {
+    if (_selectedDays.isEmpty) {
+      return 'No days selected';
+    }
+    if (_selectedDays.length == _allDays.length) {
+      return 'Everyday';
+    }
+
+    final List<String> sortedDays = _selectedDays.toList()..sort((a, b) => _allDays.indexOf(a).compareTo(_allDays.indexOf(b)));
+
+    if (sortedDays.length == 1) {
+      return sortedDays.first;
+    }
+
+    // Check for consecutive days to form ranges (e.g., Mon - Fri)
+    final List<String> abbreviatedDays = sortedDays.map((day) => day.substring(0, 3)).toList();
+    final List<String> ranges = [];
+    int i = 0;
+    while (i < abbreviatedDays.length) {
+      int j = i;
+      while (j + 1 < abbreviatedDays.length &&
+             _allDays.indexOf(sortedDays[j+1]) == _allDays.indexOf(sortedDays[j]) + 1) {
+        j++;
+      }
+      if (i == j) {
+        ranges.add(abbreviatedDays[i]);
+      } else {
+        ranges.add('${abbreviatedDays[i]} - ${abbreviatedDays[j]}');
+      }
+      i = j + 1;
+    }
+    return ranges.join(', ');
+  }
+
+  void _parseSelectedDays(String daysString) {
+    _selectedDays.clear();
+    if (daysString == 'Everyday') {
+      _selectedDays.addAll(_allDays);
+      return;
+    }
+
+    final List<String> parts = daysString.split(', ');
+    for (final part in parts) {
+      if (part.contains(' - ')) {
+        final rangeParts = part.split(' - ');
+        final startIndex = _allDays.indexWhere((day) => day.startsWith(rangeParts[0]));
+        final endIndex = _allDays.indexWhere((day) => day.startsWith(rangeParts[1]));
+        if (startIndex != -1 && endIndex != -1) {
+          for (int i = startIndex; i <= endIndex; i++) {
+            _selectedDays.add(_allDays[i]);
+          }
+        }
+      } else if (part != 'No days selected') {
+        final day = _allDays.firstWhere((d) => d.startsWith(part), orElse: () => '');
+        if (day.isNotEmpty) {
+          _selectedDays.add(day);
+        }
+      }
+    }
+  }
+}
+
+TimeOfDay _parseTimeOfDay(String timeString) {
+  final format = DateFormat.jm(); // e.g., 5:00 PM
+  final dateTime = format.parse(timeString);
+  return TimeOfDay.fromDateTime(dateTime);
+}
+
+String _formatTimeOfDay(TimeOfDay time) {
+  final now = DateTime.now();
+  final dateTime = DateTime(now.year, now.month, now.day, time.hour, time.minute);
+  return DateFormat.jm().format(dateTime);
 }

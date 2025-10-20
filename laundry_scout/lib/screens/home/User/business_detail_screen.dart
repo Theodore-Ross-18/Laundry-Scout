@@ -201,7 +201,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     try {
         final response = await Supabase.instance.client
             .from('business_profiles')
-            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours_text, available_pickup_time_slots, available_dropoff_time_slots, does_delivery, latitude, longitude, business_address') // Add new columns here
+            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours, available_pickup_time_slots, available_dropoff_time_slots, does_delivery, latitude, longitude, business_address') // Add new columns here
             .eq('id', widget.businessData['id'])
             .single();
       
@@ -767,7 +767,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  _fullBusinessData!['open_hours_text'] ?? 'Open hours not available.',
+                  _fullBusinessData!['open_hours'] ?? 'Open hours not available.',
                   style: const TextStyle(
                     fontSize: 14,
                     color: Colors.black87,
@@ -844,8 +844,8 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                       child: ElevatedButton.icon(
                         onPressed: () {
                           final phoneNumber = _fullBusinessData!['business_phone_number'] ??
-                                        _fullBusinessData!['contact_number'] ??
-                                        'No phone number available';
+                                          _fullBusinessData!['contact_number'] ??
+                                          'No phone number available';
                           showDialog(
                             context: context,
                             builder: (BuildContext context) {
