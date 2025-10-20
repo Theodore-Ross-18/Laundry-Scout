@@ -79,19 +79,22 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
     super.dispose();
   }
 
-  void _startTimer() {
-    _countdown = 60; 
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_countdown > 0) {
-        setState(() {
-          _countdown--;
-        });
-      } else {
-        _timer.cancel();
-        
-      }
-    });
-  }
+ void _startTimer() {
+  setState(() {
+    _countdown = 60;
+  });
+
+  _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    if (_countdown > 0) {
+      setState(() {
+        _countdown--;
+      });
+    } else {
+      _timer.cancel();
+    }
+  });
+}
+
 
   Future<void> _verifyOtp() async {
     setState(() {
@@ -174,56 +177,46 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
     }
   }
 
-  Future<void> _resendOtp() async {
-    setState(() {
-      _isLoading = true;
-    });
-    print('Resending OTP for email: ${widget.email}');
+ Future<void> _resendOtp() async {
+  if (_countdown > 0 || _isLoading) return; // Prevent multiple taps
 
-    if (widget.email.isEmpty) {
-      if (mounted) {
-        _showErrorDialog('Email address is missing. Cannot resend OTP.');
-      }
+  setState(() {
+    _isLoading = true;
+  });
+
+  try {
+    await Supabase.instance.client.auth.signInWithOtp(
+      email: widget.email,
+      emailRedirectTo: null, // Optional: Add redirect URI if using deep links
+    );
+
+    _startTimer(); // Restart countdown
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('A new OTP has been sent to your email.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  } on AuthException catch (error) {
+    if (mounted) {
+      _showErrorDialog('Error resending OTP: ${error.message}');
+    }
+  } catch (error) {
+    if (mounted) {
+      _showErrorDialog('Unexpected error: $error');
+    }
+  } finally {
+    if (mounted) {
       setState(() {
         _isLoading = false;
       });
-      return;
-    }
-
-    try {
-      await Supabase.instance.client.auth.resend(
-        type: OtpType.signup, 
-        email: widget.email,
-      );
-      _startTimer(); 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('New OTP has been sent to your email.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } on AuthException catch (error) {
-      if (mounted) {
-        if (error.message.contains('rate limit') || error.message.contains('too many requests')) {
-          _showErrorDialog('Too many resend requests. Please wait a moment before trying again.');
-        } else {
-          _showErrorDialog('Error resending OTP: ${error.message}');
-        }
-      }
-    } catch (error) {
-      if (mounted) {
-        _showErrorDialog('An unexpected error occurred: $error');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
+}
+
 
   void _showErrorDialog(String message) {
     showDialog(
@@ -280,44 +273,47 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
                   ),
                   const SizedBox(height: 20),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: List.generate(6, (index) {
-                      return SizedBox(
-                        width: 60,
-                        height: 60,
-                        child: TextFormField(
-                          controller: _otpControllers[index],
-                          focusNode: _otpFocusNodes[index],
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          maxLength: 1,
-                          decoration: const InputDecoration(
-                            counterText: "",
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.all(Radius.circular(100)),
-                              borderSide: BorderSide.none,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(6, (index) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4.0), // smaller spacing
+                          child: SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.1, // adaptive width (~10% of screen)
+                            height: 55,
+                            child: TextFormField(
+                              controller: _otpControllers[index],
+                              focusNode: _otpFocusNodes[index],
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              maxLength: 1,
+                              decoration: const InputDecoration(
+                                counterText: "",
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(100)),
+                                  borderSide: BorderSide.none,
+                                ),
+                                filled: true,
+                                fillColor: Color(0xFF5A35E3),
+                              ),
+                              style: const TextStyle(color: Colors.white, fontSize: 22.0),
+                              onChanged: (value) {
+                                if (value.isNotEmpty && index < _otpControllers.length - 1) {
+                                  _otpFocusNodes[index + 1].requestFocus();
+                                } else if (value.isEmpty && index > 0) {
+                                  _otpFocusNodes[index - 1].requestFocus();
+                                }
+                              },
                             ),
-                            filled: true,
-                            fillColor: Color(0xFF5A35E3), 
                           ),
-                          style: const TextStyle(color: Colors.white, fontSize: 24.0), 
-                          onChanged: (value) {
-                            if (value.isNotEmpty && index < _otpControllers.length - 1) {
-                              _otpFocusNodes[index + 1].requestFocus();
-                            } else if (value.isEmpty && index > 0) {
-                              _otpFocusNodes[index - 1].requestFocus();
-                            }
-                          },
-                        ),
-                      );
-                    }),
-                  ),
+                        );
+                      }),
+                    ),
                   const SizedBox(height: 30),
-                  TextButton(
-                    onPressed: _isLoading ? null : _resendOtp,
-                    child: const Text(
-                      'Resend OTP',
-                      style: TextStyle(
+                 TextButton(
+                    onPressed: (_isLoading || _countdown > 0) ? null : _resendOtp,
+                    child: Text(
+                      _countdown > 0 ? 'Resend in $_countdown s' : 'Resend OTP',
+                      style: const TextStyle(
                         color: Colors.grey,
                         decoration: TextDecoration.underline,
                       ),
