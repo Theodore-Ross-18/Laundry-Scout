@@ -7,6 +7,8 @@ import 'forgotpassverify_screen.dart';
 import 'dart:async'; 
 import '../../services/notification_service.dart';
 import 'package:laundry_scout/widgets/animated_eye_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 Route _createFadeRoute(Widget page) {
   return PageRouteBuilder(
@@ -41,6 +43,38 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _showSlides = false;
   String? _userType; 
   Timer? _timer; 
+
+  Future<bool> _shouldShowSlides() async {
+  final prefs = await SharedPreferences.getInstance();
+  final lastShownStr = prefs.getString('last_intro_shown');
+
+  if (lastShownStr == null) {
+    // First time login
+    return true;
+  }
+
+  final lastShown = DateTime.tryParse(lastShownStr);
+  if (lastShown == null) {
+    return true;
+  }
+
+  final now = DateTime.now();
+
+  // Same day check
+  if (now.year == lastShown.year &&
+      now.month == lastShown.month &&
+      now.day == lastShown.day) {
+    return false;
+  }
+
+  final difference = now.difference(lastShown).inDays;
+  return difference >= 3;
+}
+
+Future<void> _setIntroShownDate() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('last_intro_shown', DateTime.now().toIso8601String());
+}
 
   
   List<Map<String, String>> get userSlides => [
@@ -240,13 +274,20 @@ class _LoginScreenState extends State<LoginScreen> {
             NotificationService().testNotificationCreation();
             
             if (mounted) {
+  final shouldShow = await _shouldShowSlides();
+
+            if (shouldShow) {
+              await _setIntroShownDate(); // set the intro date right away
               setState(() {
                 _userType = determinedProfileType;
                 _showSlides = true;
                 _isLoading = false;
               });
               _startSlideTimer();
+            } else {
+              _navigateToHome();
             }
+          }
           }
         } else {
           if (mounted) {
