@@ -494,8 +494,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _signIn,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF5A35E3),
-                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF5A35E3),
                       minimumSize: const Size(250, 50),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 16),
@@ -613,8 +613,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ElevatedButton(
                   onPressed: _navigateToHome,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5A35E3),
-                    foregroundColor: const Color(0xFFFFFFFF),
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF5A35E3),
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0),
@@ -622,15 +622,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: Text(
                     _userType == 'business' ? 'START MANAGING' : 'GET STARTED',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
                   ),
                 )
               else
                 ElevatedButton(
                    onPressed: _nextPage,
                    style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5A35E3),
-                    foregroundColor: const Color(0xFFFFFFFF),
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF5A35E3),
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0),
@@ -638,7 +638,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: const Text(
                     'Next',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
                   ),
                 ),
             ],
