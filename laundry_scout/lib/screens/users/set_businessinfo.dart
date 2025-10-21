@@ -460,14 +460,14 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
               ElevatedButton(
                 onPressed: _nextPage,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5A35E3), 
-                  foregroundColor: const Color(0xFFFFFFFF),
+                  backgroundColor: Colors.white, 
+                  foregroundColor: const Color(0xFF5A35E3),
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
                 ),
                 child: Text(
-                  _currentPage == slides.length - 1 ? 'Get Started' : 'Next',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  _currentPage == slides.length - 1 ? 'GET STARTED' : 'Next',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
                 ),
               ),
             ],
@@ -604,11 +604,11 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
               ElevatedButton(
                 onPressed: _isSubmitting ? null : _submitBusinessInfo,
                 style: ElevatedButton.styleFrom(
-                   backgroundColor: const Color(0xFF5A35E3), // Purple background
-                   foregroundColor: const Color(0xFFFFFFFF), // White text
+                   backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF5A35E3),
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
-                  textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
                 ),
                 child: _isSubmitting
                     ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, valueColor: AlwaysStoppedAnimation<Color>(Colors.blue)))

@@ -1,5 +1,3 @@
-// ignore_for_file: unused_field
-
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:file_picker/file_picker.dart'; 
@@ -8,8 +6,8 @@ import 'dart:io';
 import '../../../widgets/optimized_image.dart';
 import 'package:laundry_scout/screens/home/Owner/owner_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:laundry_scout/screens/home/User/business_detail_screen.dart';
-import 'package:laundry_scout/screens/home/Owner/image_preview_screen.dart';
+import 'package:laundry_scout/screens/home/User/business_detail_screen.dart'; // Import for BusinessDetailScreen
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -46,14 +44,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final Map<int, TextEditingController> _editServiceControllers = {};
   final Map<int, TextEditingController> _editPriceControllers = {};
   final Set<int> _editingIndices = {};
-
+  // List<Map<String, dynamic>> _weeklySchedule = []; // Removed
+  // final Map<String, TextEditingController> _openControllers = {}; // Removed
+  // final Map<String, TextEditingController> _closeControllers = {}; // Removed
+  // final Map<String, bool> _closedDays = {}; // Removed
   
   bool _isLoading = true;
   bool _isSaving = false;
   bool _deliveryAvailable = false;
 
   Map<String, dynamic>? _businessProfile;
-  // 
+  // Map<String, String>? _selectedSchedule; // Removed
+
+  // final _openHoursController = TextEditingController(); // Removed
   final _pickupTimeController = TextEditingController();
   final _dropoffTimeController = TextEditingController();
 
@@ -63,11 +66,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   File? _selectedImageFile; 
   Uint8List? _selectedImageBytes; 
   String? _coverPhotoUrl; 
-
-  List<File> _selectedGalleryImageFiles = [];
-  List<Uint8List> _selectedGalleryImageBytes = [];
-  List<String> _existingGalleryImageUrls = [];
-  bool _isUploadingImages = false; // New variable for loading indicator
 
   @override
   void initState() {
@@ -92,7 +90,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       controller.dispose();
     }
     
-
+    // for (var c in _openControllers.values) { // Removed
+    //   c.dispose(); // Removed
+    // } // Removed
+    // for (var c in _closeControllers.values) { // Removed
+    //   c.dispose(); // Removed
+    // } // Removed
     
     // _openHoursController.dispose();
     _pickupTimeController.dispose();
@@ -104,8 +107,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     for (var controller in _dropoffSlotControllers) {
       controller.dispose();
     }
-
-    _isUploadingImages = false; // Dispose of the loading indicator
 
     super.dispose();
   }
@@ -136,12 +137,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _deliveryAvailable = _businessProfile!['does_delivery'] ?? false;
 
           _coverPhotoUrl = _businessProfile!['cover_photo_url'];
-
-          final List<dynamic> galleryUrls = _businessProfile!['gallery_image_urls'] ?? [];
-          _existingGalleryImageUrls = List<String>.from(galleryUrls.map((url) => url.toString()));
           _coverPhotoUrl = _businessProfile!['cover_photo_url'];
 
-
+          // _openHoursController.text = _businessProfile!['open_hours'] ?? ''; // Removed
 
           _pickupSlotControllers.clear();
           final List<String> pickupSlots = List<String>.from(_businessProfile!['available_pickup_time_slots'] ?? []);
@@ -192,7 +190,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             _pricelist.addAll(uniquePricelist.values);
           }
           
-
+          // if (_businessProfile!['pickup_schedule'] != null && _businessProfile!['dropoff_schedule'] != null) { // Removed
+          //   _selectedSchedule = { // Removed
+          //     'pickup': _businessProfile!['pickup_schedule'], // Removed
+          //     'dropoff': _businessProfile!['dropoff_schedule'], // Removed
+          //   }; // Removed
+          // } // Removed
+          
+          _syncServicesWithPricelist();
+          
+          // for (var schedule in _weeklySchedule) { // Removed
+          //   String day = schedule['day']; // Removed
+          //   _openControllers[day] = TextEditingController(text: schedule['open']); // Removed
+          //   _closeControllers[day] = TextEditingController(text: schedule['close']); // Removed
+          //   _closedDays[day] = schedule['closed'] ?? false; // Removed
+          // } // Removed
           _isLoading = false;
         });
       }
@@ -302,126 +314,94 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   
-
-
-  Future<void> _pickGalleryImages() async {
+  Future<void> _pickImage() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: true,
+        type: FileType.image, 
+        allowMultiple: false,
         withData: true,
       );
 
       if (result != null) {
         setState(() {
-          for (var file in result.files) {
-            if (_selectedGalleryImageFiles.length + _existingGalleryImageUrls.length + _selectedGalleryImageBytes.length < 7) {
-              if (file.bytes != null) {
-                _selectedGalleryImageBytes.add(file.bytes!);
-              } else if (file.path != null) {
-                _selectedGalleryImageFiles.add(File(file.path!));
-              }
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('You can only upload a maximum of 7 gallery images.')),
-              );
-            }
+          if (result.files.single.bytes != null) {
+            
+            _selectedImageBytes = result.files.single.bytes;
+            _selectedImageFile = null; 
+          } else {
+            
+            _selectedImageFile = File(result.files.single.path!);
+            _selectedImageBytes = null;
           }
         });
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking gallery images: $e')),
+          SnackBar(content: Text('Error picking image: $e')),
         );
       }
     }
   }
 
-  Widget _buildGalleryImagePreview(dynamic imageSource, {required bool isNew}) {
-    Widget imageWidget;
-    if (imageSource is String) {
-      imageWidget = OptimizedImage(
-        imageUrl: imageSource,
-        fit: BoxFit.cover,
-      );
-    } else if (imageSource is File) {
-      imageWidget = Image.file(
-        imageSource,
-        fit: BoxFit.cover,
-      );
-    } else if (imageSource is Uint8List) {
-      imageWidget = Image.memory(
-        imageSource,
-        fit: BoxFit.cover,
-      );
-    } else {
-      return const SizedBox.shrink();
+  Future<void> _deleteCoverPhoto() async {
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      if (_coverPhotoUrl != null) {
+        final uri = Uri.parse(_coverPhotoUrl!);
+        final segments = uri.pathSegments;
+        final profilesIndex = segments.indexOf('profiles');
+        String? filePath;
+        if (profilesIndex != -1 && profilesIndex + 1 < segments.length) {
+          filePath = segments.sublist(profilesIndex + 1).join('/');
+        }
+
+        if (filePath != null) {
+          await Supabase.instance.client.storage.from('profiles').remove([filePath]);
+        }
+      }
+
+      await Supabase.instance.client
+          .from('business_profiles')
+          .update({'cover_photo_url': null})
+          .eq('id', user.id);
+
+      if (mounted) {
+        setState(() {
+          _coverPhotoUrl = null;
+          _selectedImageFile = null;
+          _selectedImageBytes = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cover photo deleted successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting cover photo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
-
-    return Stack(
-      children: [
-        GestureDetector(
-          onTap: () {
-            if (imageSource is String) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ImagePreviewScreen(imageUrl: imageSource),
-                ),
-              );
-            }
-          },
-          child: Hero(
-            tag: imageSource.hashCode, // Unique tag for Hero animation
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: imageWidget,
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          top: 0,
-          right: 0,
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                if (isNew) {
-                  if (imageSource is File) {
-                    _selectedGalleryImageFiles.remove(imageSource);
-                  } else if (imageSource is Uint8List) {
-                    _selectedGalleryImageBytes.remove(imageSource);
-                  }
-                } else {
-                  _existingGalleryImageUrls.remove(imageSource);
-                }
-              });
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.close,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
   }
-
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
@@ -448,41 +428,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'available_dropoff_time_slots': _dropoffSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
       };
 
-      setState(() {
-        _isUploadingImages = true; // Start loading indicator
-      });
-
-      List<String> newGalleryImageUrls = [];
-      for (var i = 0; i < _selectedGalleryImageFiles.length; i++) {
-        final file = _selectedGalleryImageFiles[i];
-        final String fileExtension = file.path.split('.').last;
-        final String fileName = '${user.id}/gallery_photo_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExtension';
-        final String path = fileName;
-
-        await Supabase.instance.client.storage.from('profiles').uploadBinary(
-              path,
-              await file.readAsBytes(),
-              fileOptions: const FileOptions(upsert: true),
-            );
-        final String publicUrl = Supabase.instance.client.storage.from('profiles').getPublicUrl(path);
-        newGalleryImageUrls.add(publicUrl);
-      }
-
-      for (var i = 0; i < _selectedGalleryImageBytes.length; i++) {
-        final bytes = _selectedGalleryImageBytes[i];
-        final String fileName = '${user.id}/gallery_photo_${DateTime.now().millisecondsSinceEpoch}_${_selectedGalleryImageFiles.length + i}.png';
-        final String path = fileName;
-
-        await Supabase.instance.client.storage.from('profiles').uploadBinary(
-              path,
-              bytes,
-              fileOptions: const FileOptions(upsert: true),
-            );
-        final String publicUrl = Supabase.instance.client.storage.from('profiles').getPublicUrl(path);
-        newGalleryImageUrls.add(publicUrl);
-      }
-
-      updateData['gallery_image_urls'] = [..._existingGalleryImageUrls, ...newGalleryImageUrls];
+      // if (_selectedSchedule != null) { // Removed
+      //   updateData['pickup_schedule'] = _selectedSchedule!['pickup']; // Removed
+      //   updateData['dropoff_schedule'] = _selectedSchedule!['dropoff']; // Removed
+      // } // Removed
 
       if (_selectedImageFile != null || _selectedImageBytes != null) {
         final String fileExtension = _selectedImageFile?.path.split('.').last ?? 'png';
@@ -539,7 +488,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (mounted) {
         setState(() {
           _isSaving = false;
-          _isUploadingImages = false; // Stop loading indicator
         });
       }
     }
@@ -909,7 +857,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                 'available_pickup_time_slots': _pickupSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
                 'available_dropoff_time_slots': _dropoffSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
-
+                'cover_photo_url': _coverPhotoUrl,
+                '_coverPhotoFile': _selectedImageFile != null
+                    ? PlatformFile(
+                        name: _selectedImageFile!.path.split('/').last,
+                        size: _selectedImageFile!.lengthSync(),
+                        path: _selectedImageFile!.path,
+                        bytes: kIsWeb ? _selectedImageBytes : null,
+                      )
+                    : null,
               };
 
               Navigator.push(
@@ -941,6 +897,95 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    
+                             Container(
+                               height: 200,
+                               width: double.infinity,
+                               decoration: BoxDecoration(
+                                 color: Colors.grey[200],
+                                 borderRadius: BorderRadius.circular(12),
+                               ),
+                               child: Stack(
+                                 children: [
+                                   if (_coverPhotoUrl != null && _coverPhotoUrl!.isNotEmpty) ...[
+                                     Positioned.fill(
+                                       child: ClipRRect(
+                                         borderRadius: BorderRadius.circular(12),
+                                         child: OptimizedImage(
+                                           imageUrl: _coverPhotoUrl!,
+                                           fit: BoxFit.cover,
+                                         ),
+                                       ),
+                                     ),
+                                     Positioned(
+                                       top: 8,
+                                       right: 8,
+                                       child: IconButton(
+                                         icon: const Icon(Icons.delete_forever, color: Colors.red, size: 30),
+                                         onPressed: _deleteCoverPhoto,
+                                       ),
+                                     ),
+                                   ] else if (_selectedImageBytes != null) ...[
+                                     Positioned.fill(
+                                       child: ClipRRect(
+                                         borderRadius: BorderRadius.circular(12),
+                                           child: Image.memory(
+                                             _selectedImageBytes!,
+                                             fit: BoxFit.cover,
+                                           ),
+                                         ),
+                                       ),
+                                     ]
+                                   else if (_selectedImageFile != null)
+                                     ...[
+                                       Positioned.fill(
+                                         child: ClipRRect(
+                                           borderRadius: BorderRadius.circular(12),
+                                           child: Image.file(
+                                             _selectedImageFile!,
+                                             fit: BoxFit.cover,
+                                           ),
+                                         ),
+                                       ),
+                                     ]
+                                   else if (_coverPhotoUrl == null && _selectedImageBytes == null && _selectedImageFile == null)
+                                     ...[
+                                       Center(
+                                         child: Icon(
+                                           Icons.photo,
+                                           size: 50,
+                                           color: Colors.grey[400],
+                                         ),
+                                       ),
+                                     ], 
+                                   Positioned.fill( 
+                                     child: ElevatedButton.icon(
+                                       onPressed: _pickImage,
+                                       icon: const Icon(Icons.camera_alt, color: Colors.white),
+                                       label: const Text('Change Cover Photo', style: TextStyle(color: Colors.white)),
+                                       style: ElevatedButton.styleFrom(
+                                         backgroundColor: Colors.grey.withOpacity(0.5),
+                                         shape: RoundedRectangleBorder(
+                                           borderRadius: BorderRadius.circular(12),
+                                         ),
+                                         padding: EdgeInsets.zero,
+                                       ),
+                                     ),
+                                   ),
+                                   if (_coverPhotoUrl != null || _selectedImageFile != null || _selectedImageBytes != null)
+                                     Positioned(
+                                       top: 8,
+                                       right: 8,
+                                       child: IconButton(
+                                         icon: const Icon(Icons.delete_forever, color: Colors.red, size: 30),
+                                         onPressed: _deleteCoverPhoto,
+                                       ),
+                                     ),
+                                   ],
+                                 ),
+                               ),
+                               const SizedBox(height: 20),
+
                     const SizedBox(height: 24),
                     _buildSectionHeader('Business Information'),
                     const SizedBox(height: 16),
@@ -1135,51 +1180,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                     const SizedBox(height: 32),
             
-                    // Gallery Image Upload
-                    const SizedBox(height: 20),
-                    _buildSectionHeader('Gallery Images'),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8.0,
-                      runSpacing: 8.0,
-                      children: [
-                        ..._existingGalleryImageUrls.map((url) => _buildGalleryImagePreview(url, isNew: false)),
-                        ..._selectedGalleryImageFiles.map((file) => _buildGalleryImagePreview(file, isNew: true)),
-                        ..._selectedGalleryImageBytes.map((bytes) => _buildGalleryImagePreview(bytes, isNew: true)),
-                        if (_selectedGalleryImageFiles.length + _existingGalleryImageUrls.length + _selectedGalleryImageBytes.length < 7)
-                          GestureDetector(
-                            onTap: _pickGalleryImages,
-                            child: Container(
-                              width: 100,
-                              height: 100,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey[300]!),
-                              ),
-                              child: const Icon(
-                                Icons.add_a_photo,
-                                color: Colors.grey,
-                                size: 40,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    if (_isUploadingImages)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(),
-                            SizedBox(width: 16),
-                            Text('Uploading images...'),
-                          ],
-                        ),
-                      ),
-                    const SizedBox(height: 32),
+                    _buildSectionHeader('Terms and Conditions'),
                     const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _termsAndConditionsController,
+                      label: 'Terms and Conditions',
+                      maxLines: 5,
+                      validator: (value) {
+                        return null; 
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(

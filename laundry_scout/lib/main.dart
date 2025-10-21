@@ -23,10 +23,6 @@ Future<void> main() async {
     supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY']!;
   }
   
-  // Debug prints
-  print('SUPABASE_URL: $supabaseUrl');
-  print('SUPABASE_ANON_KEY: $supabaseAnonKey');
-  
   // Initialize Supabase
   await Supabase.initialize(
     url: supabaseUrl,

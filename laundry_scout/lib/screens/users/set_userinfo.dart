@@ -294,24 +294,24 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                 ElevatedButton(
                   onPressed: _nextPage,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5A35E3), 
-                    foregroundColor: const Color(0xFFFFFFFF),
+                    backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF5A35E3),
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0),
                     ),
                   ),
                   child: const Text(
-                    'Get Started',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    'GET STARTED',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
                   ),
                 )
               else
                 ElevatedButton(
                    onPressed: _nextPage,
                    style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5A35E3), 
-                    foregroundColor: const Color(0xFFFFFFFF),
+                    backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF5A35E3),
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0),
@@ -319,7 +319,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                   ),
                   child: const Text(
                     'Next',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
                   ),
                 ),
             ],
@@ -390,8 +390,8 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
               ElevatedButton(
                 onPressed: _submitUserInfo,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5A35E3), // Purple background
-                  foregroundColor: const Color(0xFFFFFFFF), // White text
+                  backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF5A35E3),
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30.0),
@@ -399,7 +399,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                 ),
                 child: const Text(
                   'Submit',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
                 ),
               ),
             ],
