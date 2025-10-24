@@ -11,6 +11,8 @@ import 'package:flutter/foundation.dart';
 import 'package:universal_html/html.dart'
     if (dart.library.io) '../../web_html_stub.dart' as html;
 
+import 'package:laundry_scout/screens/home/Owner/owner_order_preview.dart';
+
 class OwnerOrderDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> order;
 
@@ -146,20 +148,60 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
             ),
             const SizedBox(height: 20),
             Center(
-              child: TextButton(
-                onPressed: _captureAndSaveReceipt,
-                style: TextButton.styleFrom(
-                  backgroundColor: const Color(0xFF6F5ADC),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: _captureAndSaveReceipt,
+                    style: TextButton.styleFrom(
+                      backgroundColor: const Color(0xFF6F5ADC),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                    child: const Text(
+                      'Download Receipt',
+                      style: TextStyle(fontSize: 16),
+                    ),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                ),
-                child: const Text(
-                  'Download Receipt',
-                  style: TextStyle(fontSize: 16),
-                ),
+                  const SizedBox(width: 10), // Space between buttons
+                  TextButton(
+                    onPressed: () {
+                      // Extract necessary data from widget.order to pass to OrderConfirmationScreen
+                      // This is a placeholder, you'll need to map your order data correctly
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => OrderConfirmationScreen(
+                        businessData: {'id': widget.order['business_id'] ?? ''},
+                        address: widget.order['delivery_address'] ?? '',
+                        services: (widget.order['items'] as Map<String, dynamic>).map((key, value) => MapEntry(key, (value as num).toInt())),
+                        pickupDate: DateTime.tryParse(widget.order['pickup_date'] ?? '') ?? DateTime.now(),
+                        dropoffDate: DateTime.tryParse(widget.order['dropoff_date'] ?? '') ?? DateTime.now(),
+                        pickupTime: (widget.order['pickup_date'] != null && widget.order['pickup_date'].isNotEmpty) ? DateFormat('hh:mm a').format(DateTime.tryParse(widget.order['pickup_date']) ?? DateTime.now()) : '',
+                        dropoffTime: (widget.order['dropoff_date'] != null && widget.order['dropoff_date'].isNotEmpty) ? DateFormat('hh:mm a').format(DateTime.tryParse(widget.order['dropoff_date']) ?? DateTime.now()) : '',
+                        specialInstructions: widget.order['special_instructions'] ?? '',
+                        latitude: widget.order['latitude'],
+                        longitude: widget.order['longitude'],
+                        firstName: widget.order['customer_name'].split(' ').first,
+                        lastName: widget.order['customer_name'].split(' ').last,
+                        laundryShopName: widget.order['laundry_shop_name'],
+                        phoneNumber: widget.order['mobile_number'], schedule: widget.order['schedule'] ?? {}, orderId: widget.order['order_number'],
+                      )));
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: const Color(0xFF5A35E3), // Different color for distinction
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                    child: const Text(
+                      'More Details',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 20), // Added space below the button

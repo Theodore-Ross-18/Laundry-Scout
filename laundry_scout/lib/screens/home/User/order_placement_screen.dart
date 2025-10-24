@@ -476,6 +476,11 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
     );
   }
 
+  String? _selectedPickupTime;
+  String? _selectedDropoffTime;
+  DateTime? _selectedPickupDate;
+  DateTime? _selectedDropoffDate;
+
   Widget _buildScheduleSection() {
     return GestureDetector(
       onTap: () async {
@@ -484,18 +489,28 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
           MaterialPageRoute(
             builder: (context) => ScheduleSelectionScreen(
               selectedSchedule: _selectedSchedule,
-              availablePickupTimeSlots: _businessProfile?['available_pickup_time_slots']?.cast<String>() ?? [],
-              availableDropoffTimeSlots: _businessProfile?['available_dropoff_time_slots']?.cast<String>() ?? [],
-              selectedServices: _selectedServices,
+              availablePickupTimeSlots: widget.availablePickupTimeSlots,
+              availableDropoffTimeSlots: widget.availableDropoffTimeSlots,
+              initialPickupDate: _selectedPickupDate,
+              initialDropoffDate: _selectedDropoffDate,
             ),
           ),
         );
         if (result != null) {
           setState(() {
-            _selectedSchedule = {
-              if (result['pickup'] != null) 'pickup': result['pickup'] as String,
-              if (result['dropoff'] != null) 'dropoff': result['dropoff'] as String,
-            };
+            _selectedSchedule = Map<String, String>.from(result);
+            if (result['pickup'] != null) {
+              _selectedPickupTime = result['pickup'] as String;
+            }
+            if (result['dropoff'] != null) {
+              _selectedDropoffTime = result['dropoff'] as String;
+            }
+            if (result['pickupDate'] != null) {
+              _selectedPickupDate = DateTime.parse(result['pickupDate']);
+            }
+            if (result['dropoffDate'] != null) {
+              _selectedDropoffDate = DateTime.parse(result['dropoffDate']);
+            }
           });
         }
       },
@@ -546,10 +561,10 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                 ],
               ),
             ),
-            Icon(
-              Icons.add,
-              color: Colors.grey[400],
-              size: 20,
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.grey,
+              size: 16,
             ),
           ],
         ),
@@ -760,18 +775,26 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => OrderConfirmationScreen(
-          businessData: widget.businessData,
+          businessData: {
+            ...widget.businessData,
+            'first_name': _firstName,
+            'last_name': _lastName,
+            'phone_number': _phoneNumber,
+            'latitude': _latitude,
+            'longitude': _longitude,
+          },
           address: _currentAddressController.text,
           services: _selectedServices,
           schedule: _selectedSchedule!,
-          specialInstructions: _specialInstructions,
-          termsAndConditions: _businessProfile?['terms_and_conditions'] ?? 'No terms and conditions provided.', // Pass terms and conditions
-          latitude: _latitude, 
-          longitude: _longitude,
+          laundryShopName: widget.businessData['business_name'],
           firstName: _firstName,
           lastName: _lastName,
-          laundryShopName: _businessProfile?['business_name'],
           phoneNumber: _phoneNumber,
+          pickupDate: _selectedPickupDate,
+          dropoffDate: _selectedDropoffDate,
+          pickupTime: _selectedPickupTime,
+          dropoffTime: _selectedDropoffTime,
+          specialInstructions: _specialInstructions,
         ),
       ),
     );

@@ -15,6 +15,7 @@ class OrderConfirmationScreen extends StatefulWidget {
   final String? firstName;
   final String? lastName;
   final String? phoneNumber;
+  final String orderId;
 
   final DateTime? pickupDate;
   final DateTime? dropoffDate;
@@ -38,6 +39,7 @@ class OrderConfirmationScreen extends StatefulWidget {
     this.dropoffDate,
     this.pickupTime,
     this.dropoffTime,
+    required this.orderId,
   });
 
   @override
@@ -46,28 +48,43 @@ class OrderConfirmationScreen extends StatefulWidget {
 
 class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   bool _isPlacingOrder = false;
-  bool _isTermsExpanded = false; 
-  Map<String, dynamic>? _fullBusinessData; 
-
+  bool _isTermsExpanded = false;
+  Map<String, dynamic>? _fullBusinessData;
+  Map<String, dynamic>? _orderData; // New state variable to store order details
   Map<String, double> _servicePrices = {}; 
-  double _deliveryFee = 0.0;
 
   @override
   void initState() {
     super.initState();
     _loadBusinessDataAndPrices();
+    _fetchOrderDetails();
+  }
+
+  Future<void> _fetchOrderDetails() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('orders')
+          .select('*')
+          .eq('order_number', widget.orderId)
+          .single();
+      setState(() {
+        _orderData = response;
+      });
+      // print('Fetched order data: $_orderData'); // Removed this line
+    } catch (e) {
+      print('Error fetching order details: $e');
+    }
   }
 
   Future<void> _loadBusinessDataAndPrices() async {
     try {
       final response = await Supabase.instance.client
           .from('business_profiles')
-          .select('service_prices, delivery_fee')
+          .select('service_prices') // Removed delivery_fee
           .eq('id', widget.businessData['id'])
           .single();
 
       _fullBusinessData = response;
-      _deliveryFee = double.tryParse(_fullBusinessData!['delivery_fee'].toString()) ?? 0.0;
 
       if (_fullBusinessData != null && _fullBusinessData!['service_prices'] != null) {
         final servicePricesData = _fullBusinessData!['service_prices'];
@@ -94,14 +111,18 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   }
 
   double get _subtotal {
-    return widget.services.entries.fold(0.0, (sum, entry) {
+    if (_orderData == null || _orderData!['items'] == null) return 0.0;
+    final Map<String, dynamic> itemsMap = _orderData!['items'];
+    return itemsMap.entries.fold(0.0, (sum, entry) {
       final serviceName = entry.key;
-      final quantity = entry.value;
+      final quantity = (entry.value as num).toDouble(); // Cast to num then to double
       return sum + ((_servicePrices[serviceName] ?? 0.0) * quantity);
     });
   }
 
-  double get _total => _subtotal + _deliveryFee;
+  double get _total => (_orderData!['total_amount'] as num).toDouble();
+
+  double get _deliveryFeeAmount => _total - _subtotal;
 
   String _generateOrderId() {
     final now = DateTime.now();
@@ -111,9 +132,26 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final orderId = _generateOrderId();
-    final pickupDate = DateTime.now().add(const Duration(days: 1));
-    final dropoffDate = pickupDate.add(const Duration(days: 1));
+    // final orderId = _generateOrderId(); // Removed
+    // final pickupDate = DateTime.now().add(const Duration(days: 1)); // Removed
+    // final dropoffDate = pickupDate.add(const Duration(days: 1)); // Removed
+
+    if (_orderData == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF5A35E3),
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      );
+    }
+
+    final orderId = _orderData!['order_number'] ?? 'N/A';
+    final pickupDate = _orderData!['pickup_date'] != null
+        ? DateTime.parse(_orderData!['pickup_date'])
+        : null;
+    final dropoffDate = _orderData!['delivery_date'] != null
+        ? DateTime.parse(_orderData!['delivery_date'])
+        : null;
 
     return Scaffold(
       backgroundColor: const Color(0xFF5A35E3),
@@ -225,7 +263,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                               ),
                                             ),
                                             Text(
-                                              '${DateFormat('MMM dd, yyyy').format(pickupDate)} | ${widget.schedule['pickup'] ?? ''}',
+                                              pickupDate != null
+                                                  ? '${DateFormat('MMM dd, yyyy').format(pickupDate)} | ${_orderData!['pickup_schedule'] ?? ''}'
+                                                  : 'N/A',
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 color: Colors.grey[600],
@@ -267,7 +307,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                               ),
                                             ),
                                             Text(
-                                              '${DateFormat('MMM dd, yyyy').format(dropoffDate)} | ${widget.schedule['dropoff'] ?? ''}',
+                                              dropoffDate != null
+                                                  ? '${DateFormat('MMM dd, yyyy').format(dropoffDate)} | ${_orderData!['dropoff_schedule'] ?? ''}'
+                                                  : 'N/A',
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 color: Colors.grey[600],
@@ -311,7 +353,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          '${widget.businessData['first_name'] ?? ''} ${widget.businessData['last_name'] ?? ''} (+63) ${widget.businessData['phone_number'] ?? ''}',
+                                          '${_orderData!['customer_name'] ?? ''} (+63) ${_orderData!['mobile_number'] ?? ''}',
                                           style: TextStyle(
                                             fontSize: 16,
                                             color: Colors.grey[800],
@@ -319,7 +361,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          widget.address,
+                                          _orderData!['pickup_address'] ?? 'N/A',
                                           style: TextStyle(
                                             fontSize: 14,
                                             color: Colors.grey[700],
@@ -332,10 +374,10 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                               ),
                             ),
                             const SizedBox(height: 24),
-                            if (widget.businessData['latitude'] != null && widget.businessData['longitude'] != null) ...[
+                            if (_orderData!['latitude'] != null && _orderData!['longitude'] != null) ...[
                               StaticMapSnippet(
-                                latitude: widget.businessData['latitude']!,
-                                longitude: widget.businessData['longitude']!,
+                                latitude: _orderData!['latitude']!,
+                                longitude: _orderData!['longitude']!,
                               ),
                               const SizedBox(height: 24),
                             ],
@@ -358,23 +400,23 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                               ),
                               child: Column(
                                 children: [
-                                  ...widget.services.entries.map((entry) {
+                                  ...((_orderData!['items'] as Map<String, dynamic>).entries).map((entry) {
                                     final serviceName = entry.key;
-                                    final quantity = entry.value;
+                                    final quantity = (entry.value as num).toDouble(); // Cast to num then to double
                                     return Padding(
                                       padding: const EdgeInsets.only(bottom: 8),
                                       child: Row(
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
-                                            '$serviceName ($quantity kg)',
+                                            '$serviceName (${quantity.toStringAsFixed(0)} kg)',
                                             style: const TextStyle(
                                               fontSize: 14,
                                               color: Colors.black87,
                                             ),
                                           ),
                                           Text(
-                                            '₱${(_servicePrices[serviceName] ?? 0.0) * quantity}',
+                                            '₱${((_servicePrices[serviceName] ?? 0.0) * quantity).toStringAsFixed(0)}',
                                             style: const TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
@@ -384,7 +426,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                         ],
                                       ),
                                     );
-                                  }),
+                                  }).toList(),
                                   const Divider(),
                                   const SizedBox(height: 12),
                                   Row(
@@ -398,7 +440,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                         ),
                                       ),
                                       Text(
-                                        '₱${_deliveryFee.toStringAsFixed(0)}',
+                                        '₱${_deliveryFeeAmount.toStringAsFixed(0)}',
                                         style: const TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
@@ -412,7 +454,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       const Text(
-                                        'Total (Estimate)',
+                                        'Total',
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
@@ -424,7 +466,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                         style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.black87,
+                                          color: Color(0xFF5A35E3),
                                         ),
                                       ),
                                     ],
