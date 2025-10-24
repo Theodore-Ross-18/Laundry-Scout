@@ -87,8 +87,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     });
   }
 
-  double get _deliveryFee => 54.0;
-  double get _total => _subtotal + _deliveryFee;
+  double get _total => _subtotal;
 
   String _generateOrderId() {
     final now = DateTime.now();
@@ -295,55 +294,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                               ),
                             ),
                             const SizedBox(height: 24),
-                            
-                            // Status
-                            const Text(
-                              'Status of Order',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Status',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Text(
-                                    'Pending',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.orange,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Waiting for the Laundry Shop to Confirm Your Order.',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            
                           
                             const Text(
                               'Ordered Items',
@@ -369,7 +319,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          '$service (5kg)',
+                                          '$service',
                                           style: const TextStyle(
                                             fontSize: 14,
                                             color: Colors.black87,
@@ -387,26 +337,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                     ),
                                   )),
                                   const Divider(),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text(
-                                        '(+) Delivery Fee (Standard)',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                      Text(
-                                        '₱${_deliveryFee.toStringAsFixed(0)}',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
                                   const SizedBox(height: 12),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
