@@ -43,6 +43,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   Map<String, dynamic>? _fullBusinessData; 
 
   Map<String, double> _servicePrices = {}; 
+  double _deliveryFee = 0.0;
 
   @override
   void initState() {
@@ -54,11 +55,12 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     try {
       final response = await Supabase.instance.client
           .from('business_profiles')
-          .select('service_prices')
+          .select('service_prices, delivery_fee')
           .eq('id', widget.businessData['id'])
           .single();
 
       _fullBusinessData = response;
+      _deliveryFee = double.tryParse(_fullBusinessData!['delivery_fee'].toString()) ?? 0.0;
 
       if (_fullBusinessData != null && _fullBusinessData!['service_prices'] != null) {
         final servicePricesData = _fullBusinessData!['service_prices'];
@@ -92,7 +94,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     });
   }
 
-  double get _total => _subtotal;
+  double get _total => _subtotal + _deliveryFee;
 
   String _generateOrderId() {
     final now = DateTime.now();
@@ -377,6 +379,27 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                     );
                                   }),
                                   const Divider(),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        'Delivery Fee',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      Text(
+                                        '₱${_deliveryFee.toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                   const SizedBox(height: 12),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

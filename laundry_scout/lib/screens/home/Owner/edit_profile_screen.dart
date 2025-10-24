@@ -28,6 +28,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _aboutUsController = TextEditingController();
   final _termsAndConditionsController = TextEditingController();
   final _customServiceController = TextEditingController();
+  final TextEditingController _deliveryFeeController = TextEditingController(); // Add this line
   
   final List<String> _availableServices = [
     'Iron Only',
@@ -50,6 +51,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isSaving = false;
   bool _deliveryAvailable = false;
   bool _isUploadingImages = false;
+  double _deliveryFee = 0.0; // Add this line
 
   Map<String, dynamic>? _businessProfile;
   // Map<String, String>? _selectedSchedule; // Removed
@@ -83,6 +85,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _aboutUsController.dispose();
     _termsAndConditionsController.dispose();
     _customServiceController.dispose();
+    _deliveryFeeController.dispose(); // Add this line
    
     for (var controller in _editServiceControllers.values) {
       controller.dispose();
@@ -136,6 +139,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _aboutUsController.text = _businessProfile!['about_business'] ?? '';
           _termsAndConditionsController.text = _businessProfile!['terms_and_conditions'] ?? ''; // Load terms and conditions
           _deliveryAvailable = _businessProfile!['does_delivery'] ?? false;
+          _deliveryFee = double.tryParse(_businessProfile!['delivery_fee'].toString()) ?? 0.0;
+          _deliveryFeeController.text = _deliveryFee.toString(); // Add this line
 
           final List<dynamic> galleryUrls = _businessProfile!['gallery_image_urls'] ?? [];
           _existingGalleryImageUrls = List<String>.from(galleryUrls.map((url) => url.toString()));
@@ -585,6 +590,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'about_business': _aboutUsController.text.trim(),
         'does_delivery': _deliveryAvailable,
         'terms_and_conditions': _termsAndConditionsController.text.trim(),
+        'delivery_fee': _deliveryAvailable ? double.tryParse(_deliveryFeeController.text.trim()) : null,
         'service_prices': _pricelist,
         'services_offered': _selectedServices,
         'all_available_services': _availableServices,
@@ -1044,7 +1050,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 'about_business': _aboutUsController.text.trim(),
                 'does_delivery': _deliveryAvailable,
                 'terms_and_conditions': _termsAndConditionsController.text.trim(),
-                'services_offered': _selectedServices,
                 'service_prices': _pricelist,
 
                 'available_pickup_time_slots': _pickupSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
@@ -1314,9 +1319,41 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 32),
-                    
+                    if (_deliveryAvailable)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: TextFormField(
+                          controller: _deliveryFeeController,
+                          decoration: const InputDecoration(
+                            labelText: 'Delivery Fee',
+                            labelStyle: TextStyle(color: Colors.black),
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.black),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.black),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.black),
+                            ),
+                            prefixText: '₱ ',
+                            prefixStyle: TextStyle(color: Colors.black),
+                          ),
+                          style: TextStyle(color: Colors.black),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a delivery fee';
+                            }
+                            if (double.tryParse(value) == null) {
+                              return 'Please enter a valid number';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      
                     _buildSectionHeader('Services Offered'),
                     const SizedBox(height: 16),
                     const Text(
