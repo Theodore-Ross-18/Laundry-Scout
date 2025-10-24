@@ -491,8 +491,6 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
               selectedSchedule: _selectedSchedule,
               availablePickupTimeSlots: widget.availablePickupTimeSlots,
               availableDropoffTimeSlots: widget.availableDropoffTimeSlots,
-              initialPickupDate: _selectedPickupDate,
-              initialDropoffDate: _selectedDropoffDate,
             ),
           ),
         );

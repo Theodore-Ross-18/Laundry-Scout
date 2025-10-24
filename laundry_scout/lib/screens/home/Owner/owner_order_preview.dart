@@ -47,8 +47,6 @@ class OrderConfirmationScreen extends StatefulWidget {
 }
 
 class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
-  bool _isPlacingOrder = false;
-  bool _isTermsExpanded = false;
   Map<String, dynamic>? _fullBusinessData;
   Map<String, dynamic>? _orderData; // New state variable to store order details
   Map<String, double> _servicePrices = {}; 
@@ -123,12 +121,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   double get _total => (_orderData!['total_amount'] as num).toDouble();
 
   double get _deliveryFeeAmount => _total - _subtotal;
-
-  String _generateOrderId() {
-    final now = DateTime.now();
-    final timestamp = DateFormat('yyyyMMddHHmmss').format(now);
-    return 'PFFAS$timestamp';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -476,8 +468,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             ),
                             const SizedBox(height: 24),
                             
-                            _buildTermsAndConditionsSection(),
-
+                            
                             const SizedBox(height: 24),
 
                           ],
@@ -485,37 +476,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isPlacingOrder ? null : _placeOrder,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF5A35E3),
-                          disabledBackgroundColor: Colors.grey[300],
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: _isPlacingOrder
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              )
-                            : const Text(
-                                'Continue',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                      ),
-                    ),
+                    // Removed the "Continue" button
                   ],
                 ),
               ),
@@ -525,160 +486,4 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       ),
     );
   }
-
-  DateTime _parseDateTime(String dateString, String timeSlot) {
-    final date = DateFormat('MMM dd, yyyy').parse(dateString);
-    final timeParts = timeSlot.split(RegExp(r'[- ]')).where((s) => s.isNotEmpty).toList();
-    String startTime = timeParts[0] + timeParts[1]; // e.g., "8:00AM"
-    
-    // Handle cases where the time format might be "8:00 AM" or "8 AM"
-    if (timeParts.length > 2 && (timeParts[1].toLowerCase() == 'am' || timeParts[1].toLowerCase() == 'pm')) {
-      startTime = timeParts[0] + timeParts[1];
-    } else if (timeParts.length > 1 && (timeParts[0].contains(':') && (timeParts[1].toLowerCase() == 'am' || timeParts[1].toLowerCase() == 'pm'))) {
-      startTime = timeParts[0] + timeParts[1];
-    } else if (timeParts.length > 0 && timeParts[0].contains(':') && (timeParts.last.toLowerCase() == 'am' || timeParts.last.toLowerCase() == 'pm')) {
-      startTime = timeParts[0] + timeParts.last;
-    } else {
-      // Fallback for unexpected formats, try to use the first part
-      startTime = timeParts[0];
-    }
-
-    // Ensure AM/PM is correctly formatted for parsing
-    if (!startTime.contains(RegExp(r'[APap][Mm]'))) {
-      // Assume AM if not specified and hour is less than 12, otherwise PM
-      if (int.tryParse(startTime.split(':')[0]) != null && int.parse(startTime.split(':')[0]) < 12) {
-        startTime += 'AM';
-      } else {
-        startTime += 'PM';
-      }
-    }
-
-    final time = DateFormat('h:mma').parse(startTime);
-    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
-
-  Future<void> _placeOrder() async {
-    setState(() {
-      _isPlacingOrder = true;
-    });
-
-    try {
-      final supabase = Supabase.instance.client;
-      final orderId = _generateOrderId();
-
-      final String businessId = widget.businessData['id'];
-
-      final String userId = supabase.auth.currentUser!.id;
-
-      // Parse pickup and dropoff dates
-      DateTime? parsedPickupDate;
-      if (widget.schedule['pickup'] != null && widget.pickupDate != null) {
-        parsedPickupDate = _parseDateTime(DateFormat('MMM dd, yyyy').format(widget.pickupDate!), widget.schedule['pickup']!);
-      } else if (widget.schedule['pickup'] != null) {
-        parsedPickupDate = _parseDateTime(DateFormat('MMM dd, yyyy').format(DateTime.now()), widget.schedule['pickup']!);
-      }
-
-      DateTime? parsedDropoffDate;
-      if (widget.schedule['dropoff'] != null && widget.dropoffDate != null) {
-        parsedDropoffDate = _parseDateTime(DateFormat('MMM dd, yyyy').format(widget.dropoffDate!), widget.schedule['dropoff']!);
-      } else if (widget.schedule['dropoff'] != null) {
-        parsedDropoffDate = _parseDateTime(DateFormat('MMM dd, yyyy').format(DateTime.now()), widget.schedule['dropoff']!);
-      }
-
-      await supabase.from('orders').insert({
-        'order_number': orderId,
-        'user_id': userId,
-        'business_id': businessId,
-        'customer_name': '${widget.firstName ?? ''} ${widget.lastName ?? ''}',
-        'laundry_shop_name': widget.laundryShopName ?? widget.businessData['business_name'],
-        'pickup_address': widget.address,
-        'delivery_address': widget.address, 
-        'items': widget.services, 
-        'pickup_schedule': widget.schedule['pickup'], 
-        'dropoff_schedule': widget.schedule['dropoff'], 
-        'special_instructions': widget.specialInstructions,
-        'total_amount': _total,
-        'status': 'pending',
-        'pickup_date': parsedPickupDate?.toIso8601String(), // Add parsed pickup date
-        'delivery_date': parsedDropoffDate?.toIso8601String(), // Add parsed dropoff date
-        if (widget.latitude != null) 'latitude': widget.latitude,
-        if (widget.longitude != null) 'longitude': widget.longitude,
-        if (widget.phoneNumber != null) 'mobile_number': widget.phoneNumber,
-
-      });
-
-      if (mounted) {
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Order placed successfully!')),
-        );
-        Navigator.popUntil(context, (route) => route.isFirst);
-      }
-    } on PostgrestException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error placing order: ${e.message}')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('An unexpected error occurred: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isPlacingOrder = false;
-        });
-      }
-    }
-  }
-
-  Widget _buildTermsAndConditionsSection() {
-    final String termsAndConditions = widget.businessData['terms_and_conditions'] ?? 'No terms and conditions provided.';
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Column(
-        children: [
-          ListTile(
-            title: const Text(
-              'Terms and Conditions',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            trailing: Icon(
-              _isTermsExpanded ? Icons.expand_less : Icons.expand_more,
-              color: const Color(0xFF5A35E3),
-            ),
-            onTap: () {
-              setState(() {
-                _isTermsExpanded = !_isTermsExpanded;
-              });
-            },
-          ),
-          if (_isTermsExpanded)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                termsAndConditions.isEmpty
-                    ? 'No terms and conditions provided by the business.'
-                    : termsAndConditions,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}

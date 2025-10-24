@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+
 
 class ScheduleSelectionScreen extends StatefulWidget {
   final Map<String, String>? selectedSchedule;
   final List<String> availablePickupTimeSlots; 
   final List<String> availableDropoffTimeSlots;
   final Map<String, int> selectedServices;
-  final DateTime? initialPickupDate;
-  final DateTime? initialDropoffDate;
+
 
   const ScheduleSelectionScreen({
     super.key,
@@ -15,8 +14,7 @@ class ScheduleSelectionScreen extends StatefulWidget {
     this.availablePickupTimeSlots = const [], 
     this.availableDropoffTimeSlots = const [],
     this.selectedServices = const {},
-    this.initialPickupDate,
-    this.initialDropoffDate,
+
   });
 
   @override
@@ -26,8 +24,7 @@ class ScheduleSelectionScreen extends StatefulWidget {
 class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
   String? _selectedPickupTime;
   String? _selectedDropoffTime;
-  DateTime? _selectedPickupDate;
-  DateTime? _selectedDropoffDate;
+
 
   List<String> get _pickupTimes => widget.availablePickupTimeSlots;
   List<String> get _dropoffTimes => widget.availableDropoffTimeSlots;
@@ -39,8 +36,7 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
       _selectedPickupTime = widget.selectedSchedule!['pickup'];
       _selectedDropoffTime = widget.selectedSchedule!['dropoff'];
     }
-    _selectedPickupDate = widget.initialPickupDate ?? DateTime.now();
-    _selectedDropoffDate = widget.initialDropoffDate ?? DateTime.now().add(const Duration(days: 1));
+
     print('initState: _selectedPickupTime = $_selectedPickupTime, _selectedDropoffTime = $_selectedDropoffTime');
   }
 
@@ -86,21 +82,6 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Pick-Up Date',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildDateSelectionCard(_selectedPickupDate, (date) {
-                              setState(() {
-                                _selectedPickupDate = date;
-                              });
-                            }),
-                            const SizedBox(height: 24),
-                            const Text(
                               'Pick-Up Time',
                               style: TextStyle(
                                 fontSize: 18,
@@ -127,21 +108,6 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
                             )),
                             const SizedBox(height: 32),
                             
-                            const Text(
-                              'Drop-Off Date',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildDateSelectionCard(_selectedDropoffDate, (date) {
-                              setState(() {
-                                _selectedDropoffDate = date;
-                              });
-                            }),
-                            const SizedBox(height: 24),
                             const Text(
                               'Drop-Off Time',
                               style: TextStyle(
@@ -175,14 +141,12 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: (_selectedPickupTime != null && _selectedPickupDate != null) || (_selectedDropoffTime != null && _selectedDropoffDate != null)
+                        onPressed: (_selectedPickupTime != null) || (_selectedDropoffTime != null)
                             ? () {
                                 print('Done button pressed: _selectedPickupTime = $_selectedPickupTime, _selectedDropoffTime = $_selectedDropoffTime');
                                 Navigator.pop(context, {
                                   'pickup': _selectedPickupTime,
                                   'dropoff': _selectedDropoffTime ?? '',
-                                  'pickupDate': _selectedPickupDate?.toIso8601String(),
-                                  'dropoffDate': _selectedDropoffDate?.toIso8601String(),
                                 });
                               }
                             : null,
@@ -257,60 +221,5 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
     );
   }
 
-  Widget _buildDateSelectionCard(DateTime? selectedDate, Function(DateTime) onDateSelected) {
-    return GestureDetector(
-      onTap: () async {
-        final DateTime? picked = await showDatePicker(
-          context: context,
-          initialDate: selectedDate ?? DateTime.now(),
-          firstDate: DateTime.now(),
-          lastDate: DateTime.now().add(const Duration(days: 365)),
-          builder: (BuildContext context, Widget? child) {
-            return Theme(
-              data: ThemeData.light().copyWith(
-                colorScheme: const ColorScheme.light(
-                  primary: Color(0xFF5A35E3), // Header background color
-                  onPrimary: Colors.white, // Header text color
-                  onSurface: Colors.black, // Body text color
-                ),
-                textButtonTheme: TextButtonThemeData(
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF5A35E3), // Button text color
-                  ),
-                ),
-              ),
-              child: child!,
-            );
-          },
-        );
-        if (picked != null && picked != selectedDate) {
-          onDateSelected(picked);
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.calendar_today, color: Color(0xFF5A35E3)),
-            const SizedBox(width: 12),
-            Text(
-              selectedDate != null ? DateFormat('MMM dd, yyyy').format(selectedDate) : 'Select Date',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: selectedDate != null ? Colors.black87 : Colors.grey[600],
-              ),
-            ),
-            const Spacer(),
-            const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
-          ],
-        ),
-      ),
-    );
-  }
+
 }
