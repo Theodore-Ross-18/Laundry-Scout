@@ -5,7 +5,7 @@ import '../../splash/splash_screen.dart';
 import '../../auth/login_screen.dart';
 import '../../../widgets/optimized_image.dart';
 import '../../../services/image_service.dart';
-import '../Owner/owner_notification_screen.dart'; 
+// import '../Owner/owner_notification_screen.dart'; 
 import 'image_preview_screen.dart'; 
 
 
@@ -38,6 +38,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _profileImageUrl;
   bool _isLoading = true;
   bool _isUploadingImage = false;
+  bool _notificationsEnabled = false; // Add this line
 
   @override
   void initState() {
@@ -295,22 +296,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 16),
                      
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(_createFadeRoute(const OwnerNotificationScreen()));
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8F8F8),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.notifications_none, color: Color(0xFF6C757D), size: 20),
-                              SizedBox(width: 16),
-                              Text(
+                      // GestureDetector(
+                      //   onTap: () {
+                      //     Navigator.of(context).push(_createFadeRoute(const OwnerNotificationScreen()));
+                      //   },
+                      //   child: Container(
+                      //     padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      //     decoration: BoxDecoration(
+                      //       color: const Color(0xFFF8F8F8),
+                      //       borderRadius: BorderRadius.circular(12),
+                      //       border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
+                      //     ),
+                      //     child: const Row(
+                      //       children: [
+                      //         Icon(Icons.notifications_none, color: Color(0xFF6C757D), size: 20),
+                      //         SizedBox(width: 16),
+                      //         Text(
+                      //           'Push Notifications',
+                      //           style: TextStyle(
+                      //             color: Colors.black87,
+                      //             fontSize: 16,
+                      //             fontWeight: FontWeight.w500,
+                      //           ),
+                      //         ),
+                      //         Spacer(),
+                      //         Icon(Icons.chevron_right, color: Color(0xFF6C757D), size: 20),
+                      //       ],
+                      //     ),
+                      //   ),
+                      // ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8F8F8),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.notifications_none, color: Color(0xFF6C757D), size: 20),
+                            const SizedBox(width: 16),
+                            const Expanded(
+                              child: Text(
                                 'Push Notifications',
                                 style: TextStyle(
                                   color: Colors.black87,
@@ -318,10 +345,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              Spacer(),
-                              Icon(Icons.chevron_right, color: Color(0xFF6C757D), size: 20),
-                            ],
-                          ),
+                            ),
+                            Switch(
+                              value: _notificationsEnabled,
+                              onChanged: (bool value) {
+                                setState(() {
+                                  _notificationsEnabled = value;
+                                });
+                                // Handle notification toggle logic here
+                              },
+                              activeColor: const Color(0xFF5A35E3),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 20),

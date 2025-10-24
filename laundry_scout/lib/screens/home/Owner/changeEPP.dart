@@ -118,7 +118,7 @@ class _ChangeEPPScreenState extends State<ChangeEPPScreen> {
       appBar: AppBar(
         title: const Text('Change Email, Phone & Password'),
       ),
-      backgroundColor: Colors.white, 
+      backgroundColor: Color(0xFF5A35E3), 
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -127,19 +127,19 @@ class _ChangeEPPScreenState extends State<ChangeEPPScreen> {
             children: [
               TextFormField(
                 controller: _emailController,
-                style: const TextStyle(color: Colors.black),
+                style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                 decoration: const InputDecoration(
                   labelText: 'Email',
-                  labelStyle: TextStyle(color: Colors.black),
-                  hintStyle: TextStyle(color: Colors.black),
+                  labelStyle: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+                  hintStyle: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
+                    borderSide: BorderSide(color: Color.fromARGB(255, 255, 255, 255)),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
+                    borderSide: BorderSide(color: Color.fromARGB(255, 255, 255, 255)),
                   ),
                   border: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
+                    borderSide: BorderSide(color: Color.fromARGB(255, 255, 255, 255)),
                   ),
                 ),
                 keyboardType: TextInputType.emailAddress,
@@ -153,19 +153,19 @@ class _ChangeEPPScreenState extends State<ChangeEPPScreen> {
               const SizedBox(height: 16.0),
               TextFormField(
                 controller: _phoneController,
-                style: const TextStyle(color: Colors.black),
+                style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                 decoration: const InputDecoration(
                   labelText: 'Phone Number',
-                  labelStyle: TextStyle(color: Colors.black),
-                  hintStyle: TextStyle(color: Colors.black),
+                  labelStyle: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+                  hintStyle: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
+                    borderSide: BorderSide(color: Color.fromARGB(255, 255, 255, 255)),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
+                    borderSide: BorderSide(color: Color.fromARGB(255, 255, 255, 255)),
                   ),
                   border: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
+                    borderSide: BorderSide(color: Color.fromARGB(255, 255, 255, 255)),
                   ),
                 ),
                 keyboardType: TextInputType.phone,
@@ -179,19 +179,19 @@ class _ChangeEPPScreenState extends State<ChangeEPPScreen> {
               const SizedBox(height: 16.0),
               TextFormField(
                 controller: _passwordController,
-                style: const TextStyle(color: Colors.black),
+                style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                 decoration: const InputDecoration(
                   labelText: 'New Password (optional)',
-                  labelStyle: TextStyle(color: Colors.black),
-                  hintStyle: TextStyle(color: Colors.black),
+                  labelStyle: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+                  hintStyle: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
+                    borderSide: BorderSide(color: Color.fromARGB(255, 255, 255, 255)),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
+                    borderSide: BorderSide(color: Color.fromARGB(255, 255, 255, 255)),
                   ),
                   border: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
+                    borderSide: BorderSide(color: Color.fromARGB(255, 255, 255, 255)),
                   ),
                 ),
                 obscureText: true,
@@ -208,19 +208,19 @@ class _ChangeEPPScreenState extends State<ChangeEPPScreen> {
               const SizedBox(height: 16.0),
               TextFormField(
                 controller: _confirmPasswordController,
-                style: const TextStyle(color: Colors.black),
+                style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                 decoration: const InputDecoration(
                   labelText: 'Confirm New Password',
-                  labelStyle: TextStyle(color: Colors.black),
-                  hintStyle: TextStyle(color: Colors.black),
+                  labelStyle: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+                  hintStyle: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
+                    borderSide: BorderSide(color: Color.fromARGB(255, 255, 255, 255)),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
+                    borderSide: BorderSide(color: Color.fromARGB(255, 255, 255, 255)),
                   ),
                   border: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.black),
+                    borderSide: BorderSide(color: Color.fromARGB(255, 255, 255, 255)),
                   ),
                 ),
                 obscureText: true,
@@ -240,7 +240,7 @@ class _ChangeEPPScreenState extends State<ChangeEPPScreen> {
                 child: _isLoading
                     
                     ? const CircularProgressIndicator()
-                    : const Text('Update Profile'),
+                    : const Text('Update'),
               ),
             ],
           ),
