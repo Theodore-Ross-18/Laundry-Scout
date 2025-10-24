@@ -4,14 +4,14 @@ class ScheduleSelectionScreen extends StatefulWidget {
   final Map<String, String>? selectedSchedule;
   final List<String> availablePickupTimeSlots; 
   final List<String> availableDropoffTimeSlots;
-  final List<String> selectedServices;
+  final Map<String, int> selectedServices;
 
   const ScheduleSelectionScreen({
     super.key,
     this.selectedSchedule,
     this.availablePickupTimeSlots = const [], 
     this.availableDropoffTimeSlots = const [],
-    this.selectedServices = const [],
+    this.selectedServices = const {},
   });
 
   @override
@@ -178,13 +178,13 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
         onTap: () {
-          if (isPickup && !widget.selectedServices.contains('Pick Up')) {
+          if (isPickup && !widget.selectedServices.containsKey('Pick Up')) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Select a Pick Up service first.')),
             );
             return;
           }
-          if (!isPickup && !widget.selectedServices.contains('Drop Off')) {
+          if (!isPickup && !widget.selectedServices.containsKey('Drop Off')) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Select a Drop Off service first.')),
             );

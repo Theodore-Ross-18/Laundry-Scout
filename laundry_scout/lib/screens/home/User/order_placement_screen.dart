@@ -28,7 +28,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
   final _specialInstructionsController = TextEditingController();
   String? _selectedAddress;
   Map<String, String>? _selectedSchedule;
-  List<String> _selectedServices = []; 
+  Map<String, int> _selectedServices = {}; 
   List<Map<String, dynamic>> _pricelist = []; 
   bool _isExpanded = false; 
   String _specialInstructions = ''; 
@@ -414,7 +414,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
         );
         if (result != null) {
           setState(() {
-            _selectedServices = List<String>.from(result);
+            _selectedServices = Map<String, int>.from(result);
           });
         }
       },

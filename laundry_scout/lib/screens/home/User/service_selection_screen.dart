@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ServiceSelectionScreen extends StatefulWidget {
-  final List<String> selectedServices;
+  final Map<String, int> selectedServices;
   final List<Map<String, dynamic>> pricelist;
 
   const ServiceSelectionScreen({
@@ -15,7 +15,7 @@ class ServiceSelectionScreen extends StatefulWidget {
 }
 
 class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
-  late List<String> _selectedServices;
+  late Map<String, int> _selectedServicesWithQuantity;
 
   List<Map<String, dynamic>> get _services => widget.pricelist
       .where((item) => (double.tryParse(item['price']?.toString() ?? '0') ?? 0) > 0.0)
@@ -29,7 +29,7 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedServices = List.from(widget.selectedServices);
+    _selectedServicesWithQuantity = Map<String, int>.from(widget.selectedServices);
   }
 
   IconData _getServiceIcon(String? serviceName) {
@@ -135,7 +135,7 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
                         itemCount: _services.length,
                         itemBuilder: (context, index) {
                           final service = _services[index];
-                          final isSelected = _selectedServices.contains(service['name']);
+                          final isSelected = _selectedServicesWithQuantity.containsKey(service['name']);
                           
                           return Container(
                             margin: const EdgeInsets.only(bottom: 16),
@@ -178,36 +178,65 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
                                   color: Colors.grey[600],
                                 ),
                               ),
-                              trailing: Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.rectangle,
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(
-                                    color: isSelected 
-                                        ? const Color(0xFF5A35E3) 
-                                        : Colors.grey[400]!,
-                                    width: 2,
-                                  ),
-                                  color: isSelected 
-                                      ? const Color(0xFF5A35E3) 
-                                      : Colors.transparent,
-                                ),
-                                child: isSelected
-                                    ? const Icon(
-                                        Icons.check,
-                                        color: Colors.white,
-                                        size: 16,
-                                      )
-                                    : null,
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_selectedServicesWithQuantity.containsKey(service['name']))
+                                    IconButton(
+                                      icon: const Icon(Icons.remove_circle_outline, color: Color(0xFF5A35E3)),
+                                      onPressed: () {
+                                        setState(() {
+                                          int currentQuantity = _selectedServicesWithQuantity[service['name']]!;
+                                          if (currentQuantity > 1) {
+                                            _selectedServicesWithQuantity[service['name']] = currentQuantity - 1;
+                                          } else {
+                                            _selectedServicesWithQuantity.remove(service['name']);
+                                          }
+                                        });
+                                      },
+                                    ),
+                                  if (_selectedServicesWithQuantity.containsKey(service['name']))
+                                    Text(
+                                      '${_selectedServicesWithQuantity[service['name']]} kg',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  if (_selectedServicesWithQuantity.containsKey(service['name']))
+                                    IconButton(
+                                      icon: const Icon(Icons.add_circle_outline, color: Color(0xFF5A35E3)),
+                                      onPressed: () {
+                                        setState(() {
+                                          int currentQuantity = _selectedServicesWithQuantity[service['name']]!;
+                                          _selectedServicesWithQuantity[service['name']] = currentQuantity + 1;
+                                        });
+                                      },
+                                    ),
+                                  if (!_selectedServicesWithQuantity.containsKey(service['name']))
+                                    Container(
+                                      width: 24,
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.rectangle,
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(
+                                          color: Colors.grey[400]!,
+                                          width: 2,
+                                        ),
+                                        color: Colors.transparent,
+                                      ),
+                                      child: null,
+                                    ),
+                                ],
                               ),
                               onTap: () {
                                 setState(() {
-                                  if (isSelected) {
-                                    _selectedServices.remove(service['name']);
+                                  if (_selectedServicesWithQuantity.containsKey(service['name'])) {
+                                    _selectedServicesWithQuantity.remove(service['name']);
                                   } else {
-                                    _selectedServices.add(service['name']);
+                                    _selectedServicesWithQuantity[service['name']] = 1;
                                   }
                                 });
                               },
@@ -217,11 +246,22 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
+                    Center(
+                      child: const Text(
+                        'This is an estimation only and may change.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _selectedServices.isNotEmpty 
-                            ? () => Navigator.pop(context, _selectedServices)
+                        onPressed: _selectedServicesWithQuantity.isNotEmpty
+                            ? () => Navigator.pop(context, _selectedServicesWithQuantity)
                             : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF5A35E3),
@@ -232,9 +272,9 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
                           ),
                         ),
                         child: Text(
-                          _selectedServices.isEmpty 
+                          _selectedServicesWithQuantity.isEmpty
                               ? 'Select at least one service'
-                              : 'Done (${_selectedServices.length} selected)',
+                              : 'Done (${_selectedServicesWithQuantity.length} selected)',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,

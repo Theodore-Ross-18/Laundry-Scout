@@ -6,7 +6,7 @@ import 'package:laundry_scout/widgets/static_map_snippet.dart';
 class OrderConfirmationScreen extends StatefulWidget {
   final Map<String, dynamic> businessData;
   final String address;
-  final List<String> services;
+  final Map<String, int> services;
   final Map<String, String> schedule;
   final String specialInstructions;
   final String termsAndConditions; 
@@ -85,8 +85,10 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   }
 
   double get _subtotal {
-    return widget.services.fold(0.0, (sum, service) {
-      return sum + (_servicePrices[service] ?? 0.0);
+    return widget.services.entries.fold(0.0, (sum, entry) {
+      final serviceName = entry.key;
+      final quantity = entry.value;
+      return sum + ((_servicePrices[serviceName] ?? 0.0) * quantity);
     });
   }
 
@@ -347,29 +349,33 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                               ),
                               child: Column(
                                 children: [
-                                  ...widget.services.map((service) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          '$service',
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.black87,
+                                  ...widget.services.entries.map((entry) {
+                                    final serviceName = entry.key;
+                                    final quantity = entry.value;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            '$serviceName ($quantity kg)',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.black87,
+                                            ),
                                           ),
-                                        ),
-                                        Text(
-                                          '₱${_servicePrices[service.split(' (')[0]]?.toStringAsFixed(0)}',
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black87,
+                                          Text(
+                                            '₱${(_servicePrices[serviceName] ?? 0.0) * quantity}',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black87,
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  )),
+                                        ],
+                                      ),
+                                    );
+                                  }),
                                   const Divider(),
                                   const SizedBox(height: 12),
                                   Row(
