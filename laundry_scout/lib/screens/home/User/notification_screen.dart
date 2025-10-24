@@ -18,6 +18,7 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
   late RealtimeChannel _notificationsSubscription;
+  late RealtimeChannel _ordersSubscription;
   late TabController _tabController;
 
   List<Map<String, dynamic>> _orders = [];
@@ -30,11 +31,13 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
     _loadNotifications();
     _loadOrders();
     _setupRealtimeSubscription();
+    _setupOrdersRealtimeSubscription();
   }
 
   @override
   void dispose() {
     _notificationsSubscription.unsubscribe();
+    _ordersSubscription.unsubscribe();
     _tabController.dispose();
     super.dispose();
   }
@@ -189,6 +192,30 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
               setState(() {
                 _notifications.insert(0, newNotification);
               });
+            }
+          },
+        )
+        .subscribe();
+  }
+
+  void _setupOrdersRealtimeSubscription() { // Add this new method
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    _ordersSubscription = Supabase.instance.client
+        .channel('orders_${user.id}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'orders',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: user.id,
+          ),
+          callback: (payload) {
+            if (mounted) {
+              _loadOrders(); // Reload orders when an update occurs
             }
           },
         )
@@ -593,72 +620,11 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
                   },
                   child: const Text('View', style: TextStyle(color: Colors.black)),
                 ),
-                if (status == 'pending')
-                  TextButton(
-                    onPressed: () {
-                      _showCancelOrderDialog(context, order['id']);
-                    },
-                    child: const Text('Cancel Order', style: TextStyle(color: Colors.red)),
-                  ),
               ],
             ),
           ],
         ),
       ),
     );
-  }
-
-  void _showCancelOrderDialog(BuildContext context, String orderId) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Cancel Order', style: TextStyle(color: Colors.black)),
-          content: const Text('Are you sure you want to cancel this order?', style: TextStyle(color: Colors.black)),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('No', style: TextStyle(color: Colors.black)),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Yes', style: TextStyle(color: Colors.red)),
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await _cancelOrder(orderId);
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _cancelOrder(String orderId) async {
-    try {
-      await Supabase.instance.client
-          .from('orders')
-          .update({'status': 'cancelled'})
-          .eq('id', orderId);
-      _loadOrders();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Order cancelled successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to cancel order: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
   }
 }
