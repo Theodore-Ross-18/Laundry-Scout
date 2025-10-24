@@ -14,6 +14,7 @@ class OrderConfirmationScreen extends StatefulWidget {
   final String? firstName; 
   final String? lastName; 
   final String? laundryShopName; 
+  final String? phoneNumber;
 
   const OrderConfirmationScreen({
     super.key,
@@ -28,6 +29,7 @@ class OrderConfirmationScreen extends StatefulWidget {
     this.firstName, 
     this.lastName, 
     this.laundryShopName, 
+    this.phoneNumber,
   });
 
   @override
@@ -269,7 +271,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             ),
                             const SizedBox(height: 24),
                             const Text(
-                              'Delivery Address',
+                              'Pickup & Drop-off Address',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -277,20 +279,49 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              '${widget.firstName ?? ''} ${widget.lastName ?? ''}', 
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[800],
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey[200]!),
                               ),
-                            ),
-                            const SizedBox(height: 4), 
-                            Text(
-                              widget.address,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[700],
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.location_on,
+                                    color: Color(0xFF5A35E3),
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${widget.firstName ?? ''} ${widget.lastName ?? ''} (+63) ${widget.phoneNumber ?? ''}',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.grey[800],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          widget.address,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.arrow_forward_ios,
+                                    color: Colors.grey,
+                                    size: 16,
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(height: 24),
@@ -443,6 +474,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         'status': 'pending',
         if (widget.latitude != null) 'latitude': widget.latitude,
         if (widget.longitude != null) 'longitude': widget.longitude,
+        if (widget.phoneNumber != null) 'mobile_number': widget.phoneNumber,
 
       });
 

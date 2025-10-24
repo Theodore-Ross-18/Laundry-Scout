@@ -43,7 +43,9 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
   final TextEditingController _longitudeController = TextEditingController();
   String? _firstName; 
   String? _lastName; 
+  String? _phoneNumber; // Declared here
   final TextEditingController _fullNameController = TextEditingController(); 
+  final TextEditingController _phoneNumberController = TextEditingController(); // Declared here
 
   @override
   void initState() {
@@ -60,6 +62,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
     _latitudeController.dispose();
     _longitudeController.dispose();
     _fullNameController.dispose(); 
+    _phoneNumberController.dispose(); // Dispose here
     super.dispose();
   }
 
@@ -94,7 +97,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
       if (user != null) {
         final userProfile = await Supabase.instance.client
             .from('user_profiles')
-            .select('latitude, longitude, first_name, last_name')
+            .select('latitude, longitude, first_name, last_name, mobile_number')
             .eq('id', user.id)
             .single();
 
@@ -106,7 +109,9 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
             _longitudeController.text = _longitude?.toString() ?? '';
             _firstName = userProfile['first_name']; 
             _lastName = userProfile['last_name'];
+            _phoneNumber = userProfile['mobile_number']; // Add this line
             _fullNameController.text = '${_firstName ?? ''} ${_lastName ?? ''}';
+            _phoneNumberController.text = _phoneNumber ?? ''; // Add this line
           });
         }
 
@@ -300,50 +305,60 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
           ),
         ),
         const SizedBox(height: 10),
-        TextFormField(
-          controller: _fullNameController,
-          readOnly: true,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.2),
+                spreadRadius: 1,
+                blurRadius: 5,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-          decoration: InputDecoration(
-            labelText: 'Full Name',
-            labelStyle: TextStyle(color: Colors.grey[600]),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF5A35E3)),
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.location_on,
+                    color: Color(0xFF5A35E3),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '${_fullNameController.text}  (+63) ${_phoneNumberController.text}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.grey,
+                    size: 16,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.only(left: 30.0), // Adjust padding to align with the text above
+                child: Text(
+                  _currentAddressController.text,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 10),
-        TextFormField(
-          controller: _currentAddressController,
-          style: const TextStyle(color: Colors.black),
-          decoration: InputDecoration(
-            labelText: 'Current Address',
-            labelStyle: TextStyle(color: Colors.grey[600]),
-            hintText: 'Enter your current address',
-            hintStyle: TextStyle(color: Colors.grey[400]),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF5A35E3)),
-            ),
-          ),
-          onChanged: (value) {
-            setState(() {
-              _selectedAddress = value;
-            });
-          },
         ),
         const SizedBox(height: 16),
         SizedBox(
@@ -755,6 +770,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
           firstName: _firstName,
           lastName: _lastName,
           laundryShopName: _businessProfile?['business_name'],
+          phoneNumber: _phoneNumber,
         ),
       ),
     );
