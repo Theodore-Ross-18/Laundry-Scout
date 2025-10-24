@@ -96,6 +96,10 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
                 widget.order['customer_name'],
               ),
               _buildDetailRow(
+                'Customer Number',
+                widget.order['mobile_number'],
+              ),
+              _buildDetailRow(
                 'Service Type',
                 (widget.order['items'] as List<dynamic>).join(', '),
               ),
@@ -105,15 +109,11 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
               ),
               _buildDetailRow(
                 'Order Date',
-                widget.order['created_at'],
+                DateFormat('MMMM dd, yyyy hh:mm a').format(DateTime.parse(widget.order['created_at'])),
               ),
               _buildDetailRow(
                 'Note',
                 widget.order['special_instructions'] ?? '',
-              ),
-              _buildDetailRow(
-                'Paid via',
-                widget.order['payment_method'],
               ),
               const Divider(height: 30, thickness: 1),
               _buildDetailRow(
@@ -182,7 +182,7 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
           Expanded(
             flex: 3,
             child: Text(
-              value ?? 'N/A',
+              label == 'Note' && (value == null || value.isEmpty) ? 'No Request' : value ?? 'N/A',
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontSize: 16,

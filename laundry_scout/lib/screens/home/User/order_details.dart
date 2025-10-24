@@ -198,6 +198,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 widget.order['customer_name'],
               ),
               _buildDetailRow(
+                'Customer Number',
+                widget.order['mobile_number'],
+              ),
+              _buildDetailRow(
                 'Service Type',
                 (widget.order['items'] as List<dynamic>).join(', '),
               ),
@@ -207,7 +211,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               ),
               _buildDetailRow(
                 'Order Date',
-                widget.order['created_at'],
+                DateFormat('MMMM dd, yyyy hh:mm a').format(DateTime.parse(widget.order['created_at'])),
               ),
               if ((widget.order['items'] as List<dynamic>).contains('Pick Up') && widget.order['pickup_time'] != null)
                 _buildDetailRow(
@@ -222,10 +226,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
               _buildDetailRow(
                 'Note',
                 widget.order['special_instructions'] ?? '',
-              ),
-              _buildDetailRow(
-                'Paid via',
-                widget.order['payment_method'],
               ),
               const Divider(height: 30, thickness: 1),
               _buildDetailRow(
@@ -293,7 +293,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           Expanded(
             flex: 3,
             child: Text(
-              value ?? 'N/A',
+              label == 'Note' && (value == null || value.isEmpty) ? 'No Request' : value ?? 'N/A',
               textAlign: TextAlign.right,
               style: TextStyle(
                 fontSize: 16,
