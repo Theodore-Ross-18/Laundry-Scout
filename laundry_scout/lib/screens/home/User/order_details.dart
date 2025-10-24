@@ -147,128 +147,134 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        child: RepaintBoundary(
-          key: _receiptKey,
-          child: Container(
-            color: Colors.white,
-            margin: const EdgeInsets.all(16.0),
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
+        child: Column(
+          children: [
+            RepaintBoundary(
+              key: _receiptKey,
+              child: Container(
+                color: Colors.white,
+                margin: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ColorFiltered(
-                      colorFilter: ColorFilter.mode(Colors.black, BlendMode.srcIn),
-                      child: Image.asset(
-                        'lib/assets/lslogo.png',
-                        height: 50,
+                    Center(
+                      child: Column(
+                        children: [
+                          ColorFiltered(
+                            colorFilter: ColorFilter.mode(Colors.black, BlendMode.srcIn),
+                            child: Image.asset(
+                              'lib/assets/lslogo.png',
+                              height: 50,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'Payment Receipt',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            DateFormat('MMMM dd, yyyy hh:mm a').format(DateTime.now()),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Payment Receipt',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
+                    const Divider(height: 30, thickness: 1),
+                    _buildDetailRow(
+                      'Order ID',
+                      '#${widget.order['order_number']}',
+                      isBold: true,
+                      valueColor: Colors.black,
                     ),
-                    const SizedBox(height: 5),
-                    Text(
-                      DateFormat('MMMM dd, yyyy hh:mm a').format(DateTime.now()),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
+                    _buildDetailRow(
+                      'Customer Name',
+                      widget.order['customer_name'],
+                    ),
+                    _buildDetailRow(
+                      'Customer Number',
+                      widget.order['mobile_number'],
+                    ),
+                    _buildDetailRow(
+                      'Service Type',
+                      (widget.order['items'] as List<dynamic>).join(', '),
+                    ),
+                    _buildDetailRow(
+                      'Delivery Address',
+                      widget.order['delivery_address'],
+                    ),
+                    _buildDetailRow(
+                      'Order Date',
+                      DateFormat('MMMM dd, yyyy hh:mm a').format(DateTime.parse(widget.order['created_at'])),
+                    ),
+                    if ((widget.order['items'] as List<dynamic>).contains('Pick Up') && widget.order['pickup_time'] != null)
+                      _buildDetailRow(
+                        'Pick Up Time',
+                        widget.order['pickup_time'],
+                      ),
+                    if ((widget.order['items'] as List<dynamic>).contains('Drop Off') && widget.order['dropoff_time'] != null)
+                      _buildDetailRow(
+                        'Drop Off Time',
+                        widget.order['dropoff_time'],
+                      ),
+                    _buildDetailRow(
+                      'Note',
+                      widget.order['special_instructions'] ?? '',
+                    ),
+                    const Divider(height: 30, thickness: 1),
+                    _buildDetailRow(
+                      'Total Amount',
+                      '₱${widget.order['total_amount'] ?? '0.00'}',
+                      isBold: true,
+                      valueColor: const Color(0xFF6F5ADC),
+                    ),
+                    const Divider(height: 30, thickness: 1),
+                    const SizedBox(height: 20),
+                    Center(
+                      child: Text(
+                        widget.order['laundry_shop_name'] ?? '',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.black,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Divider(height: 30, thickness: 1),
-              _buildDetailRow(
-                'Order ID',
-                '#${widget.order['order_number']}',
-                isBold: true,
-                valueColor: Colors.black,
-              ),
-              _buildDetailRow(
-                'Customer Name',
-                widget.order['customer_name'],
-              ),
-              _buildDetailRow(
-                'Customer Number',
-                widget.order['mobile_number'],
-              ),
-              _buildDetailRow(
-                'Service Type',
-                (widget.order['items'] as List<dynamic>).join(', '),
-              ),
-              _buildDetailRow(
-                'Delivery Address',
-                widget.order['delivery_address'],
-              ),
-              _buildDetailRow(
-                'Order Date',
-                DateFormat('MMMM dd, yyyy hh:mm a').format(DateTime.parse(widget.order['created_at'])),
-              ),
-              if ((widget.order['items'] as List<dynamic>).contains('Pick Up') && widget.order['pickup_time'] != null)
-                _buildDetailRow(
-                  'Pick Up Time',
-                  widget.order['pickup_time'],
-                ),
-              if ((widget.order['items'] as List<dynamic>).contains('Drop Off') && widget.order['dropoff_time'] != null)
-                _buildDetailRow(
-                  'Drop Off Time',
-                  widget.order['dropoff_time'],
-                ),
-              _buildDetailRow(
-                'Note',
-                widget.order['special_instructions'] ?? '',
-              ),
-              const Divider(height: 30, thickness: 1),
-              _buildDetailRow(
-                'Total Amount',
-                '₱${widget.order['total_amount'] ?? '0.00'}',
-                isBold: true,
-                valueColor: const Color(0xFF6F5ADC),
-              ),
-              const Divider(height: 30, thickness: 1),
-              const SizedBox(height: 20),
-              Center(
-                child: Text(
-                  widget.order['laundry_shop_name'] ?? '',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.black,
+            ),
+            const SizedBox(height: 20),
+            Center(
+              child: TextButton(
+                onPressed: _captureAndSaveReceipt,
+                style: TextButton.styleFrom(
+                  backgroundColor: const Color(0xFF5A35E3),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                child: const Text(
+                  'Download Receipt',
+                  style: TextStyle(fontSize: 16),
                 ),
               ),
-              const SizedBox(height: 20),
-              Center(
-                child: TextButton(
-                  onPressed: _captureAndSaveReceipt,
-                  style: TextButton.styleFrom(
-                    backgroundColor: const Color(0xFF5A35E3),
-                    foregroundColor: Colors.white, 
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  ),
-                  child: const Text(
-                    'Download Receipt',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
-              ),
-            ],),
-          ),
+            ),
+            const SizedBox(height: 20), // Added space below the button
+          ],
         ),
       ),
     );
