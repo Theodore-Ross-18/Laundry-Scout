@@ -103,7 +103,7 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
                     ),
                     _buildDetailRow(
                       'Service Type',
-                      (widget.order['items'] as Map<String, int>).keys.join(', '),
+                      (widget.order['items'] as Map<String, dynamic>).keys.join(', '),
                     ),
                     _buildDetailRow(
                       'Delivery Address',
