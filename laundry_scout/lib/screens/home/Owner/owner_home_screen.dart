@@ -312,6 +312,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  const SizedBox(height: 20.0), // Add space above Welcome
                                   Text(
                                     'Welcome',
                                     style: TextStyle(

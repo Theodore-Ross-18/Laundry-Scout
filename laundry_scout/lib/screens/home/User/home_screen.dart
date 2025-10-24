@@ -10,7 +10,8 @@ import 'laundry_screen.dart';
 import 'message_screen.dart'; 
 import 'notification_screen.dart';
 import 'business_detail_screen.dart';
-import 'promo_preview.dart'; 
+import 'promo_preview.dart';
+import 'all_promos_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -1014,6 +1015,7 @@ class HomeScreenBody extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            const SizedBox(height: 20.0), // Add space above Welcome
                             const Text(
                               'Welcome',
                               style: TextStyle(
@@ -1145,12 +1147,60 @@ class HomeScreenBody extends StatelessWidget {
               if (!isSearching) // Use passed isSearching
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                   child: Text(
-                    'Promos',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Promos',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                      ),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          bool isMobile = MediaQuery.of(context).size.width < 600;
+                          if (isMobile) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF5A35E3),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const AllPromosScreen()),
+                                  );
+                                },
+                                child: const Text(
+                                  'View All',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            );
+                          } else {
+                            return TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const AllPromosScreen()),
+                                );
+                              },
+                              child: const Text(
+                                'View All',
+                                style: TextStyle(color: Color(0xFF5A35E3)),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 ),
               if (!isSearching)
