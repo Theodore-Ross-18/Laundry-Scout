@@ -178,18 +178,7 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
         onTap: () {
-          if (isPickup && !widget.selectedServices.containsKey('Pick Up')) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Select a Pick Up service first.')),
-            );
-            return;
-          }
-          if (!isPickup && !widget.selectedServices.containsKey('Drop Off')) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Select a Drop Off service first.')),
-            );
-            return;
-          }
+          
           onTap();
         },
         child: Container(

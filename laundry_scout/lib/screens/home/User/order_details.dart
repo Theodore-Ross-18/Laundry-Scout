@@ -205,7 +205,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                     ),
                     _buildDetailRow(
                       'Service Type',
-                      (widget.order['items'] as List<dynamic>).join(', '),
+                      (widget.order['items'] as Map<String, int>).keys.join(', '),
                     ),
                     _buildDetailRow(
                       'Delivery Address',
@@ -215,12 +215,12 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       'Order Date',
                       DateFormat('MMMM dd, yyyy hh:mm a').format(DateTime.parse(widget.order['created_at'])),
                     ),
-                    if ((widget.order['items'] as List<dynamic>).contains('Pick Up') && widget.order['pickup_time'] != null)
+                    if ((widget.order['items'] as Map<String, int>).containsKey('Pick Up') && widget.order['pickup_time'] != null)
                       _buildDetailRow(
                         'Pick Up Time',
                         widget.order['pickup_time'],
                       ),
-                    if ((widget.order['items'] as List<dynamic>).contains('Drop Off') && widget.order['dropoff_time'] != null)
+                    if ((widget.order['items'] as Map<String, int>).containsKey('Drop Off') && widget.order['dropoff_time'] != null)
                       _buildDetailRow(
                         'Drop Off Time',
                         widget.order['dropoff_time'],

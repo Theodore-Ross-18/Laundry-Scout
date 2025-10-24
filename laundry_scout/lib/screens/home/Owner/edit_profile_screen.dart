@@ -30,13 +30,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _customServiceController = TextEditingController();
   
   final List<String> _availableServices = [
-    'Drop Off',
+    'Iron Only',
     'Wash & Fold',
-    'Delivery',
-    'Pick Up',
-    'Self Service',
-    'Dry Clean',
-    'Ironing',
+    'Clean & Iron',
   ];
   List<String> _selectedServices = [];
   
@@ -161,15 +157,49 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
           final servicesOffered = _businessProfile!['services_offered'];
           if (servicesOffered is List) {
-           
             _selectedServices = List<String>.from(servicesOffered.map((service) {
               if (service is String) {
                 return service.toLowerCase() == 'deliver' ? 'Delivery' : service;
               }
               return service;
             }).whereType<String>().toSet().toList());
+
+            // Add loaded services to _availableServices, avoiding duplicates
+            setState(() {
+              for (var service in _selectedServices) {
+                if (!_availableServices.contains(service)) {
+                  _availableServices.add(service);
+                }
+              }
+            });
           } else if (servicesOffered is String) {
             _selectedServices = [servicesOffered.toLowerCase() == 'deliver' ? 'Delivery' : servicesOffered];
+            setState(() {
+              if (!_availableServices.contains(_selectedServices[0])) {
+                _availableServices.add(_selectedServices[0]);
+              }
+            });
+          }
+          
+          // Load all available services, including custom ones
+          final allAvailableServicesData = _businessProfile!['all_available_services'];
+          if (allAvailableServicesData is List) {
+            setState(() {
+              // Ensure default services are always present
+              final List<String> defaultServices = [
+                'Iron Only',
+                'Wash & Fold',
+                'Clean & Iron',
+              ];
+              _availableServices.clear();
+              _availableServices.addAll(defaultServices);
+              
+              for (var service in allAvailableServicesData) {
+                if (service is String && !_availableServices.contains(service)) {
+                  _availableServices.add(service);
+                }
+              }
+            });
           }
           
           final pricelistData = _businessProfile!['service_prices'];
@@ -303,19 +333,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       
       Set<String> existingServices = _pricelist.map((item) => item['service'] as String).toSet();
       
+      final List<dynamic> originalServicePrices = _businessProfile!['service_prices'] ?? [];
+      final Map<String, String> originalPricesMap = {
+        for (var item in originalServicePrices)
+          if (item is Map<String, dynamic> && item['service'] is String && item['price'] != null)
+            (item['service'] as String).toLowerCase() == 'deliver' ? 'Delivery' : item['service'] as String: item['price'].toString()
+      };
+
       for (String service in _selectedServices) {
-     
         String normalizedService = service.toLowerCase() == 'deliver' ? 'Delivery' : service;
 
         if (!existingServices.contains(normalizedService)) {
           _pricelist.add({
             'service': normalizedService,
-            'price': '0.00',
+            'price': originalPricesMap[normalizedService] ?? '0.00',
           });
         }
       }
       
-      _pricelist.removeWhere((item) => !_selectedServices.contains(item['service']));
+      _pricelist.removeWhere((item) {
+        String normalizedPricelistService = (item['service'] as String).toLowerCase() == 'deliver' ? 'Delivery' : item['service'] as String;
+        return !_selectedServices.contains(normalizedPricelistService);
+      });
     });
   }
 
@@ -547,15 +586,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'does_delivery': _deliveryAvailable,
         'terms_and_conditions': _termsAndConditionsController.text.trim(),
         'service_prices': _pricelist,
+        'services_offered': _selectedServices,
+        'all_available_services': _availableServices,
 
         'available_pickup_time_slots': _pickupSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
         'available_dropoff_time_slots': _dropoffSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
       };
-
-      // if (_selectedSchedule != null) { // Removed
-      //   updateData['pickup_schedule'] = _selectedSchedule!['pickup']; // Removed
-      //   updateData['dropoff_schedule'] = _selectedSchedule!['dropoff']; // Removed
-      // } // Removed
 
       if (_selectedImageFile != null || _selectedImageBytes != null) {
         final String fileExtension = _selectedImageFile?.path.split('.').last ?? 'png';

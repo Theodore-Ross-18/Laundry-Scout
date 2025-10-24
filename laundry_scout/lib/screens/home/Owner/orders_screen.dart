@@ -48,6 +48,24 @@ class _OrdersScreenState extends State<OrdersScreen> {
         ordersWithUserDetails.add(order);
       }
 
+      // Ensure 'items' is correctly typed as Map<String, int>
+      for (var order in ordersWithUserDetails) {
+        if (order['items'] is List<dynamic>) {
+          // Convert List<dynamic> to Map<String, int> if necessary
+          // This assumes the list contains alternating service name and quantity, e.g., ["Wash", 1, "Dry", 1]
+          Map<String, int> itemsMap = {};
+          List<dynamic> itemsList = order['items'];
+          for (int i = 0; i < itemsList.length; i += 2) {
+            if (i + 1 < itemsList.length && itemsList[i] is String && itemsList[i+1] is int) {
+              itemsMap[itemsList[i]] = itemsList[i+1];
+            }
+          }
+          order['items'] = itemsMap;
+        } else if (order['items'] == null) {
+          order['items'] = <String, int>{};
+        }
+      }
+
       if (mounted) {
         setState(() {
           _orders = List<Map<String, dynamic>>.from(ordersWithUserDetails);

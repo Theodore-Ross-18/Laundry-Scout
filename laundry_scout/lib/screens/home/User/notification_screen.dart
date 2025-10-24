@@ -93,6 +93,15 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
               .single();
           order['user_profiles'] = userProfileResponse;
         }
+        if (order['items'] != null && order['items'] is List<dynamic>) {
+          Map<String, int> itemsMap = {};
+          for (var item in order['items']) {
+            if (item is Map<String, dynamic> && item['service'] is String && item['quantity'] is int) {
+              itemsMap[item['service']] = item['quantity'];
+            }
+          }
+          order['items'] = itemsMap;
+        }
         ordersWithUserDetails.add(order);
       }
 
