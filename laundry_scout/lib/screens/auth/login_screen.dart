@@ -247,7 +247,7 @@ Future<void> _setIntroShownDate() async {
                 final businessProfileCheck = await Supabase.instance.client
                     .from('business_profiles')
                     .select('id')
-                    .eq('id', userId)
+                    .eq('owner_id', userId)
                     .maybeSingle();
 
                 if (businessProfileCheck != null && businessProfileCheck.isNotEmpty) {
@@ -274,20 +274,22 @@ Future<void> _setIntroShownDate() async {
             NotificationService().testNotificationCreation();
             
             if (mounted) {
-  final shouldShow = await _shouldShowSlides();
+              final shouldShow = await _shouldShowSlides();
 
-            if (shouldShow) {
-              await _setIntroShownDate(); // set the intro date right away
-              setState(() {
-                _userType = determinedProfileType;
-                _showSlides = true;
-                _isLoading = false;
-              });
-              _startSlideTimer();
-            } else {
-              _navigateToHome();
+              // Always set _userType before navigating
+              _userType = determinedProfileType;
+
+              if (shouldShow) {
+                await _setIntroShownDate(); // set the intro date right away
+                setState(() {
+                  _showSlides = true;
+                  _isLoading = false;
+                });
+                _startSlideTimer();
+              } else {
+                _navigateToHome();
+              }
             }
-          }
           }
         } else {
           if (mounted) {

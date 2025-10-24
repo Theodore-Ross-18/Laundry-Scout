@@ -147,7 +147,7 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
           if (mounted) {
             Navigator.pushReplacement(
               context,
-              _createFadeRoute(SelectUserScreen(username: username)),
+              _createFadeRoute(SelectUserScreen(username: username, email: widget.email)),
             );
           }
         } else {
@@ -276,9 +276,9 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(6, (index) {
                         return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4.0), // smaller spacing
+                          padding: const EdgeInsets.symmetric(horizontal: 2.0), // smaller spacing
                           child: SizedBox(
-                            width: MediaQuery.of(context).size.width * 0.1, // adaptive width (~10% of screen)
+                            width: MediaQuery.of(context).size.width * 0.12, // adaptive width (~10% of screen)
                             height: 55,
                             child: TextFormField(
                               controller: _otpControllers[index],
@@ -314,7 +314,7 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
                     child: Text(
                       _countdown > 0 ? 'Resend in $_countdown s' : 'Resend OTP',
                       style: const TextStyle(
-                        color: Colors.grey,
+                        color: Color.fromARGB(255, 255, 255, 255),
                         decoration: TextDecoration.underline,
                       ),
                     ),
@@ -327,10 +327,10 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
                       onPressed: _isLoading ? null : _verifyOtp,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF5A35E3),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18.0),
-                        ),
-                      ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(1),
+                                ),
+                              ),
                       child: _isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
                           : Text(

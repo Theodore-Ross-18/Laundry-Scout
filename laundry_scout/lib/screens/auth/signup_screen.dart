@@ -197,10 +197,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
           emailRedirectTo: 'com.yourapp.laundryscout://email-confirm', 
-          data: {
-            'username': _usernameController.text.trim(),
-            'email_confirm': true,
-          },
+
         );
 
         if (response.user != null) {
@@ -235,7 +232,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
             if (mounted) {
               Navigator.pushReplacement(
                 context,
-                _createFadeRoute(SelectUserScreen(username: _usernameController.text.trim())),
+                _createFadeRoute(SelectUserScreen(username: _usernameController.text.trim(), email: _emailController.text.trim())),
               );
             }
           }

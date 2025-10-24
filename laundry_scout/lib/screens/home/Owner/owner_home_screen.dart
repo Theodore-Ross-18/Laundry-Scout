@@ -52,7 +52,8 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
         print('No business ID found for user: ${user.id}');
         if (mounted) {
           setState(() {
- _isLoading = false;
+            _isLoading = false;
+            _businessProfile = null; // Set business profile to null if not found
           });
         }
         return;

@@ -6,9 +6,10 @@ import '../../services/form_persistence_service.dart';
 
 class SetUserInfoScreen extends StatefulWidget {
 
-  final String? username;
+  final String username;
+  final String email;
 
-  const SetUserInfoScreen({super.key, this.username});
+  const SetUserInfoScreen({super.key, required this.username, required this.email});
 
   @override
   _SetUserInfoScreenState createState() => _SetUserInfoScreenState();
@@ -58,11 +59,11 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     super.initState();
     
     final user = Supabase.instance.client.auth.currentUser;
-    if (user != null && user.email != null) {
+    _emailController.text = widget.email;
+    _usernameController.text = widget.username;
+    if (user != null && user.email != null && _emailController.text.isEmpty) {
       _emailController.text = user.email!;
-      
     }
-    _usernameController.text = widget.username ?? '';
     _currentPage = 0;
 
     _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {

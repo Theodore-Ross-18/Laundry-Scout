@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:laundry_scout/screens/users/set_businessinfo.dart'; 
 import 'package:laundry_scout/screens/users/set_userinfo.dart'; 
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 
 class SelectUserScreen extends StatefulWidget {
 
   final String username;
+  final String email;
 
   
-  const SelectUserScreen({super.key, required this.username});
+  const SelectUserScreen({super.key, required this.username, required this.email});
 
   @override
   State<SelectUserScreen> createState() => _SelectUserScreenState();
@@ -70,7 +72,7 @@ class _SelectUserScreenState extends State<SelectUserScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => SetUserInfoScreen(username: widget.username), // Pass the nullable username
+                      builder: (context) => SetUserInfoScreen(username: widget.username, email: widget.email),
                     ),
                   );
                 },
@@ -86,11 +88,23 @@ class _SelectUserScreenState extends State<SelectUserScreen> {
                 context: context,
                 avatarImagePath: 'lib/assets/user/owner.png',
                 title: 'Laundry Shop Owner',
-                onTap: () {
+                onTap: () async {
+                  final user = Supabase.instance.client.auth.currentUser;
+                  if (user != null) {
+                    try {
+                      await Supabase.instance.client
+                          .from('user_profiles')
+                          .delete()
+                          .eq('id', user.id);
+                      print('Existing user profile deleted for owner: ${user.id}');
+                    } catch (e) {
+                      print('Error deleting existing user profile for owner: $e');
+                    }
+                  }
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => SetBusinessInfoScreen(username: widget.username,),
+                      builder: (context) => SetBusinessInfoScreen(username: widget.username, email: widget.email),
                     ),
                   );
                 },
