@@ -56,28 +56,60 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
         ),
         centerTitle: true,
       ),
-      body: PageView.builder(
-        controller: _pageController,
-        itemCount: widget.imageUrls.length,
-        onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        itemBuilder: (context, index) {
-          final imageUrl = widget.imageUrls[index];
-          return Center(
-            child: Hero(
-              tag: imageUrl,
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.contain,
-                placeholder: (context, url) => const CircularProgressIndicator(),
-                errorWidget: (context, url, error) => const Icon(Icons.error),
+      body: Stack(
+        children: [
+          PageView.builder(
+            controller: _pageController,
+            itemCount: widget.imageUrls.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              final imageUrl = widget.imageUrls[index];
+              return Center(
+                child: Hero(
+                  tag: imageUrl,
+                  child: CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.contain,
+                    placeholder: (context, url) => const CircularProgressIndicator(),
+                    errorWidget: (context, url, error) => const Icon(Icons.error),
+                  ),
+                ),
+              );
+            },
+          ),
+          if (widget.imageUrls.length > 1) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 30),
+                onPressed: () {
+                  _pageController.animateToPage(
+                    (_currentIndex - 1 + widget.imageUrls.length) % widget.imageUrls.length,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  );
+                },
               ),
             ),
-          );
-        },
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 30),
+                onPressed: () {
+                  _pageController.animateToPage(
+                    (_currentIndex + 1) % widget.imageUrls.length,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  );
+                },
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

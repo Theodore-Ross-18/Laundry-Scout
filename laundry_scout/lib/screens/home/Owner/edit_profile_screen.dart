@@ -7,6 +7,7 @@ import '../../../widgets/optimized_image.dart';
 import 'package:laundry_scout/screens/home/Owner/owner_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:laundry_scout/screens/home/User/business_detail_screen.dart'; // Import for BusinessDetailScreen
+import 'package:laundry_scout/screens/home/Owner/image_preview_screen.dart'; // Import for ImagePreviewScreen
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class EditProfileScreen extends StatefulWidget {
@@ -52,6 +53,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
   bool _deliveryAvailable = false;
+  bool _isUploadingImages = false;
 
   Map<String, dynamic>? _businessProfile;
   // Map<String, String>? _selectedSchedule; // Removed
@@ -65,7 +67,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   File? _selectedImageFile; 
   Uint8List? _selectedImageBytes; 
-  String? _coverPhotoUrl; 
+  String? _coverPhotoUrl;
+  List<File> _selectedGalleryImageFiles = [];
+  List<Uint8List> _selectedGalleryImageBytes = [];
+  List<String> _existingGalleryImageUrls = []; 
 
   @override
   void initState() {
@@ -136,7 +141,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _termsAndConditionsController.text = _businessProfile!['terms_and_conditions'] ?? ''; // Load terms and conditions
           _deliveryAvailable = _businessProfile!['does_delivery'] ?? false;
 
-          _coverPhotoUrl = _businessProfile!['cover_photo_url'];
+          final List<dynamic> galleryUrls = _businessProfile!['gallery_image_urls'] ?? [];
+          _existingGalleryImageUrls = List<String>.from(galleryUrls.map((url) => url.toString()));
           _coverPhotoUrl = _businessProfile!['cover_photo_url'];
 
           // _openHoursController.text = _businessProfile!['open_hours'] ?? ''; // Removed
@@ -344,6 +350,124 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  Future<void> _pickGalleryImages() async { 
+    try { 
+      FilePickerResult? result = await FilePicker.platform.pickFiles( 
+        type: FileType.image, 
+        allowMultiple: true, 
+        withData: true, 
+      ); 
+
+      if (result != null) { 
+        setState(() { 
+          for (var file in result.files) { 
+            if (_selectedGalleryImageFiles.length + _existingGalleryImageUrls.length + _selectedGalleryImageBytes.length < 7) { 
+              if (file.bytes != null) { 
+                _selectedGalleryImageBytes.add(file.bytes!); 
+              } else if (file.path != null) { 
+                _selectedGalleryImageFiles.add(File(file.path!)); 
+              } 
+            } else { 
+              ScaffoldMessenger.of(context).showSnackBar( 
+                const SnackBar(content: Text('You can only upload a maximum of 7 gallery images.')), 
+              ); 
+            } 
+          } 
+        }); 
+      } 
+    } catch (e) { 
+      if (mounted) { 
+        ScaffoldMessenger.of(context).showSnackBar( 
+          SnackBar(content: Text('Error picking gallery images: $e')), 
+        ); 
+      } 
+    } 
+  } 
+
+  Widget _buildGalleryImagePreview(dynamic imageSource, {required bool isNew}) { 
+    Widget imageWidget; 
+    if (imageSource is String) { 
+      imageWidget = OptimizedImage( 
+        imageUrl: imageSource, 
+        fit: BoxFit.cover, 
+      ); 
+    } else if (imageSource is File) { 
+      imageWidget = Image.file( 
+        imageSource, 
+        fit: BoxFit.cover, 
+      ); 
+    } else if (imageSource is Uint8List) { 
+      imageWidget = Image.memory( 
+        imageSource, 
+        fit: BoxFit.cover, 
+      ); 
+    } else { 
+      return const SizedBox.shrink(); 
+    } 
+
+    return Stack( 
+      children: [ 
+        GestureDetector( 
+          onTap: () { 
+            if (imageSource is String) { 
+              Navigator.push( 
+                context, 
+                MaterialPageRoute( 
+                  builder: (context) => ImagePreviewScreen(imageUrl: imageSource), 
+                ), 
+              ); 
+            } 
+          }, 
+          child: Hero( 
+            tag: imageSource.hashCode, // Unique tag for Hero animation 
+            child: Container( 
+              width: 100, 
+              height: 100, 
+              decoration: BoxDecoration( 
+                borderRadius: BorderRadius.circular(8), 
+                border: Border.all(color: Colors.grey[300]!), 
+              ), 
+              child: ClipRRect( 
+                borderRadius: BorderRadius.circular(8), 
+                child: imageWidget, 
+              ), 
+            ), 
+          ), 
+        ), 
+        Positioned( 
+          top: 0, 
+          right: 0, 
+          child: GestureDetector( 
+            onTap: () { 
+              setState(() { 
+                if (isNew) { 
+                  if (imageSource is File) { 
+                    _selectedGalleryImageFiles.remove(imageSource); 
+                  } else if (imageSource is Uint8List) { 
+                    _selectedGalleryImageBytes.remove(imageSource); 
+                  } 
+                } else { 
+                  _existingGalleryImageUrls.remove(imageSource); 
+                } 
+              }); 
+            }, 
+            child: Container( 
+              decoration: BoxDecoration( 
+                color: Colors.black54, 
+                borderRadius: BorderRadius.circular(10), 
+              ), 
+              child: const Icon( 
+                Icons.close, 
+                color: Colors.white, 
+                size: 18, 
+              ), 
+            ), 
+          ), 
+        ), 
+      ], 
+    ); 
+  }
+
   Future<void> _deleteCoverPhoto() async {
     setState(() {
       _isSaving = true;
@@ -460,6 +584,38 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             .getPublicUrl(path);
         updateData['cover_photo_url'] = publicUrl;
       }
+
+      List<String> newGalleryImageUrls = [];
+      for (var i = 0; i < _selectedGalleryImageFiles.length; i++) {
+        final file = _selectedGalleryImageFiles[i];
+        final String fileExtension = file.path.split('.').last;
+        final String fileName = '${user.id}/gallery_photo_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExtension';
+        final String path = fileName;
+
+        await Supabase.instance.client.storage.from('profiles').uploadBinary(
+              path,
+              await file.readAsBytes(),
+              fileOptions: const FileOptions(upsert: true),
+            );
+        final String publicUrl = Supabase.instance.client.storage.from('profiles').getPublicUrl(path);
+        newGalleryImageUrls.add(publicUrl);
+      }
+
+      for (var i = 0; i < _selectedGalleryImageBytes.length; i++) {
+        final bytes = _selectedGalleryImageBytes[i];
+        final String fileName = '${user.id}/gallery_photo_${DateTime.now().millisecondsSinceEpoch}_${_selectedGalleryImageFiles.length + i}.png';
+        final String path = fileName;
+
+        await Supabase.instance.client.storage.from('profiles').uploadBinary(
+              path,
+              bytes,
+              fileOptions: const FileOptions(upsert: true),
+            );
+        final String publicUrl = Supabase.instance.client.storage.from('profiles').getPublicUrl(path);
+        newGalleryImageUrls.add(publicUrl);
+      }
+
+      updateData['gallery_image_urls'] = [..._existingGalleryImageUrls, ...newGalleryImageUrls];
 
       await Supabase.instance.client
           .from('business_profiles')
@@ -988,6 +1144,49 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                     const SizedBox(height: 24),
                     _buildSectionHeader('Business Information'),
+                    // Gallery Image Upload 
+                    const SizedBox(height: 20), 
+                    _buildSectionHeader('Gallery Images'), 
+                    const SizedBox(height: 10), 
+                    Wrap( 
+                      spacing: 8.0, 
+                      runSpacing: 8.0, 
+                      children: [ 
+                        ..._existingGalleryImageUrls.map((url) => _buildGalleryImagePreview(url, isNew: false)), 
+                        ..._selectedGalleryImageFiles.map((file) => _buildGalleryImagePreview(file, isNew: true)), 
+                        ..._selectedGalleryImageBytes.map((bytes) => _buildGalleryImagePreview(bytes, isNew: true)), 
+                        if (_selectedGalleryImageFiles.length + _existingGalleryImageUrls.length + _selectedGalleryImageBytes.length < 7) 
+                          GestureDetector( 
+                            onTap: _pickGalleryImages, 
+                            child: Container( 
+                              width: 100, 
+                              height: 100, 
+                              decoration: BoxDecoration( 
+                                color: Colors.grey[200], 
+                                borderRadius: BorderRadius.circular(8), 
+                                border: Border.all(color: Colors.grey[300]!), 
+                              ), 
+                              child: const Icon( 
+                                Icons.add_a_photo, 
+                                color: Colors.grey, 
+                                size: 40, 
+                              ), 
+                            ), 
+                          ), 
+                      ], 
+                    ), 
+                    if (_isUploadingImages) 
+                      const Padding( 
+                        padding: EdgeInsets.symmetric(vertical: 16.0), 
+                        child: Row( 
+                          mainAxisAlignment: MainAxisAlignment.center, 
+                          children: [ 
+                            CircularProgressIndicator(), 
+                            SizedBox(width: 16), 
+                            Text('Uploading images...'), 
+                          ], 
+                        ), 
+                      ),
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: _businessNameController,
