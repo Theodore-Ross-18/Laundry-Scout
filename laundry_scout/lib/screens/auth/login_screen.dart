@@ -8,6 +8,7 @@ import 'dart:async';
 import '../../services/notification_service.dart';
 import 'package:laundry_scout/widgets/animated_eye_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/session_service.dart'; // Import SessionService
 
 
 Route _createFadeRoute(Widget page) {
@@ -257,6 +258,7 @@ Future<void> _setIntroShownDate() async {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('User profile not found after login.')),
                     );
+                    SessionService().resetFeedbackFlags(); // Reset feedback flags on logout
                     await Supabase.instance.client.auth.signOut();
                   }
                   setState(() { _isLoading = false; });

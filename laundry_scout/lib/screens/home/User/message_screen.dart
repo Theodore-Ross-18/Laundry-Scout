@@ -1,7 +1,7 @@
 // ignore_for_file: unused_field
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../../services/session_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'dart:developer';
@@ -25,6 +25,7 @@ class _MessageScreenState extends State<MessageScreen> {
   List<Map<String, dynamic>> _filteredConversations = [];
   Timer? _backgroundRefreshTimer;
   Timer? _feedbackTimer; // Added feedback timer
+  final SessionService _sessionService = SessionService();
 
   @override
   void initState() {
@@ -376,14 +377,11 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
   Future<void> _checkAndShowFeedbackModal() async {
-    final prefs = await SharedPreferences.getInstance();
-    final hasShownFeedback = prefs.getBool('hasShownUserFeedback') ?? false;
-
-    if (!hasShownFeedback) {
+    if (!_sessionService.hasShownUserFeedbackModalThisSession) {
       _feedbackTimer = Timer(const Duration(seconds: 10), () {
         if (mounted) {
           _showFeedbackModal();
-          prefs.setBool('hasShownUserFeedback', true);
+          _sessionService.hasShownUserFeedbackModalThisSession = true;
         }
       });
     }

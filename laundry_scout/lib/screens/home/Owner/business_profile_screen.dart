@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../splash/splash_screen.dart';
 import 'changeEPP.dart'; 
+import '../../../services/session_service.dart'; // Corrected Import SessionService
 // import 'owner_notification_screen.dart'; 
 import 'image_preview_screen.dart'; 
 import 'business_docs_screen.dart'; 
@@ -73,6 +74,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
   void _signOut() async {
     try {
       await Supabase.instance.client.auth.signOut();
+      SessionService().resetFeedbackFlags();
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           _createFadeRoute(const SplashScreen()),

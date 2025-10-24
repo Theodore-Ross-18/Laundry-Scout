@@ -167,7 +167,8 @@ class _HomeScreenState extends State<HomeScreen> {
             availability_status,
             feedback(rating)
           ''')
-          .eq('status', 'approved'); 
+          .eq('status', 'approved')
+          .eq('feedback.feedback_type', 'user'); 
 
       if (mounted) {
        
@@ -441,7 +442,8 @@ class _HomeScreenState extends State<HomeScreen> {
             availability_status,
             feedback(rating)
           ''')
-          .eq('status', 'approved');
+          .eq('status', 'approved')
+          .eq('feedback.feedback_type', 'user');
 
       if (mounted) {
        

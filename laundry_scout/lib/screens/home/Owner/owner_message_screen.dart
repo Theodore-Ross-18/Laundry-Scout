@@ -1,7 +1,7 @@
 // ignore_for_file: unused_field
 
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../../services/session_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import '../../../services/connection_service.dart';
@@ -24,6 +24,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
   List<Map<String, dynamic>> _filteredConversations = [];
   Timer? _backgroundRefreshTimer;
   Timer? _feedbackTimer; // Added feedback timer
+  final SessionService _sessionService = SessionService();
 
   @override
   void initState() {
@@ -38,6 +39,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
   void dispose() {
     _messagesSubscription.unsubscribe();
     _backgroundRefreshTimer?.cancel();
+    _feedbackTimer?.cancel(); // Cancel the feedback timer
     _searchController.dispose();
     super.dispose();
   }
@@ -416,14 +418,11 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
   }
 
   Future<void> _checkAndShowFeedbackModal() async {
-    final prefs = await SharedPreferences.getInstance();
-    final hasShownFeedback = prefs.getBool('hasShownOwnerFeedback') ?? false;
-
-    if (!hasShownFeedback) {
+    if (!_sessionService.hasShownOwnerFeedbackModalThisSession) {
       _feedbackTimer = Timer(const Duration(seconds: 10), () {
         if (mounted) {
           _showFeedbackModal();
-          prefs.setBool('hasShownOwnerFeedback', true);
+          _sessionService.hasShownOwnerFeedbackModalThisSession = true;
         }
       });
     }

@@ -5,6 +5,7 @@ import '../../splash/splash_screen.dart';
 import '../../auth/login_screen.dart';
 import '../../../widgets/optimized_image.dart';
 import '../../../services/image_service.dart';
+import '../../../services/session_service.dart'; // Import SessionService
 // import '../Owner/owner_notification_screen.dart'; 
 import 'image_preview_screen.dart'; 
 
@@ -164,6 +165,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _signOut() async {
     try {
       await Supabase.instance.client.auth.signOut();
+      SessionService().resetFeedbackFlags();
       if (mounted) {
         Navigator.pushReplacement(
           context,
