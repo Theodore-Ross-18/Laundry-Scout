@@ -316,11 +316,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                       ],
                                     ),
                                   ),
-                                  const Icon(
-                                    Icons.arrow_forward_ios,
-                                    color: Colors.grey,
-                                    size: 16,
-                                  ),
                                 ],
                               ),
                             ),

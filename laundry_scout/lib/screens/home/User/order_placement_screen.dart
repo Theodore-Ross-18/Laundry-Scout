@@ -486,6 +486,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
               selectedSchedule: _selectedSchedule,
               availablePickupTimeSlots: _businessProfile?['available_pickup_time_slots']?.cast<String>() ?? [],
               availableDropoffTimeSlots: _businessProfile?['available_dropoff_time_slots']?.cast<String>() ?? [],
+              selectedServices: _selectedServices,
             ),
           ),
         );
@@ -640,8 +641,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                             _selectedSchedule != null &&
                             _latitude != null && 
                             _longitude != null &&
-                            (!_selectedServices.contains('Pick Up') && !_selectedServices.contains('Drop Off') || 
-                             (_selectedSchedule != null && _selectedSchedule!.containsKey('pickup') && _selectedSchedule!.containsKey('dropoff')));
+                            (_selectedSchedule != null && (_selectedSchedule!.containsKey('pickup') || _selectedSchedule!.containsKey('dropoff')));
     
     return SizedBox(
       width: double.infinity,
@@ -738,6 +738,20 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
     if (_currentAddressController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a delivery address.')),
+      );
+      return;
+    }
+
+    if (_selectedServices.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one service.')),
+      );
+      return;
+    }
+
+    if (_selectedSchedule == null || _selectedSchedule!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a pick-up and drop-off schedule.')),
       );
       return;
     }
