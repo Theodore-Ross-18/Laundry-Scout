@@ -11,10 +11,10 @@ class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key, this.initialTabIndex = 0});
 
   @override
-  State<NotificationScreen> createState() => _NotificationScreenState();
+  State<NotificationScreen> createState() => NotificationScreenState();
 }
 
-class _NotificationScreenState extends State<NotificationScreen> with SingleTickerProviderStateMixin {
+class NotificationScreenState extends State<NotificationScreen> with SingleTickerProviderStateMixin {
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
   late RealtimeChannel _notificationsSubscription;
@@ -23,6 +23,11 @@ class _NotificationScreenState extends State<NotificationScreen> with SingleTick
 
   List<Map<String, dynamic>> _orders = [];
   bool _ordersLoading = true;
+
+  Future<void> refreshData() async {
+    await _loadNotifications();
+    await _loadOrders();
+  }
 
   @override
   void initState() {

@@ -35,6 +35,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isSearching = false; 
   int _selectedIndex = 0; 
 
+  final GlobalKey<NotificationScreenState> _notificationScreenKey = GlobalKey<NotificationScreenState>();
+
   late final List<Widget> _widgetOptions;
 
   @override
@@ -69,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const LocationScreen(),
       const LaundryScreen(),
       const MessageScreen(),
-      const NotificationScreen(),
+      NotificationScreen(key: _notificationScreenKey),
     ];
     
     _loadActiveOrdersCount(); 
@@ -398,6 +400,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _loadPromosBackground(),
         _loadActiveOrdersCountBackground(),
       ]);
+      _notificationScreenKey.currentState?.refreshData();
     } catch (e) {
       print('Background refresh error: $e');
     }
