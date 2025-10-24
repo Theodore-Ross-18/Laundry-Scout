@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:laundry_scout/widgets/static_map_snippet.dart';
 
 class OrderConfirmationScreen extends StatefulWidget {
   final Map<String, dynamic> businessData;
@@ -320,6 +321,13 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                               ),
                             ),
                             const SizedBox(height: 24),
+                            if (widget.latitude != null && widget.longitude != null) ...[
+                              StaticMapSnippet(
+                                latitude: widget.latitude!,
+                                longitude: widget.longitude!,
+                              ),
+                              const SizedBox(height: 24),
+                            ],
                           
                             const Text(
                               'Ordered Items',
