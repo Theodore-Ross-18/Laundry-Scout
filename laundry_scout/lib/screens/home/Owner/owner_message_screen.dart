@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import '../../../services/connection_service.dart';
@@ -20,6 +21,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredConversations = [];
   Timer? _backgroundRefreshTimer;
+  Timer? _feedbackTimer; // Added feedback timer
 
   @override
   void initState() {
@@ -27,6 +29,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
     _loadConversations();
     _setupRealtimeSubscription();
     _startBackgroundRefresh();
+    _checkAndShowFeedbackModal();
   }
 
   @override
@@ -227,7 +230,6 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
       body: SafeArea(
         child: Column(
           children: [
-           
             const SizedBox(height: 10),
             // Messages section header
             Container(
@@ -388,33 +390,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
                           ),
               ),
             ),
-            // Feedback button
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.all(20),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _showFeedbackModal(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF7B61FF),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Feedback',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            // Removed feedback button container
           ],
         ),
       ),
@@ -434,6 +410,20 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
       return '${difference.inMinutes}m';
     } else {
       return 'now';
+    }
+  }
+
+  Future<void> _checkAndShowFeedbackModal() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasShownFeedback = prefs.getBool('hasShownOwnerFeedback') ?? false;
+
+    if (!hasShownFeedback) {
+      _feedbackTimer = Timer(const Duration(seconds: 10), () {
+        if (mounted) {
+          _showFeedbackModal();
+          prefs.setBool('hasShownOwnerFeedback', true);
+        }
+      });
     }
   }
 

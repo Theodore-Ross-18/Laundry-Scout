@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'dart:developer';
@@ -21,6 +22,7 @@ class _MessageScreenState extends State<MessageScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredConversations = [];
   Timer? _backgroundRefreshTimer;
+  Timer? _feedbackTimer; // Added feedback timer
 
   @override
   void initState() {
@@ -28,6 +30,7 @@ class _MessageScreenState extends State<MessageScreen> {
     _loadConversations();
     _setupRealtimeSubscription();
     _startBackgroundRefresh();
+    _checkAndShowFeedbackModal();
   }
 
   @override
@@ -198,9 +201,8 @@ class _MessageScreenState extends State<MessageScreen> {
       body: SafeArea(
         child: Column(
           children: [
-         
             const SizedBox(height: 10),
-           
+            // Messages section header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Row(
@@ -349,32 +351,6 @@ class _MessageScreenState extends State<MessageScreen> {
               ),
             ),
            
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.all(20),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _showFeedbackModal(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5A35E3),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Feedback',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -397,10 +373,24 @@ class _MessageScreenState extends State<MessageScreen> {
     }
   }
 
+  Future<void> _checkAndShowFeedbackModal() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasShownFeedback = prefs.getBool('hasShownUserFeedback') ?? false;
+
+    if (!hasShownFeedback) {
+      _feedbackTimer = Timer(const Duration(seconds: 10), () {
+        if (mounted) {
+          _showFeedbackModal();
+          prefs.setBool('hasShownUserFeedback', true);
+        }
+      });
+    }
+  }
+
   void _showFeedbackModal() {
     showDialog(
       context: context,
-      builder: (context) => const FeedbackModal(),
+      builder: (context) => FeedbackModal(userId: Supabase.instance.client.auth.currentUser!.id),
     );
   }
 
@@ -942,7 +932,8 @@ class _ChatScreenState extends State<ChatScreen> {
 }
 
 class FeedbackModal extends StatefulWidget {
-  const FeedbackModal({super.key});
+  final String? userId;
+  const FeedbackModal({super.key, this.userId});
 
   @override
   State<FeedbackModal> createState() => _FeedbackModalState();
@@ -999,9 +990,10 @@ class _FeedbackModalState extends State<FeedbackModal> {
     
       await Supabase.instance.client.from('feedback').insert({
         'user_id': user.id,
+        'business_id': null,
         'rating': _rating,
         'comment': _feedbackController.text.trim(),
-        'feedback_type': 'admin', 
+        'feedback_type': 'admin',
         'created_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       });
