@@ -305,98 +305,83 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
           ),
         ),
         const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.2),
-                spreadRadius: 1,
-                blurRadius: 5,
-                offset: const Offset(0, 3),
+        GestureDetector(
+          onTap: () async {
+            final LatLng? selectedLocation = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PickDropMapScreen(
+                  initialLatitude: _latitude ?? 0.0,
+                  initialLongitude: _longitude ?? 0.0,
+                ),
               ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.location_on,
-                    color: Color(0xFF5A35E3),
-                    size: 20,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      '${_fullNameController.text}  (+63) ${_phoneNumberController.text}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.black,
+            );
+            if (selectedLocation != null) {
+              setState(() {
+                _latitude = selectedLocation.latitude;
+                _longitude = selectedLocation.longitude;
+                _latitudeController.text = _latitude.toString();
+                _longitudeController.text = _longitude.toString();
+              });
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on,
+                      color: Color(0xFF5A35E3),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        '${_fullNameController.text}  (+63) ${_phoneNumberController.text}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black,
+                        ),
                       ),
                     ),
-                  ),
-                  const Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.grey,
-                    size: 16,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(left: 30.0), // Adjust padding to align with the text above
-                child: Text(
-                  _currentAddressController.text,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
+                    const Icon(
+                      Icons.arrow_forward_ios,
+                      color: Colors.grey,
+                      size: 16,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(left: 30.0), // Adjust padding to align with the text above
+                  child: Text(
+                    _currentAddressController.text,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () async {
-              final LatLng? selectedLocation = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PickDropMapScreen(
-                                            initialLatitude: _latitude ?? 0.0,
-                                            initialLongitude: _longitude ?? 0.0,
-                                          ),
-                ),
-              );
-              if (selectedLocation != null) {
-                setState(() {
-                  _latitude = selectedLocation.latitude;
-                  _longitude = selectedLocation.longitude;
-                  _latitudeController.text = _latitude.toString();
-                  _longitudeController.text = _longitude.toString();
-                });
-              }
-            },
-            icon: const Icon(Icons.map, color: Colors.white),
-            label: const Text(
-              'Pin Location on Map',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF5A35E3),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              ],
             ),
           ),
         ),
+
       ],
     );
   }
@@ -654,7 +639,9 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                             _selectedServices.isNotEmpty && 
                             _selectedSchedule != null &&
                             _latitude != null && 
-                            _longitude != null;
+                            _longitude != null &&
+                            (!_selectedServices.contains('Pick Up') && !_selectedServices.contains('Drop Off') || 
+                             (_selectedSchedule != null && _selectedSchedule!.containsKey('pickup') && _selectedSchedule!.containsKey('dropoff')));
     
     return SizedBox(
       width: double.infinity,
