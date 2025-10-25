@@ -358,7 +358,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   }
 
   String _getDefaultPrice(String service) {
-   
+    
     switch (service.toLowerCase()) {
       case 'wash & fold':
         return '50.00';
@@ -383,6 +383,31 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     }
   }
 
+// Icons at Services Available
+  IconData _getServiceIcon(String? serviceName) {
+    switch ((serviceName ?? '').toLowerCase()) {
+      case 'pick-up':
+      case 'pick up':
+        return Icons.volunteer_activism; // hand/heart
+      case 'drop-off':
+      case 'drop off':
+        return Icons.inbox;
+      case 'wash & fold':
+      case 'wash and fold':
+        return Icons.inventory_2;
+      case 'delivery':
+      case 'deliver':
+        return Icons.delivery_dining;
+      case 'dry clean':
+      case 'dry cleaning':
+        return Icons.dry_cleaning;
+      case 'iron only':
+      case 'ironing':
+        return Icons.iron;
+      default:
+        return Icons.local_laundry_service;
+    }
+  }
   double _calculateAverageRating() {
     
     final userReviews = _reviews.where((review) => 
@@ -869,7 +894,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                                       _buildAvailabilityStatusBadge(_fullBusinessData!['availability_status']),
                                     ],
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 4),
                                   Row(
                                     children: [
                                       const Icon(Icons.location_on, color: Colors.grey, size: 16),
@@ -1245,7 +1270,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Service Pricing',
+            'Services Available',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -1287,57 +1312,86 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
               ),
             )
           else
-            Column(
-              children: _pricelist.map((item) => Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item['service_name'] ?? 'N/A',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+            Builder(
+              builder: (context) {
+                final screenWidth = MediaQuery.of(context).size.width;
+                final small = screenWidth < 400;
+                final filtered = _pricelist
+                    .where((item) => (double.tryParse(item['price']?.toString() ?? '0') ?? 0) > 0.0)
+                    .toList();
+                return GridView.builder(
+                  itemCount: filtered.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    mainAxisExtent: small ? 70 : 92,
+                  ),
+                  itemBuilder: (context, index) {
+                    final item = filtered[index];
+                    return Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: small ? 12 : 14,
+                        vertical: small ? 10 : 12,
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item['description'] ?? 'N/A',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[200]!),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: Text(
-                        '₱${item['price']}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF5A35E3),
-                        ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item['service_name'] ?? 'N/A',
+                                  style: TextStyle(
+                                    fontSize: small ? 14 : 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'P${item['price']}',
+                                  style: TextStyle(
+                                    fontSize: small ? 12 : 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF5A35E3),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(width: small ? 8 : 10),
+                          Container(
+                            width: small ? 32 : 36,
+                            height: small ? 32 : 36,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              _getServiceIcon(item['service_name']),
+                              color: Colors.white,
+                              size: small ? 20 : 22,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-              )).toList(),
+                    );
+                  },
+                );
+              },
             ),
           const SizedBox(height: 24),
           // Place Order Button
