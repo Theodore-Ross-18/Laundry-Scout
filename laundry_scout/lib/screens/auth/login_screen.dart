@@ -554,7 +554,7 @@ Future<void> _setIntroShownDate() async {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('LOGIN', style: TextStyle(fontStyle: FontStyle.italic)),
+                        : const Text('LOGIN'),
                   ),
                 ),
                 const SizedBox(height: 40),
