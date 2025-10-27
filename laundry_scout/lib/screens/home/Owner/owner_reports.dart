@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class OwnerReportsScreen extends StatefulWidget {
   final Map<String, int> orderStats;
@@ -22,13 +23,16 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
   List<MapEntry<String, double>> _serviceData = [];
   List<Map<String, dynamic>> _filteredOrders = [];
   Map<String, int> _filteredOrderStats = {};
+  DateTime? _businessCreationDate; // Store business creation date
 
   @override
   void initState() {
     super.initState();
-    _monthYears = _generateMonthYears();
-    _selectedMonthYear = _monthYears.first;
-    _filterDataByMonth();
+    _loadBusinessProfileCreationDate().then((_) {
+      _monthYears = _generateMonthYears();
+      _selectedMonthYear = _monthYears.first;
+      _filterDataByMonth();
+    });
   }
 
   void _filterDataByMonth() {
@@ -63,6 +67,31 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
     // Recalculate all data based on filtered orders
     _calculateTotalEarnings();
     _calculateTopUsedService();
+  }
+
+  Future<void> _loadBusinessProfileCreationDate() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('created_at')
+          .eq('owner_id', user.id)
+          .single();
+
+      if (response['created_at'] != null) {
+        setState(() {
+          _businessCreationDate = DateTime.parse(response['created_at']);
+        });
+      }
+    } catch (e) {
+      print('Error loading business profile creation date: $e');
+      // Default to current date if error occurs
+      setState(() {
+        _businessCreationDate = DateTime.now();
+      });
+    }
   }
 
   int _getMonthNumber(String monthName) {
@@ -121,11 +150,20 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
   List<String> _generateMonthYears() {
     List<String> monthYears = [];
     DateTime now = DateTime.now();
-    DateTime nextYear = DateTime(now.year + 1, now.month, now.day);
-
-    for (DateTime date = now; date.isBefore(nextYear); date = DateTime(date.year, date.month + 1, date.day)) {
+    
+    // Start from business creation date or current date if not available
+    DateTime startDate = _businessCreationDate ?? now;
+    
+    // Ensure we don't go beyond the current date
+    DateTime endDate = DateTime(now.year + 1, now.month, now.day);
+    
+    // Generate months from start date to end date
+    for (DateTime date = DateTime(startDate.year, startDate.month, 1); 
+         date.isBefore(endDate) || date.isAtSameMomentAs(endDate); 
+         date = DateTime(date.year, date.month + 1, 1)) {
       monthYears.add('${_getMonthName(date.month)} ${date.year}');
     }
+    
     return monthYears;
   }
 
@@ -413,18 +451,22 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IconButton(
-                      icon: Icon(Icons.arrow_back_ios, color: const Color(0xFF5A35E3)),
-                      onPressed: () {
-                        final currentIndex = _monthYears.indexOf(_selectedMonthYear!);
-                        if (currentIndex > 0) {
-                          setState(() {
-                            _selectedMonthYear = _monthYears[currentIndex - 1];
-                            _filterDataByMonth();
-                          });
-                        }
-                      },
-                    ),
+                    // Only show previous button if not at the first month
+                    if (_monthYears.indexOf(_selectedMonthYear!) > 0)
+                      IconButton(
+                        icon: Icon(Icons.arrow_back_ios, color: const Color(0xFF5A35E3)),
+                        onPressed: () {
+                          final currentIndex = _monthYears.indexOf(_selectedMonthYear!);
+                          if (currentIndex > 0) {
+                            setState(() {
+                              _selectedMonthYear = _monthYears[currentIndex - 1];
+                              _filterDataByMonth();
+                            });
+                          }
+                        },
+                      )
+                    else
+                      SizedBox(width: 48), // Placeholder to maintain alignment
                     Text(
                       _selectedMonthYear!,
                       style: TextStyle(
