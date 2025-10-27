@@ -386,268 +386,304 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false, // Remove the back button
+        title: const Text('General Report'),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF5A35E3), // Set AppBar background to purple
+        foregroundColor: Colors.white, // Set AppBar text/icon color to white
+        titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Poppins'), // Set title text color to white and font to Poppins
+      ),
+      backgroundColor: Colors.white, // Set Scaffold background to white
+      body: SingleChildScrollView(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              DropdownButton<String>(
-                value: _selectedMonthYear,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedMonthYear = newValue;
-                    _filterDataByMonth();
-                  });
-                },
-                items: _monthYears.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(
-                      value,
-                      style: TextStyle(color: Colors.black),
-                    ),
-                  );
-                }).toList(),
-              ),
-              ElevatedButton.icon(
-                onPressed: _generatePDF,
-                icon: Icon(Icons.picture_as_pdf),
-                label: Text('Generate Report'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Expanded(
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Total Bookings',
-                          style: TextStyle(color: Colors.black, fontSize: 12),
-                        ),
-                        SizedBox(height: 6),
-                        Text(
-                          '${_filteredOrderStats['total'] ?? 0}',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Total Estimate Earnings',
-                          style: TextStyle(color: Colors.black, fontSize: 12),
-                        ),
-                        SizedBox(height: 6),
-                        Text(
-                          '${_totalEarnings.toStringAsFixed(2)}',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Top Used Service',
-                          style: TextStyle(color: Colors.black, fontSize: 12),
-                        ),
-                        SizedBox(height: 6),
-                        Text(
-                          '$_topUsedService',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                children: [
-                  Text(
-                    'Transactions',
-                    style: TextStyle(color: Colors.black, fontSize: 16),
-                  ),
-                  SizedBox(height: 6),
-                  Container(
-                    height: 150,
-                    child: ListView.builder(
-                      shrinkWrap: false,
-                      physics: ClampingScrollPhysics(), // Allow scrolling within the card
-                      itemCount: _filteredOrders.length,
-                      itemBuilder: (context, index) {
-                        final order = _filteredOrders[index];
-                        final customerName = order['user_profiles']?['first_name'] != null && order['user_profiles']?['last_name'] != null
-                            ? '${order['user_profiles']['first_name']} ${order['user_profiles']['last_name']}'
-                            : order['customer_name'] != null
-                                ? order['customer_name']
-                                : 'N/A';
-                        final services = (order['items'] as Map<String, dynamic>?)?.keys.join(', ') ?? 'N/A';
-                        final totalAmount = order['total_amount']?.toStringAsFixed(2) ?? '0.00';
-                        final createdAt = order['created_at'] != null
-                            ? DateFormat('MMM d').format(DateTime.parse(order['created_at']))
-                            : 'N/A';
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 6.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    customerName,
-                                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-                                  ),
-                                  Text(
-                                    services,
-                                    style: TextStyle(color: Colors.grey[600]),
-                                  ),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    'Php $totalAmount',
-                                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-                                  ),
-                                  Text(
-                                    createdAt,
-                                    style: TextStyle(color: Colors.grey[600]),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.arrow_back_ios, color: const Color(0xFF5A35E3)),
+                      onPressed: () {
+                        final currentIndex = _monthYears.indexOf(_selectedMonthYear!);
+                        if (currentIndex > 0) {
+                          setState(() {
+                            _selectedMonthYear = _monthYears[currentIndex - 1];
+                            _filterDataByMonth();
+                          });
+                        }
                       },
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SizedBox(height: 16),
-          // Pie Chart for Service Usage
-          if (_serviceData.isNotEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  children: [
                     Text(
-                      'Most Ordered Services',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                      _selectedMonthYear!,
+                      style: TextStyle(
+                        color: const Color(0xFF5A35E3),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    SizedBox(height: 12),
-                    Row(
-                      children: [
-                        // Pie Chart
-                        Container(
-                          height: 180,
-                          width: 180,
-                          child: PieChart(
-                            PieChartData(
-                              sections: _serviceData.asMap().entries.map((entry) {
-                                int index = entry.key;
-                                MapEntry<String, double> service = entry.value;
-                                final colors = _getPieChartColors();
-                                return PieChartSectionData(
-                                  color: colors[index % colors.length],
-                                  value: service.value,
-                                  title: '${service.value.toStringAsFixed(0)}',
-                                  radius: 60,
-                                  titleStyle: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                );
-                              }).toList(),
-                              sectionsSpace: 1,
-                              centerSpaceRadius: 30,
-                              pieTouchData: PieTouchData(
-                                touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                                  // Handle touch interactions if needed
-                                },
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 16),
-                        // Legend
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: _serviceData.asMap().entries.map((entry) {
-                              int index = entry.key;
-                              MapEntry<String, double> service = entry.value;
-                              final colors = _getPieChartColors();
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 2.0),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      width: 12,
-                                      height: 12,
-                                      color: colors[index % colors.length],
-                                    ),
-                                    SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        '${service.key} (${service.value.toStringAsFixed(0)} orders)',
-                                        style: TextStyle(fontSize: 11, color: Colors.black),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ],
+                    IconButton(
+                      icon: Icon(Icons.arrow_forward_ios, color: const Color(0xFF5A35E3)),
+                      onPressed: () {
+                        final currentIndex = _monthYears.indexOf(_selectedMonthYear!);
+                        if (currentIndex < _monthYears.length - 1) {
+                          setState(() {
+                            _selectedMonthYear = _monthYears[currentIndex + 1];
+                            _filterDataByMonth();
+                          });
+                        }
+                      },
                     ),
                   ],
                 ),
               ),
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Expanded(
+                    child: Card(
+                      color: const Color(0xFF5A35E3), // Set card background to purple
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Total Bookings',
+                              style: TextStyle(color: Colors.white, fontSize: 12),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              '${_filteredOrderStats['total'] ?? 0}',
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Card(
+                      color: const Color(0xFF5A35E3), // Set card background to purple
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Total Estimate Earnings',
+                              style: TextStyle(color: Colors.white, fontSize: 12),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              'Php ${_totalEarnings.toStringAsFixed(2)}',
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Card(
+                      color: const Color(0xFF5A35E3), // Set card background to purple
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Drop-Off',
+                              style: TextStyle(color: Colors.white, fontSize: 12),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              '$_topUsedService',
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16),
+              Card(
+                color: const Color(0xFF5A35E3), // Set card background to purple
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Transactions',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                      SizedBox(height: 6),
+                      Container(
+                        height: 150,
+                        child: ListView.builder(
+                          shrinkWrap: false,
+                          physics: ClampingScrollPhysics(),
+                          itemCount: _filteredOrders.length,
+                          itemBuilder: (context, index) {
+                            final order = _filteredOrders[index];
+                            final customerName = order['user_profiles']?['first_name'] != null && order['user_profiles']?['last_name'] != null
+                                ? '${order['user_profiles']['first_name']} ${order['user_profiles']['last_name']}'
+                                : order['customer_name'] != null
+                                    ? order['customer_name']
+                                    : 'N/A';
+                            final services = (order['items'] as Map<String, dynamic>?)?.keys.join(', ') ?? 'N/A';
+                            final totalAmount = order['total_amount']?.toStringAsFixed(2) ?? '0.00';
+                            final createdAt = order['created_at'] != null
+                                ? DateFormat('MMM d').format(DateTime.parse(order['created_at']))
+                                : 'N/A';
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 6.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        customerName,
+                                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                                      ),
+                                      Text(
+                                        services,
+                                        style: TextStyle(color: Colors.white70),
+                                      ),
+                                    ],
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        'Php $totalAmount',
+                                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                                      ),
+                                      Text(
+                                        createdAt,
+                                        style: TextStyle(color: Colors.white70),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+              if (_serviceData.isNotEmpty)
+                Card(
+                  color: const Color(0xFF5A35E3), // Set card background to purple
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Service Usage',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                        SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Container(
+                              height: 180,
+                              width: 180,
+                              child: PieChart(
+                                PieChartData(
+                                  sections: _serviceData.asMap().entries.map((entry) {
+                                    int index = entry.key;
+                                    MapEntry<String, double> service = entry.value;
+                                    final colors = _getPieChartColors();
+                                    return PieChartSectionData(
+                                      color: colors[index % colors.length],
+                                      value: service.value,
+                                      title: '${service.value.toStringAsFixed(0)}',
+                                      radius: 60,
+                                      titleStyle: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    );
+                                  }).toList(),
+                                  sectionsSpace: 1,
+                                  centerSpaceRadius: 30,
+                                  pieTouchData: PieTouchData(
+                                    touchCallback: (FlTouchEvent event, pieTouchResponse) {},
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: _serviceData.asMap().entries.map((entry) {
+                                  int index = entry.key;
+                                  MapEntry<String, double> service = entry.value;
+                                  final colors = _getPieChartColors();
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          width: 12,
+                                          height: 12,
+                                          color: colors[index % colors.length],
+                                        ),
+                                        SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            '${service.key}',
+                                            style: TextStyle(fontSize: 11, color: Colors.white),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: ElevatedButton(
+          onPressed: _generatePDF,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Color(0xFF5A35E3),
+            foregroundColor: Colors.white,
+            padding: EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
-          ],
+          ),
+          child: Text(
+            'Generate Report',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
         ),
       ),
     );
