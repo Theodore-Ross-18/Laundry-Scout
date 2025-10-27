@@ -71,6 +71,8 @@ flutter:
     - lib/assets/navbars/message.png
     - lib/assets/navbars/notification.png
     - lib/assets/owner/
+    - lib/assets/owner/reviews.png
+    - lib/assets/owner/reports.png
   
   fonts:
     - family: Poppins

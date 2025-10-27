@@ -7,6 +7,7 @@ import 'add_promo_screen.dart';
 import 'owner_message_screen.dart';
 import 'owner_notification_screen.dart';
 import 'owner_feedback_screen.dart';
+import 'owner_reports.dart';
 import 'edit_profile_screen.dart';
 import 'availability_screen.dart';
 import 'orders_screen.dart';
@@ -287,6 +288,8 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
         return const OwnerMessageScreen();
       case 2:
         return const OwnerNotificationScreen();
+      case 3:
+        return const OwnerReportsScreen();
       default:
         return _buildHomeScreenContent();
     }
@@ -528,6 +531,11 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
             icon: Image.asset('lib/assets/navbars/notification.png', width: 24, height: 24, color: Colors.black),
             activeIcon: Image.asset('lib/assets/navbars/notification.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
             label: 'Notification',
+          ),
+          BottomNavigationBarItem(
+            icon: Image.asset('lib/assets/owner/reports.png', width: 24, height: 24, color: Colors.black),
+            activeIcon: Image.asset('lib/assets/owner/reports.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
+            label: 'Reports',
           ),
         ],
         currentIndex: _selectedIndex,
