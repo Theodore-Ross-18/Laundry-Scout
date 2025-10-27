@@ -28,10 +28,16 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
   @override
   void initState() {
     super.initState();
+    _monthYears = _generateMonthYears(); // Initialize with default before async call
+    _selectedMonthYear = _monthYears.first;
+    _filterDataByMonth();
     _loadBusinessProfileCreationDate().then((_) {
-      _monthYears = _generateMonthYears();
-      _selectedMonthYear = _monthYears.first;
-      _filterDataByMonth();
+      // After business creation date is loaded, regenerate month years and filter data
+      setState(() {
+        _monthYears = _generateMonthYears();
+        _selectedMonthYear = _monthYears.first;
+        _filterDataByMonth();
+      });
     });
   }
 
@@ -77,12 +83,16 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
       final response = await Supabase.instance.client
           .from('business_profiles')
           .select('created_at')
-          .eq('owner_id', user.id)
-          .single();
+          .eq('owner_id', user.id);
 
-      if (response['created_at'] != null) {
+      if (response.isNotEmpty && response[0]['created_at'] != null) {
         setState(() {
-          _businessCreationDate = DateTime.parse(response['created_at']);
+          _businessCreationDate = DateTime.parse(response[0]['created_at']);
+        });
+      } else {
+        // No business profile found, default to current date
+        setState(() {
+          _businessCreationDate = DateTime.now();
         });
       }
     } catch (e) {
@@ -483,7 +493,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false, // Remove the back button
         title: const Text('General Report'),
-        centerTitle: true,
+        centerTitle: false,
         backgroundColor: const Color(0xFF5A35E3), // Set AppBar background to purple
         foregroundColor: Colors.white, // Set AppBar text/icon color to white
         titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Poppins'), // Set title text color to white and font to Poppins
