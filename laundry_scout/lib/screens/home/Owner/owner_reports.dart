@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 class OwnerReportsScreen extends StatefulWidget {
   final Map<String, int> orderStats;
-  const OwnerReportsScreen({super.key, required this.orderStats});
+  final List<Map<String, dynamic>> allOrders;
+  const OwnerReportsScreen({super.key, required this.orderStats, required this.allOrders});
 
   @override
   State<OwnerReportsScreen> createState() => _OwnerReportsScreenState();
@@ -11,12 +12,20 @@ class OwnerReportsScreen extends StatefulWidget {
 class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
   String? _selectedMonthYear;
   late List<String> _monthYears;
+  double _totalEarnings = 0.0;
 
   @override
   void initState() {
     super.initState();
     _monthYears = _generateMonthYears();
     _selectedMonthYear = _monthYears.first;
+    _calculateTotalEarnings();
+  }
+
+  void _calculateTotalEarnings() {
+    for (var order in widget.allOrders) {
+      _totalEarnings += (order['total_amount'] as num? ?? 0.0).toDouble();
+    }
   }
 
   List<String> _generateMonthYears() {
@@ -107,7 +116,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          '0.00',
+                          '${_totalEarnings.toStringAsFixed(2)}',
                           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
                         ),
                       ],

@@ -31,6 +31,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     'in_progress': 0,
     'completed': 0,
   };
+  List<Map<String, dynamic>> _allOrders = [];
   int _promoCount = 0;
   int _reviewCount = 0;
   final FeedbackService _feedbackService = FeedbackService();
@@ -92,10 +93,11 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
       final response = await Supabase.instance.client
           .from('orders')
-          .select('status')
+          .select('status, total_amount')
           .eq('business_id', user.id);
 
       final orders = List<Map<String, dynamic>>.from(response);
+      _allOrders = orders;
       final stats = {
         'total': orders.length,
         'pending': orders.where((o) => o['status'] == 'pending').length,
@@ -105,6 +107,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
       if (mounted) {
         setState(() {
+          _allOrders = orders;
           _orderStats = stats;
         });
       }
@@ -218,7 +221,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
       final response = await Supabase.instance.client
           .from('orders')
-          .select('status')
+          .select('status, total_amount')
           .eq('business_id', user.id);
 
       final orders = List<Map<String, dynamic>>.from(response);
@@ -289,7 +292,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       case 2:
         return const OwnerNotificationScreen();
       case 3:
-        return OwnerReportsScreen(orderStats: _orderStats);
+        return OwnerReportsScreen(orderStats: _orderStats, allOrders: _allOrders);
       default:
         return _buildHomeScreenContent();
     }
