@@ -226,7 +226,21 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
             ),
             pw.SizedBox(height: 20),
             pw.Text(
-              'Report Period: $laundryShopName - $_selectedMonthYear',
+              'Shop: $laundryShopName',
+              style: pw.TextStyle(
+                fontSize: 16,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.Text(
+              'Report Date: ${DateFormat('MMMM d, yyyy').format(DateTime.now())}',
+              style: pw.TextStyle(
+                fontSize: 16,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.Text(
+              'Report Period: $_selectedMonthYear',
               style: pw.TextStyle(
                 fontSize: 16,
                 fontWeight: pw.FontWeight.bold,
