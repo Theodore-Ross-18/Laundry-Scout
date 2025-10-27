@@ -1,9 +1,9 @@
 // ignore_for_file: unused_field
 
 import 'package:flutter/material.dart';
-import '../../../services/session_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
+import '../../../services/session_service.dart';
 import '../../../services/connection_service.dart';
 import '../../../services/realtime_message_service.dart';
 import '../../../services/message_queue_service.dart';
@@ -29,18 +29,28 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
   @override
   void initState() {
     super.initState();
+    print('OwnerMessageScreen initState called');
     _loadConversations();
     _setupRealtimeSubscription();
     _startBackgroundRefresh();
-    _checkAndShowFeedbackModal();
+    // Add a small delay to ensure the screen is fully built and user is authenticated
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('Screen built, checking feedback modal...');
+      // Add a small additional delay to ensure everything is ready
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          _checkAndShowFeedbackModal();
+        }
+      });
+    });
   }
 
   @override
   void dispose() {
     _messagesSubscription.unsubscribe();
     _backgroundRefreshTimer?.cancel();
-    _feedbackTimer?.cancel(); // Cancel the feedback timer
     _searchController.dispose();
+    _feedbackTimer?.cancel();
     super.dispose();
   }
   void _startBackgroundRefresh() {
@@ -418,21 +428,49 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
   }
 
   Future<void> _checkAndShowFeedbackModal() async {
+    print('Checking feedback modal - hasShownOwnerFeedbackModalThisSession: ${_sessionService.hasShownOwnerFeedbackModalThisSession}');
     if (!_sessionService.hasShownOwnerFeedbackModalThisSession) {
+      print('Setting feedback timer for 10 seconds...');
       _feedbackTimer = Timer(const Duration(seconds: 10), () {
+        print('Feedback timer triggered - mounted: $mounted');
         if (mounted) {
-          _showFeedbackModal();
-          _sessionService.hasShownOwnerFeedbackModalThisSession = true;
+          // Double-check that user is authenticated before showing modal
+          final currentUser = Supabase.instance.client.auth.currentUser;
+          if (currentUser != null) {
+            print('Showing feedback modal...');
+            _showFeedbackModal();
+            _sessionService.hasShownOwnerFeedbackModalThisSession = true;
+          } else {
+            print('User not authenticated - skipping feedback modal');
+          }
         }
       });
+    } else {
+      print('Feedback modal already shown this session');
     }
   }
 
   void _showFeedbackModal() {
-    showDialog(
-      context: context,
-      builder: (context) => FeedbackModal(businessId: Supabase.instance.client.auth.currentUser!.id),
-    );
+    print('Showing feedback modal dialog...');
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    print('Current user: $currentUser');
+    
+    if (currentUser != null) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          print('Building BusinessFeedbackModal with businessId: ${currentUser.id}');
+          return BusinessFeedbackModal(businessId: currentUser.id);
+        },
+      ).then((_) {
+        print('Feedback modal closed');
+      }).catchError((error) {
+        print('Error showing feedback modal: $error');
+      });
+    } else {
+      print('No current user found - cannot show feedback modal');
+    }
   }
 
   void _markAllAsRead() async {
@@ -990,18 +1028,25 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
   }
 }
 
-class FeedbackModal extends StatefulWidget {
-  final String? businessId;
-  const FeedbackModal({super.key, this.businessId});
+class BusinessFeedbackModal extends StatefulWidget {
+  final String businessId;
+
+  const BusinessFeedbackModal({super.key, required this.businessId});
 
   @override
-  State<FeedbackModal> createState() => _FeedbackModalState();
+  State<BusinessFeedbackModal> createState() => _BusinessFeedbackModalState();
 }
 
-class _FeedbackModalState extends State<FeedbackModal> {
+class _BusinessFeedbackModalState extends State<BusinessFeedbackModal> {
   final TextEditingController _feedbackController = TextEditingController();
-  int _rating = 0;
-  bool _isSubmitted = false;
+  int _rating = 3; // Changed initial rating to 3 to match the image
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    print('BusinessFeedbackModal created with businessId: ${widget.businessId}');
+  }
 
   @override
   void dispose() {
@@ -1010,75 +1055,51 @@ class _FeedbackModalState extends State<FeedbackModal> {
   }
 
   Future<void> _submitFeedback() async {
-    if (_feedbackController.text.trim().isEmpty) {
+    if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your feedback'),
-          backgroundColor: Colors.orange,
-        ),
+        const SnackBar(content: Text('Please select a rating')),
       );
       return;
     }
 
-    if (_rating == 0) {
+    if (_feedbackController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a rating'),
-          backgroundColor: Colors.orange,
-        ),
+        const SnackBar(content: Text('Please enter your feedback')),
       );
       return;
     }
 
     setState(() {
-      _isSubmitted = true;
+      _isSubmitting = true;
     });
 
     try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please login to submit feedback'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      await Supabase.instance.client.from('feedback').insert({
-        'user_id': user.id,
-        'business_id': widget.businessId,
-        'rating': _rating,
-        'comment': _feedbackController.text.trim(),
-        'feedback_type': 'business',
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      });
+      await Supabase.instance.client
+          .from('feedback')
+          .insert({
+            'business_id': widget.businessId,
+            'rating': _rating,
+            'comment': _feedbackController.text.trim(),
+            'feedback_type': 'business',
+            'created_at': DateTime.now().toIso8601String(),
+          });
 
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Thank you for your feedback!'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
-          ),
+          const SnackBar(content: Text('Thank you for your feedback!')),
         );
       }
-    } catch (e) {
+    } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error submitting feedback: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error submitting feedback: ${error.toString()}')),
         );
       }
     } finally {
       if (mounted) {
         setState(() {
-          _isSubmitted = false;
+          _isSubmitting = false;
         });
       }
     }
@@ -1086,192 +1107,126 @@ class _FeedbackModalState extends State<FeedbackModal> {
 
   @override
   Widget build(BuildContext context) {
+    print('BusinessFeedbackModal building...');
     return Dialog(
-      backgroundColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Container(
-        margin: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white, // Changed from gradient to white
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Give Us Your Feedback',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Do you have any thoughts you would\nlike to share?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.black54,
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Removed 'Rate your experience' text
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (index) {
+                return IconButton(
+                  icon: Icon(
+                    index < _rating ? Icons.star : Icons.star_border,
+                    color: Colors.amber,
+                    size: 36,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _rating = index + 1;
+                    });
+                  },
+                );
+              }),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _feedbackController,
+              maxLines: 5,
+              style: const TextStyle(color: Colors.black), // Set input text color to black
+              decoration: InputDecoration(
+                hintText: 'Leave Your Thoughts Here...',
+                hintStyle: TextStyle(color: Colors.grey[500]),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Colors.grey[100],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                    ),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _isSubmitting ? null : _submitFeedback,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5A35E3),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      elevation: 5,
+                      shadowColor: const Color(0xFF5A35E3).withOpacity(0.4),
+                    ),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Submit',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                          ),
+                  ),
+                ),
+              ],
             ),
           ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              const Text(
-                'Give Us Your Feedback',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3748),
-                ),
-              ),
-              const SizedBox(height: 8),
-             
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  return Icon(
-                    Icons.star,
-                    color: const Color(0xFFFFB800),
-                    size: 24,
-                  );
-                }),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Do you have any thoughts you would\nlike to share?',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF718096),
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _rating = index + 1;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(
-                        Icons.star,
-                        color: index < _rating ? const Color(0xFFFFB800) : Colors.grey[300],
-                        size: 24,
-                      ),
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 24),
-             
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF7FAFC),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color: Colors.grey[200]!,
-                    width: 1,
-                  ),
-                ),
-                child: TextField(
-                  controller: _feedbackController,
-                  maxLines: 5,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF2D3748),
-                  ),
-                  decoration: const InputDecoration(
-                    hintText: 'Leave Your Thoughts Here...',
-                    hintStyle: TextStyle(
-                      color: Color(0xFFA0AEC0),
-                      fontSize: 16,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.all(16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-             
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 50,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(25),
-                        border: Border.all(
-                          color: Colors.grey[300]!,
-                          width: 1,
-                        ),
-                      ),
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: TextButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                        ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(
-                            color: Color(0xFF718096),
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Container(
-                      height: 50,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(25),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF5A35E3), Color(0xFF5A35E3)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF5A35E3).withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ElevatedButton(
-                        onPressed: _isSubmitted ? null : _submitFeedback,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                        ),
-                        child: _isSubmitted
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text(
-                                'Submit',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
         ),
       ),
     );
