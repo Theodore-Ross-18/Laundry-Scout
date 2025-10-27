@@ -401,7 +401,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                             MaterialPageRoute(builder: (context) => const OrdersScreen()),
                                           );
                                         },
-                                        child: _analyticsCard(Image.asset('lib/assets/owner/history.png', width: 24, height: 24, color: Color(0xFF5A35E3)), '${_orderStats['total']}', 'Order History', Color(0xFF5A35E3)),
+                                        child: _analyticsCard(Image.asset('lib/assets/owner/history.png', width: 24, height: 24, color: Color(0xFF5A35E3)), '${_orderStats['total']}', 'Orders', Color(0xFF5A35E3)),
                                       ),
                                     ),
                                     const SizedBox(width: 8),

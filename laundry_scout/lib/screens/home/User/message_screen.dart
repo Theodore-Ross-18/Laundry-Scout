@@ -1064,7 +1064,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
                 children: List.generate(5, (index) {
                   return Icon(
                     Icons.star,
-                    color: Colors.grey[300],
+                    color: const Color(0xFFFFB800),
                     size: 24,
                   );
                 }),
@@ -1095,7 +1095,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
                       child: Icon(
                         Icons.star,
                         color: index < _rating ? const Color(0xFFFFB800) : Colors.grey[300],
-                        size: 36,
+                        size: 24,
                       ),
                     ),
                   );
@@ -1155,7 +1155,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
                           'Cancel',
                           style: TextStyle(
                             color: Color(0xFF718096),
-                            fontSize: 16,
+                            fontSize: 9,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -1203,7 +1203,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
                                 'Submit',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 16,
+                                  fontSize: 8,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
