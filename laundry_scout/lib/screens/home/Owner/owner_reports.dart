@@ -17,18 +17,72 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
   double _totalEarnings = 0.0;
   String _topUsedService = 'N/A';
   List<MapEntry<String, double>> _serviceData = [];
+  List<Map<String, dynamic>> _filteredOrders = [];
+  Map<String, int> _filteredOrderStats = {};
 
   @override
   void initState() {
     super.initState();
     _monthYears = _generateMonthYears();
     _selectedMonthYear = _monthYears.first;
+    _filterDataByMonth();
+  }
+
+  void _filterDataByMonth() {
+    if (_selectedMonthYear == null) return;
+    
+    // Parse selected month and year
+    final parts = _selectedMonthYear!.split(' ');
+    final selectedMonth = _getMonthNumber(parts[0]);
+    final selectedYear = int.parse(parts[1]);
+    
+    // Filter orders by selected month/year
+    _filteredOrders = widget.allOrders.where((order) {
+      if (order['created_at'] == null) return false;
+      
+      try {
+        final orderDate = DateTime.parse(order['created_at']);
+        return orderDate.month == selectedMonth && orderDate.year == selectedYear;
+      } catch (e) {
+        return false;
+      }
+    }).toList();
+    
+    // Calculate filtered order stats
+    _filteredOrderStats = {
+      'total': _filteredOrders.length,
+      'pending': _filteredOrders.where((order) => order['status'] == 'pending').length,
+      'confirmed': _filteredOrders.where((order) => order['status'] == 'confirmed').length,
+      'completed': _filteredOrders.where((order) => order['status'] == 'completed').length,
+      'cancelled': _filteredOrders.where((order) => order['status'] == 'cancelled').length,
+    };
+    
+    // Recalculate all data based on filtered orders
     _calculateTotalEarnings();
     _calculateTopUsedService();
   }
 
+  int _getMonthNumber(String monthName) {
+    switch (monthName) {
+      case 'January': return 1;
+      case 'February': return 2;
+      case 'March': return 3;
+      case 'April': return 4;
+      case 'May': return 5;
+      case 'June': return 6;
+      case 'July': return 7;
+      case 'August': return 8;
+      case 'September': return 9;
+      case 'October': return 10;
+      case 'November': return 11;
+      case 'December': return 12;
+      default: return 0;
+    }
+  }
+
   void _calculateTotalEarnings() {
-    for (var order in widget.allOrders) {
+    _totalEarnings = 0.0;
+    for (var order in _filteredOrders) {
       _totalEarnings += (order['total_amount'] as num? ?? 0.0).toDouble();
     }
   }
@@ -36,7 +90,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
   void _calculateTopUsedService() {
     Map<String, double> serviceOrderCounts = {};
 
-    for (var order in widget.allOrders) {
+    for (var order in _filteredOrders) {
       if (order['items'] != null) {
         Map<String, dynamic> items = Map<String, dynamic>.from(order['items']);
         // Count each service type once per order (order-based, not quantity-based)
@@ -55,6 +109,9 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
         ..sort((a, b) => b.value.compareTo(a.value));
       _topUsedService = sortedServices.first.key;
       _serviceData = sortedServices.take(5).toList(); // Top 5 services for pie chart
+    } else {
+      _topUsedService = 'N/A';
+      _serviceData = [];
     }
   }
 
@@ -112,6 +169,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
             onChanged: (String? newValue) {
               setState(() {
                 _selectedMonthYear = newValue;
+                _filterDataByMonth();
               });
             },
             items: _monthYears.map<DropdownMenuItem<String>>((String value) {
@@ -140,7 +198,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                         ),
                         SizedBox(height: 6),
                         Text(
-                          '${widget.orderStats['total']}',
+                          '${_filteredOrderStats['total'] ?? 0}',
                           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
                         ),
                       ],
@@ -206,9 +264,9 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                     child: ListView.builder(
                       shrinkWrap: false,
                       physics: ClampingScrollPhysics(), // Allow scrolling within the card
-                      itemCount: widget.allOrders.length,
+                      itemCount: _filteredOrders.length,
                       itemBuilder: (context, index) {
-                        final order = widget.allOrders[index];
+                        final order = _filteredOrders[index];
                         final customerName = order['user_profiles']?['first_name'] != null && order['user_profiles']?['last_name'] != null
                             ? '${order['user_profiles']['first_name']} ${order['user_profiles']['last_name']}'
                             : order['customer_name'] != null
