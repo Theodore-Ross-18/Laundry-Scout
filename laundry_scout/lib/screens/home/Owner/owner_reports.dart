@@ -197,7 +197,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
 
   List<Color> _getPieChartColors() {
     return [
-      Colors.blue,
+      const Color(0xFF5A35E3), // Color for the top service
       Colors.red,
       Colors.green,
       Colors.orange,
