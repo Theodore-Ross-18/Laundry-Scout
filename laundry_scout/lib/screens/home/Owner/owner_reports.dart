@@ -1,6 +1,9 @@
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class OwnerReportsScreen extends StatefulWidget {
   final Map<String, int> orderStats;
@@ -157,6 +160,230 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
     ];
   }
 
+  Future<void> _generatePDF() async {
+    final pdf = pw.Document();
+    
+    // Create PDF content
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (pw.Context context) {
+          return [
+            pw.Header(
+              level: 0,
+              child: pw.Text(
+                'Laundry Scout - Owner Report',
+                style: pw.TextStyle(
+                  fontSize: 24,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 20),
+            pw.Text(
+              'Report Period: $_selectedMonthYear',
+              style: pw.TextStyle(
+                fontSize: 16,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 20),
+            
+            // Summary Cards
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                _buildPDFCard('Total Bookings', '${_filteredOrderStats['total'] ?? 0}'),
+                _buildPDFCard('Total Earnings', 'Php ${_totalEarnings.toStringAsFixed(2)}'),
+                _buildPDFCard('Top Service', _topUsedService),
+              ],
+            ),
+            pw.SizedBox(height: 20),
+            
+            // Order Status Breakdown
+            pw.Text(
+              'Order Status Breakdown',
+              style: pw.TextStyle(
+                fontSize: 16,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 10),
+            pw.Table(
+              border: pw.TableBorder.all(),
+              children: [
+                pw.TableRow(
+                  children: [
+                    _buildPDFTableCell('Status', isHeader: true),
+                    _buildPDFTableCell('Count', isHeader: true),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    _buildPDFTableCell('Pending'),
+                    _buildPDFTableCell('${_filteredOrderStats['pending'] ?? 0}'),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    _buildPDFTableCell('Confirmed'),
+                    _buildPDFTableCell('${_filteredOrderStats['confirmed'] ?? 0}'),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    _buildPDFTableCell('Completed'),
+                    _buildPDFTableCell('${_filteredOrderStats['completed'] ?? 0}'),
+                  ],
+                ),
+                pw.TableRow(
+                  children: [
+                    _buildPDFTableCell('Cancelled'),
+                    _buildPDFTableCell('${_filteredOrderStats['cancelled'] ?? 0}'),
+                  ],
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 20),
+            
+            // Service Usage
+            if (_serviceData.isNotEmpty) ...[
+              pw.Text(
+                'Most Ordered Services',
+                style: pw.TextStyle(
+                  fontSize: 16,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 10),
+              pw.Table(
+                border: pw.TableBorder.all(),
+                children: [
+                  pw.TableRow(
+                    children: [
+                      _buildPDFTableCell('Service', isHeader: true),
+                      _buildPDFTableCell('Orders', isHeader: true),
+                    ],
+                  ),
+                  ..._serviceData.map((service) => pw.TableRow(
+                    children: [
+                      _buildPDFTableCell(service.key),
+                      _buildPDFTableCell(service.value.toStringAsFixed(0)),
+                    ],
+                  )).toList(),
+                ],
+              ),
+              pw.SizedBox(height: 20),
+            ],
+            
+            // Recent Transactions
+            pw.Text(
+              'Recent Transactions',
+              style: pw.TextStyle(
+                fontSize: 16,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 10),
+            pw.Table(
+              border: pw.TableBorder.all(),
+              children: [
+                pw.TableRow(
+                  children: [
+                    _buildPDFTableCell('Customer', isHeader: true),
+                    _buildPDFTableCell('Services', isHeader: true),
+                    _buildPDFTableCell('Amount', isHeader: true),
+                    _buildPDFTableCell('Date', isHeader: true),
+                  ],
+                ),
+                ..._filteredOrders.take(10).map((order) {
+                  final customerName = order['user_profiles']?['first_name'] != null && order['user_profiles']?['last_name'] != null
+                      ? '${order['user_profiles']['first_name']} ${order['user_profiles']['last_name']}'
+                      : order['customer_name'] != null
+                          ? order['customer_name']
+                          : 'N/A';
+                  final services = (order['items'] as Map<String, dynamic>?)?.keys.join(', ') ?? 'N/A';
+                  final totalAmount = order['total_amount']?.toStringAsFixed(2) ?? '0.00';
+                  final createdAt = order['created_at'] != null
+                      ? DateFormat('MMM d, yyyy').format(DateTime.parse(order['created_at']))
+                      : 'N/A';
+
+                  return pw.TableRow(
+                    children: [
+                      _buildPDFTableCell(customerName),
+                      _buildPDFTableCell(services),
+                      _buildPDFTableCell('Php $totalAmount'),
+                      _buildPDFTableCell(createdAt),
+                    ],
+                  );
+                }).toList(),
+              ],
+            ),
+            if (_filteredOrders.length > 10)
+              pw.Text(
+                '... and ${_filteredOrders.length - 10} more transactions',
+                style: pw.TextStyle(
+                  fontSize: 10,
+                  fontStyle: pw.FontStyle.italic,
+                ),
+              ),
+          ];
+        },
+      ),
+    );
+
+    // Print or share the PDF
+    await Printing.sharePdf(
+      bytes: await pdf.save(),
+      filename: 'laundry_scout_report_${_selectedMonthYear!.replaceAll(' ', '_')}.pdf',
+    );
+  }
+
+  pw.Widget _buildPDFCard(String title, String value) {
+    return pw.Container(
+      width: 150,
+      padding: const pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(),
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            title,
+            style: pw.TextStyle(
+              fontSize: 10,
+              color: PdfColors.grey700,
+            ),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildPDFTableCell(String text, {bool isHeader = false}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(8),
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(
+          fontSize: 10,
+          fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -164,23 +391,38 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-          DropdownButton<String>(
-            value: _selectedMonthYear,
-            onChanged: (String? newValue) {
-              setState(() {
-                _selectedMonthYear = newValue;
-                _filterDataByMonth();
-              });
-            },
-            items: _monthYears.map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(
-                  value,
-                  style: TextStyle(color: Colors.black),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              DropdownButton<String>(
+                value: _selectedMonthYear,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedMonthYear = newValue;
+                    _filterDataByMonth();
+                  });
+                },
+                items: _monthYears.map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(
+                      value,
+                      style: TextStyle(color: Colors.black),
+                    ),
+                  );
+                }).toList(),
+              ),
+              ElevatedButton.icon(
+                onPressed: _generatePDF,
+                icon: Icon(Icons.picture_as_pdf),
+                label: Text('Generate Report'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
-              );
-            }).toList(),
+              ),
+            ],
           ),
           SizedBox(height: 16),
           Row(
