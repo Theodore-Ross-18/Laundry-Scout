@@ -93,7 +93,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
       final response = await Supabase.instance.client
           .from('orders')
-          .select('status, total_amount')
+          .select('status, total_amount, items')
           .eq('business_id', user.id);
 
       final orders = List<Map<String, dynamic>>.from(response);
@@ -221,7 +221,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
       final response = await Supabase.instance.client
           .from('orders')
-          .select('status, total_amount')
+          .select('status, total_amount, items')
           .eq('business_id', user.id);
 
       final orders = List<Map<String, dynamic>>.from(response);

@@ -13,6 +13,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
   String? _selectedMonthYear;
   late List<String> _monthYears;
   double _totalEarnings = 0.0;
+  String _topUsedService = 'N/A';
 
   @override
   void initState() {
@@ -20,11 +21,35 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
     _monthYears = _generateMonthYears();
     _selectedMonthYear = _monthYears.first;
     _calculateTotalEarnings();
+    _calculateTopUsedService();
   }
 
   void _calculateTotalEarnings() {
     for (var order in widget.allOrders) {
       _totalEarnings += (order['total_amount'] as num? ?? 0.0).toDouble();
+    }
+  }
+
+  void _calculateTopUsedService() {
+    Map<String, double> serviceQuantities = {};
+
+    for (var order in widget.allOrders) {
+      if (order['items'] != null) {
+        Map<String, dynamic> items = Map<String, dynamic>.from(order['items']);
+        items.forEach((serviceName, quantity) {
+          serviceQuantities.update(
+            serviceName,
+            (value) => value + (quantity as num).toDouble(),
+            ifAbsent: () => (quantity as num).toDouble(),
+          );
+        });
+      }
+    }
+
+    if (serviceQuantities.isNotEmpty) {
+      var sortedServices = serviceQuantities.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      _topUsedService = sortedServices.first.key;
     }
   }
 
@@ -136,7 +161,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'N/A',
+                          '$_topUsedService',
                           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
                         ),
                       ],
