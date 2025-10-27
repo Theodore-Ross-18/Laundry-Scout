@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 
 class OwnerReportsScreen extends StatefulWidget {
@@ -170,6 +171,74 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                 ),
               ),
             ],
+          ),
+          SizedBox(height: 20),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  Text(
+                    'Transactions',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                  SizedBox(height: 8),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: widget.allOrders.length,
+                    itemBuilder: (context, index) {
+                      final order = widget.allOrders[index];
+                      final customerName = order['user_profiles']?['first_name'] != null && order['user_profiles']?['last_name'] != null
+                          ? '${order['user_profiles']['first_name']} ${order['user_profiles']['last_name']}'
+                          : order['customer_name'] != null
+                              ? order['customer_name']
+                              : 'N/A';
+                      final services = (order['items'] as Map<String, dynamic>?)?.keys.join(', ') ?? 'N/A';
+                      final totalAmount = order['total_amount']?.toStringAsFixed(2) ?? '0.00';
+                      final createdAt = order['created_at'] != null
+                          ? DateFormat('MMM d').format(DateTime.parse(order['created_at']))
+                          : 'N/A';
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  customerName,
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                                ),
+                                Text(
+                                  services,
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'Php $totalAmount',
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                                ),
+                                Text(
+                                  createdAt,
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),

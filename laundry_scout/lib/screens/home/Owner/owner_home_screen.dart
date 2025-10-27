@@ -91,26 +91,51 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
+      // First, get all orders for this business
       final response = await Supabase.instance.client
           .from('orders')
-          .select('status, total_amount, items')
+          .select('*')
           .eq('business_id', user.id);
 
-      final orders = List<Map<String, dynamic>>.from(response);
-      _allOrders = orders;
+      print('Raw orders response: $response');
+
+      // Process orders to include user profile data
+      List<Map<String, dynamic>> ordersWithUserDetails = [];
+      for (var order in response) {
+        try {
+          final userId = order['user_id'];
+          if (userId != null) {
+            final userProfileResponse = await Supabase.instance.client
+                .from('user_profiles')
+                .select('first_name, last_name')
+                .eq('id', userId)
+                .single();
+            order['user_profiles'] = userProfileResponse;
+            print('Added user profile for order ${order['id']}: $userProfileResponse');
+          } else {
+            print('No user_id found for order ${order['id']}');
+          }
+        } catch (userError) {
+          print('Error fetching user profile for order ${order['id']}: $userError');
+          // Continue with order even if user profile fails
+        }
+        ordersWithUserDetails.add(order);
+      }
+
       final stats = {
-        'total': orders.length,
-        'pending': orders.where((o) => o['status'] == 'pending').length,
-        'in_progress': orders.where((o) => o['status'] == 'in_progress').length,
-        'completed': orders.where((o) => o['status'] == 'completed').length,
+        'total': ordersWithUserDetails.length,
+        'pending': ordersWithUserDetails.where((o) => o['status'] == 'pending').length,
+        'in_progress': ordersWithUserDetails.where((o) => o['status'] == 'in_progress').length,
+        'completed': ordersWithUserDetails.where((o) => o['status'] == 'completed').length,
       };
 
       if (mounted) {
         setState(() {
-          _allOrders = orders;
+          _allOrders = ordersWithUserDetails;
           _orderStats = stats;
         });
       }
+      print('Successfully loaded ${ordersWithUserDetails.length} orders with user details');
     } catch (e) {
       print('Error loading order stats: $e');
     }
@@ -219,17 +244,36 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
+      // First, get all orders for this business
       final response = await Supabase.instance.client
           .from('orders')
-          .select('status, total_amount, items')
+          .select('*')
           .eq('business_id', user.id);
 
-      final orders = List<Map<String, dynamic>>.from(response);
+      // Process orders to include user profile data
+      List<Map<String, dynamic>> ordersWithUserDetails = [];
+      for (var order in response) {
+        try {
+          final userId = order['user_id'];
+          if (userId != null) {
+            final userProfileResponse = await Supabase.instance.client
+                .from('user_profiles')
+                .select('first_name, last_name')
+                .eq('id', userId)
+                .single();
+            order['user_profiles'] = userProfileResponse;
+          }
+        } catch (userError) {
+          // Continue with order even if user profile fails
+        }
+        ordersWithUserDetails.add(order);
+      }
+
       final stats = {
-        'total': orders.length,
-        'pending': orders.where((o) => o['status'] == 'pending').length,
-        'in_progress': orders.where((o) => o['status'] == 'in_progress').length,
-        'completed': orders.where((o) => o['status'] == 'completed').length,
+        'total': ordersWithUserDetails.length,
+        'pending': ordersWithUserDetails.where((o) => o['status'] == 'pending').length,
+        'in_progress': ordersWithUserDetails.where((o) => o['status'] == 'in_progress').length,
+        'completed': ordersWithUserDetails.where((o) => o['status'] == 'completed').length,
       };
 
       if (mounted) {
