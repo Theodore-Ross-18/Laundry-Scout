@@ -662,7 +662,7 @@ class _LocationScreenState extends State<LocationScreen> {
                               Slider(
                                 value: _searchRadius,
                                 min: 1.0,
-                                max: 10.0,
+                                max: 30.0,
                                 divisions: 9,
                                 label: _searchRadius.toStringAsFixed(1),
                                 onChanged: _onSearchRadiusChanged,
