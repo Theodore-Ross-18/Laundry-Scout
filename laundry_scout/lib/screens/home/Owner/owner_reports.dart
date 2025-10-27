@@ -1,12 +1,144 @@
 import 'package:flutter/material.dart';
 
-class OwnerReportsScreen extends StatelessWidget {
-  const OwnerReportsScreen({super.key});
+class OwnerReportsScreen extends StatefulWidget {
+  final Map<String, int> orderStats;
+  const OwnerReportsScreen({super.key, required this.orderStats});
+
+  @override
+  State<OwnerReportsScreen> createState() => _OwnerReportsScreenState();
+}
+
+class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
+  String? _selectedMonthYear;
+  late List<String> _monthYears;
+
+  @override
+  void initState() {
+    super.initState();
+    _monthYears = _generateMonthYears();
+    _selectedMonthYear = _monthYears.first;
+  }
+
+  List<String> _generateMonthYears() {
+    List<String> monthYears = [];
+    DateTime now = DateTime.now();
+    DateTime nextYear = DateTime(now.year + 1, now.month, now.day);
+
+    for (DateTime date = now; date.isBefore(nextYear); date = DateTime(date.year, date.month + 1, date.day)) {
+      monthYears.add('${_getMonthName(date.month)} ${date.year}');
+    }
+    return monthYears;
+  }
+
+  String _getMonthName(int month) {
+    switch (month) {
+      case 1: return 'January';
+      case 2: return 'February';
+      case 3: return 'March';
+      case 4: return 'April';
+      case 5: return 'May';
+      case 6: return 'June';
+      case 7: return 'July';
+      case 8: return 'August';
+      case 9: return 'September';
+      case 10: return 'October';
+      case 11: return 'November';
+      case 12: return 'December';
+      default: return '';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Owner Reports Screen (Placeholder)'),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          DropdownButton<String>(
+            value: _selectedMonthYear,
+            onChanged: (String? newValue) {
+              setState(() {
+                _selectedMonthYear = newValue;
+              });
+            },
+            items: _monthYears.map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(
+                  value,
+                  style: TextStyle(color: Colors.black),
+                ),
+              );
+            }).toList(),
+          ),
+          SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Expanded(
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Total Bookings',
+                          style: TextStyle(color: Colors.black),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          '${widget.orderStats['total']}',
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Total Estimate Earnings',
+                          style: TextStyle(color: Colors.black),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          '0.00',
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Top Used Service',
+                          style: TextStyle(color: Colors.black),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'N/A',
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

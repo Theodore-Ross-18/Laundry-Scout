@@ -289,7 +289,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       case 2:
         return const OwnerNotificationScreen();
       case 3:
-        return const OwnerReportsScreen();
+        return OwnerReportsScreen(orderStats: _orderStats);
       default:
         return _buildHomeScreenContent();
     }
