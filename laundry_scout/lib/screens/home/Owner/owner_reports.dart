@@ -163,6 +163,12 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
   Future<void> _generatePDF() async {
     final pdf = pw.Document();
     
+    // Get laundry shop name from the first order, or use a default
+    String laundryShopName = 'Your Laundry Shop';
+    if (_filteredOrders.isNotEmpty && _filteredOrders.first['laundry_shop_name'] != null) {
+      laundryShopName = _filteredOrders.first['laundry_shop_name'];
+    }
+    
     // Create PDF content
     pdf.addPage(
       pw.MultiPage(
@@ -182,7 +188,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
             ),
             pw.SizedBox(height: 20),
             pw.Text(
-              'Report Period: $_selectedMonthYear',
+              'Report Period: $laundryShopName - $_selectedMonthYear',
               style: pw.TextStyle(
                 fontSize: 16,
                 fontWeight: pw.FontWeight.bold,
@@ -345,7 +351,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
       width: 150,
       padding: const pw.EdgeInsets.all(12),
       decoration: pw.BoxDecoration(
-        border: pw.Border.all(),
+        color: PdfColor.fromHex('#5A35E3'), // Purple background color
         borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
       ),
       child: pw.Column(
@@ -355,7 +361,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
             title,
             style: pw.TextStyle(
               fontSize: 10,
-              color: PdfColors.grey700,
+              color: PdfColors.white,
             ),
           ),
           pw.SizedBox(height: 4),
@@ -364,6 +370,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
             style: pw.TextStyle(
               fontSize: 14,
               fontWeight: pw.FontWeight.bold,
+              color: PdfColors.white,
             ),
           ),
         ],
@@ -512,14 +519,14 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
               ),
               SizedBox(height: 16),
               Card(
-                color: const Color(0xFF5A35E3), // Set card background to purple
+                color: const Color.fromARGB(255, 255, 255, 255), // Set card background to purple
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: Column(
                     children: [
                       Text(
                         'Transactions',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                        style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0), fontSize: 16),
                       ),
                       SizedBox(height: 6),
                       Container(
@@ -551,11 +558,11 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                                     children: [
                                       Text(
                                         customerName,
-                                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                                        style: TextStyle(fontWeight: FontWeight.bold, color: const Color.fromARGB(255, 0, 0, 0)),
                                       ),
                                       Text(
                                         services,
-                                        style: TextStyle(color: Colors.white70),
+                                        style: TextStyle(color: const Color.fromARGB(255, 128, 128, 128)),
                                       ),
                                     ],
                                   ),
@@ -564,11 +571,11 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                                     children: [
                                       Text(
                                         'Php $totalAmount',
-                                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                                        style: TextStyle(fontWeight: FontWeight.bold, color: const Color.fromARGB(255, 0, 0, 0)),
                                       ),
                                       Text(
                                         createdAt,
-                                        style: TextStyle(color: Colors.white70),
+                                        style: TextStyle(color: const Color.fromARGB(255, 128, 128, 128)),
                                       ),
                                     ],
                                   ),
@@ -585,14 +592,14 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
               SizedBox(height: 16),
               if (_serviceData.isNotEmpty)
                 Card(
-                  color: const Color(0xFF5A35E3), // Set card background to purple
+                  color: const Color.fromARGB(255, 255, 255, 255), // Set card background to purple
                   child: Padding(
                     padding: const EdgeInsets.all(12.0),
                     child: Column(
                       children: [
                         Text(
                           'Service Usage',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: const Color.fromARGB(255, 0, 0, 0)),
                         ),
                         SizedBox(height: 12),
                         Row(
@@ -648,7 +655,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                                         Expanded(
                                           child: Text(
                                             '${service.key}',
-                                            style: TextStyle(fontSize: 11, color: Colors.white),
+                                            style: TextStyle(fontSize: 11, color: const Color.fromARGB(255, 0, 0, 0)),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
