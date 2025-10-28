@@ -75,7 +75,7 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
       for (var conversation in conversationsResponse) {
         final userProfile = await Supabase.instance.client
             .from('user_profiles')
-            .select('username, first_name, last_name, profile_image_url')
+            .select('username, first_name, last_name, profile_image_url, email, is_logged_in')
             .eq('id', conversation['user_id'])
             .maybeSingle();
         
@@ -336,20 +336,35 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
                                                     )
                                                   : const Icon(Icons.person, color: Colors.grey, size: 30),
                                             ),
-                                            // Online indicator (green dot)
-                                            Positioned(
-                                              bottom: 2,
-                                              right: 2,
-                                              child: Container(
-                                                width: 12,
-                                                height: 12,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.green,
-                                                  shape: BoxShape.circle,
-                                                  border: Border.all(color: Colors.white, width: 2),
+                                            // Online/Offline indicator
+                                            if ((user?['is_logged_in'] ?? false) == true) // Green for online
+                                              Positioned(
+                                                bottom: 2,
+                                                right: 2,
+                                                child: Container(
+                                                  width: 12,
+                                                  height: 12,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.green,
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(color: Colors.white, width: 2),
+                                                  ),
+                                                ),
+                                              )
+                                            else if ((user?['is_logged_in'] ?? false) == false) // Red for offline
+                                              Positioned(
+                                                bottom: 2,
+                                                right: 2,
+                                                child: Container(
+                                                  width: 12,
+                                                  height: 12,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.red,
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(color: Colors.white, width: 2),
+                                                  ),
                                                 ),
                                               ),
-                                            ),
                                           ],
                                         ),
                                         const SizedBox(width: 16),
@@ -715,57 +730,47 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
   }
 
   Widget _buildConnectionIndicator() {
-    Color color = Colors.grey;
-    String text = 'Unknown';
-    IconData icon = Icons.signal_cellular_off;
-    
-    switch (_connectionQuality) {
-      case ConnectionQuality.excellent:
-        color = Colors.green;
-        text = 'Excellent';
-        icon = Icons.signal_cellular_4_bar;
-        break;
-      case ConnectionQuality.good:
-        color = Colors.lightGreen;
-        text = 'Good';
-        icon = Icons.signal_cellular_4_bar;
-        break;
-      case ConnectionQuality.fair:
-        color = Colors.orange;
-        text = 'Fair';
-        icon = Icons.signal_cellular_alt;
-        break;
-      case ConnectionQuality.poor:
-        color = Colors.red;
-        text = 'Poor';
-        icon = Icons.signal_cellular_connected_no_internet_0_bar;
-        break;
-      case ConnectionQuality.offline:
-        color = Colors.grey;
-        text = 'Offline';
-        icon = Icons.signal_cellular_off;
-        break;
-    }
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500),
+    return StreamBuilder<List<Map<String, dynamic>>>( // Use StreamBuilder for real-time updates
+      stream: _streamUserLoginStatus(widget.userId), // Stream login status for the user
+      builder: (context, snapshot) {
+        bool isOnline = false;
+        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+          isOnline = snapshot.data![0]['is_logged_in'] == true; // Check 'is_logged_in' field
+        }
+
+        Color color = isOnline ? Colors.green : Colors.grey;
+        String text = isOnline ? 'Online' : 'Offline';
+        IconData icon = isOnline ? Icons.circle : Icons.circle_outlined;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.3)),
           ),
-        ],
-      ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 12, color: color),
+              const SizedBox(width: 4),
+              Text(
+                text,
+                style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        );
+      },
     );
+  }
+
+  Stream<List<Map<String, dynamic>>> _streamUserLoginStatus(String userId) {
+    return Supabase.instance.client
+        .from('user_profiles')
+        .stream(primaryKey: ['id'])
+        .eq('id', userId)
+        .order('id', ascending: true);
   }
 
   @override
@@ -857,72 +862,72 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                         
                        
                         Flexible(
-                          child: Column(
-                            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                            children: [
-                              
-                              Padding(
-                                padding: EdgeInsets.only(
-                                  bottom: 4,
-                                  left: isMe ? 0 : 8,
-                                  right: isMe ? 8 : 0,
-                                ),
-                                child: Text(
-                                  isMe ? (user?.userMetadata?['full_name'] ?? 'You') : widget.userName,
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: MediaQuery.of(context).size.width * 0.75,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                              children: [
+                                
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom: 4,
+                                    left: isMe ? 0 : 8,
+                                    right: isMe ? 8 : 0,
                                   ),
-                                ),
-                              ),
-                              
-                            
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: isMe ? const Color(0xFF5A35E3) : Colors.grey[200],
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: const Radius.circular(20),
-                                    topRight: const Radius.circular(20),
-                                    bottomLeft: Radius.circular(isMe ? 20 : 4),
-                                    bottomRight: Radius.circular(isMe ? 4 : 20),
-                                  ),
-                                ),
-                                child: Text(
-                                  message['content'],
-                                  style: TextStyle(
-                                    color: isMe ? Colors.white : Colors.black,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                              
-                            
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      _formatMessageTime(message['created_at']),
-                                      style: const TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 12,
-                                      ),
+                                  child: Text(
+                                    isMe ? (user?.userMetadata?['full_name'] ?? 'You') : widget.userName,
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
                                     ),
-                                    if (isMe) ...[
-                                      const SizedBox(width: 4),
-                                      Icon(
-                                        Icons.done,
-                                        size: 14,
-                                        color: Colors.green,
-                                      ),
-                                    ],
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                                
+                              
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: isMe ? const Color(0xFF5A35E3) : const Color(0xFFE0E0E0),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    message['content'],
+                                    style: TextStyle(
+                                      color: isMe ? Colors.white : Colors.black,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                                
+                              
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        _formatMessageTime(message['created_at']),
+                                        style: const TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      if (isMe) ...[
+                                        const SizedBox(width: 4),
+                                        Icon(
+                                          Icons.done_all,
+                                          size: 14,
+                                          color: Colors.blue,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         
@@ -967,19 +972,19 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _messageController,
-                    style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+                    style: const TextStyle(color: Colors.black87),
                     decoration: InputDecoration(
                       hintText: 'Type your message here...',
-                      hintStyle: TextStyle(color: const Color.fromARGB(255, 255, 255, 255)),
+                      hintStyle: TextStyle(color: Colors.grey[600]),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(25),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: const Color.fromARGB(46, 255, 255, 255),
+                      fillColor: Colors.grey[100],
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
-                        vertical: 10,
+                        vertical: 12,
                       ),
                     ),
                     onSubmitted: (_) => _sendMessage(),

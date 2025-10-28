@@ -63,7 +63,8 @@ class _MessageScreenState extends State<MessageScreen> {
             *,
             business_profiles(
               business_name,
-              cover_photo_url
+              cover_photo_url,
+              is_logged_in
             )
           ''')
           .eq('user_id', user.id)
@@ -285,15 +286,25 @@ class _MessageScreenState extends State<MessageScreen> {
                                             Positioned(
                                               bottom: 2,
                                               right: 2,
-                                              child: Container(
-                                                width: 12,
-                                                height: 12,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.green,
-                                                  shape: BoxShape.circle,
-                                                  border: Border.all(color: Colors.white, width: 2),
-                                                ),
-                                              ),
+                                              child: (business['is_logged_in'] ?? false) == true
+                                                  ? Container(
+                                                      width: 12,
+                                                      height: 12,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.green,
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(color: Colors.white, width: 2),
+                                                      ),
+                                                    )
+                                                  : Container(
+                                                      width: 12,
+                                                      height: 12,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.red,
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(color: Colors.white, width: 2),
+                                                      ),
+                                                    ),
                                             ),
                                           ],
                                         ),
@@ -566,57 +577,47 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildConnectionIndicator() {
-    Color color = Colors.grey;
-    String text = 'Unknown';
-    IconData icon = Icons.signal_cellular_off;
-    
-    switch (_connectionQuality) {
-      case ConnectionQuality.excellent:
-        color = Colors.green;
-        text = 'Excellent';
-        icon = Icons.signal_cellular_4_bar;
-        break;
-      case ConnectionQuality.good:
-        color = Colors.lightGreen;
-        text = 'Good';
-        icon = Icons.signal_cellular_4_bar;
-        break;
-      case ConnectionQuality.fair:
-        color = Colors.orange;
-        text = 'Fair';
-        icon = Icons.signal_cellular_alt;
-        break;
-      case ConnectionQuality.poor:
-        color = Colors.red;
-        text = 'Poor';
-        icon = Icons.signal_cellular_connected_no_internet_0_bar;
-        break;
-      case ConnectionQuality.offline:
-        color = Colors.grey;
-        text = 'Offline';
-        icon = Icons.signal_cellular_off;
-        break;
-    }
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500),
+    return StreamBuilder<List<Map<String, dynamic>>>( // Use StreamBuilder for real-time updates
+      stream: _streamBusinessLoginStatus(widget.businessId), // Stream login status for the business
+      builder: (context, snapshot) {
+        bool isOnline = false;
+        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+          isOnline = snapshot.data![0]['is_logged_in'] == true; // Check 'is_logged_in' field
+        }
+
+        Color color = isOnline ? Colors.green : Colors.grey;
+        String text = isOnline ? 'Online' : 'Offline';
+        IconData icon = isOnline ? Icons.circle : Icons.circle_outlined;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.3)),
           ),
-        ],
-      ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 12, color: color),
+              const SizedBox(width: 4),
+              Text(
+                text,
+                style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        );
+      },
     );
+  }
+
+  Stream<List<Map<String, dynamic>>> _streamBusinessLoginStatus(String businessId) {
+    return Supabase.instance.client
+        .from('business_profiles')
+        .stream(primaryKey: ['id'])
+        .eq('id', businessId)
+        .order('id', ascending: true);
   }
 
   void _scrollToBottom() {
@@ -742,22 +743,27 @@ class _ChatScreenState extends State<ChatScreen> {
                               ),
                               
                              
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: isMe ? const Color(0xFF5A35E3) : Colors.grey[200],
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: const Radius.circular(20),
-                                    topRight: const Radius.circular(20),
-                                    bottomLeft: Radius.circular(isMe ? 20 : 4),
-                                    bottomRight: Radius.circular(isMe ? 4 : 20),
-                                  ),
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: MediaQuery.of(context).size.width * 0.7,
                                 ),
-                                child: Text(
-                                  message['content'],
-                                  style: TextStyle(
-                                    color: isMe ? Colors.white : Colors.black,
-                                    fontSize: 16,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: isMe ? const Color(0xFF5A35E3) : Colors.grey[200],
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: const Radius.circular(12),
+                                      topRight: const Radius.circular(12),
+                                      bottomLeft: Radius.circular(isMe ? 12 : 2),
+                                      bottomRight: Radius.circular(isMe ? 2 : 12),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    message['content'],
+                                    style: TextStyle(
+                                      color: isMe ? Colors.white : Colors.black87,
+                                      fontSize: 15,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -778,9 +784,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                     if (isMe) ...[
                                       const SizedBox(width: 4),
                                       Icon(
-                                        isSending ? Icons.access_time : Icons.done,
+                                        isSending ? Icons.access_time : Icons.done_all,
                                         size: 14,
-                                        color: isSending ? Colors.orange : Colors.green,
+                                        color: isSending ? Colors.orange : Colors.blue,
                                       ),
                                     ],
                                   ],
@@ -831,19 +837,19 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _messageController,
-                    style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+                    style: const TextStyle(color: Colors.black87),
                     decoration: InputDecoration(
                       hintText: 'Type your message here...',
-                      hintStyle: TextStyle(color: const Color.fromARGB(255, 255, 255, 255)),
+                      hintStyle: TextStyle(color: Colors.grey[600]),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(25),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: const Color.fromARGB(46, 255, 255, 255),
+                      fillColor: Colors.grey[100],
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
-                        vertical: 10,
+                        vertical: 12,
                       ),
                     ),
                     onSubmitted: (_) => _sendMessage(),
