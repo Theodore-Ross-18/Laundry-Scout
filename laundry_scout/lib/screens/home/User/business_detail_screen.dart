@@ -7,6 +7,7 @@ import '../../../services/feedback_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:laundry_scout/screens/home/User/getdirection.dart';
+import 'package:flutter/services.dart';
 import 'image_preview_screen.dart';
 
 class BusinessDetailScreen extends StatefulWidget {
@@ -1094,15 +1095,30 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                             builder: (BuildContext context) {
                               return AlertDialog(
                                 title: const Text('Contact Number', style: TextStyle(color: Colors.black)),
-                                content: Text(
-                                  phoneNumber.toString(),
-                                  style: const TextStyle(color: Colors.black, fontSize: 16),
+                                content: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    SelectableText(
+                                      phoneNumber.toString(),
+                                      style: const TextStyle(color: Colors.black, fontSize: 16),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.copy, color: Color(0xFF5A35E3)),
+                                      onPressed: () {
+                                        Clipboard.setData(ClipboardData(text: phoneNumber.toString()));
+                                        Navigator.pop(context);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Phone number copied to clipboard', style: TextStyle(color: Colors.white))),
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ),
                                 actions: [
                                   TextButton(
                                     onPressed: () => Navigator.pop(context),
                                     child: const Text('Close', style: TextStyle(color: Colors.black)),
-                                  ),
+                                  )
                                 ],
                               );
                             },
