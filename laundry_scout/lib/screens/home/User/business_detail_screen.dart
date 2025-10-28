@@ -1377,12 +1377,12 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                             width: small ? 32 : 36,
                             height: small ? 32 : 36,
                             decoration: BoxDecoration(
-                              color: Colors.grey[300],
+                              color: const Color(0xFF5A35E3),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
                               _getServiceIcon(item['service_name']),
-                              color: Colors.white,
+                              color: const Color.fromARGB(255, 255, 255, 255),
                               size: small ? 20 : 22,
                             ),
                           ),
