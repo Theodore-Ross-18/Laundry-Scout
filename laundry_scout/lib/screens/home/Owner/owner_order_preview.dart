@@ -432,7 +432,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                         ),
                                       ),
                                       Text(
-                                        '₱${_deliveryFeeAmount.toStringAsFixed(0)}',
+                                        _deliveryFeeAmount == 0.0 ? 'Free' : '₱${_deliveryFeeAmount.toStringAsFixed(0)}',
                                         style: const TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
