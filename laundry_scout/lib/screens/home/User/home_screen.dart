@@ -627,8 +627,8 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: _onItemTapped,
         showSelectedLabels: true,
         showUnselectedLabels: true,
-        selectedFontSize: 12,
-        unselectedFontSize: 12,
+        selectedFontSize: 10,
+        unselectedFontSize: 10,
       ),
     );
   }

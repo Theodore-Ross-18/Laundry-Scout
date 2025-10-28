@@ -499,7 +499,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                         MaterialPageRoute(builder: (context) => const EditProfileScreen()),
                                       );
                                     },
-                                    child: _actionCard(Image.asset('lib/assets/owner/editprofile.png', width: 28, height: 28, color: Color(0xFF5A35E3)), 'Edit Profile', Color(0xFF5A35E3)),
+                                    child: _actionCard(Image.asset('lib/assets/owner/editprofile.png', width: 28, height: 28, color: Color(0xFF5A35E3)), 'Profile', Color(0xFF5A35E3)),
                                   ),
                                 ),
                               ],
@@ -597,7 +597,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   }
 
   Widget _availabilityCard() {
-    return _actionCard(Image.asset('lib/assets/owner/avail.png', width: 28, height: 28, color: Color(0xFF5A35E3)), 'Set Availability', Color(0xFF5A35E3));
+    return _actionCard(Image.asset('lib/assets/owner/avail.png', width: 28, height: 28, color: Color(0xFF5A35E3)), 'Availability', Color(0xFF5A35E3));
   }
 
 // Helper widgets:
@@ -669,8 +669,7 @@ Widget _slotAnalyticsCard(String availabilityStatus) {
           ),
         ),
         const SizedBox(height: 4),
-        const Text('Slot', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
-        Text(availabilityStatus.split(' ')[0], style: const TextStyle(fontSize: 12, color: Colors.black)),
+        Text(availabilityStatus, style: const TextStyle(fontSize: 12, color: Colors.black)),
       ],
     ),
   );
