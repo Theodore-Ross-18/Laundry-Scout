@@ -778,8 +778,9 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
     final user = Supabase.instance.client.auth.currentUser;
     
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF7B61FF),
+        backgroundColor: const Color(0xFF5A35E3),
         title: Row(
           children: [
             CircleAvatar(
@@ -957,7 +958,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF5A35E3) ,
+              color: const Color.fromARGB(255, 255, 255, 255) ,
               boxShadow: [
                 BoxShadow(
                   color: Colors.grey.withOpacity(0.2),

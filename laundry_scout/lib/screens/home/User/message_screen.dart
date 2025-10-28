@@ -637,6 +637,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final user = Supabase.instance.client.auth.currentUser;
     
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: const Color(0xFF5A35E3),
         title: Row(
@@ -822,7 +823,7 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF5A35E3),
+              color: const Color.fromARGB(255, 255, 255, 255),
               boxShadow: [
                 BoxShadow(
                   color: const Color.fromARGB(51, 0, 0, 0),
@@ -1152,7 +1153,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
                     height: 50,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(25),
-                      color: const Color(0xFF5A35E3), // Changed to solid color
+                      color: const Color.fromARGB(255, 255, 255, 255), // Changed to solid color
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFF5A35E3).withOpacity(0.3),
