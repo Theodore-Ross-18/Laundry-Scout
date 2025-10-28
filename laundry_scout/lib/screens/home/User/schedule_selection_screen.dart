@@ -141,18 +141,15 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: (_selectedPickupTime != null) || (_selectedDropoffTime != null)
-                            ? () {
-                                print('Done button pressed: _selectedPickupTime = $_selectedPickupTime, _selectedDropoffTime = $_selectedDropoffTime');
-                                Navigator.pop(context, {
-                                  'pickup': _selectedPickupTime,
-                                  'dropoff': _selectedDropoffTime ?? '',
-                                });
-                              }
-                            : null,
+                        onPressed: () {
+                          print('Done button pressed: _selectedPickupTime = $_selectedPickupTime, _selectedDropoffTime = $_selectedDropoffTime');
+                          Navigator.pop(context, {
+                            'pickup': _selectedPickupTime ?? '',
+                            'dropoff': _selectedDropoffTime ?? '',
+                          });
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF5A35E3),
-                          disabledBackgroundColor: Colors.grey[300],
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),

@@ -215,7 +215,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              widget.schedule['pickup'] != null && widget.schedule['dropoff'] == null
+                                              widget.schedule['pickup']!.isNotEmpty && widget.schedule['dropoff']!.isEmpty
                                                   ? 'Pickup only'
                                                   : 'Pickup at',
                                               style: TextStyle(
@@ -224,13 +224,14 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                                 color: Colors.black87,
                                               ),
                                             ),
-                                            Text(
-                                              '${DateFormat('MMM dd, yyyy').format(pickupDate)} | ${widget.schedule['pickup'] ?? ''}',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey[600],
+                                            if (widget.schedule['pickup']!.isNotEmpty)
+                                              Text(
+                                                '${DateFormat('MMM dd, yyyy').format(pickupDate)} | ${widget.schedule['pickup']}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey[600],
+                                                ),
                                               ),
-                                            ),
                                           ],
                                         ),
                                       ),
@@ -257,7 +258,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              widget.schedule['dropoff'] != null && widget.schedule['pickup'] == null
+                                              widget.schedule['dropoff']!.isNotEmpty && widget.schedule['pickup']!.isEmpty
                                                   ? 'Drop off only'
                                                   : 'Drop off',
                                               style: TextStyle(
@@ -266,13 +267,14 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                                 color: Colors.black87,
                                               ),
                                             ),
-                                            Text(
-                                              '${DateFormat('MMM dd, yyyy').format(dropoffDate)} | ${widget.schedule['dropoff'] ?? ''}',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey[600],
+                                            if (widget.schedule['dropoff']!.isNotEmpty)
+                                              Text(
+                                                '${DateFormat('MMM dd, yyyy').format(dropoffDate)} | ${widget.schedule['dropoff']}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey[600],
+                                                ),
                                               ),
-                                            ),
                                           ],
                                         ),
                                       ),
@@ -530,16 +532,16 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
       // Parse pickup and dropoff dates
       DateTime? parsedPickupDate;
-      if (widget.schedule['pickup'] != null && widget.pickupDate != null) {
+      if (widget.schedule['pickup']!.isNotEmpty && widget.pickupDate != null) {
         parsedPickupDate = _parseDateTime(DateFormat('MMM dd, yyyy').format(widget.pickupDate!), widget.schedule['pickup']!);
-      } else if (widget.schedule['pickup'] != null) {
+      } else if (widget.schedule['pickup']!.isNotEmpty) {
         parsedPickupDate = _parseDateTime(DateFormat('MMM dd, yyyy').format(DateTime.now()), widget.schedule['pickup']!);
       }
 
       DateTime? parsedDropoffDate;
-      if (widget.schedule['dropoff'] != null && widget.dropoffDate != null) {
+      if (widget.schedule['dropoff']!.isNotEmpty && widget.dropoffDate != null) {
         parsedDropoffDate = _parseDateTime(DateFormat('MMM dd, yyyy').format(widget.dropoffDate!), widget.schedule['dropoff']!);
-      } else if (widget.schedule['dropoff'] != null) {
+      } else if (widget.schedule['dropoff']!.isNotEmpty) {
         parsedDropoffDate = _parseDateTime(DateFormat('MMM dd, yyyy').format(DateTime.now()), widget.schedule['dropoff']!);
       }
 
