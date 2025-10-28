@@ -150,7 +150,16 @@ class _OwnerPromoPreviewScreenState extends State<OwnerPromoPreviewScreen> {
                       color: Colors.black,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${widget.promoData['discount'] ?? 0}% OFF',
+                    style: const TextStyle(
+                      fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white, // Adjusted color for white background
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                   
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -173,35 +182,7 @@ class _OwnerPromoPreviewScreenState extends State<OwnerPromoPreviewScreen> {
                   ),
                   const SizedBox(height: 32),
                   
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF5A35E3).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: const Color(0xFF5A35E3).withValues(alpha: 0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.access_time,
-                          color: const Color(0xFF5A35E3),
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Valid until further notice',
-                          style: TextStyle(
-                            color: const Color(0xFF5A35E3),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
+
                   
                   // Preview Info Card
                   Container(

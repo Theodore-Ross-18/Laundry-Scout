@@ -51,6 +51,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
   Map<String, double> _servicePrices = {}; 
   double _deliveryFee = 0.0;
+  double _appliedDiscount = 0.0;
+  String? _promoTitle;
 
   @override
   void initState() {
@@ -60,13 +62,13 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
   Future<void> _loadBusinessDataAndPrices() async {
     try {
-      final response = await Supabase.instance.client
+      final businessResponse = await Supabase.instance.client
           .from('business_profiles')
           .select('service_prices, delivery_fee')
           .eq('id', widget.businessData['id'])
           .single();
 
-      _fullBusinessData = response;
+      _fullBusinessData = businessResponse;
       _deliveryFee = double.tryParse(_fullBusinessData!['delivery_fee'].toString()) ?? 0.0;
 
       if (_fullBusinessData != null && _fullBusinessData!['service_prices'] != null) {
@@ -87,6 +89,29 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
           });
         }
       }
+
+      // Fetch promo data
+      final promoResponse = await Supabase.instance.client
+          .from('promos')
+          .select('promo_title, discount')
+          .eq('business_id', widget.businessData['id'])
+          .limit(1); // Get only one promo for now
+
+      if (promoResponse.isNotEmpty) {
+        final promo = promoResponse.first;
+        _promoTitle = promo['promo_title'];
+        final discountString = promo['discount'];
+
+        if (discountString != null) {
+          if (discountString.endsWith('%')) {
+            final percentage = double.tryParse(discountString.replaceAll('%', '')) ?? 0.0;
+            _appliedDiscount = _subtotal * (percentage / 100);
+          } else {
+            _appliedDiscount = double.tryParse(discountString) ?? 0.0;
+          }
+        }
+      }
+
       setState(() {}); 
     } catch (e) {
       print('Error loading business data and prices: $e');
@@ -101,7 +126,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     });
   }
 
-  double get _total => _subtotal + _deliveryFee;
+  double get _total => (_subtotal - _appliedDiscount) + _deliveryFee;
 
   String _generateOrderId() {
     final now = DateTime.now();
@@ -389,6 +414,29 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                   }),
                                   const Divider(),
                                   const SizedBox(height: 12),
+                                  if (_appliedDiscount > 0 && _promoTitle != null) ...[
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Discount (${_promoTitle!})',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.green,
+                                          ),
+                                        ),
+                                        Text(
+                                          '-₱${_appliedDiscount.toStringAsFixed(0)}',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.green,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                  ],
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [

@@ -144,6 +144,11 @@ class _PickDropMapScreenState extends State<PickDropMapScreen> {
       try {
         final user = Supabase.instance.client.auth.currentUser;
         if (user != null) {
+          // Ensure the latest values from controllers are used
+          _fullName = _nameController.text;
+          _phoneNumber = _phoneController.text;
+          _currentAddress = _addressController.text;
+
           // Parse full name into first and last name
           List<String> nameParts = _fullName.trim().split(' ');
           String firstName = nameParts.isNotEmpty ? nameParts[0] : '';

@@ -19,6 +19,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
   Uint8List? _selectedImageBytes;
   final _promoTitleController = TextEditingController();
   final _promoDescriptionController = TextEditingController();
+  final _discountController = TextEditingController();
   final _notificationService = NotificationService();
   
 
@@ -37,6 +38,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
   void dispose() {
     _promoTitleController.dispose();
     _promoDescriptionController.dispose();
+    _discountController.dispose();
     super.dispose();
   }
 
@@ -116,6 +118,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
       _isEditing = true;
       _promoTitleController.text = promo['promo_title'] ?? '';
       _promoDescriptionController.text = promo['promo_description'] ?? '';
+      _discountController.text = promo['discount']?.toString() ?? '';
       
       _selectedImageFile = null;
       _selectedImageBytes = null;
@@ -133,6 +136,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
       _isEditing = false;
       _promoTitleController.clear();
       _promoDescriptionController.clear();
+      _discountController.clear();
       _selectedImageFile = null;
       _selectedImageBytes = null;
     });
@@ -202,6 +206,21 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
         );
         return;
       }
+
+      if (_discountController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a discount percentage')),
+        );
+        return;
+      }
+
+      final int? discount = int.tryParse(_discountController.text.trim());
+      if (discount == null || discount < 0 || discount > 100) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a valid discount percentage between 0 and 100')),
+        );
+        return;
+      }
   
       String? imageUrlToStore;
 
@@ -237,6 +256,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
         final updateData = {
           'promo_title': _promoTitleController.text.trim(),
           'promo_description': _promoDescriptionController.text.trim(),
+          'discount': int.parse(_discountController.text.trim()),
         };
         
         if (imageUrlToStore != null) {
@@ -261,6 +281,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
           'business_id': user.id, 
           'promo_title': _promoTitleController.text.trim(),
           'promo_description': _promoDescriptionController.text.trim(),
+          'discount': int.parse(_discountController.text.trim()),
           'image_url': imageUrlToStore, 
           'created_at': DateTime.now().toIso8601String(),
         };
@@ -288,6 +309,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
       if (!_isEditing) {
         _promoTitleController.clear();
         _promoDescriptionController.clear();
+        _discountController.clear();
         _selectedImageFile = null;
         _selectedImageBytes = null;
       }
@@ -325,6 +347,7 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
                 final previewData = {
                   'promo_title': _promoTitleController.text.trim(),
                   'promo_description': _promoDescriptionController.text.trim(),
+                  'discount': int.tryParse(_discountController.text.trim()) ?? 0,
                   'image_url': _getImageUrlForPreview(),
                 };
                 
@@ -433,6 +456,24 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
               ),
               maxLines: 3,
               maxLength: 200,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _discountController,
+              style: const TextStyle(color: Colors.black),
+              decoration: InputDecoration(
+                labelText: 'Discount Percentage',
+                labelStyle: const TextStyle(color: Colors.black),
+                hintText: 'Enter discount percentage (e.g., "20%")',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              keyboardType: TextInputType.number,
+              maxLength: 3,
             ),
             const SizedBox(height: 24),
            
