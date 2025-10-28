@@ -214,7 +214,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                     ),
                     _buildDetailRow(
                       'Order Date',
-                      DateFormat('MMMM dd, yyyy hh:mm a').format(DateTime.parse(widget.order['created_at'])),
+                      DateFormat('MMMM dd, yyyy hh:mm a').format(DateTime.parse(widget.order['created_at']).toLocal()),
                     ),
                     if ((widget.order['items'] as Map<String, dynamic>).containsKey('Pick Up') && widget.order['pickup_time'] != null)
                       _buildDetailRow(

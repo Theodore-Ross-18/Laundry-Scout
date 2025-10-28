@@ -113,7 +113,7 @@ class _OwnerOrderDetailsScreenState extends State<OwnerOrderDetailsScreen> {
                     ),
                     _buildDetailRow(
                       'Order Date',
-                      DateFormat('MMMM dd, yyyy hh:mm a').format(DateTime.parse(widget.order['created_at'])),
+                      DateFormat('MMMM dd, yyyy hh:mm a').format(DateTime.parse(widget.order['created_at']).toLocal()),
                     ),
                     _buildDetailRow(
                       'Note',

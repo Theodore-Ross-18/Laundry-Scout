@@ -112,8 +112,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   @override
   Widget build(BuildContext context) {
     final orderId = _generateOrderId();
-    final pickupDate = DateTime.now().add(const Duration(days: 1));
-    final dropoffDate = pickupDate.add(const Duration(days: 1));
+    final pickupDate = widget.pickupDate ?? DateTime.now();
+    final dropoffDate = widget.dropoffDate ?? pickupDate.add(const Duration(days: 1));
 
     return Scaffold(
       backgroundColor: const Color(0xFF5A35E3),

@@ -524,7 +524,7 @@ class NotificationScreenState extends State<NotificationScreen> with SingleTicke
     final customerName = '$customerFirstName $customerLastName'.trim();
     final orderNumber = order['order_number'] ?? '';
     final status = order['status'] ?? 'pending';
-    final createdAt = DateTime.parse(order['created_at']);
+    final createdAt = DateTime.parse(order['created_at']).toLocal(); // Convert to local time
 
     Color statusColor;
     switch (status) {
