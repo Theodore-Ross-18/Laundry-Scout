@@ -51,6 +51,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
   Map<String, double> _servicePrices = {}; 
   double _deliveryFee = 0.0;
+  bool _isDeliveryFree = false; // Add this line
   double _appliedDiscount = 0.0;
   String? _promoTitle;
 
@@ -64,12 +65,13 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     try {
       final businessResponse = await Supabase.instance.client
           .from('business_profiles')
-          .select('service_prices, delivery_fee')
+          .select('service_prices, delivery_fee, is_delivery_free') // Select is_delivery_free
           .eq('id', widget.businessData['id'])
           .single();
 
       _fullBusinessData = businessResponse;
       _deliveryFee = double.tryParse(_fullBusinessData!['delivery_fee'].toString()) ?? 0.0;
+      _isDeliveryFree = _fullBusinessData!['is_delivery_free'] ?? false; // Load is_delivery_free
 
       if (_fullBusinessData != null && _fullBusinessData!['service_prices'] != null) {
         final servicePricesData = _fullBusinessData!['service_prices'];
@@ -126,7 +128,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     });
   }
 
-  double get _total => (_subtotal - _appliedDiscount) + _deliveryFee;
+  double get _total => (_subtotal - _appliedDiscount) + (_isDeliveryFree ? 0.0 : _deliveryFee);
 
   String _generateOrderId() {
     final now = DateTime.now();
@@ -448,7 +450,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                         ),
                                       ),
                                       Text(
-                                        '₱${_deliveryFee.toStringAsFixed(0)}',
+                                        _isDeliveryFree ? 'Free' : '₱${_deliveryFee.toStringAsFixed(0)}',
                                         style: const TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,

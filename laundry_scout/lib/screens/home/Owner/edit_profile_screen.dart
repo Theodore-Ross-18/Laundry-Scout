@@ -51,6 +51,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isSaving = false;
   bool _deliveryAvailable = false;
   bool _isUploadingImages = false;
+  bool _isDeliveryFree = false; // Add this line
   double _deliveryFee = 0.0; // Add this line
 
   Map<String, dynamic>? _businessProfile;
@@ -139,6 +140,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _aboutUsController.text = _businessProfile!['about_business'] ?? '';
           _termsAndConditionsController.text = _businessProfile!['terms_and_conditions'] ?? ''; // Load terms and conditions
           _deliveryAvailable = _businessProfile!['does_delivery'] ?? false;
+          _isDeliveryFree = _businessProfile!['is_delivery_free'] ?? false; // Add this line
           _deliveryFee = double.tryParse(_businessProfile!['delivery_fee'].toString()) ?? 0.0;
           _deliveryFeeController.text = _deliveryFee.toString(); // Add this line
 
@@ -589,8 +591,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'longitude': _longitude,
         'about_business': _aboutUsController.text.trim(),
         'does_delivery': _deliveryAvailable,
+        'is_delivery_free': _isDeliveryFree, // Add this line
         'terms_and_conditions': _termsAndConditionsController.text.trim(),
-        'delivery_fee': _deliveryAvailable ? double.tryParse(_deliveryFeeController.text.trim()) : null,
+        'delivery_fee': _deliveryAvailable && !_isDeliveryFree ? double.tryParse(_deliveryFeeController.text.trim()) : null,
         'service_prices': _pricelist,
         'services_offered': _selectedServices,
         'all_available_services': _availableServices,
@@ -1313,6 +1316,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           onChanged: (value) {
                             setState(() {
                               _deliveryAvailable = value;
+                              if (!value) {
+                                _isDeliveryFree = false; // Reset free delivery if delivery is turned off
+                              }
                             });
                           },
                           activeColor: const Color(0xFF5A35E3),
@@ -1320,6 +1326,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ],
                     ),
                     if (_deliveryAvailable)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                        child: Row(
+                          children: [
+                            const Text(
+                              'Free Delivery',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black,
+                              ),
+                            ),
+                            const Spacer(),
+                            Switch(
+                              value: _isDeliveryFree,
+                              onChanged: (value) {
+                                setState(() {
+                                  _isDeliveryFree = value;
+                                });
+                              },
+                              activeColor: const Color(0xFF5A35E3),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (_deliveryAvailable && !_isDeliveryFree)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: TextFormField(
