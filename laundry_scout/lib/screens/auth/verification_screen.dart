@@ -295,7 +295,7 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
                                 filled: true,
                                 fillColor: Color(0xFF5A35E3),
                               ),
-                              style: const TextStyle(color: Colors.white, fontSize: 22.0),
+                              style: const TextStyle(color: Colors.white, fontSize: 15.0),
                               onChanged: (value) {
                                 if (value.isNotEmpty && index < _otpControllers.length - 1) {
                                   _otpFocusNodes[index + 1].requestFocus();
@@ -326,9 +326,9 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _verifyOtp,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF5A35E3),
+                        backgroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(1),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
                       child: _isLoading
@@ -336,7 +336,7 @@ class _VerificationScreenState extends State<VerificationScreen> with SingleTick
                           : Text(
                               'Confirm',
                               style: textTheme.titleLarge?.copyWith(
-                                color: Colors.white,
+                                color: Color(0xFF5A35E3),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
