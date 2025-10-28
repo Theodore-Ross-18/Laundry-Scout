@@ -1153,7 +1153,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
                     height: 50,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(25),
-                      color: const Color.fromARGB(255, 255, 255, 255), // Changed to solid color
+                      color: const Color(0xFF5A35E3), // Changed to solid color
                       boxShadow: [
                         BoxShadow(
                           color: const Color(0xFF5A35E3).withOpacity(0.3),
