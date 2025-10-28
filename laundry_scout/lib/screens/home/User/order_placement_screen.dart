@@ -332,6 +332,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                 _latitudeController.text = _latitude.toString();
                 _longitudeController.text = _longitude.toString();
               });
+              _loadAddresses(); // Refresh data after returning from map screen
             }
           },
           child: Container(
@@ -379,7 +380,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                 Padding(
                   padding: const EdgeInsets.only(left: 30.0), // Adjust padding to align with the text above
                   child: Text(
-                    _currentAddressController.text,
+                    _currentAddressController.text.isEmpty ? 'Add your Address here' : _currentAddressController.text,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey[600],

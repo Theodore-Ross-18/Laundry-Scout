@@ -419,7 +419,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          'Discount (${_promoTitle!})',
+                                          'Discount',
                                           style: const TextStyle(
                                             fontSize: 14,
                                             color: Colors.green,

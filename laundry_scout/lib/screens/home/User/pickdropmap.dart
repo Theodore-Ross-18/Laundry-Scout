@@ -169,6 +169,7 @@ class _PickDropMapScreenState extends State<PickDropMapScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Location and contact info saved successfully!')),
             );
+            await _loadUserData(); // Refresh user data after saving
             // Return to the order placement screen with the selected location
             Navigator.of(context).pop(_selectedPosition);
           }
