@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:laundry_scout/services/notification_service.dart';
 import 'owner_promo_preview.dart';
+import 'package:intl/intl.dart';
 
 class AddPromoScreen extends StatefulWidget {
   const AddPromoScreen({super.key});
@@ -20,8 +21,12 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
   final _promoTitleController = TextEditingController();
   final _promoDescriptionController = TextEditingController();
   final _discountController = TextEditingController();
+  final _expirationDateController = TextEditingController();
+  final _expirationTimeController = TextEditingController();
   final _notificationService = NotificationService();
   
+  DateTime? _selectedDate;
+  TimeOfDay? _selectedTime;
 
   List<dynamic> _existingPromos = [];
   bool _isLoadingPromos = false;
@@ -39,6 +44,8 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
     _promoTitleController.dispose();
     _promoDescriptionController.dispose();
     _discountController.dispose();
+    _expirationDateController.dispose();
+    _expirationTimeController.dispose();
     super.dispose();
   }
 
@@ -81,6 +88,34 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
     return null;
   }
 
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+        _expirationDateController.text = "${picked.toLocal()}".split(' ')[0];
+      });
+    }
+  }
+
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime ?? TimeOfDay.now(),
+    );
+    if (picked != null && picked != _selectedTime) {
+      setState(() {
+        _selectedTime = picked;
+        _expirationTimeController.text = picked.format(context);
+      });
+    }
+  }
+
   Future<void> _fetchExistingPromos() async {
     setState(() {
       _isLoadingPromos = true;
@@ -96,8 +131,25 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
           .eq('business_id', user.id)
           .order('created_at', ascending: false);
 
+      final now = DateTime.now();
+      final List<dynamic> validPromos = [];
+      for (var promo in response) {
+        if (promo['expiration_date'] != null) {
+          final expirationDate = DateTime.parse(promo['expiration_date']);
+          if (expirationDate.isAfter(now)) {
+            validPromos.add(promo);
+          } else {
+            // Promo has expired, delete it
+            await Supabase.instance.client.from('promos').delete().eq('id', promo['id']);
+          }
+        } else {
+          // If no expiration date, consider it valid (or handle as per business logic)
+          validPromos.add(promo);
+        }
+      }
+
       setState(() {
-        _existingPromos = response;
+        _existingPromos = validPromos;
         _isLoadingPromos = false;
       });
     } catch (e) {
@@ -119,15 +171,21 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
       _promoTitleController.text = promo['promo_title'] ?? '';
       _promoDescriptionController.text = promo['promo_description'] ?? '';
       _discountController.text = promo['discount']?.toString() ?? '';
-      
+      if (promo['expiration_date'] != null) {
+        final expirationDate = DateTime.parse(promo['expiration_date']);
+        _selectedDate = expirationDate;
+        _selectedTime = TimeOfDay.fromDateTime(expirationDate);
+        _expirationDateController.text = DateFormat.yMd().format(expirationDate);
+        _expirationTimeController.text = _selectedTime?.format(context) ?? '';
+      } else {
+        _selectedDate = null;
+        _selectedTime = null;
+        _expirationDateController.clear();
+        _expirationTimeController.clear();
+      }
       _selectedImageFile = null;
       _selectedImageBytes = null;
     });
-    
-   
-    if (mounted) {
-     
-    }
   }
 
   void _cancelEdit() {
@@ -137,8 +195,12 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
       _promoTitleController.clear();
       _promoDescriptionController.clear();
       _discountController.clear();
+      _expirationDateController.clear();
+      _expirationTimeController.clear();
       _selectedImageFile = null;
       _selectedImageBytes = null;
+      _selectedDate = null;
+      _selectedTime = null;
     });
   }
 
@@ -214,6 +276,13 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
         return;
       }
 
+      if (_selectedDate == null || _selectedTime == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select an expiration date and time')),
+        );
+        return;
+      }
+
       final int? discount = int.tryParse(_discountController.text.trim());
       if (discount == null || discount < 0 || discount > 100) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -257,6 +326,13 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
           'promo_title': _promoTitleController.text.trim(),
           'promo_description': _promoDescriptionController.text.trim(),
           'discount': int.parse(_discountController.text.trim()),
+          'expiration_date': DateTime(
+            _selectedDate!.year,
+            _selectedDate!.month,
+            _selectedDate!.day,
+            _selectedTime!.hour,
+            _selectedTime!.minute,
+          ).toIso8601String(),
         };
         
         if (imageUrlToStore != null) {
@@ -283,6 +359,13 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
           'promo_description': _promoDescriptionController.text.trim(),
           'discount': int.parse(_discountController.text.trim()),
           'image_url': imageUrlToStore, 
+          'expiration_date': DateTime(
+            _selectedDate!.year,
+            _selectedDate!.month,
+            _selectedDate!.day,
+            _selectedTime!.hour,
+            _selectedTime!.minute,
+          ).toIso8601String(),
           'created_at': DateTime.now().toIso8601String(),
         };
         
@@ -474,6 +557,42 @@ class _AddPromoScreenState extends State<AddPromoScreen> {
               ),
               keyboardType: TextInputType.number,
               maxLength: 3,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _expirationDateController,
+              readOnly: true,
+              onTap: () => _selectDate(context),
+              style: const TextStyle(color: Colors.black),
+              decoration: InputDecoration(
+                labelText: 'Expiration Date',
+                labelStyle: const TextStyle(color: Colors.black),
+                hintText: 'Select expiration date',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _expirationTimeController,
+              readOnly: true,
+              onTap: () => _selectTime(context),
+              style: const TextStyle(color: Colors.black),
+              decoration: InputDecoration(
+                labelText: 'Expiration Time',
+                labelStyle: const TextStyle(color: Colors.black),
+                hintText: 'Select expiration time',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
             ),
             const SizedBox(height: 24),
            

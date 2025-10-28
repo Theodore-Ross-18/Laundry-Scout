@@ -12,6 +12,7 @@ import 'notification_screen.dart';
 import 'business_detail_screen.dart';
 import 'promo_preview.dart';
 import 'all_promos_screen.dart';
+import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -322,7 +323,15 @@ class _HomeScreenState extends State<HomeScreen> {
           .select('*, business_profiles(business_name)');
 
       if (mounted) {
-        _promos = List<Map<String, dynamic>>.from(response);
+        final now = DateTime.now();
+        _promos = List<Map<String, dynamic>>.from(response).where((promo) {
+          final expirationDateString = promo['expiration_date'] as String?;
+          if (expirationDateString == null) {
+            return true; // Promo without expiration date is always valid
+          }
+          final expirationDate = DateTime.parse(expirationDateString);
+          return expirationDate.isAfter(now);
+        }).toList();
         _updateHomeScreenBodyState(); 
       }
     } catch (e) {
@@ -490,8 +499,17 @@ class _HomeScreenState extends State<HomeScreen> {
           .select('*, business_profiles(business_name)');
 
       if (mounted) {
+        final now = DateTime.now();
         setState(() {
-          _promos = List<Map<String, dynamic>>.from(response);
+          _promos = List<Map<String, dynamic>>.from(response).where((promo) {
+            final expirationDateString = promo['expiration_date'] as String?;
+            if (expirationDateString == null) {
+              return true; // Promo without expiration date is always valid
+            }
+            final expirationDate = DateTime.parse(expirationDateString);
+            return expirationDate.isAfter(now);
+          }).toList();
+          _updateHomeScreenBodyState();
         });
       }
     } catch (e) {
@@ -1242,16 +1260,39 @@ class HomeScreenBody extends StatelessWidget {
                                     offset: const Offset(0, 2),
                                   ),
                                 ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12.0), // Apply border radius here
-                                child: OptimizedImage(
-                                  imageUrl: promo['image_url'],
-                                  fallbackAsset: 'lib/assets/promo_example.png',
-                                  width: 150,
-                                  height: double.infinity,
+                                image: DecorationImage(
+                                  image: NetworkImage(promo['image_url'] ?? 'https://via.placeholder.com/150'), // Provide a fallback image URL
                                   fit: BoxFit.cover,
                                 ),
+                              ),
+                              child: Stack(
+                                children: [
+                                  Positioned(
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.only(top: 0.0, bottom: 3.0, left: 150.0),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.5),
+                                        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(15)),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          if (promo['expiration_date'] != null)
+                                            Text(
+                                              'Expires: ${DateFormat('MMM d, yyyy h:mm a').format(DateTime.parse(promo['expiration_date']))}',
+                                              style: const TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: 10,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           );

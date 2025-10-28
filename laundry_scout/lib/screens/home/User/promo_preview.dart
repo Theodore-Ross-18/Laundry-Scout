@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
 import 'business_detail_screen.dart';
 import '../../../widgets/optimized_image.dart';
 
@@ -191,12 +192,22 @@ class _PromoPreviewScreenState extends State<PromoPreviewScreen> {
                           size: 20,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'Valid until further notice',
-                          style: TextStyle(
-                            color: const Color(0xFF5A35E3),
-                            fontWeight: FontWeight.w500,
-                          ),
+                        Builder(
+                          builder: (context) {
+                            final expirationDateString = widget.promoData['expiration_date'] as String?;
+                            String displayText = 'Valid until further notice';
+                            if (expirationDateString != null) {
+                              final expirationDate = DateTime.parse(expirationDateString);
+                              displayText = 'Valid until ${DateFormat('MMM d, yyyy h:mm a').format(expirationDate)}';
+                            }
+                            return Text(
+                              displayText,
+                              style: TextStyle(
+                                color: const Color(0xFF5A35E3),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),

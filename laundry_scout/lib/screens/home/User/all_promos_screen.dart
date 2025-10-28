@@ -99,50 +99,6 @@ class _AllPromosScreenState extends State<AllPromosScreen> {
                                       height: 180,
                                       fit: BoxFit.cover,
                                     ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(15),
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      Colors.black.withOpacity(0.7),
-                                    ],
-                                    stops: const [0.5, 1.0],
-                                  ),
-                                ),
-                                padding: const EdgeInsets.all(12.0),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (promo['promo_title'] != null)
-                                      Text(
-                                        promo['promo_title'],
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    if (promo['promo_title'] != null && promo['business_profiles']?['business_name'] != null)
-                                      const SizedBox(height: 4),
-                                    if (promo['business_profiles']?['business_name'] != null)
-                                      Text(
-                                        promo['business_profiles']['business_name'],
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(0.9),
-                                          fontSize: 15,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                  ],
-                                ),
-                              ),
                             ],
                           ),
                         ),
