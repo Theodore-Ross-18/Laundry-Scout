@@ -1230,7 +1230,7 @@ class HomeScreenBody extends StatelessWidget {
                               );
                             },
                             child: Container(
-                              width: 250,
+                              width: 300,
                               margin: EdgeInsets.only(left: index == 0 ? 16.0 : 8.0, right: index == promos.length - 1 ? 16.0 : 0),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(15),
@@ -1244,73 +1244,13 @@ class HomeScreenBody extends StatelessWidget {
                                 ],
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(15),
-                                child: Stack(
-                                  children: [
-                                    promo['image_url'] != null
-                                        ? OptimizedImage(
-                                            imageUrl: promo['image_url'],
-                                            width: 250,
-                                            height: double.infinity,
-                                            fit: BoxFit.cover,
-                                            errorWidget: Image.asset(
-                                              'lib/assets/promo_example.png',
-                                              width: 250,
-                                              height: double.infinity,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          )
-                                        : Image.asset(
-                                            'lib/assets/promo_example.png',
-                                            width: 250,
-                                            height: double.infinity,
-                                            fit: BoxFit.cover,
-                                          ),
-                                    Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(15),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.black.withOpacity(0.7),
-                                  ],
-                                  stops: const [0.5, 1.0],
-                                ),
-                              ),
-                              padding: const EdgeInsets.all(12.0),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (promo['promo_title'] != null)
-                                    Text(
-                                      promo['promo_title'],
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  if (promo['promo_title'] != null && promo['business_profiles']?['business_name'] != null)
-                                    const SizedBox(height: 4),
-                                  if (promo['business_profiles']?['business_name'] != null)
-                                    Text(
-                                      promo['business_profiles']['business_name'],
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.9),
-                                        fontSize: 14,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                ],
-                              ),
-                            ),
-                                  ],
+                                borderRadius: BorderRadius.circular(12.0), // Apply border radius here
+                                child: OptimizedImage(
+                                  imageUrl: promo['image_url'],
+                                  fallbackAsset: 'lib/assets/promo_example.png',
+                                  width: 150,
+                                  height: double.infinity,
+                                  fit: BoxFit.cover,
                                 ),
                               ),
                             ),
