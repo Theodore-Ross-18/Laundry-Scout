@@ -385,18 +385,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onItemTapped(int index) {
     if (!mounted) return;
-    
+
     if (index == 0 && _selectedIndex == 0) {
       _scrollController.animateTo(
         0,
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
-      
+
       _refreshDataInBackground();
       return;
+    } else if (index == 4 && _selectedIndex != 4) { // Notification tab tapped
+      _notificationScreenKey.currentState?.refreshData();
     }
-    
+
     setState(() {
       _selectedIndex = index;
     });

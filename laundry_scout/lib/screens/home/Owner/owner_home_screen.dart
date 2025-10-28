@@ -36,6 +36,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   int _reviewCount = 0;
   final FeedbackService _feedbackService = FeedbackService();
 
+  final GlobalKey<OwnerMessageScreenState> _ownerMessageScreenKey = GlobalKey<OwnerMessageScreenState>();
+  final GlobalKey<OwnerNotificationScreenState> _ownerNotificationScreenKey = GlobalKey<OwnerNotificationScreenState>();
+
   @override
   void initState() {
     super.initState();
@@ -190,15 +193,21 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
   void _onItemTapped(int index) {
     if (!mounted) return;
-    
+
     if (index == 0 && _selectedIndex == 0) {
       _refreshDataInBackground();
       return;
     }
-    
+
     setState(() {
       _selectedIndex = index;
     });
+
+    if (index == 1) { // Messages tab
+      _ownerMessageScreenKey.currentState?.refreshData();
+    } else if (index == 2) { // Notifications tab
+      _ownerNotificationScreenKey.currentState?.refreshData();
+    }
   }
 
   Future<void> _refreshDataInBackground() async {
@@ -332,9 +341,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       case 0:
         return _buildHomeScreenContent();
       case 1:
-        return const OwnerMessageScreen();
+        return OwnerMessageScreen(key: _ownerMessageScreenKey);
       case 2:
-        return const OwnerNotificationScreen();
+        return OwnerNotificationScreen(key: _ownerNotificationScreenKey);
       case 3:
         return OwnerReportsScreen(orderStats: _orderStats, allOrders: _allOrders);
       default:

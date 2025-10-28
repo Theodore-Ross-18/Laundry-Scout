@@ -8,14 +8,18 @@ class OwnerNotificationScreen extends StatefulWidget {
   const OwnerNotificationScreen({super.key});
 
   @override
-  State<OwnerNotificationScreen> createState() => _OwnerNotificationScreenState();
+  State<OwnerNotificationScreen> createState() => OwnerNotificationScreenState();
 }
 
-class _OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
+class OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
   late RealtimeChannel _notificationsSubscription;
   final Map<String, String> _userNames = {};
+
+  void refreshData() {
+    _loadNotifications();
+  }
 
   @override
   void initState() {

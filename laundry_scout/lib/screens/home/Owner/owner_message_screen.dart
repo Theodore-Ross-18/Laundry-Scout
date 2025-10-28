@@ -13,10 +13,10 @@ class OwnerMessageScreen extends StatefulWidget {
   const OwnerMessageScreen({super.key});
 
   @override
-  State<OwnerMessageScreen> createState() => _OwnerMessageScreenState();
+  State<OwnerMessageScreen> createState() => OwnerMessageScreenState();
 }
 
-class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
+class OwnerMessageScreenState extends State<OwnerMessageScreen> {
   List<Map<String, dynamic>> _conversations = [];
   bool _isLoading = true;
   late RealtimeChannel _messagesSubscription;
@@ -25,6 +25,10 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
   Timer? _backgroundRefreshTimer;
   Timer? _feedbackTimer; // Added feedback timer
   final SessionService _sessionService = SessionService();
+
+  void refreshData() {
+    _loadConversations();
+  }
 
   @override
   void initState() {
