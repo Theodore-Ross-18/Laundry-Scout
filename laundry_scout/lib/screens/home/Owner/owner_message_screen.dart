@@ -756,7 +756,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
               const SizedBox(width: 4),
               Text(
                 text,
-                style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500),
+                style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w500),
               ),
             ],
           ),
