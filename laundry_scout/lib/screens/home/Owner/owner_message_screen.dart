@@ -549,6 +549,8 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
   late StreamSubscription _messageSubscription;
   RealtimeChannel? _currentChannel;
   Timer? _backgroundRefreshTimer; // Add background refresh timer
+  String? _businessName; // Store business name from business_profiles table
+  String? _businessCoverPhotoUrl; // Store cover photo URL from business_profiles table
 
   @override
   void initState() {
@@ -556,6 +558,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
     _realtimeService.initialize();
     _connectionService.startMonitoring();
     _messageQueue.startQueue();
+    _loadBusinessProfile(); // Load business profile data
     _loadMessages();
     _setupRealtimeSubscription();
     _setupConnectionQualityListener();
@@ -582,6 +585,29 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
         _refreshMessagesInBackground();
       }
     });
+  }
+
+  // Load business profile data to get business_name and cover_photo_url
+  Future<void> _loadBusinessProfile() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('business_name, cover_photo_url')
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (mounted && response != null) {
+        setState(() {
+          _businessName = response['business_name'];
+          _businessCoverPhotoUrl = response['cover_photo_url'];
+        });
+      }
+    } catch (e) {
+      print('Error loading business profile: $e');
+    }
   }
 
   // Background refresh method for messages
@@ -878,7 +904,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                                     right: isMe ? 8 : 0,
                                   ),
                                   child: Text(
-                                    isMe ? (user?.userMetadata?['full_name'] ?? 'You') : widget.userName,
+                                    isMe ? ( 'You') : widget.userName,
                                     style: const TextStyle(
                                       color: Colors.grey,
                                       fontSize: 12,
@@ -938,14 +964,19 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                           CircleAvatar(
                             radius: 16,
                             backgroundColor: const Color(0xFF5A35E3),
-                            child: Text(
-                              user?.userMetadata?['full_name']?.substring(0, 1).toUpperCase() ?? 'O',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            backgroundImage: _businessCoverPhotoUrl != null 
+                                ? NetworkImage(_businessCoverPhotoUrl!)
+                                : null,
+                            child: _businessCoverPhotoUrl == null
+                                ? Text(
+                                    user?.userMetadata?['full_name']?.substring(0, 1).toUpperCase() ?? 'O',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                : null,
                           ),
                         ],
                       ],
