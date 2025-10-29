@@ -164,6 +164,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _signOut() async {
     try {
+      // Update user_is_online to FALSE before signing out
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        print('Updating user_is_online to FALSE for user: ${user.id}');
+        final updateResult = await Supabase.instance.client
+            .from('user_profiles')
+            .update({'user_is_online': false})
+            .eq('id', user.id);
+        print('User offline status updated successfully: $updateResult');
+      }
+      
       await Supabase.instance.client.auth.signOut();
       SessionService().resetFeedbackFlags();
       if (mounted) {
