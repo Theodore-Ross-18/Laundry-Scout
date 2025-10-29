@@ -270,7 +270,22 @@ Future<void> _setIntroShownDate() async {
             if (determinedProfileType == 'user') {
 
             } else if (determinedProfileType == 'business') {
-
+              // Update owner_is_online to TRUE for business owners
+              try {
+                print('Updating owner_is_online to TRUE for user: $userId');
+                final updateResult = await Supabase.instance.client
+                    .from('business_profiles')
+                    .update({'owner_is_online': true})
+                    .eq('id', userId);
+                print('Owner online status updated successfully: $updateResult');
+              } catch (e) {
+                print('Error updating owner_is_online status: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Note: Online status not updated')),
+                  );
+                }
+              }
             }
 
             NotificationService().testNotificationCreation();

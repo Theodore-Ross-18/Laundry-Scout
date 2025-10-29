@@ -73,6 +73,17 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
 
   void _signOut() async {
     try {
+      // Update owner_is_online to FALSE before signing out
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        print('Updating owner_is_online to FALSE for user: ${user.id}');
+        final updateResult = await Supabase.instance.client
+            .from('business_profiles')
+            .update({'owner_is_online': false})
+            .eq('id', user.id);
+        print('Owner offline status updated successfully: $updateResult');
+      }
+      
       await Supabase.instance.client.auth.signOut();
       SessionService().resetFeedbackFlags();
       if (mounted) {
