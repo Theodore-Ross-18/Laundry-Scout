@@ -343,9 +343,9 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       case 1:
         return OwnerMessageScreen(key: _ownerMessageScreenKey);
       case 2:
-        return OwnerNotificationScreen(key: _ownerNotificationScreenKey);
-      case 3:
         return OwnerReportsScreen(orderStats: _orderStats, allOrders: _allOrders);
+      case 3:
+        return OwnerNotificationScreen(key: _ownerNotificationScreenKey);
       default:
         return _buildHomeScreenContent();
     }
@@ -584,14 +584,14 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
             label: 'Messages',
           ),
           BottomNavigationBarItem(
-            icon: Image.asset('lib/assets/navbars/notification.png', width: 24, height: 24, color: Colors.black),
-            activeIcon: Image.asset('lib/assets/navbars/notification.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
-            label: 'Notification',
-          ),
-          BottomNavigationBarItem(
             icon: Image.asset('lib/assets/owner/reports.png', width: 24, height: 24, color: Colors.black),
             activeIcon: Image.asset('lib/assets/owner/reports.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
             label: 'Reports',
+          ),
+          BottomNavigationBarItem(
+            icon: Image.asset('lib/assets/navbars/notification.png', width: 24, height: 24, color: Colors.black),
+            activeIcon: Image.asset('lib/assets/navbars/notification.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
+            label: 'Notifications',
           ),
         ],
         currentIndex: _selectedIndex,

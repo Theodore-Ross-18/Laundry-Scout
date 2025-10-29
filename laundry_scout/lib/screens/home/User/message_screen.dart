@@ -64,7 +64,7 @@ class _MessageScreenState extends State<MessageScreen> {
             business_profiles(
               business_name,
               cover_photo_url,
-              is_logged_in
+              owner_is_online
             )
           ''')
           .eq('user_id', user.id)
@@ -114,7 +114,8 @@ class _MessageScreenState extends State<MessageScreen> {
             *,
             business_profiles(
               business_name,
-              cover_photo_url
+              cover_photo_url,
+              owner_is_online
             )
           ''')
           .eq('user_id', user.id)
@@ -286,7 +287,7 @@ class _MessageScreenState extends State<MessageScreen> {
                                             Positioned(
                                               bottom: 2,
                                               right: 2,
-                                              child: (business['is_logged_in'] ?? false) == true
+                                              child: (business['owner_is_online'] ?? false) == true
                                                   ? Container(
                                                       width: 12,
                                                       height: 12,
@@ -582,10 +583,10 @@ class _ChatScreenState extends State<ChatScreen> {
       builder: (context, snapshot) {
         bool isOnline = false;
         if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-          isOnline = snapshot.data![0]['is_logged_in'] == true; // Check 'is_logged_in' field
+          isOnline = snapshot.data![0]['owner_is_online'] == true; // Check 'owner_is_online' field
         }
 
-        Color color = isOnline ? Colors.green : Colors.grey;
+        Color color = isOnline ? Colors.green : const Color.fromARGB(255, 222, 0, 0);
         String text = isOnline ? 'Online' : 'Offline';
         IconData icon = isOnline ? Icons.circle : Icons.circle_outlined;
 
