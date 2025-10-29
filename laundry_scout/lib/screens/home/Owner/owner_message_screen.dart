@@ -75,7 +75,7 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
       for (var conversation in conversationsResponse) {
         final userProfile = await Supabase.instance.client
             .from('user_profiles')
-            .select('username, first_name, last_name, profile_image_url, email, is_logged_in')
+            .select('username, first_name, last_name, profile_image_url, email, user_is_online')
             .eq('id', conversation['user_id'])
             .maybeSingle();
         
@@ -158,7 +158,7 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
         
         final userProfile = await Supabase.instance.client
             .from('user_profiles')
-            .select('username, first_name, last_name, profile_image_url, email')
+            .select('username, first_name, last_name, profile_image_url, email, user_is_online')
             .eq('id', conversation['user_id'])
             .maybeSingle();
         
@@ -337,7 +337,7 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
                                                   : const Icon(Icons.person, color: Colors.grey, size: 30),
                                             ),
                                             // Online/Offline indicator
-                                            if ((user?['is_logged_in'] ?? false) == true) // Green for online
+                                            if ((user?['user_is_online'] ?? false) == true) // Green for online
                                               Positioned(
                                                 bottom: 2,
                                                 right: 2,
@@ -351,7 +351,7 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
                                                   ),
                                                 ),
                                               )
-                                            else if ((user?['is_logged_in'] ?? false) == false) // Red for offline
+                                            else if ((user?['user_is_online'] ?? false) == false) // Red for offline
                                               Positioned(
                                                 bottom: 2,
                                                 right: 2,
@@ -735,10 +735,10 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
       builder: (context, snapshot) {
         bool isOnline = false;
         if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-          isOnline = snapshot.data![0]['is_logged_in'] == true; // Check 'is_logged_in' field
+          isOnline = snapshot.data![0]['user_is_online'] == true; // Check 'user_is_online' field
         }
 
-        Color color = isOnline ? Colors.green : Colors.grey;
+        Color color = isOnline ? Colors.green : const Color.fromARGB(255, 222, 0, 0);
         String text = isOnline ? 'Online' : 'Offline';
         IconData icon = isOnline ? Icons.circle : Icons.circle_outlined;
 
