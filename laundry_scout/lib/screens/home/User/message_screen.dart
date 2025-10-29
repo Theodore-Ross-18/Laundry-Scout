@@ -446,7 +446,9 @@ class _ChatScreenState extends State<ChatScreen> {
   late StreamSubscription _qualitySubscription;
   late StreamSubscription _messageSubscription;
   RealtimeChannel? _currentChannel;
-  Timer? _backgroundRefreshTimer; 
+  Timer? _backgroundRefreshTimer;
+  String? _userUsername;
+  String? _userProfileImage; 
 
   @override
   void initState() {
@@ -454,6 +456,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _realtimeService.initialize();
     _connectionService.startMonitoring();
     _messageQueue.startQueue();
+    _loadUserProfile();
     _loadMessages();
     _setupRealtimeSubscription();
     _setupQualityListener();
@@ -479,6 +482,33 @@ class _ChatScreenState extends State<ChatScreen> {
         _refreshMessagesInBackground();
       }
     });
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final response = await Supabase.instance.client
+          .from('user_profiles')
+          .select('username, profile_image_url')
+          .eq('id', user.id)
+          .single();
+
+      if (mounted) {
+        setState(() {
+          _userUsername = response['username'] ?? 'You';
+          _userProfileImage = response['profile_image_url'];
+        });
+      }
+    } catch (e) {
+      log('Error loading user profile: $e');
+      if (mounted) {
+        setState(() {
+          _userUsername = 'You';
+        });
+      }
+    }
   }
 
   Future<void> _refreshMessagesInBackground() async {
@@ -735,7 +765,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   right: isMe ? 8 : 0,
                                 ),
                                 child: Text(
-                                  isMe ? (user?.userMetadata?['full_name'] ?? 'You') : widget.businessName,
+                                  isMe ? ( 'You') : widget.businessName,
                                   style: const TextStyle(
                                     color: Colors.grey,
                                     fontSize: 12,
@@ -804,14 +834,31 @@ class _ChatScreenState extends State<ChatScreen> {
                           CircleAvatar(
                             radius: 16,
                             backgroundColor: const Color(0xFF5A35E3),
-                            child: Text(
-                              user?.userMetadata?['full_name']?.substring(0, 1).toUpperCase() ?? 'U',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            child: _userProfileImage != null
+                                ? ClipOval(
+                                    child: OptimizedImage(
+                                      imageUrl: _userProfileImage!,
+                                      width: 32,
+                                      height: 32,
+                                      fit: BoxFit.cover,
+                                      placeholder: Text(
+                                        _userUsername?.substring(0, 1).toUpperCase() ?? 'U',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Text(
+                                    _userUsername?.substring(0, 1).toUpperCase() ?? 'U',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                         ],
                       ],
