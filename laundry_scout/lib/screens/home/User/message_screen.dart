@@ -390,7 +390,7 @@ class _MessageScreenState extends State<MessageScreen> {
 
   Future<void> _checkAndShowFeedbackModal() async {
     if (!_sessionService.hasShownUserFeedbackModalThisSession) {
-      _feedbackTimer = Timer(const Duration(minutes: 20), () {
+      _feedbackTimer = Timer(const Duration(minutes: 5), () {
         if (mounted) {
           _showFeedbackModal();
           _sessionService.hasShownUserFeedbackModalThisSession = true;

@@ -450,7 +450,7 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
     print('Checking feedback modal - hasShownOwnerFeedbackModalThisSession: ${_sessionService.hasShownOwnerFeedbackModalThisSession}');
     if (!_sessionService.hasShownOwnerFeedbackModalThisSession) {
       print('Setting feedback timer for 10 seconds...');
-      _feedbackTimer = Timer(const Duration(minutes: 20), () {
+      _feedbackTimer = Timer(const Duration(minutes: 5), () {
         print('Feedback timer triggered - mounted: $mounted');
         if (mounted) {
           // Double-check that user is authenticated before showing modal
