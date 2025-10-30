@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import '../../../services/session_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
-import 'dart:developer';
+import 'dart:developer' as developer;
+import 'dart:math';
 import '../../../services/connection_service.dart';
 import '../../../services/message_queue_service.dart';
 import '../../../services/realtime_message_service.dart';
@@ -99,7 +100,7 @@ class _MessageScreenState extends State<MessageScreen> {
         });
       }
     } catch (e) {
-      log('Background refresh error: $e');
+      print('Background refresh error: $e');
     }
   }
 
@@ -146,7 +147,7 @@ class _MessageScreenState extends State<MessageScreen> {
         });
       }
     } catch (e) {
-      log('Error loading conversations: $e');
+      print('Error loading conversations: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -415,10 +416,10 @@ class _MessageScreenState extends State<MessageScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
-      log('Mark all as read pressed for user: ${user.id}');
+      print('Mark all as read pressed for user: ${user.id}');
 
     } catch (e) {
-      log('Error marking all messages as read: $e');
+      developer.log('Error marking all messages as read: $e');
     }
   }
 }
@@ -520,7 +521,7 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }
     } catch (e) {
-      log('Error loading user profile: $e');
+      developer.log('Error loading user profile: $e');
       if (mounted) {
         setState(() {
           _userUsername = 'You';
@@ -560,7 +561,7 @@ class _ChatScreenState extends State<ChatScreen> {
         await _checkBusinessOnlineStatus();
       }
     } catch (e) {
-      log('Background message refresh error: $e');
+      developer.log('Background message refresh error: $e');
     }
   }
 
@@ -626,7 +627,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       return response.isEmpty;
     } catch (e) {
-      log('Error checking first message: $e');
+      developer.log('Error checking first message: $e');
       return false;
     }
   }
@@ -641,8 +642,76 @@ class _ChatScreenState extends State<ChatScreen> {
 
       return response['owner_is_online'] == true;
     } catch (e) {
-      log('Error checking business online status: $e');
+      developer.log('Error checking business online status: $e');
       return false;
+    }
+  }
+
+  bool _containsThankYou(String content) {
+    // Check for various forms of "thank you" in the message
+    final thankYouPatterns = [
+      'thank you',
+      'thanks',
+      'thankyou',
+      'thx',
+      'ty',
+      'thank u',
+      'thanx'
+    ];
+    
+    final lowerContent = content.toLowerCase();
+    return thankYouPatterns.any((pattern) => lowerContent.contains(pattern));
+  }
+
+  Future<void> _sendThankYouResponse() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final thankYouResponses = [
+        "You're welcome! 😊",
+        "My pleasure! 🙂",
+        "Anytime! Happy to help 👍",
+        "You're very welcome! 🌟",
+        "No problem at all! 👌"
+      ];
+      
+      final random = Random();
+      final response = thankYouResponses[random.nextInt(thankYouResponses.length)];
+
+      // Insert the thank you response directly into the messages table
+      final responseData = await Supabase.instance.client
+          .from('messages')
+          .insert({
+            'sender_id': widget.businessId,
+            'receiver_id': user.id,
+            'business_id': widget.businessId,
+            'content': response,
+            'created_at': DateTime.now().toIso8601String(),
+          })
+          .select()
+          .single();
+
+      // Add the response to the UI immediately
+      final responseMessage = {
+        'id': responseData['id'],
+        'sender_id': widget.businessId,
+        'receiver_id': user.id,
+        'business_id': widget.businessId,
+        'content': response,
+        'created_at': responseData['created_at'],
+        'is_sending': false,
+      };
+
+      if (mounted) {
+        setState(() {
+          _messages.add(responseMessage);
+        });
+        _scrollToBottom();
+      }
+
+    } catch (e) {
+      developer.log('Error sending thank you response: $e');
     }
   }
 
@@ -689,7 +758,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
 
     } catch (e) {
-      log('Error sending automatic greeting: $e');
+      developer.log('Error sending automatic greeting: $e');
     }
   }
 
@@ -734,6 +803,15 @@ class _ChatScreenState extends State<ChatScreen> {
         _messages.add(optimisticMessage);
       });
       _scrollToBottom();
+
+      // Check if user said "thank you" and business is online
+      if (_containsThankYou(content) && isBusinessOnline) {
+        Timer(const Duration(seconds: 3), () {
+          if (mounted) {
+            _sendThankYouResponse();
+          }
+        });
+      }
     }
   }
 
@@ -1089,7 +1167,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _scrollToBottom();
       }
     } catch (e) {
-      log('Error loading messages: $e');
+      print('Error loading messages: $e');
     }
   }
   
@@ -1126,7 +1204,7 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       }
     } catch (e) {
-      log('Error checking business online status: $e');
+      print('Error checking business online status: $e');
       // Reset flag on error
       _isNavigatingToChatAssist = false;
     }
@@ -1229,7 +1307,7 @@ class _ChatAssistWidgetState extends State<ChatAssistWidget> {
         _isLoadingData = false;
       });
     } catch (e) {
-      log('Error loading business data: $e');
+      print('Error loading business data: $e');
       setState(() {
         _isLoadingData = false;
       });
