@@ -615,6 +615,84 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  Future<bool> _isFirstMessageToBusiness(String userId, String businessId) async {
+    try {
+      final response = await Supabase.instance.client
+          .from('messages')
+          .select('id')
+          .eq('sender_id', userId)
+          .eq('business_id', businessId)
+          .limit(1);
+
+      return response.isEmpty;
+    } catch (e) {
+      log('Error checking first message: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _isBusinessOnline(String businessId) async {
+    try {
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('owner_is_online')
+          .eq('id', businessId)
+          .single();
+
+      return response['owner_is_online'] == true;
+    } catch (e) {
+      log('Error checking business online status: $e');
+      return false;
+    }
+  }
+
+  Future<void> _sendAutomaticGreeting() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final greetings = [
+        "Hello! Welcome to ${widget.businessName}! How can I help you today? 😊",
+        "Hi there! Thanks for reaching out to ${widget.businessName}. What can I assist you with?",
+        "Welcome to ${widget.businessName}! I'm here to help. What brings you here today?",
+        "Hello! Great to hear from you at ${widget.businessName}. How may I assist you?",
+        "Hi! Welcome to ${widget.businessName}. I'm online and ready to help with anything you need!"
+      ];
+
+      final randomGreeting = greetings[DateTime.now().millisecond % greetings.length];
+
+      // Insert the greeting message directly to the database
+      // The business owner is the sender, user is the receiver
+      await Supabase.instance.client.from('messages').insert({
+        'sender_id': widget.businessId,  // Business owner sends the greeting
+        'receiver_id': user.id,          // User receives the greeting
+        'business_id': widget.businessId,
+        'content': randomGreeting,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      // Add optimistic message to the UI - business owner is the sender
+      final greetingMessage = {
+        'sender_id': widget.businessId,
+        'receiver_id': user.id,
+        'business_id': widget.businessId,
+        'content': randomGreeting,
+        'created_at': DateTime.now().toIso8601String(),
+        'is_sending': false,
+      };
+
+      if (mounted) {
+        setState(() {
+          _messages.add(greetingMessage);
+        });
+        _scrollToBottom();
+      }
+
+    } catch (e) {
+      log('Error sending automatic greeting: $e');
+    }
+  }
+
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
 
@@ -623,6 +701,19 @@ class _ChatScreenState extends State<ChatScreen> {
 
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
+      // Check if this is the first message and business is online
+      final isFirstMessage = await _isFirstMessageToBusiness(user.id, widget.businessId);
+      final isBusinessOnline = await _isBusinessOnline(widget.businessId);
+      
+      if (isFirstMessage && isBusinessOnline) {
+        // Send automatic greeting after a short delay
+        Timer(const Duration(seconds: 2), () {
+          if (mounted) {
+            _sendAutomaticGreeting();
+          }
+        });
+      }
+
       final tempId = _messageQueue.queueMessage(
         content: content,
         receiverId: widget.businessId,
