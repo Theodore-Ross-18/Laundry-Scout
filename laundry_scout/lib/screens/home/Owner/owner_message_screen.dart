@@ -241,6 +241,53 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
     });
   }
 
+  Future<void> _deleteConversation(Map<String, dynamic> conversation) async {
+    try {
+      final businessId = Supabase.instance.client.auth.currentUser?.id;
+      if (businessId == null) return;
+
+      final userId = conversation['user_id'];
+      
+      // Delete all messages for this conversation using sender_id/receiver_id instead of user_id
+      await Supabase.instance.client
+          .from('messages')
+          .delete()
+          .or('sender_id.eq.${userId},receiver_id.eq.${userId}')
+          .eq('business_id', businessId);
+
+      // Delete the conversation
+      await Supabase.instance.client
+          .from('conversations')
+          .delete()
+          .eq('business_id', businessId)
+          .eq('user_id', userId);
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Conversation deleted successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error deleting conversation: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete conversation: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      // Re-throw the error so the Dismissible knows the deletion failed
+      rethrow;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -298,123 +345,211 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
                               final user = conversation['user_profiles'];
                               final lastMessage = conversation['last_message'];
                               
-                              return Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                child: InkWell(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => OwnerChatScreen(
-                        userId: conversation['user_id'],
-                        userName: _getDisplayName(user, conversation['user_id']),
-                        userImage: user?['profile_image_url'],
-                      ),
+                              return Dismissible(
+                                key: Key(conversation['conversation_id'].toString()),
+                                direction: DismissDirection.endToStart,
+                                background: Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 20),
+                                  child: const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.delete,
+                                        color: Colors.white,
+                                        size: 28,
                                       ),
-                                    );
-                                  },
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Row(
-                                      children: [
-                                        // Avatar with online indicator
-                                        Stack(
-                                          children: [
-                                            CircleAvatar(
-                                              radius: 28,
-                                              backgroundColor: Colors.grey[200],
-                                              child: user?['profile_image_url'] != null
-                                                  ? ClipOval(
-                                                      child: OptimizedImage(
-                                                        imageUrl: user!['profile_image_url'],
-                                                        width: 56,
-                                                        height: 56,
-                                                        fit: BoxFit.cover,
-                                                        placeholder: const Icon(Icons.person, color: Colors.grey),
-                                                      ),
-                                                    )
-                                                  : const Icon(Icons.person, color: Colors.grey, size: 30),
-                                            ),
-                                            // Online/Offline indicator
-                                            if ((user?['user_is_online'] ?? false) == true) // Green for online
-                                              Positioned(
-                                                bottom: 2,
-                                                right: 2,
-                                                child: Container(
-                                                  width: 12,
-                                                  height: 12,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.green,
-                                                    shape: BoxShape.circle,
-                                                    border: Border.all(color: Colors.white, width: 2),
-                                                  ),
-                                                ),
-                                              )
-                                            else if ((user?['user_is_online'] ?? false) == false) // Red for offline
-                                              Positioned(
-                                                bottom: 2,
-                                                right: 2,
-                                                child: Container(
-                                                  width: 12,
-                                                  height: 12,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.red,
-                                                    shape: BoxShape.circle,
-                                                    border: Border.all(color: Colors.white, width: 2),
-                                                  ),
-                                                ),
-                                              ),
-                                          ],
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'Delete',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
                                         ),
-                                        const SizedBox(width: 16),
-                                        // Message content
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                confirmDismiss: (direction) async {
+                                  return await showDialog<bool>(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: const Text(
+                                          'Delete Conversation',
+                                          style: TextStyle(color: Colors.black),
+                                        ),
+                                        content: Text(
+                                          'Are you sure you want to delete your conversation with ${_getDisplayName(user, conversation['user_id'])}? This will also delete all messages in the conversation.',
+                                          style: const TextStyle(color: Colors.black),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(false),
+                                            child: const Text(
+                                              'Cancel',
+                                              style: TextStyle(color: Colors.black),
+                                            ),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(true),
+                                            child: const Text(
+                                              'Delete',
+                                              style: TextStyle(color: Colors.red),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ) ?? false;
+                                },
+                                onDismissed: (direction) async {
+                                  // Remove the conversation from the local list immediately
+                                  final conversationId = conversation['conversation_id'].toString();
+                                  final removedConversation = conversation;
+                                  final removedIndex = index;
+                                  
+                                  setState(() {
+                                    _filteredConversations.removeAt(index);
+                                    _conversations.removeWhere((conv) => conv['conversation_id'].toString() == conversationId);
+                                  });
+                                  
+                                  try {
+                                    await _deleteConversation(conversation);
+                                  } catch (e) {
+                                    // If deletion fails, add the conversation back
+                                    setState(() {
+                                      _filteredConversations.insert(removedIndex, removedConversation);
+                                      _conversations.add(removedConversation);
+                                    });
+                                    // Re-throw to show the error message
+                                    rethrow;
+                                  }
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                  child: InkWell(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => OwnerChatScreen(
+                          userId: conversation['user_id'],
+                          userName: _getDisplayName(user, conversation['user_id']),
+                          userImage: user?['profile_image_url'],
+                        ),
+                                        ),
+                                      );
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Row(
+                                        children: [
+                                          // Avatar with online indicator
+                                          Stack(
                                             children: [
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                children: [
-                                                  Expanded(
-                                                    child: Text(
-                                                      _getDisplayName(user, conversation['user_id']),
-                                                      style: const TextStyle(
-                                                        fontWeight: FontWeight.w600,
-                                                        fontSize: 16,
-                                                        color: Colors.black,
-                                                      ),
-                                                      overflow: TextOverflow.ellipsis,
-                                                      maxLines: 2,
+                                              CircleAvatar(
+                                                radius: 28,
+                                                backgroundColor: Colors.grey[200],
+                                                child: user?['profile_image_url'] != null
+                                                    ? ClipOval(
+                                                        child: OptimizedImage(
+                                                          imageUrl: user!['profile_image_url'],
+                                                          width: 56,
+                                                          height: 56,
+                                                          fit: BoxFit.cover,
+                                                          placeholder: const Icon(Icons.person, color: Colors.grey),
+                                                        ),
+                                                      )
+                                                    : const Icon(Icons.person, color: Colors.grey, size: 30),
+                                              ),
+                                              // Online/Offline indicator
+                                              if ((user?['user_is_online'] ?? false) == true) // Green for online
+                                                Positioned(
+                                                  bottom: 2,
+                                                  right: 2,
+                                                  child: Container(
+                                                    width: 12,
+                                                    height: 12,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.green,
+                                                      shape: BoxShape.circle,
+                                                      border: Border.all(color: Colors.white, width: 2),
                                                     ),
                                                   ),
-                                                  if (lastMessage != null)
-                                                    Flexible(
-                                                      child: Text(
-                                                        _formatTime(lastMessage['created_at']),
-                                                        style: TextStyle(
-                                                          color: Colors.grey[500],
-                                                          fontSize: 12,
-                                                        ),
-                                                        overflow: TextOverflow.ellipsis,
-                                                      ),
+                                                )
+                                              else if ((user?['user_is_online'] ?? false) == false) // Red for offline
+                                                Positioned(
+                                                  bottom: 2,
+                                                  right: 2,
+                                                  child: Container(
+                                                    width: 12,
+                                                    height: 12,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.red,
+                                                      shape: BoxShape.circle,
+                                                      border: Border.all(color: Colors.white, width: 2),
                                                     ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                lastMessage?['content'] ?? 'No messages yet',
-                                                style: TextStyle(
-                                                  color: Colors.grey[600],
-                                                  fontSize: 14,
+                                                  ),
                                                 ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
                                             ],
                                           ),
-                                        ),
-                                      ],
+                                          const SizedBox(width: 16),
+                                          // Message content
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        _getDisplayName(user, conversation['user_id']),
+                                                        style: const TextStyle(
+                                                          fontWeight: FontWeight.w600,
+                                                          fontSize: 16,
+                                                          color: Colors.black,
+                                                        ),
+                                                        overflow: TextOverflow.ellipsis,
+                                                        maxLines: 2,
+                                                      ),
+                                                    ),
+                                                    if (lastMessage != null)
+                                                      Flexible(
+                                                        child: Text(
+                                                          _formatTime(lastMessage['created_at']),
+                                                          style: TextStyle(
+                                                            color: Colors.grey[500],
+                                                            fontSize: 12,
+                                                          ),
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  lastMessage?['content'] ?? 'No messages yet',
+                                                  style: TextStyle(
+                                                    color: Colors.grey[600],
+                                                    fontSize: 14,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
