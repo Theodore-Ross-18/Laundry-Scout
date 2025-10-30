@@ -235,14 +235,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                                   color: Color(0xFF7B61FF),
                                   fontWeight: FontWeight.bold,
                                   fontSize: 24,
-                                ),
-                              ),
-                              TextSpan(
-                                text: "'s Profile",
-                                style: TextStyle(
-                                  color: Colors.black87,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 24,
+                                  fontFamily: 'Popins',
                                 ),
                               ),
                             ],
