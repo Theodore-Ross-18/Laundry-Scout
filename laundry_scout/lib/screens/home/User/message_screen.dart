@@ -9,6 +9,9 @@ import '../../../services/connection_service.dart';
 import '../../../services/message_queue_service.dart';
 import '../../../services/realtime_message_service.dart';
 import '../../../widgets/optimized_image.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:laundry_scout/screens/home/User/getdirection.dart';
 
 
 class MessageScreen extends StatefulWidget {
@@ -1302,6 +1305,14 @@ class _ChatAssistWidgetState extends State<ChatAssistWidget> {
 
   String _getLocationInformation() {
     final address = _businessData!['business_address'] ?? 'Address not specified';
+    final latitude = _businessData!['latitude'];
+    final longitude = _businessData!['longitude'];
+    
+    if (latitude != null && longitude != null) {
+      // Return special marker to indicate location with map
+      return 'MAP_LOCATION:$address';
+    }
+    
     return 'You can find us at:\n$address\n\nWe\'re conveniently located to serve your laundry needs. Feel free to visit us!';
   }
 
@@ -1339,11 +1350,27 @@ class _ChatAssistWidgetState extends State<ChatAssistWidget> {
   void _addBotMessage(String message) {
     setState(() {
       _isTyping = false;
-      _chatMessages.add({
-        'isBot': true,
-        'message': message,
-        'timestamp': DateTime.now(),
-      });
+      
+      if (message.startsWith('MAP_LOCATION:')) {
+        final address = message.substring('MAP_LOCATION:'.length);
+        final latitude = _businessData!['latitude'];
+        final longitude = _businessData!['longitude'];
+        
+        _chatMessages.add({
+          'isBot': true,
+          'message': 'You can find us at:\n$address\n\nWe\'re conveniently located to serve your laundry needs. Feel free to visit us!',
+          'timestamp': DateTime.now(),
+          'showMap': true,
+          'latitude': latitude,
+          'longitude': longitude,
+        });
+      } else {
+        _chatMessages.add({
+          'isBot': true,
+          'message': message,
+          'timestamp': DateTime.now(),
+        });
+      }
     });
   }
 
@@ -1380,12 +1407,24 @@ class _ChatAssistWidgetState extends State<ChatAssistWidget> {
                       color: Colors.white,
                     ),
                   ),
-                  Text(
-                    '${widget.businessName} is currently offline',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.8),
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.businessName,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      Text(
+                        'is currently offline',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1493,6 +1532,10 @@ class _ChatAssistWidgetState extends State<ChatAssistWidget> {
                         color: _isTyping ? Colors.grey[500] : Colors.grey[600],
                         fontSize: 14,
                       ),
+                    ),
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 14,
                     ),
                     enabled: !_isTyping,
                     onSubmitted: _handleUserMessage,
@@ -1624,13 +1667,112 @@ class _ChatAssistWidgetState extends State<ChatAssistWidget> {
                         ),
                       ],
                     )
-                  : Text(
-                      message['message'] as String,
-                      style: TextStyle(
-                        color: isBot ? Colors.black87 : Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
+                  : message['showMap'] == true
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              message['message'] as String,
+                              style: TextStyle(
+                                color: isBot ? Colors.black87 : Colors.white,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Column(
+                              children: [
+                                Container(
+                                  height: 200,
+                                  width: 250,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.grey[300]!),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: FlutterMap(
+                                      options: MapOptions(
+                                        initialCenter: LatLng(
+                                          message['latitude'] as double,
+                                          message['longitude'] as double,
+                                        ),
+                                        initialZoom: 15.0,
+                                        minZoom: 15.0,
+                                        maxZoom: 15.0,
+                                        interactionOptions: const InteractionOptions(
+                                          flags: InteractiveFlag.none,
+                                        ),
+                                      ),
+                                      children: [
+                                        TileLayer(
+                                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                        ),
+                                        MarkerLayer(
+                                          markers: [
+                                            Marker(
+                                              point: LatLng(
+                                                message['latitude'] as double,
+                                                message['longitude'] as double,
+                                              ),
+                                              width: 40,
+                                              height: 40,
+                                              child: const Icon(
+                                                Icons.location_pin,
+                                                color: Colors.red,
+                                                size: 30,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: 250,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => GetDirectionScreen(
+                                            destinationLatitude: message['latitude'] as double,
+                                            destinationLongitude: message['longitude'] as double,
+                                            businessName: widget.businessName,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF5A35E3),
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Get Direction',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        )
+                      : Text(
+                          message['message'] as String,
+                          style: TextStyle(
+                            color: isBot ? Colors.black87 : Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
             ),
           ),
           
