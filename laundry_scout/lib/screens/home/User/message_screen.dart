@@ -883,6 +883,18 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             child: Row(
               children: [
+                IconButton(
+                  icon: const Icon(Icons.camera_alt, color: Color(0xFF5A35E3)),
+                  onPressed: () {
+                    // Handle camera action
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.photo, color: Color(0xFF5A35E3)),
+                  onPressed: () {
+                    // Handle photo action
+                  },
+                ),
                 Expanded(
                   child: TextField(
                     controller: _messageController,
