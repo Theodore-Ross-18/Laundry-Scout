@@ -1418,7 +1418,7 @@ class HomeScreenBody extends StatelessWidget {
                                 children: [
                                   LaundryShopImageCard(
                                     imageUrl: shop['cover_photo_url'],
-                                    height: 90,
+                                    height: 100,
                                     borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
                                   ),
                                   Padding(
@@ -1477,7 +1477,7 @@ class HomeScreenBody extends StatelessWidget {
                         },
                       ),
               ),
-              const SizedBox(height: 20), 
+              const SizedBox(height: 2), 
             ],
           ),
         ),
