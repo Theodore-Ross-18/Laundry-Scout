@@ -48,6 +48,24 @@ class _OrdersScreenState extends State<OrdersScreen> {
         ordersWithUserDetails.add(order);
       }
 
+      // Ensure 'items' is correctly typed as Map<String, int>
+      for (var order in ordersWithUserDetails) {
+        if (order['items'] is List<dynamic>) {
+          // Convert List<dynamic> to Map<String, int> if necessary
+          // This assumes the list contains alternating service name and quantity, e.g., ["Wash", 1, "Dry", 1]
+          Map<String, int> itemsMap = {};
+          List<dynamic> itemsList = order['items'];
+          for (int i = 0; i < itemsList.length; i += 2) {
+            if (i + 1 < itemsList.length && itemsList[i] is String && itemsList[i+1] is int) {
+              itemsMap[itemsList[i]] = itemsList[i+1];
+            }
+          }
+          order['items'] = itemsMap;
+        } else if (order['items'] == null) {
+          order['items'] = <String, int>{};
+        }
+      }
+
       if (mounted) {
         setState(() {
           _orders = List<Map<String, dynamic>>.from(ordersWithUserDetails);
@@ -282,7 +300,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 if (status == 'pending' || status == 'in_progress')
                   TextButton(
                     onPressed: () => _setOrderAsComplete(order['id']),
-                    child: const Text('Set as Complete', style: TextStyle(color: Color(0xFF5A35E3))),
+                    child: const Text('Accept', style: TextStyle(color: Color(0xFF5A35E3))),
+                  ),
+                if (status == 'pending' || status == 'in_progress')
+                  TextButton(
+                    onPressed: () {
+                      _showCancelOrderDialog(context, order['id']);
+                    },
+                    child: const Text('Cancel', style: TextStyle(color: Colors.red)),
                   ),
                 TextButton(
                   onPressed: () {
@@ -301,5 +326,59 @@ class _OrdersScreenState extends State<OrdersScreen> {
         ),
       ),
     );
+  }
+
+  void _showCancelOrderDialog(BuildContext context, String orderId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Cancel Order', style: TextStyle(color: Colors.black)),
+          content: const Text('Are you sure you want to cancel this order?', style: TextStyle(color: Colors.black)),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('No', style: TextStyle(color: Colors.black)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Yes', style: TextStyle(color: Colors.red)),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _cancelOrder(orderId);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _cancelOrder(String orderId) async {
+    try {
+      await Supabase.instance.client
+          .from('orders')
+          .update({'status': 'cancelled'})
+          .eq('id', orderId);
+      _loadOrders();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order cancelled successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel order: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

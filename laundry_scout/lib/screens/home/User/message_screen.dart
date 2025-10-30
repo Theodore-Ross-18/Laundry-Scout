@@ -1,4 +1,7 @@
+// ignore_for_file: unused_field
+
 import 'package:flutter/material.dart';
+import '../../../services/session_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'dart:developer';
@@ -21,6 +24,8 @@ class _MessageScreenState extends State<MessageScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredConversations = [];
   Timer? _backgroundRefreshTimer;
+  Timer? _feedbackTimer; // Added feedback timer
+  final SessionService _sessionService = SessionService();
 
   @override
   void initState() {
@@ -28,6 +33,7 @@ class _MessageScreenState extends State<MessageScreen> {
     _loadConversations();
     _setupRealtimeSubscription();
     _startBackgroundRefresh();
+    _checkAndShowFeedbackModal();
   }
 
   @override
@@ -57,7 +63,8 @@ class _MessageScreenState extends State<MessageScreen> {
             *,
             business_profiles(
               business_name,
-              cover_photo_url
+              cover_photo_url,
+              owner_is_online
             )
           ''')
           .eq('user_id', user.id)
@@ -107,7 +114,8 @@ class _MessageScreenState extends State<MessageScreen> {
             *,
             business_profiles(
               business_name,
-              cover_photo_url
+              cover_photo_url,
+              owner_is_online
             )
           ''')
           .eq('user_id', user.id)
@@ -198,9 +206,8 @@ class _MessageScreenState extends State<MessageScreen> {
       body: SafeArea(
         child: Column(
           children: [
-         
             const SizedBox(height: 10),
-           
+            // Messages section header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Row(
@@ -280,15 +287,25 @@ class _MessageScreenState extends State<MessageScreen> {
                                             Positioned(
                                               bottom: 2,
                                               right: 2,
-                                              child: Container(
-                                                width: 12,
-                                                height: 12,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.green,
-                                                  shape: BoxShape.circle,
-                                                  border: Border.all(color: Colors.white, width: 2),
-                                                ),
-                                              ),
+                                              child: (business['owner_is_online'] ?? false) == true
+                                                  ? Container(
+                                                      width: 12,
+                                                      height: 12,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.green,
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(color: Colors.white, width: 2),
+                                                      ),
+                                                    )
+                                                  : Container(
+                                                      width: 12,
+                                                      height: 12,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.red,
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(color: Colors.white, width: 2),
+                                                      ),
+                                                    ),
                                             ),
                                           ],
                                         ),
@@ -349,32 +366,6 @@ class _MessageScreenState extends State<MessageScreen> {
               ),
             ),
            
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.all(20),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _showFeedbackModal(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5A35E3),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Feedback',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -397,10 +388,21 @@ class _MessageScreenState extends State<MessageScreen> {
     }
   }
 
+  Future<void> _checkAndShowFeedbackModal() async {
+    if (!_sessionService.hasShownUserFeedbackModalThisSession) {
+      _feedbackTimer = Timer(const Duration(minutes: 20), () {
+        if (mounted) {
+          _showFeedbackModal();
+          _sessionService.hasShownUserFeedbackModalThisSession = true;
+        }
+      });
+    }
+  }
+
   void _showFeedbackModal() {
     showDialog(
       context: context,
-      builder: (context) => const FeedbackModal(),
+      builder: (context) => FeedbackModal(userId: Supabase.instance.client.auth.currentUser!.id),
     );
   }
 
@@ -444,7 +446,9 @@ class _ChatScreenState extends State<ChatScreen> {
   late StreamSubscription _qualitySubscription;
   late StreamSubscription _messageSubscription;
   RealtimeChannel? _currentChannel;
-  Timer? _backgroundRefreshTimer; 
+  Timer? _backgroundRefreshTimer;
+  String? _userUsername;
+  String? _userProfileImage; 
 
   @override
   void initState() {
@@ -452,6 +456,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _realtimeService.initialize();
     _connectionService.startMonitoring();
     _messageQueue.startQueue();
+    _loadUserProfile();
     _loadMessages();
     _setupRealtimeSubscription();
     _setupQualityListener();
@@ -477,6 +482,33 @@ class _ChatScreenState extends State<ChatScreen> {
         _refreshMessagesInBackground();
       }
     });
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final response = await Supabase.instance.client
+          .from('user_profiles')
+          .select('username, profile_image_url')
+          .eq('id', user.id)
+          .single();
+
+      if (mounted) {
+        setState(() {
+          _userUsername = response['username'] ?? 'You';
+          _userProfileImage = response['profile_image_url'];
+        });
+      }
+    } catch (e) {
+      log('Error loading user profile: $e');
+      if (mounted) {
+        setState(() {
+          _userUsername = 'You';
+        });
+      }
+    }
   }
 
   Future<void> _refreshMessagesInBackground() async {
@@ -576,57 +608,47 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildConnectionIndicator() {
-    Color color = Colors.grey;
-    String text = 'Unknown';
-    IconData icon = Icons.signal_cellular_off;
-    
-    switch (_connectionQuality) {
-      case ConnectionQuality.excellent:
-        color = Colors.green;
-        text = 'Excellent';
-        icon = Icons.signal_cellular_4_bar;
-        break;
-      case ConnectionQuality.good:
-        color = Colors.lightGreen;
-        text = 'Good';
-        icon = Icons.signal_cellular_4_bar;
-        break;
-      case ConnectionQuality.fair:
-        color = Colors.orange;
-        text = 'Fair';
-        icon = Icons.signal_cellular_alt;
-        break;
-      case ConnectionQuality.poor:
-        color = Colors.red;
-        text = 'Poor';
-        icon = Icons.signal_cellular_connected_no_internet_0_bar;
-        break;
-      case ConnectionQuality.offline:
-        color = Colors.grey;
-        text = 'Offline';
-        icon = Icons.signal_cellular_off;
-        break;
-    }
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500),
+    return StreamBuilder<List<Map<String, dynamic>>>( // Use StreamBuilder for real-time updates
+      stream: _streamBusinessLoginStatus(widget.businessId), // Stream login status for the business
+      builder: (context, snapshot) {
+        bool isOnline = false;
+        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+          isOnline = snapshot.data![0]['owner_is_online'] == true; // Check 'owner_is_online' field
+        }
+
+        Color color = isOnline ? Colors.green : const Color.fromARGB(255, 222, 0, 0);
+        String text = isOnline ? 'Online' : 'Offline';
+        IconData icon = isOnline ? Icons.circle : Icons.circle_outlined;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.3)),
           ),
-        ],
-      ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 12, color: color),
+              const SizedBox(width: 4),
+              Text(
+                text,
+                style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        );
+      },
     );
+  }
+
+  Stream<List<Map<String, dynamic>>> _streamBusinessLoginStatus(String businessId) {
+    return Supabase.instance.client
+        .from('business_profiles')
+        .stream(primaryKey: ['id'])
+        .eq('id', businessId)
+        .order('id', ascending: true);
   }
 
   void _scrollToBottom() {
@@ -646,6 +668,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final user = Supabase.instance.client.auth.currentUser;
     
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: const Color(0xFF5A35E3),
         title: Row(
@@ -742,7 +765,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   right: isMe ? 8 : 0,
                                 ),
                                 child: Text(
-                                  isMe ? (user?.userMetadata?['full_name'] ?? 'You') : widget.businessName,
+                                  isMe ? ( 'You') : widget.businessName,
                                   style: const TextStyle(
                                     color: Colors.grey,
                                     fontSize: 12,
@@ -752,22 +775,27 @@ class _ChatScreenState extends State<ChatScreen> {
                               ),
                               
                              
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: isMe ? const Color(0xFF5A35E3) : Colors.grey[200],
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: const Radius.circular(20),
-                                    topRight: const Radius.circular(20),
-                                    bottomLeft: Radius.circular(isMe ? 20 : 4),
-                                    bottomRight: Radius.circular(isMe ? 4 : 20),
-                                  ),
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: MediaQuery.of(context).size.width * 0.7,
                                 ),
-                                child: Text(
-                                  message['content'],
-                                  style: TextStyle(
-                                    color: isMe ? Colors.white : Colors.black,
-                                    fontSize: 16,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: isMe ? const Color(0xFF5A35E3) : Colors.grey[200],
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: const Radius.circular(12),
+                                      topRight: const Radius.circular(12),
+                                      bottomLeft: Radius.circular(isMe ? 12 : 2),
+                                      bottomRight: Radius.circular(isMe ? 2 : 12),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    message['content'],
+                                    style: TextStyle(
+                                      color: isMe ? Colors.white : Colors.black87,
+                                      fontSize: 15,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -788,9 +816,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                     if (isMe) ...[
                                       const SizedBox(width: 4),
                                       Icon(
-                                        isSending ? Icons.access_time : Icons.done,
+                                        isSending ? Icons.access_time : Icons.done_all,
                                         size: 14,
-                                        color: isSending ? Colors.orange : Colors.green,
+                                        color: isSending ? Colors.orange : Colors.blue,
                                       ),
                                     ],
                                   ],
@@ -806,14 +834,31 @@ class _ChatScreenState extends State<ChatScreen> {
                           CircleAvatar(
                             radius: 16,
                             backgroundColor: const Color(0xFF5A35E3),
-                            child: Text(
-                              user?.userMetadata?['full_name']?.substring(0, 1).toUpperCase() ?? 'U',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            child: _userProfileImage != null
+                                ? ClipOval(
+                                    child: OptimizedImage(
+                                      imageUrl: _userProfileImage!,
+                                      width: 32,
+                                      height: 32,
+                                      fit: BoxFit.cover,
+                                      placeholder: Text(
+                                        _userUsername?.substring(0, 1).toUpperCase() ?? 'U',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Text(
+                                    _userUsername?.substring(0, 1).toUpperCase() ?? 'U',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                         ],
                       ],
@@ -826,7 +871,7 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF5A35E3),
+              color: const Color.fromARGB(255, 255, 255, 255),
               boxShadow: [
                 BoxShadow(
                   color: const Color.fromARGB(51, 0, 0, 0),
@@ -841,19 +886,19 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _messageController,
-                    style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+                    style: const TextStyle(color: Colors.black87),
                     decoration: InputDecoration(
                       hintText: 'Type your message here...',
-                      hintStyle: TextStyle(color: const Color.fromARGB(255, 255, 255, 255)),
+                      hintStyle: TextStyle(color: Colors.grey[600]),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(25),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: const Color.fromARGB(46, 255, 255, 255),
+                      fillColor: Colors.grey[100],
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
-                        vertical: 10,
+                        vertical: 12,
                       ),
                     ),
                     onSubmitted: (_) => _sendMessage(),
@@ -942,7 +987,8 @@ class _ChatScreenState extends State<ChatScreen> {
 }
 
 class FeedbackModal extends StatefulWidget {
-  const FeedbackModal({super.key});
+  final String? userId;
+  const FeedbackModal({super.key, this.userId});
 
   @override
   State<FeedbackModal> createState() => _FeedbackModalState();
@@ -950,7 +996,7 @@ class FeedbackModal extends StatefulWidget {
 
 class _FeedbackModalState extends State<FeedbackModal> {
   final TextEditingController _feedbackController = TextEditingController();
-  int _rating = 0;
+  int _rating = 3; // Changed initial rating to 3
   bool _isSubmitted = false;
 
   @override
@@ -999,9 +1045,10 @@ class _FeedbackModalState extends State<FeedbackModal> {
     
       await Supabase.instance.client.from('feedback').insert({
         'user_id': user.id,
+        'business_id': null,
         'rating': _rating,
         'comment': _feedbackController.text.trim(),
-        'feedback_type': 'admin', 
+        'feedback_type': 'admin',
         'created_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       });
@@ -1037,191 +1084,164 @@ class _FeedbackModalState extends State<FeedbackModal> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Container(
-        margin: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white, // Changed from gradient to white
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              const Text(
-                'Give Us Your Feedback',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Give Us Your Feedback',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Do you have any thoughts you would\nlike to share?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.black54,
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Removed 'Rate your experience' text
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (index) {
+                return IconButton(
+                  icon: Icon(
+                    index < _rating ? Icons.star : Icons.star_border,
+                    color: const Color(0xFFFFC107),
+                    size: 35,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _rating = index + 1;
+                    });
+                  },
+                );
+              }),
+            ),
+            const SizedBox(height: 24),
+            // Feedback text area
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7FAFC),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(
+                  color: Colors.grey[200]!,
+                  width: 1,
+                ),
+              ),
+              child: TextField(
+                controller: _feedbackController,
+                maxLines: 5,
+                style: const TextStyle(
+                  fontSize: 16,
                   color: Color(0xFF2D3748),
                 ),
-              ),
-              const SizedBox(height: 8),
-              // Star rating display
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  return Icon(
-                    Icons.star,
-                    color: Colors.grey[300],
-                    size: 24,
-                  );
-                }),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Do you have any thoughts you would\nlike to share?',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF718096),
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              // Interactive star rating
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _rating = index + 1;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(
-                        Icons.star,
-                        color: index < _rating ? const Color(0xFFFFB800) : Colors.grey[300],
-                        size: 36,
-                      ),
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 24),
-              // Feedback text area
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF7FAFC),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color: Colors.grey[200]!,
-                    width: 1,
-                  ),
-                ),
-                child: TextField(
-                  controller: _feedbackController,
-                  maxLines: 5,
-                  style: const TextStyle(
+                decoration: const InputDecoration(
+                  hintText: 'Leave Your Thoughts Here...',
+                  hintStyle: TextStyle(
+                    color: Color(0xFFA0AEC0),
                     fontSize: 16,
-                    color: Color(0xFF2D3748),
                   ),
-                  decoration: const InputDecoration(
-                    hintText: 'Leave Your Thoughts Here...',
-                    hintStyle: TextStyle(
-                      color: Color(0xFFA0AEC0),
-                      fontSize: 16,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.all(16),
-                  ),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
                 ),
               ),
-              const SizedBox(height: 30),
-              // Action buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 50,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(25),
-                        border: Border.all(
-                          color: Colors.grey[300]!,
-                          width: 1,
+            ),
+            const SizedBox(height: 30),
+            // Action buttons
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(
+                        color: Colors.grey[300]!,
+                        width: 1,
+                      ),
+                    ),
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.black,
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
                         ),
                       ),
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: TextButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                        ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(
-                            color: Color(0xFF718096),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          color: Color(0xFF718096),
+                          fontSize: 16, // Changed font size
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Container(
-                      height: 50,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(25),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF5A35E3), Color(0xFF9C88FF)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(25),
+                      color: const Color(0xFF5A35E3), // Changed to solid color
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF5A35E3).withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF5A35E3).withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _isSubmitted ? null : _submitFeedback,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
                       ),
-                      child: ElevatedButton(
-                        onPressed: _isSubmitted ? null : _submitFeedback,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                        ),
-                        child: _isSubmitted
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text(
-                                'Submit',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                      child: _isSubmitted
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
                               ),
-                      ),
+                            )
+                          : const Text(
+                              'Submit',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16, // Changed font size
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

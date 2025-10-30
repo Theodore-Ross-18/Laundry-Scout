@@ -28,7 +28,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
   final _specialInstructionsController = TextEditingController();
   String? _selectedAddress;
   Map<String, String>? _selectedSchedule;
-  List<String> _selectedServices = []; 
+  Map<String, int> _selectedServices = {}; 
   List<Map<String, dynamic>> _pricelist = []; 
   bool _isExpanded = false; 
   String _specialInstructions = ''; 
@@ -43,7 +43,9 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
   final TextEditingController _longitudeController = TextEditingController();
   String? _firstName; 
   String? _lastName; 
+  String? _phoneNumber; // Declared here
   final TextEditingController _fullNameController = TextEditingController(); 
+  final TextEditingController _phoneNumberController = TextEditingController(); // Declared here
 
   @override
   void initState() {
@@ -60,6 +62,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
     _latitudeController.dispose();
     _longitudeController.dispose();
     _fullNameController.dispose(); 
+    _phoneNumberController.dispose(); // Dispose here
     super.dispose();
   }
 
@@ -94,7 +97,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
       if (user != null) {
         final userProfile = await Supabase.instance.client
             .from('user_profiles')
-            .select('latitude, longitude, first_name, last_name')
+            .select('latitude, longitude, first_name, last_name, mobile_number')
             .eq('id', user.id)
             .single();
 
@@ -106,7 +109,9 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
             _longitudeController.text = _longitude?.toString() ?? '';
             _firstName = userProfile['first_name']; 
             _lastName = userProfile['last_name'];
+            _phoneNumber = userProfile['mobile_number']; // Add this line
             _fullNameController.text = '${_firstName ?? ''} ${_lastName ?? ''}';
+            _phoneNumberController.text = _phoneNumber ?? ''; // Add this line
           });
         }
 
@@ -269,9 +274,18 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                       style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 24),
-                    _buildServicesSection(),
-                    const SizedBox(height: 16),
                     _buildAddressSection(),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Place your Order',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildServicesSection(),
                     const SizedBox(height: 16),
                     _buildScheduleSection(),
                     const SizedBox(height: 16),
@@ -300,88 +314,84 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
           ),
         ),
         const SizedBox(height: 10),
-        TextFormField(
-          controller: _fullNameController,
-          readOnly: true,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-          decoration: InputDecoration(
-            labelText: 'Full Name',
-            labelStyle: TextStyle(color: Colors.grey[600]),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF5A35E3)),
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-        TextFormField(
-          controller: _currentAddressController,
-          style: const TextStyle(color: Colors.black),
-          decoration: InputDecoration(
-            labelText: 'Current Address',
-            labelStyle: TextStyle(color: Colors.grey[600]),
-            hintText: 'Enter your current address',
-            hintStyle: TextStyle(color: Colors.grey[400]),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF5A35E3)),
-            ),
-          ),
-          onChanged: (value) {
-            setState(() {
-              _selectedAddress = value;
-            });
-          },
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () async {
-              final LatLng? selectedLocation = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PickDropMapScreen(
-                                            initialLatitude: _latitude ?? 0.0,
-                                            initialLongitude: _longitude ?? 0.0,
-                                          ),
+        GestureDetector(
+          onTap: () async {
+            final LatLng? selectedLocation = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PickDropMapScreen(
+                  initialLatitude: _latitude ?? 0.0,
+                  initialLongitude: _longitude ?? 0.0,
                 ),
-              );
-              if (selectedLocation != null) {
-                setState(() {
-                  _latitude = selectedLocation.latitude;
-                  _longitude = selectedLocation.longitude;
-                  _latitudeController.text = _latitude.toString();
-                  _longitudeController.text = _longitude.toString();
-                });
-              }
-            },
-            icon: const Icon(Icons.map, color: Colors.white),
-            label: const Text(
-              'Pin Location on Map',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF5A35E3),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
               ),
+            );
+            if (selectedLocation != null) {
+              setState(() {
+                _latitude = selectedLocation.latitude;
+                _longitude = selectedLocation.longitude;
+                _latitudeController.text = _latitude.toString();
+                _longitudeController.text = _longitude.toString();
+              });
+              _loadAddresses(); // Refresh data after returning from map screen
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on,
+                      color: Color(0xFF5A35E3),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        '${_fullNameController.text}  (+63) ${_phoneNumberController.text}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    const Icon(
+                      Icons.arrow_forward_ios,
+                      color: Colors.grey,
+                      size: 16,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(left: 30.0), // Adjust padding to align with the text above
+                  child: Text(
+                    _currentAddressController.text.isEmpty ? 'Add your Address here' : _currentAddressController.text,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
+
       ],
     );
   }
@@ -414,7 +424,7 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
         );
         if (result != null) {
           setState(() {
-            _selectedServices = List<String>.from(result);
+            _selectedServices = Map<String, int>.from(result);
           });
         }
       },
@@ -476,6 +486,11 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
     );
   }
 
+  String? _selectedPickupTime;
+  String? _selectedDropoffTime;
+  DateTime? _selectedPickupDate;
+  DateTime? _selectedDropoffDate;
+
   Widget _buildScheduleSection() {
     return GestureDetector(
       onTap: () async {
@@ -484,17 +499,26 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
           MaterialPageRoute(
             builder: (context) => ScheduleSelectionScreen(
               selectedSchedule: _selectedSchedule,
-              availablePickupTimeSlots: _businessProfile?['available_pickup_time_slots']?.cast<String>() ?? [],
-              availableDropoffTimeSlots: _businessProfile?['available_dropoff_time_slots']?.cast<String>() ?? [],
+              availablePickupTimeSlots: widget.availablePickupTimeSlots,
+              availableDropoffTimeSlots: widget.availableDropoffTimeSlots,
             ),
           ),
         );
         if (result != null) {
           setState(() {
-            _selectedSchedule = {
-              if (result['pickup'] != null) 'pickup': result['pickup'] as String,
-              if (result['dropoff'] != null) 'dropoff': result['dropoff'] as String,
-            };
+            _selectedSchedule = Map<String, String>.from(result);
+            if (result['pickup'] != null) {
+              _selectedPickupTime = result['pickup'] as String;
+            }
+            if (result['dropoff'] != null) {
+              _selectedDropoffTime = result['dropoff'] as String;
+            }
+            if (result['pickupDate'] != null) {
+              _selectedPickupDate = DateTime.parse(result['pickupDate']);
+            }
+            if (result['dropoffDate'] != null) {
+              _selectedDropoffDate = DateTime.parse(result['dropoffDate']);
+            }
           });
         }
       },
@@ -545,10 +569,10 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                 ],
               ),
             ),
-            Icon(
-              Icons.add,
-              color: Colors.grey[400],
-              size: 20,
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.grey,
+              size: 16,
             ),
           ],
         ),
@@ -639,7 +663,8 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
                             _selectedServices.isNotEmpty && 
                             _selectedSchedule != null &&
                             _latitude != null && 
-                            _longitude != null;
+                            _longitude != null &&
+                            (_selectedSchedule != null && (_selectedSchedule!.containsKey('pickup') || _selectedSchedule!.containsKey('dropoff')));
     
     return SizedBox(
       width: double.infinity,
@@ -740,21 +765,44 @@ class _OrderPlacementScreenState extends State<OrderPlacementScreen> {
       return;
     }
 
+    if (_selectedServices.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one service.')),
+      );
+      return;
+    }
+
+    if (_selectedSchedule == null || _selectedSchedule!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a pick-up and drop-off schedule.')),
+      );
+      return;
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => OrderConfirmationScreen(
-          businessData: widget.businessData,
+          businessData: {
+            ...widget.businessData,
+            'first_name': _firstName,
+            'last_name': _lastName,
+            'phone_number': _phoneNumber,
+            'latitude': _latitude,
+            'longitude': _longitude,
+          },
           address: _currentAddressController.text,
           services: _selectedServices,
           schedule: _selectedSchedule!,
-          specialInstructions: _specialInstructions,
-          termsAndConditions: _businessProfile?['terms_and_conditions'] ?? 'No terms and conditions provided.', // Pass terms and conditions
-          latitude: _latitude, 
-          longitude: _longitude,
+          laundryShopName: widget.businessData['business_name'],
           firstName: _firstName,
           lastName: _lastName,
-          laundryShopName: _businessProfile?['business_name'],
+          phoneNumber: _phoneNumber,
+          pickupDate: _selectedPickupDate,
+          dropoffDate: _selectedDropoffDate,
+          pickupTime: _selectedPickupTime,
+          dropoffTime: _selectedDropoffTime,
+          specialInstructions: _specialInstructions,
         ),
       ),
     );

@@ -27,6 +27,7 @@ class FeedbackService {
           .from('feedback')
           .select('*')
           .eq('business_id', businessId)
+          .eq('feedback_type', 'user')
           .order('created_at', ascending: false);
 
       print('Query response: $response');

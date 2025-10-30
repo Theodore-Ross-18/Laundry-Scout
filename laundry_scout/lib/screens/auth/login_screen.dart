@@ -7,6 +7,9 @@ import 'forgotpassverify_screen.dart';
 import 'dart:async'; 
 import '../../services/notification_service.dart';
 import 'package:laundry_scout/widgets/animated_eye_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/session_service.dart'; // Import SessionService
+
 
 Route _createFadeRoute(Widget page) {
   return PageRouteBuilder(
@@ -41,6 +44,38 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _showSlides = false;
   String? _userType; 
   Timer? _timer; 
+
+  Future<bool> _shouldShowSlides() async {
+  final prefs = await SharedPreferences.getInstance();
+  final lastShownStr = prefs.getString('last_intro_shown');
+
+  if (lastShownStr == null) {
+    // First time login
+    return true;
+  }
+
+  final lastShown = DateTime.tryParse(lastShownStr);
+  if (lastShown == null) {
+    return true;
+  }
+
+  final now = DateTime.now();
+
+  // Same day check
+  if (now.year == lastShown.year &&
+      now.month == lastShown.month &&
+      now.day == lastShown.day) {
+    return false;
+  }
+
+  final difference = now.difference(lastShown).inDays;
+  return difference >= 3;
+}
+
+Future<void> _setIntroShownDate() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('last_intro_shown', DateTime.now().toIso8601String());
+}
 
   
   List<Map<String, String>> get userSlides => [
@@ -213,7 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 final businessProfileCheck = await Supabase.instance.client
                     .from('business_profiles')
                     .select('id')
-                    .eq('id', userId)
+                    .eq('owner_id', userId)
                     .maybeSingle();
 
                 if (businessProfileCheck != null && businessProfileCheck.isNotEmpty) {
@@ -223,6 +258,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('User profile not found after login.')),
                     );
+                    SessionService().resetFeedbackFlags(); // Reset feedback flags on logout
                     await Supabase.instance.client.auth.signOut();
                   }
                   setState(() { _isLoading = false; });
@@ -232,20 +268,59 @@ class _LoginScreenState extends State<LoginScreen> {
             }
 
             if (determinedProfileType == 'user') {
-
+              // Update user_is_online to TRUE for users
+              try {
+                print('Updating user_is_online to TRUE for user: $userId');
+                final updateResult = await Supabase.instance.client
+                    .from('user_profiles')
+                    .update({'user_is_online': true})
+                    .eq('id', userId);
+                print('User online status updated successfully: $updateResult');
+              } catch (e) {
+                print('Error updating user_is_online status: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Note: Online status not updated')),
+                  );
+                }
+              }
             } else if (determinedProfileType == 'business') {
-
+              // Update owner_is_online to TRUE for business owners
+              try {
+                print('Updating owner_is_online to TRUE for user: $userId');
+                final updateResult = await Supabase.instance.client
+                    .from('business_profiles')
+                    .update({'owner_is_online': true})
+                    .eq('id', userId);
+                print('Owner online status updated successfully: $updateResult');
+              } catch (e) {
+                print('Error updating owner_is_online status: $e');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Note: Online status not updated')),
+                  );
+                }
+              }
             }
 
             NotificationService().testNotificationCreation();
             
             if (mounted) {
-              setState(() {
-                _userType = determinedProfileType;
-                _showSlides = true;
-                _isLoading = false;
-              });
-              _startSlideTimer();
+              final shouldShow = await _shouldShowSlides();
+
+              // Always set _userType before navigating
+              _userType = determinedProfileType;
+
+              if (shouldShow) {
+                await _setIntroShownDate(); // set the intro date right away
+                setState(() {
+                  _showSlides = true;
+                  _isLoading = false;
+                });
+                _startSlideTimer();
+              } else {
+                _navigateToHome();
+              }
             }
           }
         } else {
@@ -494,8 +569,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _signIn,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF5A35E3),
-                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF5A35E3),
                       minimumSize: const Size(250, 50),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 16),
@@ -509,7 +584,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('Log In'),
+                        : const Text('LOGIN'),
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -613,24 +688,24 @@ class _LoginScreenState extends State<LoginScreen> {
                 ElevatedButton(
                   onPressed: _navigateToHome,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5A35E3),
-                    foregroundColor: const Color(0xFFFFFFFF),
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF5A35E3),
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0),
                     ),
                   ),
                   child: Text(
-                    _userType == 'business' ? 'Start Managing' : 'Get Started',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    _userType == 'business' ? 'START MANAGING' : 'GET STARTED',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
                   ),
                 )
               else
                 ElevatedButton(
                    onPressed: _nextPage,
                    style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5A35E3),
-                    foregroundColor: const Color(0xFFFFFFFF),
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF5A35E3),
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0),
@@ -638,7 +713,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: const Text(
                     'Next',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
                   ),
                 ),
             ],

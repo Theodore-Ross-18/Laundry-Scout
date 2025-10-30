@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:laundry_scout/widgets/static_map_snippet.dart';
 
 class OrderConfirmationScreen extends StatefulWidget {
   final Map<String, dynamic> businessData;
   final String address;
-  final List<String> services;
+  final Map<String, int> services;
   final Map<String, String> schedule;
   final String specialInstructions;
-  final String termsAndConditions; 
   final double? latitude; 
   final double? longitude; 
-  final String? firstName; 
-  final String? lastName; 
-  final String? laundryShopName; 
+  final String? laundryShopName;
+  final String? firstName;
+  final String? lastName;
+  final String? phoneNumber;
+
+  final DateTime? pickupDate;
+  final DateTime? dropoffDate;
+  final String? pickupTime;
+  final String? dropoffTime;
 
   const OrderConfirmationScreen({
     super.key,
@@ -22,12 +28,16 @@ class OrderConfirmationScreen extends StatefulWidget {
     required this.services,
     required this.schedule,
     required this.specialInstructions,
-    required this.termsAndConditions, 
-    this.latitude, 
-    this.longitude, 
-    this.firstName, 
-    this.lastName, 
-    this.laundryShopName, 
+    this.latitude,
+    this.longitude,
+    this.laundryShopName,
+    this.firstName,
+    this.lastName,
+    this.phoneNumber,
+    this.pickupDate,
+    this.dropoffDate,
+    this.pickupTime,
+    this.dropoffTime,
   });
 
   @override
@@ -40,6 +50,10 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   Map<String, dynamic>? _fullBusinessData; 
 
   Map<String, double> _servicePrices = {}; 
+  double _deliveryFee = 0.0;
+  bool _isDeliveryFree = false; // Add this line
+  double _appliedDiscount = 0.0;
+  String? _promoTitle;
 
   @override
   void initState() {
@@ -49,13 +63,15 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
   Future<void> _loadBusinessDataAndPrices() async {
     try {
-      final response = await Supabase.instance.client
+      final businessResponse = await Supabase.instance.client
           .from('business_profiles')
-          .select('service_prices')
+          .select('service_prices, delivery_fee, is_delivery_free') // Select is_delivery_free
           .eq('id', widget.businessData['id'])
           .single();
 
-      _fullBusinessData = response;
+      _fullBusinessData = businessResponse;
+      _deliveryFee = double.tryParse(_fullBusinessData!['delivery_fee'].toString()) ?? 0.0;
+      _isDeliveryFree = _fullBusinessData!['is_delivery_free'] ?? false; // Load is_delivery_free
 
       if (_fullBusinessData != null && _fullBusinessData!['service_prices'] != null) {
         final servicePricesData = _fullBusinessData!['service_prices'];
@@ -75,6 +91,29 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
           });
         }
       }
+
+      // Fetch promo data
+      final promoResponse = await Supabase.instance.client
+          .from('promos')
+          .select('promo_title, discount')
+          .eq('business_id', widget.businessData['id'])
+          .limit(1); // Get only one promo for now
+
+      if (promoResponse.isNotEmpty) {
+        final promo = promoResponse.first;
+        _promoTitle = promo['promo_title'];
+        final discountString = promo['discount'];
+
+        if (discountString != null) {
+          if (discountString.endsWith('%')) {
+            final percentage = double.tryParse(discountString.replaceAll('%', '')) ?? 0.0;
+            _appliedDiscount = _subtotal * (percentage / 100);
+          } else {
+            _appliedDiscount = double.tryParse(discountString) ?? 0.0;
+          }
+        }
+      }
+
       setState(() {}); 
     } catch (e) {
       print('Error loading business data and prices: $e');
@@ -82,13 +121,14 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   }
 
   double get _subtotal {
-    return widget.services.fold(0.0, (sum, service) {
-      return sum + (_servicePrices[service] ?? 0.0);
+    return widget.services.entries.fold(0.0, (sum, entry) {
+      final serviceName = entry.key;
+      final quantity = entry.value;
+      return sum + ((_servicePrices[serviceName] ?? 0.0) * quantity);
     });
   }
 
-  double get _deliveryFee => 54.0;
-  double get _total => _subtotal + _deliveryFee;
+  double get _total => (_subtotal - _appliedDiscount) + (_isDeliveryFree ? 0.0 : _deliveryFee);
 
   String _generateOrderId() {
     final now = DateTime.now();
@@ -99,8 +139,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   @override
   Widget build(BuildContext context) {
     final orderId = _generateOrderId();
-    final pickupDate = DateTime.now().add(const Duration(days: 1));
-    final dropoffDate = pickupDate.add(const Duration(days: 1));
+    final pickupDate = widget.pickupDate ?? DateTime.now();
+    final dropoffDate = widget.dropoffDate ?? pickupDate.add(const Duration(days: 1));
 
     return Scaffold(
       backgroundColor: const Color(0xFF5A35E3),
@@ -202,7 +242,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              widget.schedule['pickup'] != null && widget.schedule['dropoff'] == null
+                                              widget.schedule['pickup']!.isNotEmpty && widget.schedule['dropoff']!.isEmpty
                                                   ? 'Pickup only'
                                                   : 'Pickup at',
                                               style: TextStyle(
@@ -211,13 +251,14 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                                 color: Colors.black87,
                                               ),
                                             ),
-                                            Text(
-                                              '${DateFormat('MMM dd, yyyy').format(pickupDate)} | ${widget.schedule['pickup'] ?? ''}',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey[600],
+                                            if (widget.schedule['pickup']!.isNotEmpty)
+                                              Text(
+                                                '${DateFormat('MMM dd, yyyy').format(pickupDate)} | ${widget.schedule['pickup']}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey[600],
+                                                ),
                                               ),
-                                            ),
                                           ],
                                         ),
                                       ),
@@ -244,7 +285,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              widget.schedule['dropoff'] != null && widget.schedule['pickup'] == null
+                                              widget.schedule['dropoff']!.isNotEmpty && widget.schedule['pickup']!.isEmpty
                                                   ? 'Drop off only'
                                                   : 'Drop off',
                                               style: TextStyle(
@@ -253,13 +294,14 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                                 color: Colors.black87,
                                               ),
                                             ),
-                                            Text(
-                                              '${DateFormat('MMM dd, yyyy').format(dropoffDate)} | ${widget.schedule['dropoff'] ?? ''}',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey[600],
+                                            if (widget.schedule['dropoff']!.isNotEmpty)
+                                              Text(
+                                                '${DateFormat('MMM dd, yyyy').format(dropoffDate)} | ${widget.schedule['dropoff']}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey[600],
+                                                ),
                                               ),
-                                            ),
                                           ],
                                         ),
                                       ),
@@ -270,7 +312,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             ),
                             const SizedBox(height: 24),
                             const Text(
-                              'Delivery Address',
+                              'Pickup & Drop-off Address',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -278,72 +320,54 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              '${widget.firstName ?? ''} ${widget.lastName ?? ''}', 
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[800],
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey[200]!),
                               ),
-                            ),
-                            const SizedBox(height: 4), 
-                            Text(
-                              widget.address,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            
-                            // Status
-                            const Text(
-                              'Status of Order',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Status',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.location_on,
+                                    color: Color(0xFF5A35E3),
+                                    size: 24,
                                   ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Text(
-                                    'Pending',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.orange,
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${widget.businessData['first_name'] ?? ''} ${widget.businessData['last_name'] ?? ''} (+63) ${widget.businessData['phone_number'] ?? ''}',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.grey[800],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          widget.address,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[700],
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Waiting for the Laundry Shop to Confirm Your Order.',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
+                                ],
                               ),
                             ),
                             const SizedBox(height: 24),
-                            
+                            if (widget.businessData['latitude'] != null && widget.businessData['longitude'] != null) ...[
+                              StaticMapSnippet(
+                                latitude: widget.businessData['latitude']!,
+                                longitude: widget.businessData['longitude']!,
+                              ),
+                              const SizedBox(height: 24),
+                            ],
                           
                             const Text(
                               'Ordered Items',
@@ -363,42 +387,70 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                               ),
                               child: Column(
                                 children: [
-                                  ...widget.services.map((service) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: Row(
+                                  ...widget.services.entries.map((entry) {
+                                    final serviceName = entry.key;
+                                    final quantity = entry.value;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            '$serviceName ($quantity kg)',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          Text(
+                                            '₱${(_servicePrices[serviceName] ?? 0.0) * quantity}',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }),
+                                  const Divider(),
+                                  const SizedBox(height: 12),
+                                  if (_appliedDiscount > 0 && _promoTitle != null) ...[
+                                    Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
-                                          '$service (5kg)',
+                                          'Discount',
                                           style: const TextStyle(
                                             fontSize: 14,
-                                            color: Colors.black87,
+                                            color: Colors.green,
                                           ),
                                         ),
                                         Text(
-                                          '₱${_servicePrices[service.split(' (')[0]]?.toStringAsFixed(0)}',
+                                          '-₱${_appliedDiscount.toStringAsFixed(0)}',
                                           style: const TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
-                                            color: Colors.black87,
+                                            color: Colors.green,
                                           ),
                                         ),
                                       ],
                                     ),
-                                  )),
-                                  const Divider(),
+                                    const SizedBox(height: 12),
+                                  ],
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       const Text(
-                                        '(+) Delivery Fee (Standard)',
+                                        'Delivery Fee',
                                         style: TextStyle(
                                           fontSize: 14,
                                           color: Colors.black87,
                                         ),
                                       ),
                                       Text(
-                                        '₱${_deliveryFee.toStringAsFixed(0)}',
+                                        _isDeliveryFree ? 'Free' : '₱${_deliveryFee.toStringAsFixed(0)}',
                                         style: const TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
@@ -484,6 +536,37 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     );
   }
 
+  DateTime _parseDateTime(String dateString, String timeSlot) {
+    final date = DateFormat('MMM dd, yyyy').parse(dateString);
+    final timeParts = timeSlot.split(RegExp(r'[- ]')).where((s) => s.isNotEmpty).toList();
+    String startTime = timeParts[0] + timeParts[1]; // e.g., "8:00AM"
+    
+    // Handle cases where the time format might be "8:00 AM" or "8 AM"
+    if (timeParts.length > 2 && (timeParts[1].toLowerCase() == 'am' || timeParts[1].toLowerCase() == 'pm')) {
+      startTime = timeParts[0] + timeParts[1];
+    } else if (timeParts.length > 1 && (timeParts[0].contains(':') && (timeParts[1].toLowerCase() == 'am' || timeParts[1].toLowerCase() == 'pm'))) {
+      startTime = timeParts[0] + timeParts[1];
+    } else if (timeParts.length > 0 && timeParts[0].contains(':') && (timeParts.last.toLowerCase() == 'am' || timeParts.last.toLowerCase() == 'pm')) {
+      startTime = timeParts[0] + timeParts.last;
+    } else {
+      // Fallback for unexpected formats, try to use the first part
+      startTime = timeParts[0];
+    }
+
+    // Ensure AM/PM is correctly formatted for parsing
+    if (!startTime.contains(RegExp(r'[APap][Mm]'))) {
+      // Assume AM if not specified and hour is less than 12, otherwise PM
+      if (int.tryParse(startTime.split(':')[0]) != null && int.parse(startTime.split(':')[0]) < 12) {
+        startTime += 'AM';
+      } else {
+        startTime += 'PM';
+      }
+    }
+
+    final time = DateFormat('h:mma').parse(startTime);
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
+  }
+
   Future<void> _placeOrder() async {
     setState(() {
       _isPlacingOrder = true;
@@ -497,12 +580,27 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
       final String userId = supabase.auth.currentUser!.id;
 
+      // Parse pickup and dropoff dates
+      DateTime? parsedPickupDate;
+      if (widget.schedule['pickup']!.isNotEmpty && widget.pickupDate != null) {
+        parsedPickupDate = _parseDateTime(DateFormat('MMM dd, yyyy').format(widget.pickupDate!), widget.schedule['pickup']!);
+      } else if (widget.schedule['pickup']!.isNotEmpty) {
+        parsedPickupDate = _parseDateTime(DateFormat('MMM dd, yyyy').format(DateTime.now()), widget.schedule['pickup']!);
+      }
+
+      DateTime? parsedDropoffDate;
+      if (widget.schedule['dropoff']!.isNotEmpty && widget.dropoffDate != null) {
+        parsedDropoffDate = _parseDateTime(DateFormat('MMM dd, yyyy').format(widget.dropoffDate!), widget.schedule['dropoff']!);
+      } else if (widget.schedule['dropoff']!.isNotEmpty) {
+        parsedDropoffDate = _parseDateTime(DateFormat('MMM dd, yyyy').format(DateTime.now()), widget.schedule['dropoff']!);
+      }
+
       await supabase.from('orders').insert({
         'order_number': orderId,
         'user_id': userId,
         'business_id': businessId,
         'customer_name': '${widget.firstName ?? ''} ${widget.lastName ?? ''}',
-        'laundry_shop_name': widget.laundryShopName,
+        'laundry_shop_name': widget.laundryShopName ?? widget.businessData['business_name'],
         'pickup_address': widget.address,
         'delivery_address': widget.address, 
         'items': widget.services, 
@@ -511,8 +609,11 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         'special_instructions': widget.specialInstructions,
         'total_amount': _total,
         'status': 'pending',
+        'pickup_date': parsedPickupDate?.toIso8601String(), // Add parsed pickup date
+        'delivery_date': parsedDropoffDate?.toIso8601String(), // Add parsed dropoff date
         if (widget.latitude != null) 'latitude': widget.latitude,
         if (widget.longitude != null) 'longitude': widget.longitude,
+        if (widget.phoneNumber != null) 'mobile_number': widget.phoneNumber,
 
       });
 
@@ -545,6 +646,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   }
 
   Widget _buildTermsAndConditionsSection() {
+    final String termsAndConditions = widget.businessData['terms_and_conditions'] ?? 'No terms and conditions provided.';
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey[50],
@@ -576,9 +678,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
-                widget.termsAndConditions.isEmpty
+                termsAndConditions.isEmpty
                     ? 'No terms and conditions provided by the business.'
-                    : widget.termsAndConditions,
+                    : termsAndConditions,
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[700],

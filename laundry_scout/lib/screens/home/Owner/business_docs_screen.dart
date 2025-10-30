@@ -16,6 +16,9 @@ class _BusinessDocsScreenState extends State<BusinessDocsScreen> {
   PlatformFile? _birFile;
   PlatformFile? _certificateFile;
   PlatformFile? _permitFile;
+  String? _birImageUrl;
+  String? _certificateImageUrl;
+  String? _permitImageUrl;
   bool _isSubmitting = false;
 
   @override
@@ -36,21 +39,19 @@ class _BusinessDocsScreenState extends State<BusinessDocsScreen> {
           .maybeSingle();
 
       if (response == null) {
-        
         return;
       }
 
       if (mounted) {
         setState(() {
-          
           if (response['bir_registration_url'] != null) {
-            _birFile = PlatformFile(name: 'BIR_Registration.pdf', size: 0); 
+            _birImageUrl = response['bir_registration_url'] as String;
           }
           if (response['business_certificate_url'] != null) {
-            _certificateFile = PlatformFile(name: 'Business_Certificate.pdf', size: 0); 
+            _certificateImageUrl = response['business_certificate_url'] as String;
           }
           if (response['mayors_permit_url'] != null) {
-            _permitFile = PlatformFile(name: 'Mayors_Permit.pdf', size: 0); 
+            _permitImageUrl = response['mayors_permit_url'] as String;
           }
         });
       }
@@ -224,9 +225,11 @@ class _BusinessDocsScreenState extends State<BusinessDocsScreen> {
 
   Widget _buildFileUploadField({
     required String label,
-    required PlatformFile? file,
+    PlatformFile? file,
+    String? imageUrl,
     required VoidCallback onTap,
     required TextTheme textTheme,
+    required VoidCallback onClear,
   }) {
     bool isImage =
         (file?.extension?.toLowerCase() == 'jpg' ||
@@ -238,7 +241,7 @@ class _BusinessDocsScreenState extends State<BusinessDocsScreen> {
       children: [
         Text(
           label,
-          style: textTheme.bodyMedium?.copyWith(color: Colors.black87, fontWeight: FontWeight.bold),
+          style: textTheme.bodyMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         GestureDetector(
@@ -246,36 +249,92 @@ class _BusinessDocsScreenState extends State<BusinessDocsScreen> {
           child: Container(
             height: 120,
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: Colors.grey[800],
               borderRadius: BorderRadius.circular(12.0),
-              border: Border.all(color: Colors.grey[300]!),
-              image: isImage && file != null
+              border: Border.all(color: Colors.grey[700]!),
+              image: (isImage && file != null)
                   ? DecorationImage(
                       image: kIsWeb
                           ? MemoryImage(file.bytes!) as ImageProvider<Object>
                           : FileImage(File(file.path!)) as ImageProvider<Object>,
                       fit: BoxFit.cover,
                     )
-                  : null,
+                  : (imageUrl != null
+                      ? DecorationImage(
+                          image: NetworkImage(imageUrl),
+                          fit: BoxFit.cover,
+                        )
+                      : null),
             ),
-            child: file == null
+            child: (file == null && imageUrl == null)
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.cloud_upload, size: 40, color: Colors.grey[600]),
+                        Icon(Icons.cloud_upload, size: 40, color: Colors.white),
                         const SizedBox(height: 8),
-                        Text('Click to upload', style: textTheme.bodySmall?.copyWith(color: Colors.grey[600])),
+                        Text('Click to upload', style: textTheme.bodySmall?.copyWith(color: Colors.white)),
                       ],
                     ),
                   )
-                : isImage
-                    ? null
+                : (isImage || imageUrl != null)
+                    ? Stack(
+                        children: [
+                          Positioned.fill(
+                            child: (isImage && file != null)
+                                ? Image(
+                                    image: kIsWeb
+                                        ? MemoryImage(file.bytes!) as ImageProvider<Object>
+                                        : FileImage(File(file.path!)) as ImageProvider<Object>,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image(
+                                    image: NetworkImage(imageUrl!),
+                                    fit: BoxFit.cover,
+                                  ),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: GestureDetector(
+                              onTap: onClear,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.all(4),
+                                child: const Icon(Icons.close, color: Colors.white, size: 16),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
                     : Center(
-                        child: Text(
-                          file.name,
-                          style: textTheme.bodySmall?.copyWith(color: Colors.black87),
-                          textAlign: TextAlign.center,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Text(
+                              file!.name,
+                              style: textTheme.bodySmall?.copyWith(color: Colors.white),
+                              textAlign: TextAlign.center,
+                            ),
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: GestureDetector(
+                                onTap: onClear,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.all(4),
+                                  child: const Icon(Icons.close, color: Colors.white, size: 16),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
           ),
@@ -284,7 +343,7 @@ class _BusinessDocsScreenState extends State<BusinessDocsScreen> {
         if (file != null && !isImage)
           Text(
             file.name,
-            style: textTheme.bodySmall?.copyWith(color: Colors.black54),
+            style: textTheme.bodySmall?.copyWith(color: Colors.white),
           ),
       ],
     );
@@ -305,21 +364,36 @@ class _BusinessDocsScreenState extends State<BusinessDocsScreen> {
             _buildFileUploadField(
               label: 'Attach BIR Registration',
               file: _birFile,
+              imageUrl: _birImageUrl,
               onTap: () => _pickFile(_onBirFilePicked, 'BIR Registration'),
+              onClear: () => setState(() {
+                _birFile = null;
+                _birImageUrl = null;
+              }),
               textTheme: textTheme,
             ),
             const SizedBox(height: 20),
             _buildFileUploadField(
               label: 'Business Certificate',
               file: _certificateFile,
+              imageUrl: _certificateImageUrl,
               onTap: () => _pickFile(_onCertificateFilePicked, 'Business Certificate'),
+              onClear: () => setState(() {
+                _certificateFile = null;
+                _certificateImageUrl = null;
+              }),
               textTheme: textTheme,
             ),
             const SizedBox(height: 20),
             _buildFileUploadField(
               label: 'Mayor\'s Permit',
               file: _permitFile,
+              imageUrl: _permitImageUrl,
               onTap: () => _pickFile(_onPermitFilePicked, 'Mayor\'s Permit'),
+              onClear: () => setState(() {
+                _permitFile = null;
+                _permitImageUrl = null;
+              }),
               textTheme: textTheme,
             ),
             const SizedBox(height: 30),

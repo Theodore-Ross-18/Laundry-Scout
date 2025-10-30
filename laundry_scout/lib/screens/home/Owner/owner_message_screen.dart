@@ -1,6 +1,9 @@
+// ignore_for_file: unused_field
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
+import '../../../services/session_service.dart';
 import '../../../services/connection_service.dart';
 import '../../../services/realtime_message_service.dart';
 import '../../../services/message_queue_service.dart';
@@ -10,23 +13,40 @@ class OwnerMessageScreen extends StatefulWidget {
   const OwnerMessageScreen({super.key});
 
   @override
-  State<OwnerMessageScreen> createState() => _OwnerMessageScreenState();
+  State<OwnerMessageScreen> createState() => OwnerMessageScreenState();
 }
 
-class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
+class OwnerMessageScreenState extends State<OwnerMessageScreen> {
   List<Map<String, dynamic>> _conversations = [];
   bool _isLoading = true;
   late RealtimeChannel _messagesSubscription;
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredConversations = [];
   Timer? _backgroundRefreshTimer;
+  Timer? _feedbackTimer; // Added feedback timer
+  final SessionService _sessionService = SessionService();
+
+  void refreshData() {
+    _loadConversations();
+  }
 
   @override
   void initState() {
     super.initState();
+    print('OwnerMessageScreen initState called');
     _loadConversations();
     _setupRealtimeSubscription();
     _startBackgroundRefresh();
+    // Add a small delay to ensure the screen is fully built and user is authenticated
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('Screen built, checking feedback modal...');
+      // Add a small additional delay to ensure everything is ready
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          _checkAndShowFeedbackModal();
+        }
+      });
+    });
   }
 
   @override
@@ -34,6 +54,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
     _messagesSubscription.unsubscribe();
     _backgroundRefreshTimer?.cancel();
     _searchController.dispose();
+    _feedbackTimer?.cancel();
     super.dispose();
   }
   void _startBackgroundRefresh() {
@@ -54,7 +75,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
       for (var conversation in conversationsResponse) {
         final userProfile = await Supabase.instance.client
             .from('user_profiles')
-            .select('username, first_name, last_name, profile_image_url')
+            .select('username, first_name, last_name, profile_image_url, email, user_is_online')
             .eq('id', conversation['user_id'])
             .maybeSingle();
         
@@ -137,7 +158,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
         
         final userProfile = await Supabase.instance.client
             .from('user_profiles')
-            .select('username, first_name, last_name, profile_image_url, email')
+            .select('username, first_name, last_name, profile_image_url, email, user_is_online')
             .eq('id', conversation['user_id'])
             .maybeSingle();
         
@@ -227,7 +248,6 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
       body: SafeArea(
         child: Column(
           children: [
-           
             const SizedBox(height: 10),
             // Messages section header
             Container(
@@ -316,20 +336,35 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
                                                     )
                                                   : const Icon(Icons.person, color: Colors.grey, size: 30),
                                             ),
-                                            // Online indicator (green dot)
-                                            Positioned(
-                                              bottom: 2,
-                                              right: 2,
-                                              child: Container(
-                                                width: 12,
-                                                height: 12,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.green,
-                                                  shape: BoxShape.circle,
-                                                  border: Border.all(color: Colors.white, width: 2),
+                                            // Online/Offline indicator
+                                            if ((user?['user_is_online'] ?? false) == true) // Green for online
+                                              Positioned(
+                                                bottom: 2,
+                                                right: 2,
+                                                child: Container(
+                                                  width: 12,
+                                                  height: 12,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.green,
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(color: Colors.white, width: 2),
+                                                  ),
+                                                ),
+                                              )
+                                            else if ((user?['user_is_online'] ?? false) == false) // Red for offline
+                                              Positioned(
+                                                bottom: 2,
+                                                right: 2,
+                                                child: Container(
+                                                  width: 12,
+                                                  height: 12,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.red,
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(color: Colors.white, width: 2),
+                                                  ),
                                                 ),
                                               ),
-                                            ),
                                           ],
                                         ),
                                         const SizedBox(width: 16),
@@ -388,33 +423,7 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
                           ),
               ),
             ),
-            // Feedback button
-            Container(
-              color: Colors.white,
-              padding: const EdgeInsets.all(20),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _showFeedbackModal(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF7B61FF),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Feedback',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            // Removed feedback button container
           ],
         ),
       ),
@@ -437,11 +446,50 @@ class _OwnerMessageScreenState extends State<OwnerMessageScreen> {
     }
   }
 
+  Future<void> _checkAndShowFeedbackModal() async {
+    print('Checking feedback modal - hasShownOwnerFeedbackModalThisSession: ${_sessionService.hasShownOwnerFeedbackModalThisSession}');
+    if (!_sessionService.hasShownOwnerFeedbackModalThisSession) {
+      print('Setting feedback timer for 10 seconds...');
+      _feedbackTimer = Timer(const Duration(minutes: 20), () {
+        print('Feedback timer triggered - mounted: $mounted');
+        if (mounted) {
+          // Double-check that user is authenticated before showing modal
+          final currentUser = Supabase.instance.client.auth.currentUser;
+          if (currentUser != null) {
+            print('Showing feedback modal...');
+            _showFeedbackModal();
+            _sessionService.hasShownOwnerFeedbackModalThisSession = true;
+          } else {
+            print('User not authenticated - skipping feedback modal');
+          }
+        }
+      });
+    } else {
+      print('Feedback modal already shown this session');
+    }
+  }
+
   void _showFeedbackModal() {
-    showDialog(
-      context: context,
-      builder: (context) => FeedbackModal(businessId: Supabase.instance.client.auth.currentUser!.id),
-    );
+    print('Showing feedback modal dialog...');
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    print('Current user: $currentUser');
+    
+    if (currentUser != null) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          print('Building BusinessFeedbackModal with businessId: ${currentUser.id}');
+          return BusinessFeedbackModal(businessId: currentUser.id);
+        },
+      ).then((_) {
+        print('Feedback modal closed');
+      }).catchError((error) {
+        print('Error showing feedback modal: $error');
+      });
+    } else {
+      print('No current user found - cannot show feedback modal');
+    }
   }
 
   void _markAllAsRead() async {
@@ -501,6 +549,8 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
   late StreamSubscription _messageSubscription;
   RealtimeChannel? _currentChannel;
   Timer? _backgroundRefreshTimer; // Add background refresh timer
+  String? _businessName; // Store business name from business_profiles table
+  String? _businessCoverPhotoUrl; // Store cover photo URL from business_profiles table
 
   @override
   void initState() {
@@ -508,6 +558,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
     _realtimeService.initialize();
     _connectionService.startMonitoring();
     _messageQueue.startQueue();
+    _loadBusinessProfile(); // Load business profile data
     _loadMessages();
     _setupRealtimeSubscription();
     _setupConnectionQualityListener();
@@ -534,6 +585,29 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
         _refreshMessagesInBackground();
       }
     });
+  }
+
+  // Load business profile data to get business_name and cover_photo_url
+  Future<void> _loadBusinessProfile() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('business_name, cover_photo_url')
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (mounted && response != null) {
+        setState(() {
+          _businessName = response['business_name'];
+          _businessCoverPhotoUrl = response['cover_photo_url'];
+        });
+      }
+    } catch (e) {
+      print('Error loading business profile: $e');
+    }
   }
 
   // Background refresh method for messages
@@ -682,57 +756,47 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
   }
 
   Widget _buildConnectionIndicator() {
-    Color color = Colors.grey;
-    String text = 'Unknown';
-    IconData icon = Icons.signal_cellular_off;
-    
-    switch (_connectionQuality) {
-      case ConnectionQuality.excellent:
-        color = Colors.green;
-        text = 'Excellent';
-        icon = Icons.signal_cellular_4_bar;
-        break;
-      case ConnectionQuality.good:
-        color = Colors.lightGreen;
-        text = 'Good';
-        icon = Icons.signal_cellular_4_bar;
-        break;
-      case ConnectionQuality.fair:
-        color = Colors.orange;
-        text = 'Fair';
-        icon = Icons.signal_cellular_alt;
-        break;
-      case ConnectionQuality.poor:
-        color = Colors.red;
-        text = 'Poor';
-        icon = Icons.signal_cellular_connected_no_internet_0_bar;
-        break;
-      case ConnectionQuality.offline:
-        color = Colors.grey;
-        text = 'Offline';
-        icon = Icons.signal_cellular_off;
-        break;
-    }
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500),
+    return StreamBuilder<List<Map<String, dynamic>>>( // Use StreamBuilder for real-time updates
+      stream: _streamUserLoginStatus(widget.userId), // Stream login status for the user
+      builder: (context, snapshot) {
+        bool isOnline = false;
+        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+          isOnline = snapshot.data![0]['user_is_online'] == true; // Check 'user_is_online' field
+        }
+
+        Color color = isOnline ? Colors.green : const Color.fromARGB(255, 222, 0, 0);
+        String text = isOnline ? 'Online' : 'Offline';
+        IconData icon = isOnline ? Icons.circle : Icons.circle_outlined;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.3)),
           ),
-        ],
-      ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 12, color: color),
+              const SizedBox(width: 4),
+              Text(
+                text,
+                style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        );
+      },
     );
+  }
+
+  Stream<List<Map<String, dynamic>>> _streamUserLoginStatus(String userId) {
+    return Supabase.instance.client
+        .from('user_profiles')
+        .stream(primaryKey: ['id'])
+        .eq('id', userId)
+        .order('id', ascending: true);
   }
 
   @override
@@ -740,8 +804,9 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
     final user = Supabase.instance.client.auth.currentUser;
     
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF7B61FF),
+        backgroundColor: const Color(0xFF5A35E3),
         title: Row(
           children: [
             CircleAvatar(
@@ -824,72 +889,72 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                         
                        
                         Flexible(
-                          child: Column(
-                            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                            children: [
-                              
-                              Padding(
-                                padding: EdgeInsets.only(
-                                  bottom: 4,
-                                  left: isMe ? 0 : 8,
-                                  right: isMe ? 8 : 0,
-                                ),
-                                child: Text(
-                                  isMe ? (user?.userMetadata?['full_name'] ?? 'You') : widget.userName,
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: MediaQuery.of(context).size.width * 0.75,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                              children: [
+                                
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom: 4,
+                                    left: isMe ? 0 : 8,
+                                    right: isMe ? 8 : 0,
                                   ),
-                                ),
-                              ),
-                              
-                            
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: isMe ? const Color(0xFF5A35E3) : Colors.grey[200],
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: const Radius.circular(20),
-                                    topRight: const Radius.circular(20),
-                                    bottomLeft: Radius.circular(isMe ? 20 : 4),
-                                    bottomRight: Radius.circular(isMe ? 4 : 20),
-                                  ),
-                                ),
-                                child: Text(
-                                  message['content'],
-                                  style: TextStyle(
-                                    color: isMe ? Colors.white : Colors.black,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                              
-                            
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      _formatMessageTime(message['created_at']),
-                                      style: const TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 12,
-                                      ),
+                                  child: Text(
+                                    isMe ? ( 'You') : widget.userName,
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
                                     ),
-                                    if (isMe) ...[
-                                      const SizedBox(width: 4),
-                                      Icon(
-                                        Icons.done,
-                                        size: 14,
-                                        color: Colors.green,
-                                      ),
-                                    ],
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                                
+                              
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: isMe ? const Color(0xFF5A35E3) : const Color(0xFFE0E0E0),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    message['content'],
+                                    style: TextStyle(
+                                      color: isMe ? Colors.white : Colors.black,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                                
+                              
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        _formatMessageTime(message['created_at']),
+                                        style: const TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      if (isMe) ...[
+                                        const SizedBox(width: 4),
+                                        Icon(
+                                          Icons.done_all,
+                                          size: 14,
+                                          color: Colors.blue,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         
@@ -899,14 +964,19 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                           CircleAvatar(
                             radius: 16,
                             backgroundColor: const Color(0xFF5A35E3),
-                            child: Text(
-                              user?.userMetadata?['full_name']?.substring(0, 1).toUpperCase() ?? 'O',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            backgroundImage: _businessCoverPhotoUrl != null 
+                                ? NetworkImage(_businessCoverPhotoUrl!)
+                                : null,
+                            child: _businessCoverPhotoUrl == null
+                                ? Text(
+                                    user?.userMetadata?['full_name']?.substring(0, 1).toUpperCase() ?? 'O',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                : null,
                           ),
                         ],
                       ],
@@ -919,7 +989,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF5A35E3) ,
+              color: const Color.fromARGB(255, 255, 255, 255) ,
               boxShadow: [
                 BoxShadow(
                   color: Colors.grey.withOpacity(0.2),
@@ -934,19 +1004,19 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _messageController,
-                    style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+                    style: const TextStyle(color: Colors.black87),
                     decoration: InputDecoration(
                       hintText: 'Type your message here...',
-                      hintStyle: TextStyle(color: const Color.fromARGB(255, 255, 255, 255)),
+                      hintStyle: TextStyle(color: Colors.grey[600]),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(25),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: const Color.fromARGB(46, 255, 255, 255),
+                      fillColor: Colors.grey[100],
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
-                        vertical: 10,
+                        vertical: 12,
                       ),
                     ),
                     onSubmitted: (_) => _sendMessage(),
@@ -999,18 +1069,25 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
   }
 }
 
-class FeedbackModal extends StatefulWidget {
-  final String? businessId;
-  const FeedbackModal({super.key, this.businessId});
+class BusinessFeedbackModal extends StatefulWidget {
+  final String businessId;
+
+  const BusinessFeedbackModal({super.key, required this.businessId});
 
   @override
-  State<FeedbackModal> createState() => _FeedbackModalState();
+  State<BusinessFeedbackModal> createState() => _BusinessFeedbackModalState();
 }
 
-class _FeedbackModalState extends State<FeedbackModal> {
+class _BusinessFeedbackModalState extends State<BusinessFeedbackModal> {
   final TextEditingController _feedbackController = TextEditingController();
-  int _rating = 0;
-  bool _isSubmitted = false;
+  int _rating = 3; // Changed initial rating to 3 to match the image
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    print('BusinessFeedbackModal created with businessId: ${widget.businessId}');
+  }
 
   @override
   void dispose() {
@@ -1019,75 +1096,51 @@ class _FeedbackModalState extends State<FeedbackModal> {
   }
 
   Future<void> _submitFeedback() async {
-    if (_feedbackController.text.trim().isEmpty) {
+    if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your feedback'),
-          backgroundColor: Colors.orange,
-        ),
+        const SnackBar(content: Text('Please select a rating')),
       );
       return;
     }
 
-    if (_rating == 0) {
+    if (_feedbackController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a rating'),
-          backgroundColor: Colors.orange,
-        ),
+        const SnackBar(content: Text('Please enter your feedback')),
       );
       return;
     }
 
     setState(() {
-      _isSubmitted = true;
+      _isSubmitting = true;
     });
 
     try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please login to submit feedback'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      await Supabase.instance.client.from('feedback').insert({
-        'user_id': user.id,
-        'business_id': widget.businessId,
-        'rating': _rating,
-        'comment': _feedbackController.text.trim(),
-        'feedback_type': 'business',
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      });
+      await Supabase.instance.client
+          .from('feedback')
+          .insert({
+            'business_id': widget.businessId,
+            'rating': _rating,
+            'comment': _feedbackController.text.trim(),
+            'feedback_type': 'business',
+            'created_at': DateTime.now().toIso8601String(),
+          });
 
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Thank you for your feedback!'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
-          ),
+          const SnackBar(content: Text('Thank you for your feedback!')),
         );
       }
-    } catch (e) {
+    } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error submitting feedback: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error submitting feedback: ${error.toString()}')),
         );
       }
     } finally {
       if (mounted) {
         setState(() {
-          _isSubmitted = false;
+          _isSubmitting = false;
         });
       }
     }
@@ -1095,192 +1148,126 @@ class _FeedbackModalState extends State<FeedbackModal> {
 
   @override
   Widget build(BuildContext context) {
+    print('BusinessFeedbackModal building...');
     return Dialog(
-      backgroundColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Container(
-        margin: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white, // Changed from gradient to white
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Give Us Your Feedback',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Do you have any thoughts you would\nlike to share?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.black54,
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Removed 'Rate your experience' text
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(5, (index) {
+                return IconButton(
+                  icon: Icon(
+                    index < _rating ? Icons.star : Icons.star_border,
+                    color: Colors.amber,
+                    size: 36,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _rating = index + 1;
+                    });
+                  },
+                );
+              }),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _feedbackController,
+              maxLines: 5,
+              style: const TextStyle(color: Colors.black), // Set input text color to black
+              decoration: InputDecoration(
+                hintText: 'Leave Your Thoughts Here...',
+                hintStyle: TextStyle(color: Colors.grey[500]),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Colors.grey[100],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                    ),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _isSubmitting ? null : _submitFeedback,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5A35E3),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      elevation: 5,
+                      shadowColor: const Color(0xFF5A35E3).withOpacity(0.4),
+                    ),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Submit',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                          ),
+                  ),
+                ),
+              ],
             ),
           ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(30),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              const Text(
-                'Give Us Your Feedback',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3748),
-                ),
-              ),
-              const SizedBox(height: 8),
-             
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  return Icon(
-                    Icons.star,
-                    color: Colors.grey[300],
-                    size: 24,
-                  );
-                }),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Do you have any thoughts you would\nlike to share?',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF718096),
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _rating = index + 1;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(
-                        Icons.star,
-                        color: index < _rating ? const Color(0xFFFFB800) : Colors.grey[300],
-                        size: 36,
-                      ),
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 24),
-             
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF7FAFC),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color: Colors.grey[200]!,
-                    width: 1,
-                  ),
-                ),
-                child: TextField(
-                  controller: _feedbackController,
-                  maxLines: 5,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF2D3748),
-                  ),
-                  decoration: const InputDecoration(
-                    hintText: 'Leave Your Thoughts Here...',
-                    hintStyle: TextStyle(
-                      color: Color(0xFFA0AEC0),
-                      fontSize: 16,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.all(16),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-             
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 50,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(25),
-                        border: Border.all(
-                          color: Colors.grey[300]!,
-                          width: 1,
-                        ),
-                      ),
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: TextButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                        ),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(
-                            color: Color(0xFF718096),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Container(
-                      height: 50,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(25),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF5A35E3), Color(0xFF5A35E3)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF5A35E3).withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ElevatedButton(
-                        onPressed: _isSubmitted ? null : _submitFeedback,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                        ),
-                        child: _isSubmitted
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text(
-                                'Submit',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
         ),
       ),
     );

@@ -353,7 +353,8 @@ class _LocationScreenState extends State<LocationScreen> {
       final response = await Supabase.instance.client
           .from('feedback')
           .select('rating')
-          .eq('business_id', businessId);
+          .eq('business_id', businessId)
+          .eq('feedback_type', 'user');
 
       if (response.isEmpty) {
         return 0.0;
@@ -631,89 +632,56 @@ class _LocationScreenState extends State<LocationScreen> {
                         ],
                       ),
                       Positioned(
-                        top: 10,
-                        right: 10,
-                        child: Container(
-                          padding: const EdgeInsets.all(8.0),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
-                            borderRadius: BorderRadius.circular(8.0),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 1,
-                                blurRadius: 3,
-                                offset: const Offset(0, 2), 
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.my_location, color: Colors.blue, size: 20.0),
-                              const SizedBox(width: 5),
-                              const Text('You', style: TextStyle(color: Colors.black)),
-                              const SizedBox(width: 20),
-                              Image.asset('lib/assets/official.png', width: 20.0, height: 20.0),
-                              const SizedBox(width: 5),
-                              const Text('Laundry Shop', style: TextStyle(color: Colors.black)),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Positioned(
                         bottom: 16,
                         left: 16,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.9),
-                                borderRadius: BorderRadius.circular(8.0),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey.withOpacity(0.5),
-                                    spreadRadius: 1,
-                                    blurRadius: 3,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
+                        right: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 10,
+                                spreadRadius: 2,
                               ),
-                              child: Text(
-                                'Search Radius: ${_searchRadius.toStringAsFixed(0)} km',
-                                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            if (_searchRadius < 10.0) 
-                              SizedBox(
-                                  width: 200, 
-                                  child: ElevatedButton.icon(
-                                    onPressed: () {
-                                        setState(() {
-                                          _searchRadius = (_searchRadius + 1.0).clamp(1.0, 10.0);
-                                        });
-                                        _fetchBusinessProfiles(radius: _searchRadius);
-                                    },
-                                    icon: const Icon(Icons.search), 
-                                    label: const Text('Locate Laundry'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF5A35E3), 
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8.0),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12), 
-                                    ),
-                                  ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Search Radius: ${_searchRadius.toStringAsFixed(1)} km',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF5A35E3),
                                 ),
-                          ],
+                              ),
+                              Slider(
+                                value: _searchRadius,
+                                min: 1.0,
+                                max: 30.0,
+                                divisions: 9,
+                                label: _searchRadius.toStringAsFixed(1),
+                                onChanged: _onSearchRadiusChanged,
+                                activeColor: const Color(0xFF5A35E3),
+                                inactiveColor: const Color(0xFF5A35E3).withOpacity(0.3),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
       );
     }
+
+  void _onSearchRadiusChanged(double newRadius) {
+    setState(() {
+      _searchRadius = newRadius;
+    });
+    _fetchBusinessProfiles(radius: _searchRadius);
+  }
 }

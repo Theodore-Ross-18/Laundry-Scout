@@ -6,9 +6,10 @@ import '../../services/form_persistence_service.dart';
 
 class SetUserInfoScreen extends StatefulWidget {
 
-  final String? username;
+  final String username;
+  final String email;
 
-  const SetUserInfoScreen({super.key, this.username});
+  const SetUserInfoScreen({super.key, required this.username, required this.email});
 
   @override
   _SetUserInfoScreenState createState() => _SetUserInfoScreenState();
@@ -58,11 +59,11 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
     super.initState();
     
     final user = Supabase.instance.client.auth.currentUser;
-    if (user != null && user.email != null) {
+    _emailController.text = widget.email;
+    _usernameController.text = widget.username;
+    if (user != null && user.email != null && _emailController.text.isEmpty) {
       _emailController.text = user.email!;
-      
     }
-    _usernameController.text = widget.username ?? '';
     _currentPage = 0;
 
     _timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
@@ -294,24 +295,24 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                 ElevatedButton(
                   onPressed: _nextPage,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5A35E3), 
-                    foregroundColor: const Color(0xFFFFFFFF),
+                    backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF5A35E3),
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0),
                     ),
                   ),
                   child: const Text(
-                    'Get Started',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    'GET STARTED',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
                   ),
                 )
               else
                 ElevatedButton(
                    onPressed: _nextPage,
                    style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5A35E3), 
-                    foregroundColor: const Color(0xFFFFFFFF),
+                    backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF5A35E3),
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0),
@@ -319,7 +320,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                   ),
                   child: const Text(
                     'Next',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
                   ),
                 ),
             ],
@@ -390,8 +391,8 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
               ElevatedButton(
                 onPressed: _submitUserInfo,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5A35E3), // Purple background
-                  foregroundColor: const Color(0xFFFFFFFF), // White text
+                  backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF5A35E3),
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30.0),
@@ -399,7 +400,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                 ),
                 child: const Text(
                   'Submit',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
                 ),
               ),
             ],

@@ -7,6 +7,7 @@ import 'add_promo_screen.dart';
 import 'owner_message_screen.dart';
 import 'owner_notification_screen.dart';
 import 'owner_feedback_screen.dart';
+import 'owner_reports.dart';
 import 'edit_profile_screen.dart';
 import 'availability_screen.dart';
 import 'orders_screen.dart';
@@ -30,9 +31,13 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
     'in_progress': 0,
     'completed': 0,
   };
+  List<Map<String, dynamic>> _allOrders = [];
   int _promoCount = 0;
   int _reviewCount = 0;
   final FeedbackService _feedbackService = FeedbackService();
+
+  final GlobalKey<OwnerMessageScreenState> _ownerMessageScreenKey = GlobalKey<OwnerMessageScreenState>();
+  final GlobalKey<OwnerNotificationScreenState> _ownerNotificationScreenKey = GlobalKey<OwnerNotificationScreenState>();
 
   @override
   void initState() {
@@ -52,7 +57,8 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
         print('No business ID found for user: ${user.id}');
         if (mounted) {
           setState(() {
- _isLoading = false;
+            _isLoading = false;
+            _businessProfile = null; // Set business profile to null if not found
           });
         }
         return;
@@ -88,24 +94,51 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
+      // First, get all orders for this business
       final response = await Supabase.instance.client
           .from('orders')
-          .select('status')
+          .select('*')
           .eq('business_id', user.id);
 
-      final orders = List<Map<String, dynamic>>.from(response);
+      print('Raw orders response: $response');
+
+      // Process orders to include user profile data
+      List<Map<String, dynamic>> ordersWithUserDetails = [];
+      for (var order in response) {
+        try {
+          final userId = order['user_id'];
+          if (userId != null) {
+            final userProfileResponse = await Supabase.instance.client
+                .from('user_profiles')
+                .select('first_name, last_name')
+                .eq('id', userId)
+                .single();
+            order['user_profiles'] = userProfileResponse;
+            print('Added user profile for order ${order['id']}: $userProfileResponse');
+          } else {
+            print('No user_id found for order ${order['id']}');
+          }
+        } catch (userError) {
+          print('Error fetching user profile for order ${order['id']}: $userError');
+          // Continue with order even if user profile fails
+        }
+        ordersWithUserDetails.add(order);
+      }
+
       final stats = {
-        'total': orders.length,
-        'pending': orders.where((o) => o['status'] == 'pending').length,
-        'in_progress': orders.where((o) => o['status'] == 'in_progress').length,
-        'completed': orders.where((o) => o['status'] == 'completed').length,
+        'total': ordersWithUserDetails.length,
+        'pending': ordersWithUserDetails.where((o) => o['status'] == 'pending').length,
+        'in_progress': ordersWithUserDetails.where((o) => o['status'] == 'in_progress').length,
+        'completed': ordersWithUserDetails.where((o) => o['status'] == 'completed').length,
       };
 
       if (mounted) {
         setState(() {
+          _allOrders = ordersWithUserDetails;
           _orderStats = stats;
         });
       }
+      print('Successfully loaded ${ordersWithUserDetails.length} orders with user details');
     } catch (e) {
       print('Error loading order stats: $e');
     }
@@ -160,15 +193,21 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
 
   void _onItemTapped(int index) {
     if (!mounted) return;
-    
+
     if (index == 0 && _selectedIndex == 0) {
       _refreshDataInBackground();
       return;
     }
-    
+
     setState(() {
       _selectedIndex = index;
     });
+
+    if (index == 1) { // Messages tab
+      _ownerMessageScreenKey.currentState?.refreshData();
+    } else if (index == 2) { // Notifications tab
+      _ownerNotificationScreenKey.currentState?.refreshData();
+    }
   }
 
   Future<void> _refreshDataInBackground() async {
@@ -214,17 +253,36 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
+      // First, get all orders for this business
       final response = await Supabase.instance.client
           .from('orders')
-          .select('status')
+          .select('*')
           .eq('business_id', user.id);
 
-      final orders = List<Map<String, dynamic>>.from(response);
+      // Process orders to include user profile data
+      List<Map<String, dynamic>> ordersWithUserDetails = [];
+      for (var order in response) {
+        try {
+          final userId = order['user_id'];
+          if (userId != null) {
+            final userProfileResponse = await Supabase.instance.client
+                .from('user_profiles')
+                .select('first_name, last_name')
+                .eq('id', userId)
+                .single();
+            order['user_profiles'] = userProfileResponse;
+          }
+        } catch (userError) {
+          // Continue with order even if user profile fails
+        }
+        ordersWithUserDetails.add(order);
+      }
+
       final stats = {
-        'total': orders.length,
-        'pending': orders.where((o) => o['status'] == 'pending').length,
-        'in_progress': orders.where((o) => o['status'] == 'in_progress').length,
-        'completed': orders.where((o) => o['status'] == 'completed').length,
+        'total': ordersWithUserDetails.length,
+        'pending': ordersWithUserDetails.where((o) => o['status'] == 'pending').length,
+        'in_progress': ordersWithUserDetails.where((o) => o['status'] == 'in_progress').length,
+        'completed': ordersWithUserDetails.where((o) => o['status'] == 'completed').length,
       };
 
       if (mounted) {
@@ -283,9 +341,11 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
       case 0:
         return _buildHomeScreenContent();
       case 1:
-        return const OwnerMessageScreen();
+        return OwnerMessageScreen(key: _ownerMessageScreenKey);
       case 2:
-        return const OwnerNotificationScreen();
+        return OwnerReportsScreen(orderStats: _orderStats, allOrders: _allOrders);
+      case 3:
+        return OwnerNotificationScreen(key: _ownerNotificationScreenKey);
       default:
         return _buildHomeScreenContent();
     }
@@ -311,6 +371,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  const SizedBox(height: 20.0), // Add space above Welcome
                                   Text(
                                     'Welcome',
                                     style: TextStyle(
@@ -399,7 +460,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                             MaterialPageRoute(builder: (context) => const OrdersScreen()),
                                           );
                                         },
-                                        child: _analyticsCard(Image.asset('lib/assets/owner/history.png', width: 24, height: 24, color: Color(0xFF5A35E3)), '${_orderStats['total']}', 'Order History', Color(0xFF5A35E3)),
+                                        child: _analyticsCard(Image.asset('lib/assets/owner/history.png', width: 24, height: 24, color: Color(0xFF5A35E3)), '${_orderStats['total']}', 'Orders', Color(0xFF5A35E3)),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -447,7 +508,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                         MaterialPageRoute(builder: (context) => const EditProfileScreen()),
                                       );
                                     },
-                                    child: _actionCard(Image.asset('lib/assets/owner/editprofile.png', width: 28, height: 28, color: Color(0xFF5A35E3)), 'Edit Profile', Color(0xFF5A35E3)),
+                                    child: _actionCard(Image.asset('lib/assets/owner/editprofile.png', width: 28, height: 28, color: Color(0xFF5A35E3)), 'Profile', Color(0xFF5A35E3)),
                                   ),
                                 ),
                               ],
@@ -523,9 +584,14 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
             label: 'Messages',
           ),
           BottomNavigationBarItem(
+            icon: Image.asset('lib/assets/owner/reports.png', width: 24, height: 24, color: Colors.black),
+            activeIcon: Image.asset('lib/assets/owner/reports.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
+            label: 'Reports',
+          ),
+          BottomNavigationBarItem(
             icon: Image.asset('lib/assets/navbars/notification.png', width: 24, height: 24, color: Colors.black),
             activeIcon: Image.asset('lib/assets/navbars/notification.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
-            label: 'Notification',
+            label: 'Notifications',
           ),
         ],
         currentIndex: _selectedIndex,
@@ -540,7 +606,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
   }
 
   Widget _availabilityCard() {
-    return _actionCard(Image.asset('lib/assets/owner/avail.png', width: 28, height: 28, color: Color(0xFF5A35E3)), 'Set Availability', Color(0xFF5A35E3));
+    return _actionCard(Image.asset('lib/assets/owner/avail.png', width: 28, height: 28, color: Color(0xFF5A35E3)), 'Availability', Color(0xFF5A35E3));
   }
 
 // Helper widgets:
@@ -612,8 +678,7 @@ Widget _slotAnalyticsCard(String availabilityStatus) {
           ),
         ),
         const SizedBox(height: 4),
-        const Text('Slot', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
-        Text(availabilityStatus.split(' ')[0], style: const TextStyle(fontSize: 12, color: Colors.black)),
+        Text(availabilityStatus, style: const TextStyle(fontSize: 12, color: Colors.black)),
       ],
     ),
   );

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../splash/splash_screen.dart';
 import 'changeEPP.dart'; 
-import 'owner_notification_screen.dart'; 
+import '../../../services/session_service.dart'; // Corrected Import SessionService
+// import 'owner_notification_screen.dart'; 
 import 'image_preview_screen.dart'; 
 import 'business_docs_screen.dart'; 
 
@@ -30,6 +31,7 @@ class BusinessProfileScreen extends StatefulWidget {
 class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
   Map<String, dynamic>? _businessProfile;
   bool _isLoading = true;
+  bool _notificationsEnabled = false; // Add this line
 
   @override
   void initState() {
@@ -71,7 +73,19 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
 
   void _signOut() async {
     try {
+      // Update owner_is_online to FALSE before signing out
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        print('Updating owner_is_online to FALSE for user: ${user.id}');
+        final updateResult = await Supabase.instance.client
+            .from('business_profiles')
+            .update({'owner_is_online': false})
+            .eq('id', user.id);
+        print('Owner offline status updated successfully: $updateResult');
+      }
+      
       await Supabase.instance.client.auth.signOut();
+      SessionService().resetFeedbackFlags();
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           _createFadeRoute(const SplashScreen()),
@@ -257,9 +271,43 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                           Navigator.of(context).push(_createFadeRoute(const ChangeEPPScreen()));
                         }),
                         const SizedBox(height: 12),
-                        _modernSettingsTile('Push Notifications', Icons.notifications_none, hasTrailing: true, onTap: () {
-                          Navigator.of(context).push(_createFadeRoute(const OwnerNotificationScreen()));
-                        }),
+                        // _modernSettingsTile('Push Notifications', Icons.notifications_none, hasTrailing: true, onTap: () {
+                        //   Navigator.of(context).push(_createFadeRoute(const OwnerNotificationScreen()));
+                        // }),
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF8F9FA),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Color(0xFFE9ECEF), width: 1),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.notifications_none, color: Color(0xFF6C757D), size: 20),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Text(
+                                  'Push Notifications',
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              Switch(
+                                value: _notificationsEnabled,
+                                onChanged: (bool value) {
+                                  setState(() {
+                                    _notificationsEnabled = value;
+                                  });
+                                  // Handle notification toggle logic here
+                                },
+                                activeColor: Color(0xFF5A35E3),
+                              ),
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 12),
                         _modernSettingsTile('Update BIR, Business Permit, Business Cert', Icons.business_center_outlined, hasTrailing: true, onTap: () {
                           Navigator.of(context).push(_createFadeRoute(const BusinessDocsScreen()));

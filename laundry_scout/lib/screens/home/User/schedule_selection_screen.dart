@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 
+
 class ScheduleSelectionScreen extends StatefulWidget {
   final Map<String, String>? selectedSchedule;
   final List<String> availablePickupTimeSlots; 
   final List<String> availableDropoffTimeSlots;
+  final Map<String, int> selectedServices;
+
 
   const ScheduleSelectionScreen({
     super.key,
     this.selectedSchedule,
     this.availablePickupTimeSlots = const [], 
     this.availableDropoffTimeSlots = const [],
+    this.selectedServices = const {},
+
   });
 
   @override
@@ -19,6 +24,7 @@ class ScheduleSelectionScreen extends StatefulWidget {
 class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
   String? _selectedPickupTime;
   String? _selectedDropoffTime;
+
 
   List<String> get _pickupTimes => widget.availablePickupTimeSlots;
   List<String> get _dropoffTimes => widget.availableDropoffTimeSlots;
@@ -30,6 +36,7 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
       _selectedPickupTime = widget.selectedSchedule!['pickup'];
       _selectedDropoffTime = widget.selectedSchedule!['dropoff'];
     }
+
     print('initState: _selectedPickupTime = $_selectedPickupTime, _selectedDropoffTime = $_selectedDropoffTime');
   }
 
@@ -75,7 +82,7 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Pick-Up Schedule',
+                              'Pick-Up Time',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -102,7 +109,7 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
                             const SizedBox(height: 32),
                             
                             const Text(
-                              'Drop-Off Schedule',
+                              'Drop-Off Time',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -134,18 +141,15 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: (_selectedPickupTime != null || _selectedDropoffTime != null)
-                            ? () {
-                                print('Done button pressed: _selectedPickupTime = $_selectedPickupTime, _selectedDropoffTime = $_selectedDropoffTime');
-                                Navigator.pop(context, {
-                                  'pickup': _selectedPickupTime,
-                                  'dropoff': _selectedDropoffTime,
-                                });
-                              }
-                            : null,
+                        onPressed: () {
+                          print('Done button pressed: _selectedPickupTime = $_selectedPickupTime, _selectedDropoffTime = $_selectedDropoffTime');
+                          Navigator.pop(context, {
+                            'pickup': _selectedPickupTime ?? '',
+                            'dropoff': _selectedDropoffTime ?? '',
+                          });
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF5A35E3),
-                          disabledBackgroundColor: Colors.grey[300],
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -176,6 +180,7 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
         onTap: () {
+          
           onTap();
         },
         child: Container(
@@ -212,4 +217,6 @@ class _ScheduleSelectionScreenState extends State<ScheduleSelectionScreen> {
       ),
     );
   }
+
+
 }

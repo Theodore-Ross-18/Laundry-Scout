@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'message_screen.dart';
 import '../../../widgets/optimized_image.dart';
-import 'package:file_picker/file_picker.dart';
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'order_placement_screen.dart';
 import '../../../services/feedback_service.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:laundry_scout/screens/home/User/getdirection.dart';
+import 'package:flutter/services.dart';
+import 'image_preview_screen.dart';
 
 class BusinessDetailScreen extends StatefulWidget {
   final Map<String, dynamic> businessData;
@@ -27,6 +26,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   Map<String, dynamic>? _fullBusinessData;
   bool _isLoading = true;
   late TabController _tabController;
+  List<String> _galleryImageUrls = [];
   List<Map<String, dynamic>> _reviews = [];
   List<Map<String, dynamic>> _pricelist = [];
   final FeedbackService _feedbackService = FeedbackService();
@@ -34,7 +34,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this); 
+    _tabController = TabController(length: 4, vsync: this); 
     _loadFullBusinessData().then((_) {
 
       _loadPricelist();
@@ -152,27 +152,9 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
 
   Widget _buildCoverImage() {
     
-    final coverPhotoFile = _fullBusinessData!['_coverPhotoFile'] as PlatformFile?;
     final coverPhotoUrl = _fullBusinessData!['cover_photo_url'] as String?;
     
-    if (coverPhotoFile != null) {
-      
-      if (kIsWeb) {
-        return Image.memory(
-          coverPhotoFile.bytes!,
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: double.infinity,
-        );
-      } else {
-        return Image.file(
-          File(coverPhotoFile.path!),
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: double.infinity,
-        );
-      }
-    } else if (coverPhotoUrl != null) {
+    if (coverPhotoUrl != null) {
      
       return OptimizedImage(
         imageUrl: coverPhotoUrl,
@@ -201,12 +183,13 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     try {
         final response = await Supabase.instance.client
             .from('business_profiles')
-            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours_text, available_pickup_time_slots, available_dropoff_time_slots, does_delivery, latitude, longitude, business_address') // Add new columns here
+            .select('*, availability_status, business_phone_number, services_offered, service_prices, open_hours, available_pickup_time_slots, available_dropoff_time_slots, does_delivery, latitude, longitude, business_address, gallery_image_urls, cover_photo_url') // Add new columns here
             .eq('id', widget.businessData['id'])
             .single();
       
       setState(() {
         _fullBusinessData = response;
+        _galleryImageUrls = List<String>.from(response['gallery_image_urls'] ?? []);
         _isLoading = false;
       });
     } catch (e) {
@@ -376,7 +359,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
   }
 
   String _getDefaultPrice(String service) {
-   
+    
     switch (service.toLowerCase()) {
       case 'wash & fold':
         return '50.00';
@@ -401,6 +384,31 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     }
   }
 
+// Icons at Services Available
+  IconData _getServiceIcon(String? serviceName) {
+    switch ((serviceName ?? '').toLowerCase()) {
+      case 'pick-up':
+      case 'pick up':
+        return Icons.volunteer_activism; // hand/heart
+      case 'drop-off':
+      case 'drop off':
+        return Icons.inbox;
+      case 'wash & fold':
+      case 'wash and fold':
+        return Icons.inventory_2;
+      case 'delivery':
+      case 'deliver':
+        return Icons.delivery_dining;
+      case 'dry clean':
+      case 'dry cleaning':
+        return Icons.dry_cleaning;
+      case 'iron only':
+      case 'ironing':
+        return Icons.iron;
+      default:
+        return Icons.local_laundry_service;
+    }
+  }
   double _calculateAverageRating() {
     
     final userReviews = _reviews.where((review) => 
@@ -511,27 +519,49 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     );
   }
 
-  String _formatTimeAgo(String? createdAt) {
-      if (createdAt == null) return 'Unknown';
-    
-    try {
-      final DateTime reviewDate = DateTime.parse(createdAt);
-      final DateTime now = DateTime.now();
-      final Duration difference = now.difference(reviewDate);
-      
-      if (difference.inDays > 0) {
-        return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
-      } else if (difference.inHours > 0) {
-        return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
-      } else if (difference.inMinutes > 0) {
-        return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
-      } else {
-        return 'Just now';
-      }
-    } catch (e) {
-      return 'Unknown';
+  Widget _buildGalleryTab() {
+    if (_galleryImageUrls.isEmpty) {
+      return const Center(
+        child: Text(
+          'No gallery images available.',
+          style: TextStyle(fontSize: 16, color: Colors.black54),
+        ),
+      );
     }
+
+    return GridView.builder(
+      padding: const EdgeInsets.all(8.0),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 8.0,
+        mainAxisSpacing: 8.0,
+      ),
+      itemCount: _galleryImageUrls.length,
+      itemBuilder: (context, index) {
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ImagePreviewScreen(
+                  imageUrls: _galleryImageUrls,
+                  initialIndex: index,
+                ),
+              ),
+            );
+          },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8.0),
+            child: OptimizedImage(
+              imageUrl: _galleryImageUrls[index],
+              fit: BoxFit.cover,
+            ),
+          ),
+        );
+      },
+    );
   }
+
 
   Future<void> _placeOrder() async {
     final user = Supabase.instance.client.auth.currentUser;
@@ -555,625 +585,35 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
     );
   }
 
+  String _formatTimeAgo(String? createdAt) {
+    if (createdAt == null) return 'Unknown';
 
+    try {
+      final DateTime reviewDate = DateTime.parse(createdAt);
+      final DateTime now = DateTime.now();
+      final Duration difference = now.difference(reviewDate);
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : _fullBusinessData == null
-              ? const Center(
-                  child: Text(
-                    'Business details not found.',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                )
-              : Column(
-                  children: [
-                    
-                    SizedBox(
-                      height: 300,
-                      child: Stack(
-                        children: [
-                          
-                          Positioned.fill(
-                            child: _buildCoverImage(),
-                          ),
-                         
-                          Positioned.fill(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.black.withOpacity(0.7),
-                                  ],
-                                  stops: const [0.5, 1.0],
-                                ),
-                              ),
-                            ),
-                          ),
-                          
-                          Positioned(
-                            top: 40,
-                            left: 16,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.3),
-                                shape: BoxShape.circle,
-                              ),
-                              child: IconButton(
-                                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                                onPressed: () => Navigator.pop(context),
-                              ),
-                            ),
-                          ),
-                         
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(20),
-                                  topRight: Radius.circular(20),
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    spreadRadius: 1,
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          _fullBusinessData!['business_name'] ?? 'Business Name',
-                                          style: const TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                      ),
-                                      _buildAvailabilityStatusBadge(_fullBusinessData!['availability_status']),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.location_on, color: Colors.grey, size: 16),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          _fullBusinessData!['business_address'] ?? 'Location not available',
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    Container(
-                      color: Colors.white,
-                      child: TabBar(
-                        controller: _tabController,
-                        indicatorColor: const Color(0xFF5A35E3),
-                        labelColor: const Color(0xFF5A35E3),
-                        unselectedLabelColor: Colors.grey,
-                        tabAlignment: TabAlignment.fill,
-                        tabs: const [
-                          Tab(text: 'About'),
-                          Tab(text: 'Order'),
-                          Tab(text: 'Reviews'),
-                        ],
-                      ),
-                    ),
-                    // TabBarView
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildAboutTab(),
-                          _buildOrderTab(),
-                          _buildReviewsTab(),
-                        ],
-                      ),
-                    ),
-                  ], // Column children
-                ),
-    );
-  }
-
-  Widget _buildAboutTab() {
-    return SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'About Us',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  _fullBusinessData!['about_business'] ?? 'Welcome to our laundry service! We provide professional laundry services with care and attention to detail.',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Open Hours
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Open Hours',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  _fullBusinessData!['open_hours_text'] ?? 'Open hours not available.',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Delivery Service
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Delivery Service',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(
-                      _fullBusinessData!['does_delivery'] == true ? Icons.check_circle : Icons.cancel,
-                      color: _fullBusinessData!['does_delivery'] == true ? Colors.green : Colors.red,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _fullBusinessData!['does_delivery'] == true ? 'Available' : 'Not Available',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Contact Details
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Contact Details',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          final phoneNumber = _fullBusinessData!['business_phone_number'] ??
-                                        _fullBusinessData!['contact_number'] ??
-                                        'No phone number available';
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: const Text('Contact Number', style: TextStyle(color: Colors.black)),
-                                content: Text(
-                                  phoneNumber.toString(),
-                                  style: const TextStyle(color: Colors.black, fontSize: 16),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('Close', style: TextStyle(color: Colors.black)),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
-                        icon: const Icon(Icons.phone, color: Colors.white),
-                        label: const Text('Call', style: TextStyle(color: Colors.white)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF5A35E3),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChatScreen(
-                                businessId: widget.businessData['id'],
-                                businessName: _fullBusinessData!['business_name'] ?? 'Business',
-                                businessImage: _fullBusinessData!['cover_photo_url'],
-                              ),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.message, color: Colors.white),
-                        label: const Text('Message', style: TextStyle(color: Colors.white)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF5A35E3),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Address with Map
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Address',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  _fullBusinessData!['business_address'] ?? 'Address not available.',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 200,
-                  child: _fullBusinessData!['latitude'] != null && _fullBusinessData!['longitude'] != null
-                      ? FlutterMap(
-                          options: MapOptions(
-                            initialCenter: LatLng(
-                              _fullBusinessData!['latitude'],
-                              _fullBusinessData!['longitude'],
-                            ),
-                            initialZoom: 15.0,
-                            minZoom: 15.0,
-                            maxZoom: 15.0,
-                            interactiveFlags: InteractiveFlag.none, // Make map non-interactive
-                          ),
-                          children: [
-                            TileLayer(
-                              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            ),
-                            MarkerLayer(
-                              markers: [
-                                Marker(
-                                  point: LatLng(
-                                    _fullBusinessData!['latitude'],
-                                    _fullBusinessData!['longitude'],
-                                  ),
-                                  width: 80,
-                                  height: 80,
-                                  child: const Icon(
-                                    Icons.location_pin,
-                                    color: Colors.red,
-                                    size: 40,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        )
-                      : Center(
-                          child: Text(
-                            'Location not available',
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                        ),
-                ),
-                const SizedBox(height: 16),
-                if (_fullBusinessData!['latitude'] != null && _fullBusinessData!['longitude'] != null)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => GetDirectionScreen(
-                              destinationLatitude: _fullBusinessData!['latitude'],
-                              destinationLongitude: _fullBusinessData!['longitude'],
-                              businessName: _fullBusinessData!['business_name'],
-                            ),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF5A35E3),
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Get Direction',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOrderTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Service Pricing',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 16),
-          if (_pricelist.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 48,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Pricing information will be available soon',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Contact the business directly for pricing details',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            Column(
-              children: _pricelist.map((item) => Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[200]!),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item['service_name'] ?? 'N/A',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item['description'] ?? 'N/A',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: Text(
-                        '₱${item['price']}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF5A35E3),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )).toList(),
-            ),
-          const SizedBox(height: 24),
-          // Place Order Button
-          SizedBox(
-            width: double.infinity,
-            child: _fullBusinessData!['does_delivery'] == true
-                ? ElevatedButton(
-                    onPressed: _placeOrder,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF5A35E3),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Place Order',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  )
-                : Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'Delivery Not Available for Now',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-          ),
-        ],
-      ),
-    );
+      if (difference.inDays > 0) {
+        return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
+      } else if (difference.inHours > 0) {
+        return '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
+      } else if (difference.inMinutes > 0) {
+        return '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
+      } else {
+        return 'Just now';
+      }
+    } catch (e) {
+      return 'Unknown';
+    }
   }
 
   Widget _buildReviewsTab() {
-    
-    final userReviews = _reviews.where((review) => 
-      review['user_profiles'] != null && 
+
+    final userReviews = _reviews.where((review) =>
+      review['user_profiles'] != null &&
       review['user_profiles']['first_name'] != null
     ).toList();
-    
+
     double averageRating = _calculateAverageRating();
     int totalReviews = userReviews.length;
 
@@ -1351,6 +791,664 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+          : _fullBusinessData == null
+              ? const Center(
+                  child: Text(
+                    'Business details not found.',
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                )
+              : Column(
+                  children: [
+                    
+                    SizedBox(
+                      height: 300,
+                      child: Stack(
+                        children: [
+                          
+                          Positioned.fill(
+                            child: _buildCoverImage(),
+                          ),
+                         
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.7),
+                                  ],
+                                  stops: const [0.5, 1.0],
+                                ),
+                              ),
+                            ),
+                          ),
+                          
+                          Positioned(
+                            top: 40,
+                            left: 16,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.3),
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                            ),
+                          ),
+                         
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(20),
+                                  topRight: Radius.circular(20),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    spreadRadius: 1,
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          _fullBusinessData!['business_name'] ?? 'Business Name',
+                                          style: const TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ),
+                                      _buildAvailabilityStatusBadge(_fullBusinessData!['availability_status']),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.location_on, color: Colors.grey, size: 16),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          _fullBusinessData!['business_address'] ?? 'Location not available',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    Container(
+                      color: Colors.white,
+                      child: TabBar(
+                        controller: _tabController,
+                        indicatorColor: const Color(0xFF5A35E3),
+                        labelColor: const Color(0xFF5A35E3),
+                        unselectedLabelColor: Colors.grey,
+                        tabAlignment: TabAlignment.fill,
+                        tabs: const [
+                          Tab(text: 'About'),
+                          Tab(text: 'Order'),
+                          Tab(text: 'Gallery'),
+                          Tab(text: 'Reviews'),
+                        ],
+                      ),
+                    ),
+                    // TabBarView
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildAboutTab(),
+                          _buildOrderTab(),
+                          _buildGalleryTab(),
+                          _buildReviewsTab(),
+                        ],
+                      ),
+                    ),
+                  ], // Column children
+                ),
+    );
+  }
+
+  Widget _buildAboutTab() {
+    return SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'About Us',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _fullBusinessData!['about_business'] ?? 'Welcome to our laundry service! We provide professional laundry services with care and attention to detail.',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Open Hours
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Open Hours',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _fullBusinessData!['open_hours'] ?? 'Open hours not available.',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Delivery Service
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Delivery Service',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(
+                      _fullBusinessData!['does_delivery'] == true ? Icons.check_circle : Icons.cancel,
+                      color: _fullBusinessData!['does_delivery'] == true ? Colors.green : Colors.red,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _fullBusinessData!['does_delivery'] == true ? 'Available' : 'Not Available',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Contact Details
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Contact Details',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          final phoneNumber = _fullBusinessData!['business_phone_number'] ??
+                                          _fullBusinessData!['contact_number'] ??
+                                          'No phone number available';
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text('Contact Number', style: TextStyle(color: Colors.black)),
+                                content: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    SelectableText(
+                                      phoneNumber.toString(),
+                                      style: const TextStyle(color: Colors.black, fontSize: 16),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.copy, color: Color(0xFF5A35E3)),
+                                      onPressed: () {
+                                        Clipboard.setData(ClipboardData(text: phoneNumber.toString()));
+                                        Navigator.pop(context);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Phone number copied to clipboard', style: TextStyle(color: Colors.white))),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Close', style: TextStyle(color: Colors.black)),
+                                  )
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        icon: const Icon(Icons.phone, color: Colors.white),
+                        label: const Text('Call', style: TextStyle(color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF5A35E3),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatScreen(
+                                businessId: widget.businessData['id'],
+                                businessName: _fullBusinessData!['business_name'] ?? 'Business',
+                                businessImage: _fullBusinessData!['cover_photo_url'],
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.message, color: Colors.white),
+                        label: const Text('Message', style: TextStyle(color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF5A35E3),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Address with Map
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Address',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _fullBusinessData!['business_address'] ?? 'Address not available.',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 200,
+                  child: _fullBusinessData!['latitude'] != null && _fullBusinessData!['longitude'] != null
+                      ? FlutterMap(
+                          options: MapOptions(
+                            initialCenter: LatLng(
+                              _fullBusinessData!['latitude'],
+                              _fullBusinessData!['longitude'],
+                            ),
+                            initialZoom: 15.0,
+                            minZoom: 15.0,
+                            maxZoom: 15.0,
+                            interactiveFlags: InteractiveFlag.none, // Make map non-interactive
+                          ),
+                          children: [
+                            TileLayer(
+                              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                            ),
+                            MarkerLayer(
+                              markers: [
+                                Marker(
+                                  point: LatLng(
+                                    _fullBusinessData!['latitude'],
+                                    _fullBusinessData!['longitude'],
+                                  ),
+                                  width: 80,
+                                  height: 80,
+                                  child: const Icon(
+                                    Icons.location_pin,
+                                    color: Colors.red,
+                                    size: 40,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        )
+                      : Center(
+                          child: Text(
+                            'Location not available',
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ),
+                ),
+                const SizedBox(height: 16),
+                if (_fullBusinessData!['latitude'] != null && _fullBusinessData!['longitude'] != null)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => GetDirectionScreen(
+                              destinationLatitude: _fullBusinessData!['latitude'],
+                              destinationLongitude: _fullBusinessData!['longitude'],
+                              businessName: _fullBusinessData!['business_name'],
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF5A35E3),
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Get Direction',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrderTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Services Available',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (_pricelist.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 48,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Pricing information will be available soon',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Contact the business directly for pricing details',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Builder(
+              builder: (context) {
+                final screenWidth = MediaQuery.of(context).size.width;
+                final small = screenWidth < 400;
+                final filtered = _pricelist
+                    .where((item) => (double.tryParse(item['price']?.toString() ?? '0') ?? 0) > 0.0)
+                    .toList();
+                return GridView.builder(
+                  itemCount: filtered.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    mainAxisExtent: small ? 70 : 92,
+                  ),
+                  itemBuilder: (context, index) {
+                    final item = filtered[index];
+                    return Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: small ? 12 : 14,
+                        vertical: small ? 10 : 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item['service_name'] ?? 'N/A',
+                                  style: TextStyle(
+                                    fontSize: small ? 14 : 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'P${item['price']}',
+                                  style: TextStyle(
+                                    fontSize: small ? 12 : 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF5A35E3),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(width: small ? 8 : 10),
+                          Container(
+                            width: small ? 32 : 36,
+                            height: small ? 32 : 36,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF5A35E3),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              _getServiceIcon(item['service_name']),
+                              color: const Color.fromARGB(255, 255, 255, 255),
+                              size: small ? 20 : 22,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          const SizedBox(height: 24),
+          // Place Order Button
+          SizedBox(
+            width: double.infinity,
+            child: _fullBusinessData!['does_delivery'] == true
+                ? ElevatedButton(
+                    onPressed: _placeOrder,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5A35E3),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Place Order',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                : Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'Delivery Not Available for Now',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
           ),
         ],
       ),

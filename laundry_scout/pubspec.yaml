@@ -11,6 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
+  shared_preferences: ^2.0.15
   supabase_flutter: ^2.3.4
   flutter_dotenv: ^5.1.0
   flutter_launcher_icons: ^0.13.1
@@ -21,7 +22,6 @@ dependencies:
   flutter_cache_manager: ^3.3.1
   flutter_image_compress: ^2.3.0
   path_provider: ^2.1.4
-  shared_preferences: ^2.2.2
   geolocator: ^14.0.2 # Updated geolocator dependency
   permission_handler: ^11.3.1
   flutter_map: ^6.1.0
@@ -37,6 +37,7 @@ dependencies:
   image_gallery_saver: ^2.0.3
   universal_html: ^2.2.2
   image: ^4.5.4
+  fl_chart: ^0.68.0
 
 dev_dependencies:
   flutter_test:
@@ -71,6 +72,8 @@ flutter:
     - lib/assets/navbars/message.png
     - lib/assets/navbars/notification.png
     - lib/assets/owner/
+    - lib/assets/owner/reviews.png
+    - lib/assets/owner/reports.png
   
   fonts:
     - family: Poppins

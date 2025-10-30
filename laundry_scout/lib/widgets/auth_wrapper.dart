@@ -40,6 +40,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
       final profileState = await _determineProfileState(user.id);
       
       Widget targetScreen;
+      final email = user.email ?? ''; // Retrieve email here
       switch (profileState['type']) {
         case 'complete_business':
           targetScreen = const OwnerHomeScreen();
@@ -49,7 +50,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
           break;
         case 'incomplete_business_info':
           // User has started business setup but hasn't completed business info
-          targetScreen = SetBusinessInfoScreen(username: profileState['username'] ?? 'User');
+          targetScreen = SetBusinessInfoScreen(username: profileState['username'] ?? 'User', email: email);
           break;
         case 'incomplete_business_profile':
           // User has completed business info but hasn't set up business profile
@@ -57,7 +58,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
           break;
         case 'incomplete_user_info':
           // User has started user setup but hasn't completed user info
-          targetScreen = SetUserInfoScreen(username: profileState['username'] ?? 'User');
+          targetScreen = SetUserInfoScreen(username: profileState['username'] ?? 'User', email: email);
           break;
         default:
           // No profile found or unknown state, show splash screen

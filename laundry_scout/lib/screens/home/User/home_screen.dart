@@ -10,7 +10,9 @@ import 'laundry_screen.dart';
 import 'message_screen.dart'; 
 import 'notification_screen.dart';
 import 'business_detail_screen.dart';
-import 'promo_preview.dart'; 
+import 'promo_preview.dart';
+import 'all_promos_screen.dart';
+import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,6 +35,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController(); 
   bool _isSearching = false; 
   int _selectedIndex = 0; 
+
+  final GlobalKey<NotificationScreenState> _notificationScreenKey = GlobalKey<NotificationScreenState>();
 
   late final List<Widget> _widgetOptions;
 
@@ -68,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const LocationScreen(),
       const LaundryScreen(),
       const MessageScreen(),
-      const NotificationScreen(),
+      NotificationScreen(key: _notificationScreenKey),
     ];
     
     _loadActiveOrdersCount(); 
@@ -164,7 +168,8 @@ class _HomeScreenState extends State<HomeScreen> {
             availability_status,
             feedback(rating)
           ''')
-          .eq('status', 'approved'); 
+          .eq('status', 'approved')
+          .eq('feedback.feedback_type', 'user'); 
 
       if (mounted) {
        
@@ -318,7 +323,15 @@ class _HomeScreenState extends State<HomeScreen> {
           .select('*, business_profiles(business_name)');
 
       if (mounted) {
-        _promos = List<Map<String, dynamic>>.from(response);
+        final now = DateTime.now();
+        _promos = List<Map<String, dynamic>>.from(response).where((promo) {
+          final expirationDateString = promo['expiration_date'] as String?;
+          if (expirationDateString == null) {
+            return true; // Promo without expiration date is always valid
+          }
+          final expirationDate = DateTime.parse(expirationDateString);
+          return expirationDate.isAfter(now);
+        }).toList();
         _updateHomeScreenBodyState(); 
       }
     } catch (e) {
@@ -372,18 +385,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onItemTapped(int index) {
     if (!mounted) return;
-    
+
     if (index == 0 && _selectedIndex == 0) {
       _scrollController.animateTo(
         0,
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
-      
+
       _refreshDataInBackground();
       return;
+    } else if (index == 4 && _selectedIndex != 4) { // Notification tab tapped
+      _notificationScreenKey.currentState?.refreshData();
     }
-    
+
     setState(() {
       _selectedIndex = index;
     });
@@ -397,6 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _loadPromosBackground(),
         _loadActiveOrdersCountBackground(),
       ]);
+      _notificationScreenKey.currentState?.refreshData();
     } catch (e) {
       print('Background refresh error: $e');
     }
@@ -437,7 +453,8 @@ class _HomeScreenState extends State<HomeScreen> {
             availability_status,
             feedback(rating)
           ''')
-          .eq('status', 'approved');
+          .eq('status', 'approved')
+          .eq('feedback.feedback_type', 'user');
 
       if (mounted) {
        
@@ -484,8 +501,17 @@ class _HomeScreenState extends State<HomeScreen> {
           .select('*, business_profiles(business_name)');
 
       if (mounted) {
+        final now = DateTime.now();
         setState(() {
-          _promos = List<Map<String, dynamic>>.from(response);
+          _promos = List<Map<String, dynamic>>.from(response).where((promo) {
+            final expirationDateString = promo['expiration_date'] as String?;
+            if (expirationDateString == null) {
+              return true; // Promo without expiration date is always valid
+            }
+            final expirationDate = DateTime.parse(expirationDateString);
+            return expirationDate.isAfter(now);
+          }).toList();
+          _updateHomeScreenBodyState();
         });
       }
     } catch (e) {
@@ -603,8 +629,8 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: _onItemTapped,
         showSelectedLabels: true,
         showUnselectedLabels: true,
-        selectedFontSize: 12,
-        unselectedFontSize: 12,
+        selectedFontSize: 10,
+        unselectedFontSize: 10,
       ),
     );
   }
@@ -1014,6 +1040,7 @@ class HomeScreenBody extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            const SizedBox(height: 20.0), // Add space above Welcome
                             const Text(
                               'Welcome',
                               style: TextStyle(
@@ -1145,12 +1172,60 @@ class HomeScreenBody extends StatelessWidget {
               if (!isSearching) // Use passed isSearching
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                   child: Text(
-                    'Promos',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Promos',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                      ),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          bool isMobile = MediaQuery.of(context).size.width < 600;
+                          if (isMobile) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF5A35E3),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const AllPromosScreen()),
+                                  );
+                                },
+                                child: const Text(
+                                  'View All',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            );
+                          } else {
+                            return TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const AllPromosScreen()),
+                                );
+                              },
+                              child: const Text(
+                                'View All',
+                                style: TextStyle(color: Color(0xFF5A35E3)),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 ),
               if (!isSearching)
@@ -1175,7 +1250,7 @@ class HomeScreenBody extends StatelessWidget {
                               );
                             },
                             child: Container(
-                              width: 250,
+                              width: 300,
                               margin: EdgeInsets.only(left: index == 0 ? 16.0 : 8.0, right: index == promos.length - 1 ? 16.0 : 0),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(15),
@@ -1187,76 +1262,39 @@ class HomeScreenBody extends StatelessWidget {
                                     offset: const Offset(0, 2),
                                   ),
                                 ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(15),
-                                child: Stack(
-                                  children: [
-                                    promo['image_url'] != null
-                                        ? OptimizedImage(
-                                            imageUrl: promo['image_url'],
-                                            width: 250,
-                                            height: double.infinity,
-                                            fit: BoxFit.cover,
-                                            errorWidget: Image.asset(
-                                              'lib/assets/promo_example.png',
-                                              width: 250,
-                                              height: double.infinity,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          )
-                                        : Image.asset(
-                                            'lib/assets/promo_example.png',
-                                            width: 250,
-                                            height: double.infinity,
-                                            fit: BoxFit.cover,
-                                          ),
-                                    Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(15),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.black.withOpacity(0.7),
-                                  ],
-                                  stops: const [0.5, 1.0],
+                                image: DecorationImage(
+                                  image: NetworkImage(promo['image_url'] ?? 'https://via.placeholder.com/150'), // Provide a fallback image URL
+                                  fit: BoxFit.cover,
                                 ),
                               ),
-                              padding: const EdgeInsets.all(12.0),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              child: Stack(
                                 children: [
-                                  if (promo['promo_title'] != null)
-                                    Text(
-                                      promo['promo_title'],
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
+                                  Positioned(
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.only(top: 0.0, bottom: 3.0, left: 150.0),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.5),
+                                        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(15)),
                                       ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  if (promo['promo_title'] != null && promo['business_profiles']?['business_name'] != null)
-                                    const SizedBox(height: 4),
-                                  if (promo['business_profiles']?['business_name'] != null)
-                                    Text(
-                                      promo['business_profiles']['business_name'],
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.9),
-                                        fontSize: 14,
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          if (promo['expiration_date'] != null)
+                                            Text(
+                                              'Expires: ${DateFormat('MMM d, yyyy h:mm a').format(DateTime.parse(promo['expiration_date']))}',
+                                              style: const TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: 10,
+                                              ),
+                                            ),
+                                        ],
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
+                                  ),
                                 ],
-                              ),
-                            ),
-                                  ],
-                                ),
                               ),
                             ),
                           );

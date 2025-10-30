@@ -197,10 +197,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
           emailRedirectTo: 'com.yourapp.laundryscout://email-confirm', 
-          data: {
-            'username': _usernameController.text.trim(),
-            'email_confirm': true,
-          },
+
         );
 
         if (response.user != null) {
@@ -235,7 +232,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
             if (mounted) {
               Navigator.pushReplacement(
                 context,
-                _createFadeRoute(SelectUserScreen(username: _usernameController.text.trim())),
+                _createFadeRoute(SelectUserScreen(username: _usernameController.text.trim(), email: _emailController.text.trim())),
               );
             }
           }
@@ -558,8 +555,8 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _signUp,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF5A35E3),
-                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.white,
+                            foregroundColor: const Color(0xFF5A35E3),
                             minimumSize: const Size(250, 50),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             textStyle: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold, fontSize: 16),
@@ -573,7 +570,7 @@ class _SignupScreenState extends State<SignupScreen> with SingleTickerProviderSt
                                   width: 20,
                                   child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                                 )
-                              : const Text('Sign Up'),
+                              : const Text('SIGN UP'),
                         ),
                       ),
                     ),

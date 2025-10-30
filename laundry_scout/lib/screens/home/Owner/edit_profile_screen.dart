@@ -7,6 +7,7 @@ import '../../../widgets/optimized_image.dart';
 import 'package:laundry_scout/screens/home/Owner/owner_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:laundry_scout/screens/home/User/business_detail_screen.dart'; // Import for BusinessDetailScreen
+import 'package:laundry_scout/screens/home/Owner/image_preview_screen.dart'; // Import for ImagePreviewScreen
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class EditProfileScreen extends StatefulWidget {
@@ -27,15 +28,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _aboutUsController = TextEditingController();
   final _termsAndConditionsController = TextEditingController();
   final _customServiceController = TextEditingController();
+  final TextEditingController _deliveryFeeController = TextEditingController(); // Add this line
   
   final List<String> _availableServices = [
-    'Drop Off',
+    'Iron Only',
     'Wash & Fold',
-    'Delivery',
-    'Pick Up',
-    'Self Service',
-    'Dry Clean',
-    'Ironing',
+    'Clean & Iron',
   ];
   List<String> _selectedServices = [];
   
@@ -44,19 +42,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final Map<int, TextEditingController> _editServiceControllers = {};
   final Map<int, TextEditingController> _editPriceControllers = {};
   final Set<int> _editingIndices = {};
-  List<Map<String, dynamic>> _weeklySchedule = [];
-  final Map<String, TextEditingController> _openControllers = {};
-  final Map<String, TextEditingController> _closeControllers = {};
-  final Map<String, bool> _closedDays = {};
+  // List<Map<String, dynamic>> _weeklySchedule = []; // Removed
+  // final Map<String, TextEditingController> _openControllers = {}; // Removed
+  // final Map<String, TextEditingController> _closeControllers = {}; // Removed
+  // final Map<String, bool> _closedDays = {}; // Removed
   
   bool _isLoading = true;
   bool _isSaving = false;
   bool _deliveryAvailable = false;
+  bool _isUploadingImages = false;
+  bool _isDeliveryFree = false; // Add this line
+  double _deliveryFee = 0.0; // Add this line
 
   Map<String, dynamic>? _businessProfile;
-  Map<String, String>? _selectedSchedule;
+  // Map<String, String>? _selectedSchedule; // Removed
 
-  final _openHoursController = TextEditingController();
+  // final _openHoursController = TextEditingController(); // Removed
   final _pickupTimeController = TextEditingController();
   final _dropoffTimeController = TextEditingController();
 
@@ -65,7 +66,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   File? _selectedImageFile; 
   Uint8List? _selectedImageBytes; 
-  String? _coverPhotoUrl; 
+  String? _coverPhotoUrl;
+  List<File> _selectedGalleryImageFiles = [];
+  List<Uint8List> _selectedGalleryImageBytes = [];
+  List<String> _existingGalleryImageUrls = []; 
 
   @override
   void initState() {
@@ -82,6 +86,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _aboutUsController.dispose();
     _termsAndConditionsController.dispose();
     _customServiceController.dispose();
+    _deliveryFeeController.dispose(); // Add this line
    
     for (var controller in _editServiceControllers.values) {
       controller.dispose();
@@ -90,14 +95,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       controller.dispose();
     }
     
-    for (var c in _openControllers.values) {
-      c.dispose();
-    }
-    for (var c in _closeControllers.values) {
-      c.dispose();
-    }
+    // for (var c in _openControllers.values) { // Removed
+    //   c.dispose(); // Removed
+    // } // Removed
+    // for (var c in _closeControllers.values) { // Removed
+    //   c.dispose(); // Removed
+    // } // Removed
     
-    _openHoursController.dispose();
+    // _openHoursController.dispose();
     _pickupTimeController.dispose();
     _dropoffTimeController.dispose();
 
@@ -135,11 +140,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _aboutUsController.text = _businessProfile!['about_business'] ?? '';
           _termsAndConditionsController.text = _businessProfile!['terms_and_conditions'] ?? ''; // Load terms and conditions
           _deliveryAvailable = _businessProfile!['does_delivery'] ?? false;
+          _isDeliveryFree = _businessProfile!['is_delivery_free'] ?? false; // Add this line
+          _deliveryFee = double.tryParse(_businessProfile!['delivery_fee'].toString()) ?? 0.0;
+          _deliveryFeeController.text = _deliveryFee.toString(); // Add this line
 
-          _coverPhotoUrl = _businessProfile!['cover_photo_url'];
+          final List<dynamic> galleryUrls = _businessProfile!['gallery_image_urls'] ?? [];
+          _existingGalleryImageUrls = List<String>.from(galleryUrls.map((url) => url.toString()));
           _coverPhotoUrl = _businessProfile!['cover_photo_url'];
 
-          _openHoursController.text = _businessProfile!['open_hours_text'] ?? '';
+          // _openHoursController.text = _businessProfile!['open_hours'] ?? ''; // Removed
 
           _pickupSlotControllers.clear();
           final List<String> pickupSlots = List<String>.from(_businessProfile!['available_pickup_time_slots'] ?? []);
@@ -155,15 +164,49 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
           final servicesOffered = _businessProfile!['services_offered'];
           if (servicesOffered is List) {
-           
             _selectedServices = List<String>.from(servicesOffered.map((service) {
               if (service is String) {
                 return service.toLowerCase() == 'deliver' ? 'Delivery' : service;
               }
               return service;
             }).whereType<String>().toSet().toList());
+
+            // Add loaded services to _availableServices, avoiding duplicates
+            setState(() {
+              for (var service in _selectedServices) {
+                if (!_availableServices.contains(service)) {
+                  _availableServices.add(service);
+                }
+              }
+            });
           } else if (servicesOffered is String) {
             _selectedServices = [servicesOffered.toLowerCase() == 'deliver' ? 'Delivery' : servicesOffered];
+            setState(() {
+              if (!_availableServices.contains(_selectedServices[0])) {
+                _availableServices.add(_selectedServices[0]);
+              }
+            });
+          }
+          
+          // Load all available services, including custom ones
+          final allAvailableServicesData = _businessProfile!['all_available_services'];
+          if (allAvailableServicesData is List) {
+            setState(() {
+              // Ensure default services are always present
+              final List<String> defaultServices = [
+                'Iron Only',
+                'Wash & Fold',
+                'Clean & Iron',
+              ];
+              _availableServices.clear();
+              _availableServices.addAll(defaultServices);
+              
+              for (var service in allAvailableServicesData) {
+                if (service is String && !_availableServices.contains(service)) {
+                  _availableServices.add(service);
+                }
+              }
+            });
           }
           
           final pricelistData = _businessProfile!['service_prices'];
@@ -190,21 +233,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             _pricelist.addAll(uniquePricelist.values);
           }
           
-          if (_businessProfile!['pickup_schedule'] != null && _businessProfile!['dropoff_schedule'] != null) {
-            _selectedSchedule = {
-              'pickup': _businessProfile!['pickup_schedule'],
-              'dropoff': _businessProfile!['dropoff_schedule'],
-            };
-          }
+          // if (_businessProfile!['pickup_schedule'] != null && _businessProfile!['dropoff_schedule'] != null) { // Removed
+          //   _selectedSchedule = { // Removed
+          //     'pickup': _businessProfile!['pickup_schedule'], // Removed
+          //     'dropoff': _businessProfile!['dropoff_schedule'], // Removed
+          //   }; // Removed
+          // } // Removed
           
           _syncServicesWithPricelist();
           
-          for (var schedule in _weeklySchedule) {
-            String day = schedule['day'];
-            _openControllers[day] = TextEditingController(text: schedule['open']);
-            _closeControllers[day] = TextEditingController(text: schedule['close']);
-            _closedDays[day] = schedule['closed'] ?? false;
-          }
+          // for (var schedule in _weeklySchedule) { // Removed
+          //   String day = schedule['day']; // Removed
+          //   _openControllers[day] = TextEditingController(text: schedule['open']); // Removed
+          //   _closeControllers[day] = TextEditingController(text: schedule['close']); // Removed
+          //   _closedDays[day] = schedule['closed'] ?? false; // Removed
+          // } // Removed
           _isLoading = false;
         });
       }
@@ -297,19 +340,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       
       Set<String> existingServices = _pricelist.map((item) => item['service'] as String).toSet();
       
+      final List<dynamic> originalServicePrices = _businessProfile!['service_prices'] ?? [];
+      final Map<String, String> originalPricesMap = {
+        for (var item in originalServicePrices)
+          if (item is Map<String, dynamic> && item['service'] is String && item['price'] != null)
+            (item['service'] as String).toLowerCase() == 'deliver' ? 'Delivery' : item['service'] as String: item['price'].toString()
+      };
+
       for (String service in _selectedServices) {
-     
         String normalizedService = service.toLowerCase() == 'deliver' ? 'Delivery' : service;
 
         if (!existingServices.contains(normalizedService)) {
           _pricelist.add({
             'service': normalizedService,
-            'price': '0.00',
+            'price': originalPricesMap[normalizedService] ?? '0.00',
           });
         }
       }
       
-      _pricelist.removeWhere((item) => !_selectedServices.contains(item['service']));
+      _pricelist.removeWhere((item) {
+        String normalizedPricelistService = (item['service'] as String).toLowerCase() == 'deliver' ? 'Delivery' : item['service'] as String;
+        return !_selectedServices.contains(normalizedPricelistService);
+      });
     });
   }
 
@@ -342,6 +394,124 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         );
       }
     }
+  }
+
+  Future<void> _pickGalleryImages() async { 
+    try { 
+      FilePickerResult? result = await FilePicker.platform.pickFiles( 
+        type: FileType.image, 
+        allowMultiple: true, 
+        withData: true, 
+      ); 
+
+      if (result != null) { 
+        setState(() { 
+          for (var file in result.files) { 
+            if (_selectedGalleryImageFiles.length + _existingGalleryImageUrls.length + _selectedGalleryImageBytes.length < 7) { 
+              if (file.bytes != null) { 
+                _selectedGalleryImageBytes.add(file.bytes!); 
+              } else if (file.path != null) { 
+                _selectedGalleryImageFiles.add(File(file.path!)); 
+              } 
+            } else { 
+              ScaffoldMessenger.of(context).showSnackBar( 
+                const SnackBar(content: Text('You can only upload a maximum of 7 gallery images.')), 
+              ); 
+            } 
+          } 
+        }); 
+      } 
+    } catch (e) { 
+      if (mounted) { 
+        ScaffoldMessenger.of(context).showSnackBar( 
+          SnackBar(content: Text('Error picking gallery images: $e')), 
+        ); 
+      } 
+    } 
+  } 
+
+  Widget _buildGalleryImagePreview(dynamic imageSource, {required bool isNew}) { 
+    Widget imageWidget; 
+    if (imageSource is String) { 
+      imageWidget = OptimizedImage( 
+        imageUrl: imageSource, 
+        fit: BoxFit.cover, 
+      ); 
+    } else if (imageSource is File) { 
+      imageWidget = Image.file( 
+        imageSource, 
+        fit: BoxFit.cover, 
+      ); 
+    } else if (imageSource is Uint8List) { 
+      imageWidget = Image.memory( 
+        imageSource, 
+        fit: BoxFit.cover, 
+      ); 
+    } else { 
+      return const SizedBox.shrink(); 
+    } 
+
+    return Stack( 
+      children: [ 
+        GestureDetector( 
+          onTap: () { 
+            if (imageSource is String) { 
+              Navigator.push( 
+                context, 
+                MaterialPageRoute( 
+                  builder: (context) => ImagePreviewScreen(imageUrl: imageSource), 
+                ), 
+              ); 
+            } 
+          }, 
+          child: Hero( 
+            tag: imageSource.hashCode, // Unique tag for Hero animation 
+            child: Container( 
+              width: 100, 
+              height: 100, 
+              decoration: BoxDecoration( 
+                borderRadius: BorderRadius.circular(8), 
+                border: Border.all(color: Colors.grey[300]!), 
+              ), 
+              child: ClipRRect( 
+                borderRadius: BorderRadius.circular(8), 
+                child: imageWidget, 
+              ), 
+            ), 
+          ), 
+        ), 
+        Positioned( 
+          top: 0, 
+          right: 0, 
+          child: GestureDetector( 
+            onTap: () { 
+              setState(() { 
+                if (isNew) { 
+                  if (imageSource is File) { 
+                    _selectedGalleryImageFiles.remove(imageSource); 
+                  } else if (imageSource is Uint8List) { 
+                    _selectedGalleryImageBytes.remove(imageSource); 
+                  } 
+                } else { 
+                  _existingGalleryImageUrls.remove(imageSource); 
+                } 
+              }); 
+            }, 
+            child: Container( 
+              decoration: BoxDecoration( 
+                color: Colors.black54, 
+                borderRadius: BorderRadius.circular(10), 
+              ), 
+              child: const Icon( 
+                Icons.close, 
+                color: Colors.white, 
+                size: 18, 
+              ), 
+            ), 
+          ), 
+        ), 
+      ], 
+    ); 
   }
 
   Future<void> _deleteCoverPhoto() async {
@@ -421,18 +591,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'longitude': _longitude,
         'about_business': _aboutUsController.text.trim(),
         'does_delivery': _deliveryAvailable,
+        'is_delivery_free': _isDeliveryFree, // Add this line
         'terms_and_conditions': _termsAndConditionsController.text.trim(),
+        'delivery_fee': _deliveryAvailable && !_isDeliveryFree ? double.tryParse(_deliveryFeeController.text.trim()) : null,
         'service_prices': _pricelist,
-        'open_hours_text': _openHoursController.text.trim(),
+        'services_offered': _selectedServices,
+        'all_available_services': _availableServices,
 
         'available_pickup_time_slots': _pickupSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
         'available_dropoff_time_slots': _dropoffSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
       };
-
-      if (_selectedSchedule != null) {
-        updateData['pickup_schedule'] = _selectedSchedule!['pickup'];
-        updateData['dropoff_schedule'] = _selectedSchedule!['dropoff'];
-      }
 
       if (_selectedImageFile != null || _selectedImageBytes != null) {
         final String fileExtension = _selectedImageFile?.path.split('.').last ?? 'png';
@@ -461,6 +629,38 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             .getPublicUrl(path);
         updateData['cover_photo_url'] = publicUrl;
       }
+
+      List<String> newGalleryImageUrls = [];
+      for (var i = 0; i < _selectedGalleryImageFiles.length; i++) {
+        final file = _selectedGalleryImageFiles[i];
+        final String fileExtension = file.path.split('.').last;
+        final String fileName = '${user.id}/gallery_photo_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExtension';
+        final String path = fileName;
+
+        await Supabase.instance.client.storage.from('profiles').uploadBinary(
+              path,
+              await file.readAsBytes(),
+              fileOptions: const FileOptions(upsert: true),
+            );
+        final String publicUrl = Supabase.instance.client.storage.from('profiles').getPublicUrl(path);
+        newGalleryImageUrls.add(publicUrl);
+      }
+
+      for (var i = 0; i < _selectedGalleryImageBytes.length; i++) {
+        final bytes = _selectedGalleryImageBytes[i];
+        final String fileName = '${user.id}/gallery_photo_${DateTime.now().millisecondsSinceEpoch}_${_selectedGalleryImageFiles.length + i}.png';
+        final String path = fileName;
+
+        await Supabase.instance.client.storage.from('profiles').uploadBinary(
+              path,
+              bytes,
+              fileOptions: const FileOptions(upsert: true),
+            );
+        final String publicUrl = Supabase.instance.client.storage.from('profiles').getPublicUrl(path);
+        newGalleryImageUrls.add(publicUrl);
+      }
+
+      updateData['gallery_image_urls'] = [..._existingGalleryImageUrls, ...newGalleryImageUrls];
 
       await Supabase.instance.client
           .from('business_profiles')
@@ -708,18 +908,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Open Hours'),
+        
         const SizedBox(height: 16),
-        _buildTextField(
-          controller: _openHoursController,
-          label: 'Open Hours (e.g., Mon-Sat: 9AM-5PM)',
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter your open hours';
-            }
-            return null;
-          },
-        ),
         const SizedBox(height: 24),
         if (_deliveryAvailable)
           Column(
@@ -863,9 +1053,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 'about_business': _aboutUsController.text.trim(),
                 'does_delivery': _deliveryAvailable,
                 'terms_and_conditions': _termsAndConditionsController.text.trim(),
-                'services_offered': _selectedServices,
                 'service_prices': _pricelist,
-                'open_hours_text': _openHoursController.text.trim(),
+
                 'available_pickup_time_slots': _pickupSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
                 'available_dropoff_time_slots': _dropoffSlotControllers.map((e) => e.text.trim()).where((e) => e.isNotEmpty).toList(),
                 'cover_photo_url': _coverPhotoUrl,
@@ -960,7 +1149,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                        ),
                                      ]
                                    else if (_coverPhotoUrl == null && _selectedImageBytes == null && _selectedImageFile == null)
-                                     ...[ 
+                                     ...[
                                        Center(
                                          child: Icon(
                                            Icons.photo,
@@ -999,6 +1188,49 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                     const SizedBox(height: 24),
                     _buildSectionHeader('Business Information'),
+                    // Gallery Image Upload 
+                    const SizedBox(height: 20), 
+                    _buildSectionHeader('Gallery Images'), 
+                    const SizedBox(height: 10), 
+                    Wrap( 
+                      spacing: 8.0, 
+                      runSpacing: 8.0, 
+                      children: [ 
+                        ..._existingGalleryImageUrls.map((url) => _buildGalleryImagePreview(url, isNew: false)), 
+                        ..._selectedGalleryImageFiles.map((file) => _buildGalleryImagePreview(file, isNew: true)), 
+                        ..._selectedGalleryImageBytes.map((bytes) => _buildGalleryImagePreview(bytes, isNew: true)), 
+                        if (_selectedGalleryImageFiles.length + _existingGalleryImageUrls.length + _selectedGalleryImageBytes.length < 7) 
+                          GestureDetector( 
+                            onTap: _pickGalleryImages, 
+                            child: Container( 
+                              width: 100, 
+                              height: 100, 
+                              decoration: BoxDecoration( 
+                                color: Colors.grey[200], 
+                                borderRadius: BorderRadius.circular(8), 
+                                border: Border.all(color: Colors.grey[300]!), 
+                              ), 
+                              child: const Icon( 
+                                Icons.add_a_photo, 
+                                color: Colors.grey, 
+                                size: 40, 
+                              ), 
+                            ), 
+                          ), 
+                      ], 
+                    ), 
+                    if (_isUploadingImages) 
+                      const Padding( 
+                        padding: EdgeInsets.symmetric(vertical: 16.0), 
+                        child: Row( 
+                          mainAxisAlignment: MainAxisAlignment.center, 
+                          children: [ 
+                            CircularProgressIndicator(), 
+                            SizedBox(width: 16), 
+                            Text('Uploading images...'), 
+                          ], 
+                        ), 
+                      ),
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: _businessNameController,
@@ -1084,15 +1316,76 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           onChanged: (value) {
                             setState(() {
                               _deliveryAvailable = value;
+                              if (!value) {
+                                _isDeliveryFree = false; // Reset free delivery if delivery is turned off
+                              }
                             });
                           },
                           activeColor: const Color(0xFF5A35E3),
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 32),
-                    
+                    if (_deliveryAvailable)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                        child: Row(
+                          children: [
+                            const Text(
+                              'Free Delivery',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black,
+                              ),
+                            ),
+                            const Spacer(),
+                            Switch(
+                              value: _isDeliveryFree,
+                              onChanged: (value) {
+                                setState(() {
+                                  _isDeliveryFree = value;
+                                });
+                              },
+                              activeColor: const Color(0xFF5A35E3),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (_deliveryAvailable && !_isDeliveryFree)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: TextFormField(
+                          controller: _deliveryFeeController,
+                          decoration: const InputDecoration(
+                            labelText: 'Delivery Fee',
+                            labelStyle: TextStyle(color: Colors.black),
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.black),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.black),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.black),
+                            ),
+                            prefixText: '₱ ',
+                            prefixStyle: TextStyle(color: Colors.black),
+                          ),
+                          style: TextStyle(color: Colors.black),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a delivery fee';
+                            }
+                            if (double.tryParse(value) == null) {
+                              return 'Please enter a valid number';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      
                     _buildSectionHeader('Services Offered'),
                     const SizedBox(height: 16),
                     const Text(
@@ -1145,7 +1438,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 32),
                     
                     // 3. Business Schedule Section (Editable)
-                    _buildSectionHeader('Business Schedule'),
+                    
                     const SizedBox(height: 16),
                     _buildEditableScheduleSection(),
                     const SizedBox(height: 32),
