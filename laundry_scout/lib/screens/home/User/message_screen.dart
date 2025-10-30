@@ -1099,17 +1099,29 @@ class _ChatAssistWidgetState extends State<ChatAssistWidget> {
   bool _isLoadingData = true;
   DateTime? _lastMessageTime;
   static const Duration _messageCooldown = Duration(seconds: 3);
+  StreamSubscription? _businessStatusSubscription;
+  Timer? _statusCheckTimer;
+  bool _isCheckingStatus = true;
 
   @override
   void initState() {
     super.initState();
     _loadBusinessData();
     _addWelcomeMessage();
+    // Only start monitoring after confirming business is offline
+    _loadBusinessData().then((_) {
+      if (mounted && _businessData?['owner_is_online'] != true) {
+        _setupBusinessStatusMonitoring();
+        _startPeriodicStatusCheck();
+      }
+    });
   }
 
   @override
   void dispose() {
     _messageController.dispose();
+    _businessStatusSubscription?.cancel();
+    _statusCheckTimer?.cancel();
     super.dispose();
   }
 
@@ -1129,6 +1141,81 @@ class _ChatAssistWidgetState extends State<ChatAssistWidget> {
       log('Error loading business data: $e');
       setState(() {
         _isLoadingData = false;
+      });
+    }
+  }
+
+  void _setupBusinessStatusMonitoring() {
+    try {
+      // First check if business is already online before setting up monitoring
+      _checkBusinessOnlineStatus();
+      
+      // Only set up stream monitoring if business is offline
+      if (_isCheckingStatus) {
+        _businessStatusSubscription = Supabase.instance.client
+            .from('business_profiles')
+            .stream(primaryKey: ['id'])
+            .eq('id', widget.businessId)
+            .listen((data) {
+              if (mounted && data.isNotEmpty) {
+                final businessData = data.first;
+                if (businessData['owner_is_online'] == true) {
+                  _onBusinessOwnerOnline();
+                }
+              }
+            });
+      }
+    } catch (e) {
+      debugPrint('Error setting up business status monitoring: $e');
+    }
+  }
+
+  void _startPeriodicStatusCheck() {
+    // Check status every 5 seconds
+    _statusCheckTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (mounted && _isCheckingStatus) {
+        _checkBusinessOnlineStatus();
+      }
+    });
+  }
+
+  Future<void> _checkBusinessOnlineStatus() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('owner_is_online')
+          .eq('id', widget.businessId)
+          .single();
+      
+      if (mounted && response['owner_is_online'] == true) {
+        _onBusinessOwnerOnline();
+      }
+    } catch (e) {
+      debugPrint('Error checking business status: $e');
+    }
+  }
+
+  void _onBusinessOwnerOnline() {
+    if (mounted) {
+      // Stop monitoring
+      _isCheckingStatus = false;
+      _statusCheckTimer?.cancel();
+      _businessStatusSubscription?.cancel();
+      
+      // Show notification to user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${_businessData?['business_name'] ?? 'Business owner'} is now online. Returning to chat...'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      // Navigate back after a short delay
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
       });
     }
   }
