@@ -39,7 +39,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
     try {
       final response = await Supabase.instance.client
           .from('business_profiles')
-          .select('id, business_name, business_address, cover_photo_url, does_delivery')
+          .select('id, business_name, business_address, cover_photo_url, does_delivery, services_offered')
           .eq('status', 'approved');
 
       if (mounted) {
@@ -79,31 +79,19 @@ class _LaundryScreenState extends State<LaundryScreen> {
     }
     
    
-    if (_currentFilters['selectedServices'] != null && 
+    if (_currentFilters['selectedServices'] != null &&
         (_currentFilters['selectedServices'] as List).isNotEmpty) {
       filtered = filtered.where((shop) {
         List<String> selectedServices = List<String>.from(_currentFilters['selectedServices']);
-      
+        List<String> shopServices = List<String>.from(shop['services_offered'] ?? []);
+
         bool hasService = false;
-        
         for (String service in selectedServices) {
-          switch (service) {
-            case 'Delivery':
-              if (shop['does_delivery'] == true) hasService = true;
-              break;
-            case 'Drop Off':
-            case 'Pick Up':
-            case 'Wash & Fold':
-            case 'Self Service':
-            case 'Dry Clean':
-            case 'Ironing':
-             
-              hasService = true;
-              break;
+          if (shopServices.contains(service)) {
+            hasService = true;
+            break;
           }
-          if (hasService) break;
         }
-        
         return hasService;
       }).toList();
     }
@@ -367,57 +355,46 @@ class _LaundryScreenState extends State<LaundryScreen> {
                  
                   Row(
                     children: [
-                     
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          'Open Slots',
-                          style: TextStyle(
-                            color: Colors.orange[700],
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                     
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF5A35E3).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          shop['does_delivery'] == true ? 'Wash & Fold' : 'Drop Off',
-                          style: const TextStyle(
-                            color: Color(0xFF5A35E3),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      if (shop['does_delivery'] == true) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'Delivery',
-                            style: TextStyle(
-                              color: Colors.green[700],
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
+                      if (shop['services_offered'] != null)
+                        ...(shop['services_offered'] as List<dynamic>).map((service) {
+                          Color backgroundColor;
+                          Color textColor;
+                          switch (service) {
+                            case 'Iron Only':
+                              backgroundColor = Colors.orange.withOpacity(0.1);
+                              textColor = Colors.orange[700]!;
+                              break;
+                            case 'Wash & Fold':
+                              backgroundColor = const Color(0xFF5A35E3).withOpacity(0.1);
+                              textColor = const Color(0xFF5A35E3);
+                              break;
+                            case 'Clean & Iron':
+                              backgroundColor = Colors.green.withOpacity(0.1);
+                              textColor = Colors.green[700]!;
+                              break;
+                            default:
+                              backgroundColor = Colors.grey.withOpacity(0.1);
+                              textColor = Colors.grey[700]!;
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 6.0),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: backgroundColor,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                service,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      ],
+                          );
+                        }).toList(),
                     ],
                   ),
                 ],
