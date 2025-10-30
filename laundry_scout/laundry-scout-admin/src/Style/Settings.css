@@ -52,17 +52,24 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 15px;
+  margin-bottom: 20px;
 }
 
+
 .settings-title {
-  font-size: 20px;
+  font-size: 1.5rem;
   font-weight: 600;
   color: var(--text-color);
+  margin: 0px 0px 5px;
+
 }
 
 .settings-subtitle {
   font-size: 14px;
   color: var(--muted-text);
+  margin: 0px 0px 5px;
 }
 
 .settings-header-actions {

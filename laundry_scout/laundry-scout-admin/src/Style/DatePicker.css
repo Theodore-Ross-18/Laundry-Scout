@@ -1,0 +1,35 @@
+.date-range-container {
+  position: relative;
+}
+
+.date-picker-popover {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.date-picker-input {
+  display: flex;
+  flex-direction: column;
+}
+
+.date-picker-input label {
+  margin-bottom: 5px;
+}
+
+.apply-btn {
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+}

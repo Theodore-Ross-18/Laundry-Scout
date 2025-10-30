@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Notifications from "./Notifications";
 
-// ✅ Filter Right Section (with date dropdown)
+// ✅ Filter Right Section (date dropdown + transaction dropdown)
 const ApplicationsFilterRight = ({
   startDate,
   endDate,
@@ -17,8 +17,11 @@ const ApplicationsFilterRight = ({
   showDateDropdown,
   setShowDateDropdown,
   handleCustomDateFilter,
-  handleAllTransactions,
+  handleFilterStatus,
+  selectedStatus,
 }) => {
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+
   return (
     <div className="applications-filter-right">
       {/* 📅 Date Button */}
@@ -31,10 +34,10 @@ const ApplicationsFilterRight = ({
             ? `${new Date(startDate).toLocaleDateString()} - ${new Date(
                 endDate
               ).toLocaleDateString()}`
-            : "Select Date Range"}
+            : "Filter by Date Range"}
         </button>
 
-        {/* ✅ Dropdown */}
+        {/* ✅ Date Dropdown with calendar inputs */}
         {showDateDropdown && (
           <div className="date-dropdown">
             <label>
@@ -53,17 +56,44 @@ const ApplicationsFilterRight = ({
                 onChange={(e) => setEndDate(e.target.value)}
               />
             </label>
-            <button className="apply-btn" onClick={handleCustomDateFilter}>
-              Apply
+            <button
+              className="apply-btn"
+              onClick={() => handleCustomDateFilter()}
+            >
+              Apply Filter
             </button>
           </div>
         )}
       </div>
 
-      {/* 💼 All Transactions Button */}
-      <button className="a-all-btn" onClick={handleAllTransactions}>
-        All Transactions
-      </button>
+      {/* 💼 All Transactions Button with Dropdown */}
+      <div className="dropdown-container">
+        <button
+          className="a-all-btn"
+          onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+        >
+          {selectedStatus ? selectedStatus : "All Transactions"}
+        </button>
+
+        {showStatusDropdown && (
+          <div className="dropdown-menu">
+            {["All Transactions", "Pending", "Approved", "Rejected"].map(
+              (status) => (
+                <div
+                  key={status}
+                  className={selectedStatus === status ? "active" : ""}
+                  onClick={() => {
+                    handleFilterStatus(status);
+                    setShowStatusDropdown(false);
+                  }}
+                >
+                  {status}
+                </div>
+              )
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -74,10 +104,8 @@ function Applications() {
   const [search, setSearch] = useState("");
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
-
   const [selectedBiz, setSelectedBiz] = useState(null);
   const [preview, setPreview] = useState(null);
-
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Reject Modal
@@ -90,10 +118,13 @@ function Applications() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  // ✅ Transaction Filter
+  const [selectedStatus, setSelectedStatus] = useState("All Transactions");
+
   const navigate = useNavigate();
   const searchRef = useRef(null);
 
-  // ✅ helper for Supabase public URLs
+  // ✅ Supabase public file URL helper
   const getFileUrl = (path, bucketName = "businessdocuments") => {
     if (!path) return null;
     if (path.startsWith("http")) return path;
@@ -102,10 +133,10 @@ function Applications() {
     return data?.publicUrl || null;
   };
 
-  const renderDocumentImage = (url, alt, key) => {
+  const renderDocumentImage = (url, alt) => {
     const imageUrl = getFileUrl(url);
     if (!url) return <span>No file uploaded</span>;
-    if (!imageUrl) return <span className="error-text">Invalid image URL</span>;
+    if (!imageUrl) return <span className="error-text">Invalid URL</span>;
 
     return (
       <img
@@ -118,7 +149,7 @@ function Applications() {
     );
   };
 
-  // ✅ fetch businesses
+  // ✅ Fetch all businesses
   useEffect(() => {
     fetchBusinesses();
   }, []);
@@ -132,15 +163,16 @@ function Applications() {
 
   // ✅ Custom Date Filter
   const handleCustomDateFilter = async () => {
-    if (!startDate || !endDate) return;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    if (!startDate || !endDate) {
+      alert("Please select both start and end dates.");
+      return;
+    }
 
     const { data, error } = await supabase
       .from("business_profiles")
       .select("*")
-      .gte("created_at", start.toISOString())
-      .lte("created_at", end.toISOString());
+      .gte("created_at", new Date(startDate).toISOString())
+      .lte("created_at", new Date(endDate).toISOString());
 
     if (error) {
       console.error("Error filtering by date:", error.message);
@@ -150,17 +182,22 @@ function Applications() {
     }
   };
 
-  // ✅ All Transactions (reset filter)
-  const handleAllTransactions = async () => {
-    const { data, error } = await supabase.from("business_profiles").select("*");
-    if (error) {
-      console.error("Error fetching all:", error.message);
+  // ✅ Filter by Status
+  const handleFilterStatus = async (status) => {
+    setSelectedStatus(status);
+    if (status === "All Transactions") {
+      fetchBusinesses();
     } else {
-      setBusinesses(data || []);
+      const { data, error } = await supabase
+        .from("business_profiles")
+        .select("*")
+        .eq("status", status.toLowerCase());
+      if (error) console.error(error.message);
+      else setBusinesses(data || []);
     }
   };
 
-  // ✅ search history click outside
+  // ✅ Search history outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -172,7 +209,7 @@ function Applications() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ✅ search history save
+  // ✅ Save search history
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && search.trim() !== "") {
       if (!history.includes(search)) {
@@ -195,16 +232,15 @@ function Applications() {
       .some((f) => f.toLowerCase().includes(search.toLowerCase()))
   );
 
-  // ✅ Approve business
+  // ✅ Approve
   const handleApprove = async () => {
     if (!selectedBiz) return;
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("business_profiles")
       .update({ status: "approved" })
       .eq("id", selectedBiz.id)
       .select();
-
-    if (!error && data?.length) {
+    if (data?.length) {
       setBusinesses((prev) =>
         prev.map((b) =>
           b.id === selectedBiz.id ? { ...b, status: "approved" } : b
@@ -214,7 +250,7 @@ function Applications() {
     }
   };
 
-  // ✅ Reject business
+  // ✅ Reject
   const handleReject = async () => {
     if (!selectedBiz) return;
     await supabase
@@ -251,7 +287,7 @@ function Applications() {
             <div>
               <h2 className="applications-title">Applications</h2>
               <p className="applications-subtitle">
-                All the Applicants Businesses waiting to be reviewed and Approved
+                Review, Approve, or Reject submitted business applications
               </p>
             </div>
           </div>
@@ -259,21 +295,17 @@ function Applications() {
             <div className="notification-wrapper">
               <Notifications />
             </div>
-            <div className="settings-wrapper">
-              <FiSettings
-                size={22}
-                className="settings-icon"
-                onClick={() => navigate("/settings")}
-              />
-            </div>
-            <div className="dropdown-wrapper">
-              <img
-                src="https://via.placeholder.com/32"
-                alt="profile"
-                className="profile-avatar"
-                onClick={() => navigate("/profile")}
-              />
-            </div>
+            <FiSettings
+              size={22}
+              className="settings-icon"
+              onClick={() => navigate("/settings")}
+            />
+            <img
+              src="https://via.placeholder.com/32"
+              alt="profile"
+              className="profile-avatar"
+              onClick={() => navigate("/profile")}
+            />
           </div>
         </header>
 
@@ -287,11 +319,12 @@ function Applications() {
                 <span className="count">{filteredBusinesses.length}</span>
               </div>
 
+              {/* Search */}
               <div className="applications-search-box" ref={searchRef}>
                 <FiSearch className="search-icon" />
                 <input
                   type="text"
-                  placeholder="Search Here"
+                  placeholder="Search here..."
                   className="applications-search-input"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -318,7 +351,7 @@ function Applications() {
                 )}
               </div>
 
-              {/* ✅ Date & Transactions Filter */}
+              {/* ✅ Date & Transaction Filters */}
               <ApplicationsFilterRight
                 startDate={startDate}
                 endDate={endDate}
@@ -327,22 +360,21 @@ function Applications() {
                 showDateDropdown={showDateDropdown}
                 setShowDateDropdown={setShowDateDropdown}
                 handleCustomDateFilter={handleCustomDateFilter}
-                handleAllTransactions={handleAllTransactions}
+                handleFilterStatus={handleFilterStatus}
+                selectedStatus={selectedStatus}
               />
             </div>
 
             {/* Table */}
             <div className="applications-table-wrapper">
-              <h3 className="applications-table-title">
-                Applicants For Review
-              </h3>
+              <h3 className="applications-table-title">Applicants For Review</h3>
               <table className="applications-table">
                 <thead>
                   <tr>
                     <th>Review</th>
                     <th>Store Name</th>
                     <th>Owner Name</th>
-                    <th>Phone Number</th>
+                    <th>Phone</th>
                     <th>Date Submitted</th>
                     <th>Status</th>
                   </tr>
@@ -370,9 +402,7 @@ function Applications() {
                         <td>{biz.business_phone_number}</td>
                         <td>
                           {biz.created_at &&
-                            new Date(biz.created_at).toLocaleDateString(
-                              "en-US"
-                            )}
+                            new Date(biz.created_at).toLocaleDateString("en-US")}
                         </td>
                         <td className={`status ${biz.status || "pending"}`}>
                           {biz.status || "Pending"}
@@ -390,49 +420,33 @@ function Applications() {
           </>
         ) : (
           <div className="applications-review-panel">
-            <h3 className="applications-review-panel-title">
-              {selectedBiz.business_name} For Review
-            </h3>
+            <h3>{selectedBiz.business_name} — Review</h3>
             <p>
-              <strong>First Name:</strong> {selectedBiz.owner_first_name}
+              <strong>Owner:</strong> {selectedBiz.owner_first_name}{" "}
+              {selectedBiz.owner_last_name}
             </p>
             <p>
-              <strong>Last Name:</strong> {selectedBiz.owner_last_name}
+              <strong>Phone:</strong> {selectedBiz.business_phone_number}
             </p>
             <p>
-              <strong>Phone Number:</strong> {selectedBiz.business_phone_number}
-            </p>
-            <p>
-              <strong>Business Name:</strong> {selectedBiz.business_name}
-            </p>
-            <p>
-              <strong>Business Address:</strong> {selectedBiz.business_address}
+              <strong>Address:</strong> {selectedBiz.business_address}
             </p>
 
             <div className="review-docs">
               <div className="doc-box">
-                <p>Attach BIR Registration</p>
-                {renderDocumentImage(
-                  selectedBiz.bir_registration_url,
-                  "BIR Registration",
-                  "bir"
-                )}
+                <p>BIR Registration</p>
+                {renderDocumentImage(selectedBiz.bir_registration_url, "BIR")}
               </div>
               <div className="doc-box">
                 <p>Business Certificate</p>
                 {renderDocumentImage(
                   selectedBiz.business_certificate_url,
-                  "Business Certificate",
-                  "certificate"
+                  "Certificate"
                 )}
               </div>
               <div className="doc-box">
-                <p>Business Mayor Permit</p>
-                {renderDocumentImage(
-                  selectedBiz.mayors_permit_url,
-                  "Mayor Permit",
-                  "mayor"
-                )}
+                <p>Mayor’s Permit</p>
+                {renderDocumentImage(selectedBiz.mayors_permit_url, "Permit")}
               </div>
             </div>
 
@@ -454,7 +468,7 @@ function Applications() {
         )}
       </main>
 
-      {/* ✅ Image Preview Modal */}
+      {/* ✅ Image Preview */}
       {preview && (
         <div className="preview-overlay" onClick={() => setPreview(null)}>
           <div className="preview-content">
@@ -468,7 +482,7 @@ function Applications() {
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">
-              <h3>Rejecting This Applicant</h3>
+              <h3>Rejecting Applicant</h3>
               <button
                 className="close-btn"
                 onClick={() => setShowRejectModal(false)}
@@ -483,7 +497,7 @@ function Applications() {
                 "Incomplete Documents",
                 "Invalid Documents",
                 "Duplicate Registration",
-                "Unclear Photo of documentation",
+                "Unclear Photo of Documentation",
               ].map((r) => (
                 <label key={r}>
                   <input

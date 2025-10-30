@@ -182,8 +182,8 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  gap: clamp(12px, 3vw, 32px);
-  width: 100%;
+  gap: 16px;
+  width: 28.5%;
   box-sizing: border-box;
   background: #ffffff; /* white container, as requested */
   border: 1px solid #e5eaf2; /* keep existing border color */

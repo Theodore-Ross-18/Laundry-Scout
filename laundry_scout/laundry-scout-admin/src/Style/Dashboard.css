@@ -9,14 +9,16 @@
   font-family: "Inter", sans-serif;
   background: var(--bg-color);
   color: var(--text-color);
+  overflow: hidden;
 }
 
 .dashboard-main {
   flex: 1;
-  padding: 20px;
+  padding: 0px 20px;
   background: var(--bg-color);
   color: var(--text-color);
-  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 100vh;
   transition: margin-left 0.3s ease;
 }
 
@@ -32,8 +34,12 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  padding: 0px 0px 12px 0px; 
+  padding: 20px 0px 12px 0px; 
   border-bottom: 1px solid var(--border-color);
+  position: sticky; /* stick header */
+  top: 0;
+  z-index: 10;
+  background: var(--bg-color);
 }
 
 .dashboard-header-left h2 {

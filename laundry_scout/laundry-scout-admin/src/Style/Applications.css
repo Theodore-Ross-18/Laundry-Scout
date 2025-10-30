@@ -159,7 +159,7 @@
   cursor: pointer;
 }
 
-/* ===== Date Dropdown ===== */
+/* ===== Date & All Transactions Buttons ===== */
 .date-dropdown-wrapper {
   position: relative;
   display: inline-block;
@@ -181,6 +181,7 @@
   background: #f3f4f6;
 }
 
+/* ===== Date Dropdown ===== */
 .date-dropdown {
   position: absolute;
   top: 45px;
@@ -225,6 +226,44 @@
 }
 .apply-btn:hover {
   background: #5848d6;
+}
+
+/* ===== Dropdown Menu for All Transactions ===== */
+.dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 2500;
+  min-width: 180px;
+  overflow: hidden;
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+.dropdown-menu div {
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-color);
+  transition: background 0.2s ease;
+}
+
+.dropdown-menu div:hover {
+  background: #f3f4f6;
+}
+
+.dropdown-menu div.active {
+  background: #6a5ae0;
+  color: white;
 }
 
 /* ===== Table ===== */

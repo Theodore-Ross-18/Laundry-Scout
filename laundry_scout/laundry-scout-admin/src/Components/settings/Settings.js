@@ -86,7 +86,7 @@ function Settings() {
       <div className="settings-main">
         {/* Header */}
         <div className="settings-header">
-          <div>
+          <div className="settings-header-left">
             <h2 className="settings-title">Settings</h2>
             <p className="settings-subtitle">
               Here you have the basic access you need to change to your preference.

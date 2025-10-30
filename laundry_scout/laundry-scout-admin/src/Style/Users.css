@@ -1,4 +1,4 @@
-/* ===== Layout ===== */
+/* ===== Root Layout ===== */
 .users-root {
   background: #f7f7fa;
   display: flex;
@@ -13,6 +13,7 @@
   display: flex;
   flex-direction: column;
   gap: 32px;
+  max-height: 100vh;
   background: var(--bg-color);
   transition: margin-left 0.3s ease-in-out;
 }
@@ -24,7 +25,11 @@
   align-items: center;
   width: 100%;
   border-bottom: 1px solid #c9c9c9;
-  padding: 0px 0px 12px 0px; 
+  padding-bottom: 12px;
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 100;
 }
 
 .users-header-left {
@@ -34,76 +39,29 @@
 }
 
 .users-title {
-  color: #333333;
+  color: #333;
   margin: 0 0 5px 0;
   font-size: 1.5rem;
   font-weight: 700;
 }
 
-.users-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+.users-subtitle {
+  font-size: 0.9rem;
+  color: #888;
+  margin: 0;
 }
 
 .users-header-icons {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    margin-left: auto;
-    position: relative;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  position: relative;
 }
-
-.users-subtitle {
-  margin-top: 0px;
-  font-size: 0.9rem;
-  color: #888;
-}
-
-.users-toggle-sidebar {
-  font-size: 1.6rem;
-  color: #6a5ae0;
-  cursor: pointer;
-}
-
 
 .icon {
   font-size: 1.2rem;
   cursor: pointer;
 }
-
-.notification-badge {
-  position: absolute;
-  top: -6px;
-  right: -8px;
-  background: #ef4444;
-  color: #fff;
-  font-size: 0.7rem;
-  padding: 2px 6px;
-  border-radius: 9999px;
-}
-
-
-.notif-time {
-  font-size: 12px;
-  color: #888;
-  display: block;
-}
-
-/* Profile Avatar */
-/* .profile-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  cursor: pointer;
-  border: 2px solid #e5e7eb;
-  transition: border 0.2s;
-} */
-
-/* .profile-avatar:hover {
-  border-color: #9ca3af;
-} */
 
 /* ===== Filters/Search ===== */
 .users-filters {
@@ -123,9 +81,8 @@
 }
 
 .users-filter-tab .count {
-  margin-left: 6px;
   background: #6b4eff;
-  color: white;
+  color: #fff;
   border-radius: 6px;
   padding: 2px 6px;
   font-size: 12px;
@@ -140,6 +97,11 @@
   border-radius: 8px;
   padding: 6px 10px;
   max-width: 320px;
+  transition: border-color 0.2s ease;
+}
+
+.users-search-box:focus-within {
+  border-color: #6b4eff;
 }
 
 .users-search-input {
@@ -150,34 +112,22 @@
   background: transparent;
 }
 
-.search-box:focus {
-  border-color: #6b4eff;
-}
-
 /* ===== Table ===== */
 .users-table-wrapper {
-     background: var(--card-bg);
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    width: 97%;
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  width: 97%;
+  overflow-x: auto;
 }
 
 .user-profiles-title {
-  color: #000000;
   text-align: center;
   margin-bottom: 16px;
   font-weight: 600;
   font-size: 18px;
-  color: var(--text-color) ;
-}
-
-.users-subtitle{
-  font-family: "Poppins", sans-serif;
-  font-size: 15.2px;
-  margin: 0px;
-  font-size: 0.9rem;
-  color: #888;
+  color: var(--text-color);
 }
 
 .users-table {
@@ -203,49 +153,42 @@
 
 .users-table tr:hover {
   background: #f9f9f9;
+  transition: background 0.2s ease;
 }
 
-/* Status colors */
+/* ===== Verified Status Colors ===== */
 .users-table td[style*="green"] {
   font-weight: 600;
   color: #10b981 !important;
 }
+
 .users-table td[style*="red"] {
   font-weight: 600;
   color: #ef4444 !important;
 }
 
-/* ===== Actions Menu ===== */
+/* ===== Action Buttons ===== */
 .actions-cell {
-  position: relative;
+  text-align: right;
 }
 
-.menu-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 1.2rem;
-}
-
-
-/* Delete button styling */
 .actions-cell .danger {
   background: transparent;
   border: none;
-  color: #ff0000;
+  color: #ef4444;
   cursor: pointer;
   font-family: "Poppins", sans-serif;
   font-weight: 600;
   font-size: 14px;
-  transition: color 0.2s;
+  transition: color 0.2s ease;
 }
 
 .actions-cell .danger:hover {
-  color: #cc0000;
+  color: #dc2626;
 }
 
-/* Modal overlay */
-.modal-overlay {
+/* ===== Delete Confirmation Overlay ===== */
+.confirm-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -256,43 +199,90 @@
   justify-content: center;
   align-items: center;
   z-index: 2000;
-}
-
-/* Modal box */
-.modal-content {
-  background: #fff;
-  padding: 20px 30px;
-  border-radius: 12px;
-  width: 400px;
-  max-width: 90%;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.3);
   animation: fadeIn 0.3s ease;
+  backdrop-filter: blur(3px);
 }
 
-/* Header */
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
+.confirm-box {
+  background: #fff;
+  padding: 25px 30px;
+  border-radius: 14px;
+  width: 380px;
+  max-width: 90%;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25);
+  text-align: center;
+  animation: scaleIn 0.25s ease;
 }
 
-.close-icon {
-  cursor: pointer;
-  font-size: 22px;
+.confirm-box h3 {
+  margin-bottom: 12px;
+  font-size: 1.25rem;
+  color: #111;
+  font-weight: 600;
+}
+
+.confirm-box p {
   color: #555;
+  font-size: 0.95rem;
+  margin-bottom: 22px;
+  line-height: 1.5;
 }
 
-.modal-body p {
-  margin: 10px 0;
-  font-size: 15px;
-  line-height: 1.4;
+.confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
 }
 
-.modal-body strong {
+.cancel-btn {
+  background: #e5e7eb;
   color: #333;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
+.cancel-btn:hover {
+  background: #d1d5db;
+}
+
+.users-delete-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.users-delete-btn:hover {
+  background: #dc2626;
+}
+
+/* ===== Toast Notification ===== */
+.toast-message {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  background: #111827;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  z-index: 3000;
+  animation: slideUp 0.3s ease, fadeOut 2.3s 0.2s forwards;
+}
+
+/* ===== Filter Buttons ===== */
 .u-date-btn,
 .u-all-btn {
   background: #fff;
@@ -304,10 +294,61 @@
   color: #444;
   cursor: pointer;
   transition: background 0.2s;
+}
 
+.u-date-btn:hover,
+.u-all-btn:hover {
+  background: #f3f4f6;
 }
 
 .users-filter-right {
   display: flex;
   gap: 10px;
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+  to { opacity: 0; }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .users-filters {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .users-search-box {
+    width: 100%;
+  }
+
+  .users-table-wrapper {
+    width: 100%;
+  }
+
+  .confirm-box {
+    width: 90%;
+    padding: 20px;
+  }
+
+  .users-table th,
+  .users-table td {
+    font-size: 0.85rem;
+  }
 }

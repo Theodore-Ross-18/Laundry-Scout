@@ -1,11 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "../Supabase/supabaseClient";
 import "../Style/Users.css";
-import {
-  FiBell,
-  FiSearch,
-  FiMoreVertical,
-} from "react-icons/fi";
+import { FiSearch, FiSettings } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Notifications from "./Notifications";
@@ -19,70 +15,79 @@ function Users() {
   const [search, setSearch] = useState("");
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null); // For overlay confirmation
 
   const navigate = useNavigate();
   const searchRef = useRef(null);
 
-  // ✅ Fetch users
+  // ✅ Fetch all users
   useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("user_profiles")
-        .select("*");
-      if (!error) setUsers(data || []);
-      setLoading(false);
-    };
     fetchUsers();
   }, []);
 
-  // ✅ Real-time Supabase notifications
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const fetchUsers = async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("user_profiles").select("*");
+    if (error) console.error("Fetch error:", error);
+    else setUsers(data || []);
+    setLoading(false);
+  };
 
+  // ✅ Real-time user inserts
   useEffect(() => {
-    const addNotification = (title, message) => {
-      setNotifications((prev) => [
-        {
-          id: Date.now(),
-          title,
-          message,
-          time: new Date().toLocaleTimeString(),
-          read: false,
-        },
-        ...prev,
-      ]);
-      setUnreadCount((prev) => prev + 1);
-    };
-
-    const userSub = supabase
+    const channel = supabase
       .channel("user-changes")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "user_profiles" },
         (payload) => {
-          addNotification(
-            "New user registered",
-            `User ${payload.new.username || payload.new.email} just signed up.`
-          );
+          showToast(`New user ${payload.new.email || "registered"} added.`);
+          fetchUsers();
         }
       )
       .subscribe();
 
-    return () => supabase.removeChannel(userSub);
+    return () => supabase.removeChannel(channel);
   }, []);
 
-  // ✅ Filtered users
+  // ✅ Show confirmation overlay
+  const confirmDeleteUser = (user) => {
+    setConfirmDelete(user);
+  };
+
+  // ✅ Handle deletion
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    const { uid, email } = confirmDelete;
+
+    const { error } = await supabase.from("user_profiles").delete().eq("uid", uid);
+    if (error) {
+      console.error(error);
+      showToast("❌ Failed to delete user.");
+    } else {
+      setUsers((prev) => prev.filter((u) => u.uid !== uid));
+      showToast(`✅ ${email} deleted successfully.`);
+    }
+    setConfirmDelete(null);
+  };
+
+  // ✅ Toast helper
+  const showToast = (message) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  // ✅ Search filter
   const filteredUsers = users.filter((u) =>
     [u.first_name, u.last_name, u.email, u.mobile_number, u.customer_id]
       .filter(Boolean)
       .some((f) => f.toLowerCase().includes(search.toLowerCase()))
   );
 
-  // ✅ Click outside search history
+  // ✅ Hide search history when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -102,8 +107,6 @@ function Users() {
     }
   };
 
-  const toggleMenu = (idx) => setMenuOpen(menuOpen === idx ? null : idx);
-
   return (
     <div className="users-root">
       <Sidebar isOpen={sidebarOpen} activePage="users" />
@@ -113,16 +116,17 @@ function Users() {
         <header className="users-header">
           <div className="users-header-left">
             <div>
-               <h2 className="users-title">Users</h2>
-                <p className="users-subtitle">
-                  All users registered in the app
-                </p>
+              <h2 className="users-title">Users</h2>
+              <p className="users-subtitle">All users registered in the app</p>
             </div>
           </div>
           <div className="users-header-icons">
             <Notifications />
-            <div className="dropdown-wrapper">
-            </div>
+            <FiSettings
+              size={22}
+              className="settings-icon"
+              onClick={() => navigate("/settings")}
+            />
             <div className="dropdown-wrapper">
               <img
                 src="https://via.placeholder.com/32"
@@ -192,9 +196,9 @@ function Users() {
               </ul>
             )}
           </div>
-          <div className="applications-filter-right">
-            <button className="date-btn">19 Dec - 20 Dec 2024</button>
-            <button className="all-btn">All Transactions</button>
+          <div className="users-filter-right">
+            <button className="u-date-btn">19 Dec - 20 Dec 2024</button>
+            <button className="u-all-btn">All Transactions</button>
           </div>
         </div>
 
@@ -243,20 +247,11 @@ function Users() {
                     </td>
                     <td className="actions-cell">
                       <button
-                        className="menu-btn"
-                        onClick={() => toggleMenu(idx)}
+                        className="danger"
+                        onClick={() => confirmDeleteUser(user)}
                       >
-                        <FiMoreVertical />
+                        Delete
                       </button>
-                      {menuOpen === idx && (
-                        <div className="menu-dropdown">
-                          <button onClick={() => alert(`Viewing ${user.email}`)}>View</button>
-                          <button onClick={() => alert(`Editing ${user.email}`)}>Edit</button>
-                          <button onClick={() => alert(`Deleting ${user.email}`)} className="danger">
-                            Delete
-                          </button>
-                        </div>
-                      )}
                     </td>
                   </tr>
                 ))
@@ -268,6 +263,31 @@ function Users() {
             </tbody>
           </table>
         </div>
+
+        {/* ✅ Delete Confirmation Overlay */}
+        {confirmDelete && (
+          <div className="confirm-overlay">
+            <div className="confirm-box">
+              <h3>Confirm Deletion</h3>
+              <p>
+                Are you sure you want to delete{" "}
+                <strong>{confirmDelete.email}</strong>?<br />
+                This action cannot be undone.
+              </p>
+              <div className="confirm-actions">
+                <button className="cancel-btn" onClick={() => setConfirmDelete(null)}>
+                  Cancel
+                </button>
+                <button className="users-delete-btn" onClick={handleDelete}>
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ✅ Toast Notification */}
+        {toast && <div className="toast-message">{toast}</div>}
       </main>
     </div>
   );
