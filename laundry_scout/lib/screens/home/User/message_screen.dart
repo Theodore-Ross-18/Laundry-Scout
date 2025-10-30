@@ -9,7 +9,7 @@ import '../../../services/connection_service.dart';
 import '../../../services/message_queue_service.dart';
 import '../../../services/realtime_message_service.dart';
 import '../../../widgets/optimized_image.dart';
-import 'package:url_launcher/url_launcher.dart';
+
 
 class MessageScreen extends StatefulWidget {
   const MessageScreen({super.key});
@@ -451,7 +451,8 @@ class _ChatScreenState extends State<ChatScreen> {
   Timer? _businessStatusTimer;
   String? _userUsername;
   String? _userProfileImage;
-  bool _showChatAssist = false; 
+  static bool _isNavigatingToChatAssist = false; // Prevent multiple navigations
+ 
 
   @override
   void initState() {
@@ -484,7 +485,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _startBackgroundRefresh() {
     _backgroundRefreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      if (mounted) {
+      if (mounted && !_isNavigatingToChatAssist) {
         _refreshMessagesInBackground();
       }
     });
@@ -492,7 +493,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _startBusinessStatusRefresh() {
     _businessStatusTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (mounted) {
+      if (mounted && !_isNavigatingToChatAssist) {
         _checkBusinessOnlineStatus();
       }
     });
@@ -551,8 +552,10 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       }
 
-      // Also refresh business online status in background
-      await _checkBusinessOnlineStatus();
+      // Also refresh business online status in background (only if not already navigating)
+      if (!_isNavigatingToChatAssist) {
+        await _checkBusinessOnlineStatus();
+      }
     } catch (e) {
       log('Background message refresh error: $e');
     }
@@ -588,10 +591,7 @@ class _ChatScreenState extends State<ChatScreen> {
           table: 'business_profiles',
           callback: (payload) {
             if (mounted && payload.newRecord['id'] == widget.businessId) {
-              final isOnline = payload.newRecord['owner_is_online'] ?? true;
-              setState(() {
-                _showChatAssist = !isOnline;
-              });
+              // Handle online status change - navigation will be handled elsewhere
             }
           },
         )
@@ -750,9 +750,6 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
-          // Show chat assist widget when business owner is offline
-          if (_showChatAssist)
-            ChatAssistWidget(businessName: widget.businessName),
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
@@ -1003,6 +1000,9 @@ class _ChatScreenState extends State<ChatScreen> {
   }
   
   Future<void> _checkBusinessOnlineStatus() async {
+    // Prevent multiple navigations
+    if (_isNavigatingToChatAssist) return;
+    
     try {
       final response = await Supabase.instance.client
           .from('business_profiles')
@@ -1011,12 +1011,30 @@ class _ChatScreenState extends State<ChatScreen> {
           .single();
       
       if (mounted) {
-        setState(() {
-          _showChatAssist = !(response['owner_is_online'] ?? true);
-        });
+        final isOffline = !(response['owner_is_online'] ?? true);
+        if (isOffline && !_isNavigatingToChatAssist) {
+          // Set flag to prevent multiple navigations
+          _isNavigatingToChatAssist = true;
+          
+          // Navigate to chat assistant when business is offline
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatAssistWidget(
+                businessName: widget.businessName,
+                businessId: widget.businessId,
+              ),
+            ),
+          ).then((_) {
+            // Reset flag when navigation completes
+            _isNavigatingToChatAssist = false;
+          });
+        }
       }
     } catch (e) {
       log('Error checking business online status: $e');
+      // Reset flag on error
+      _isNavigatingToChatAssist = false;
     }
   }
 
@@ -1055,149 +1073,625 @@ class _ChatScreenState extends State<ChatScreen> {
     
 }
 
-// Chat Assist Widget for offline business owners
-class ChatAssistWidget extends StatelessWidget {
+// Chat Assist Widget for offline business owners - Now with AI chat functionality
+class ChatAssistWidget extends StatefulWidget {
+  final String businessId;
   final String businessName;
 
   const ChatAssistWidget({
     super.key,
+    required this.businessId,
     required this.businessName,
   });
 
   @override
+  State<ChatAssistWidget> createState() => _ChatAssistWidgetState();
+}
+
+class _ChatAssistWidgetState extends State<ChatAssistWidget> {
+  final TextEditingController _messageController = TextEditingController();
+  final List<Map<String, dynamic>> _chatMessages = [];
+  bool _isTyping = false;
+  Map<String, dynamic>? _businessData;
+  bool _isLoadingData = true;
+  DateTime? _lastMessageTime;
+  static const Duration _messageCooldown = Duration(seconds: 3);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBusinessData();
+    _addWelcomeMessage();
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadBusinessData() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('*, service_prices, services_offered, open_hours, business_phone_number, business_address, about_business, does_delivery, delivery_fee')
+          .eq('id', widget.businessId)
+          .single();
+
+      setState(() {
+        _businessData = response;
+        _isLoadingData = false;
+      });
+    } catch (e) {
+      log('Error loading business data: $e');
+      setState(() {
+        _isLoadingData = false;
+      });
+    }
+  }
+
+  void _addWelcomeMessage() {
+    setState(() {
+      _chatMessages.add({
+        'isBot': true,
+        'message': 'Hello! I\'m ${widget.businessName}\'s assistant. I can help you with information about our services, prices, business hours, and more. What would you like to know?',
+        'timestamp': DateTime.now(),
+      });
+    });
+  }
+
+  void _handleUserMessage(String message) {
+    if (message.trim().isEmpty) return;
+    
+    // Prevent processing if already typing (prevents spam)
+    if (_isTyping) {
+      return;
+    }
+    
+    // Rate limiting: Check if enough time has passed since last message
+    final now = DateTime.now();
+    if (_lastMessageTime != null && now.difference(_lastMessageTime!) < _messageCooldown) {
+      return; // Too soon, ignore this message
+    }
+    
+    _lastMessageTime = now;
+
+    setState(() {
+      _chatMessages.add({
+        'isBot': false,
+        'message': message.trim(),
+        'timestamp': DateTime.now(),
+      });
+      _isTyping = true;
+    });
+
+    _messageController.clear();
+
+    // Generate response immediately (typing indicator will handle the delay)
+    _generateBotResponse(message.trim().toLowerCase());
+  }
+
+  void _generateBotResponse(String userMessage) {
+    if (_businessData == null) {
+      _addBotMessage('I\'m sorry, but I couldn\'t load the business information. Please try again later.');
+      return;
+    }
+
+    // Add typing indicator
+    setState(() {
+      _chatMessages.add({
+        'isBot': true,
+        'message': '',
+        'isTyping': true,
+        'timestamp': DateTime.now(),
+      });
+    });
+
+    // Simulate processing time
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      // Remove typing indicator
+      setState(() {
+        _chatMessages.removeWhere((msg) => msg['isTyping'] == true);
+      });
+
+      String response = _processUserQuery(userMessage);
+      _addBotMessage(response);
+    });
+  }
+
+  String _processUserQuery(String query) {
+    // Price-related questions
+    if (query.contains('price') || query.contains('cost') || query.contains('how much')) {
+      return _getPriceInformation(query);
+    }
+    
+    // Service-related questions
+    if (query.contains('service') || query.contains('what do you offer') || query.contains('available')) {
+      return _getServiceInformation();
+    }
+    
+    // Hours-related questions
+    if (query.contains('hour') || query.contains('open') || query.contains('close') || query.contains('time')) {
+      return _getHoursInformation();
+    }
+    
+    // Location/delivery questions
+    if (query.contains('location') || query.contains('address') || query.contains('where')) {
+      return _getLocationInformation();
+    }
+    
+    // Delivery questions
+    if (query.contains('delivery') || query.contains('deliver')) {
+      return _getDeliveryInformation();
+    }
+    
+    // Contact questions
+    if (query.contains('contact') || query.contains('phone') || query.contains('call')) {
+      return _getContactInformation();
+    }
+    
+    // About business
+    if (query.contains('about') || query.contains('tell me')) {
+      return _getAboutInformation();
+    }
+    
+    // Default response
+    return 'I\'m here to help! You can ask me about our services, prices, business hours, location, delivery options, or contact information. What would you like to know?';
+  }
+
+  String _getPriceInformation(String query) {
+    final servicePrices = _businessData!['service_prices'] as List<dynamic>?;
+    if (servicePrices == null || servicePrices.isEmpty) {
+      return 'I don\'t have specific pricing information available at the moment. Please contact us directly for pricing details.';
+    }
+
+    // Check if user asked about a specific service
+    for (var item in servicePrices) {
+      if (item is Map<String, dynamic>) {
+        String serviceName = item['service']?.toString().toLowerCase() ?? '';
+        String price = item['price']?.toString() ?? '0';
+        
+        // Check if query mentions this specific service
+        if (query.contains(serviceName.toLowerCase())) {
+          return 'Our ${item['service']} service costs ₱${double.parse(price).toStringAsFixed(2)}.';
+        }
+      }
+    }
+
+    // General price response
+    String priceList = servicePrices.map((item) {
+      if (item is Map<String, dynamic>) {
+        String service = item['service'] ?? 'Service';
+        String price = item['price']?.toString() ?? '0';
+        return '• $service: ₱${double.parse(price).toStringAsFixed(2)}';
+      }
+      return '';
+    }).join('\n');
+
+    return 'Here are our service prices:\n$priceList\n\nPrices may vary based on specific requirements.';
+  }
+
+  String _getServiceInformation() {
+    final servicesOffered = _businessData!['services_offered'];
+    final servicePrices = _businessData!['service_prices'] as List<dynamic>?;
+    
+    String serviceList = '';
+    if (servicePrices != null && servicePrices.isNotEmpty) {
+      serviceList = servicePrices.map((item) {
+        if (item is Map<String, dynamic>) {
+          return '• ${item['service'] ?? 'Service'}';
+        }
+        return '';
+      }).join('\n');
+    } else if (servicesOffered is List) {
+      serviceList = servicesOffered.map((service) => '• $service').join('\n');
+    } else if (servicesOffered is String) {
+      serviceList = '• $servicesOffered';
+    }
+
+    return 'We offer the following laundry services:\n$serviceList\n\nEach service is designed to meet your specific laundry needs with quality care.';
+  }
+
+  String _getHoursInformation() {
+    final openHours = _businessData!['open_hours'];
+    if (openHours == null || openHours.toString().isEmpty) {
+      return 'Our business hours are not specified. Please contact us directly for our operating hours.';
+    }
+    return 'Our business hours are:\n$openHours\n\nWe\'re here to serve you during these times. Feel free to drop off or pick up your laundry!';
+  }
+
+  String _getLocationInformation() {
+    final address = _businessData!['business_address'] ?? 'Address not specified';
+    return 'You can find us at:\n$address\n\nWe\'re conveniently located to serve your laundry needs. Feel free to visit us!';
+  }
+
+  String _getDeliveryInformation() {
+    final doesDelivery = _businessData!['does_delivery'] ?? false;
+    final deliveryFee = _businessData!['delivery_fee'];
+    
+    if (!doesDelivery) {
+      return 'We currently do not offer delivery services. Please visit our location to drop off and pick up your laundry.';
+    }
+    
+    if (deliveryFee != null && deliveryFee > 0) {
+      return 'Yes, we offer delivery services! The delivery fee is ₱${double.parse(deliveryFee.toString()).toStringAsFixed(2)}. We\'ll deliver your clean laundry right to your doorstep.';
+    }
+    
+    return 'Yes, we offer free delivery services! We\'ll deliver your clean laundry right to your doorstep at no extra cost.';
+  }
+
+  String _getContactInformation() {
+    final phoneNumber = _businessData!['business_phone_number'];
+    if (phoneNumber == null || phoneNumber.toString().isEmpty) {
+      return 'I don\'t have our phone number available. Please visit our location or check our business profile for contact details.';
+    }
+    return 'You can reach us at: $phoneNumber\n\nFeel free to call us for any questions, scheduling, or special requests!';
+  }
+
+  String _getAboutInformation() {
+    final aboutBusiness = _businessData!['about_business'];
+    if (aboutBusiness == null || aboutBusiness.toString().isEmpty) {
+      return '${widget.businessName} is your trusted local laundry service provider. We\'re committed to providing high-quality laundry care with convenient service options.';
+    }
+    return aboutBusiness.toString();
+  }
+
+  void _addBotMessage(String message) {
+    setState(() {
+      _isTyping = false;
+      _chatMessages.add({
+        'isBot': true,
+        'message': message,
+        'timestamp': DateTime.now(),
+      });
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF5A35E3),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.support_agent,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Chat Assistant',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    '${widget.businessName} is currently offline',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF5A35E3).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.support_agent,
-                  color: Color(0xFF5A35E3),
-                  size: 24,
-                ),
+          // Chat messages area
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                border: Border(top: BorderSide(color: Colors.grey[300]!)),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Chat Assistant',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Color(0xFF5A35E3),
+              child: Column(
+                children: [
+                  // Messages list
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _chatMessages.length,
+                      itemBuilder: (context, index) {
+                        final message = _chatMessages[index];
+                        return _buildChatMessage(message);
+                      },
+                    ),
+                  ),
+                  
+                  // Typing indicator
+                  if (_isTyping)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[600],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[600],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[600],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      '$businessName is currently offline',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'While you wait for a response, you can:',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 8),
-          _buildAssistOption(
-            context,
-            icon: Icons.schedule,
-            title: 'Check business hours',
-            onTap: () {
-              Navigator.pop(context);
-              // Navigate to business profile or hours page
-            },
+          
+          // Message input
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  spreadRadius: 1,
+                  blurRadius: 3,
+                  offset: const Offset(0, -1),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    decoration: InputDecoration(
+                      hintText: _isTyping ? 'Assistant is typing...' : 'Ask about services, prices, hours...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: _isTyping ? Colors.grey[200] : Colors.grey[100],
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      hintStyle: TextStyle(
+                        color: _isTyping ? Colors.grey[500] : Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                    enabled: !_isTyping,
+                    onSubmitted: _handleUserMessage,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF5A35E3),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: IconButton(
+                    onPressed: _isTyping ? null : () => _handleUserMessage(_messageController.text),
+                    icon: Icon(Icons.send, color: _isTyping ? Colors.white.withValues(alpha: 0.5) : Colors.white),
+                  ),
+                ),
+              ],
+            ),
           ),
-          _buildAssistOption(
-            context,
-            icon: Icons.question_answer,
-            title: 'View FAQ',
-            onTap: () {
-              Navigator.pop(context);
-              // Navigate to FAQ page
-            },
-          ),
-          _buildAssistOption(
-            context,
-            icon: Icons.phone,
-            title: 'Contact via phone',
-            onTap: () async {
-              final Uri phoneUri = Uri(scheme: 'tel', path: '');
-              if (await canLaunchUrl(phoneUri)) {
-                await launchUrl(phoneUri);
-              }
-            },
+          
+          // Quick suggestions
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: Colors.grey[200]!)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Quick questions you can ask:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildQuickQuestion('Services'),
+                      const SizedBox(width: 8),
+                      _buildQuickQuestion('Prices'),
+                      const SizedBox(width: 8),
+                      _buildQuickQuestion('Hours'),
+                      const SizedBox(width: 8),
+                      _buildQuickQuestion('Location'),
+                      const SizedBox(width: 8),
+                      _buildQuickQuestion('Delivery'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAssistOption(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: const Color(0xFF5A35E3),
+  Widget _buildChatMessage(Map<String, dynamic> message) {
+    final isBot = message['isBot'] as bool;
+    final isTyping = message['isTyping'] as bool? ?? false;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: isBot ? MainAxisAlignment.start : MainAxisAlignment.end,
+        children: [
+          if (isBot) ...[
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: const Color(0xFF5A35E3).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.support_agent,
+                color: Color(0xFF5A35E3),
+                size: 16,
+              ),
             ),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+            const SizedBox(width: 8),
+          ],
+          
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isBot ? Colors.white : const Color(0xFF5A35E3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isBot ? Colors.grey[300]! : Colors.transparent,
+                ),
+              ),
+              child: isTyping
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[600],
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[600],
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[600],
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Text(
+                      message['message'] as String,
+                      style: TextStyle(
+                        color: isBot ? Colors.black87 : Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+            ),
+          ),
+          
+          if (!isBot) ...[
+            const SizedBox(width: 8),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: const Color(0xFF5A35E3).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.person,
+                color: Color(0xFF5A35E3),
+                size: 16,
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickQuestion(String question) {
+    return GestureDetector(
+      onTap: () {
+        // Only handle if not currently typing (prevents spam)
+        if (!_isTyping) {
+          _messageController.text = question.toLowerCase();
+          _handleUserMessage(question.toLowerCase());
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: _isTyping 
+              ? const Color(0xFF5A35E3).withValues(alpha: 0.05)
+              : const Color(0xFF5A35E3).withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _isTyping
+                ? const Color(0xFF5A35E3).withValues(alpha: 0.1)
+                : const Color(0xFF5A35E3).withValues(alpha: 0.3),
+          ),
+        ),
+        child: Text(
+          question,
+          style: TextStyle(
+            color: _isTyping 
+                ? const Color(0xFF5A35E3).withValues(alpha: 0.5)
+                : const Color(0xFF5A35E3),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
   }
+
+
 }
 
 class FeedbackModal extends StatefulWidget {
