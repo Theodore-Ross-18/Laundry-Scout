@@ -87,7 +87,12 @@ class _LaundryScreenState extends State<LaundryScreen> {
 
         bool hasService = false;
         for (String service in selectedServices) {
-          if (shopServices.contains(service)) {
+          if (service == 'Delivery') {
+            if (shop['does_delivery'] == true) {
+              hasService = true;
+              break;
+            }
+          } else if (shopServices.contains(service)) {
             hasService = true;
             break;
           }

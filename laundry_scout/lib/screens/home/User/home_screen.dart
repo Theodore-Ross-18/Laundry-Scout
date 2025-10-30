@@ -166,6 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
             cover_photo_url, 
             does_delivery, 
             availability_status,
+            services_offered,
             feedback(rating)
           ''')
           .eq('status', 'approved')
@@ -201,6 +202,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
         _laundryShops = List<Map<String, dynamic>>.from(processedShops);
         _filteredLaundryShops = _laundryShops;
+        
+        // Debugging: Print services_offered for each shop
+        for (var shop in _laundryShops) {
+          print('Shop: ${shop['business_name']}, Services Offered: ${shop['services_offered']}');
+        }
         
         _updateHomeScreenBodyState(); 
       }
@@ -263,20 +269,15 @@ class _HomeScreenState extends State<HomeScreen> {
         bool hasService = false;
         
         for (String service in selectedServices) {
-          switch (service) {
-            case 'Delivery':
-              if (shop['does_delivery'] == true) hasService = true;
+          if (service == 'Delivery') {
+            if (shop['does_delivery'] == true) {
+              hasService = true;
               break;
-            case 'Drop Off':
-            case 'Pick Up':
-            case 'Wash & Fold':
-            case 'Self Service':
-            case 'Dry Clean':
-            case 'Ironing':
-              if (shopServices.contains(service)) hasService = true;
-              break;
+            }
+          } else if (shopServices.contains(service)) {
+            hasService = true;
+            break;
           }
-          if (hasService) break;
         }
         
         return hasService;
@@ -451,6 +452,7 @@ class _HomeScreenState extends State<HomeScreen> {
             cover_photo_url, 
             does_delivery, 
             availability_status,
+            services_offered,
             feedback(rating)
           ''')
           .eq('status', 'approved')
