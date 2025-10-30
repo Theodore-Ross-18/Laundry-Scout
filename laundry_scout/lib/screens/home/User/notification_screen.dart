@@ -275,6 +275,33 @@ class NotificationScreenState extends State<NotificationScreen> with SingleTicke
     }
   }
 
+  Future<void> _deleteNotification(Map<String, dynamic> notification) async {
+    try {
+      final notificationId = notification['id'];
+      
+      await Supabase.instance.client
+          .from('notifications')
+          .delete()
+          .eq('id', notificationId);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Notification deleted'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print('Error deleting notification: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting notification: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      rethrow;
+    }
+  }
+
   IconData _getNotificationIcon(String type) {
     switch (type) {
       case 'promo':
@@ -396,78 +423,160 @@ class NotificationScreenState extends State<NotificationScreen> with SingleTicke
                           final isRead = notification['is_read'] ?? false;
                           final type = notification['type'] ?? 'general';
                           
-                          return Container(
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isRead ? Colors.white : Colors.blue.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isRead ? Colors.grey.withOpacity(0.2) : Colors.blue.withOpacity(0.2),
+                          return Dismissible(
+                            key: Key(notification['id'].toString()),
+                            background: Container(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 4,
                               ),
-                            ),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: _getNotificationColor(type).withOpacity(0.1),
-                                child: Icon(
-                                  _getNotificationIcon(type),
-                                  color: _getNotificationColor(type),
-                                  size: 20,
-                                ),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              title: FutureBuilder<String>(
-                                future: _getDisplayTitle(notification),
-                                builder: (context, snapshot) {
-                                  return Text(
-                                    snapshot.data ?? (notification['title'] ?? 'Notification'),
-                                    style: TextStyle(
-                                      fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-                                      color: Colors.black,
-                                      fontSize: 16,
-                                    ),
-                                  );
-                                },
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              child: const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    notification['message'] ?? '',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 14,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
+                                  Icon(
+                                    Icons.delete,
+                                    color: Colors.white,
+                                    size: 28,
                                   ),
-                                  const SizedBox(height: 4),
+                                  SizedBox(height: 4),
                                   Text(
-                                    _formatTime(notification['created_at']),
+                                    'Delete',
                                     style: TextStyle(
-                                      color: Colors.grey[500],
+                                      color: Colors.white,
                                       fontSize: 12,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ],
                               ),
-                              trailing: !isRead
-                                  ? Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFF5A35E3),
-                                        shape: BoxShape.circle,
+                            ),
+                            direction: DismissDirection.endToStart,
+                            confirmDismiss: (direction) async {
+                              return await showDialog<bool>(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text(
+                                      'Delete Notification',
+                                      style: TextStyle(color: Colors.black),
+                                    ),
+                                    content: const Text(
+                                      'Are you sure you want to delete this notification?',
+                                      style: TextStyle(color: Colors.black),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(context).pop(false),
+                                        child: const Text(
+                                          'Cancel',
+                                          style: TextStyle(color: Colors.black),
+                                        ),
                                       ),
-                                    )
-                                  : null,
-                              onTap: () {
-                                if (!isRead) {
-                                  _markAsRead(notification['id']);
-                                }
-                              },
+                                      TextButton(
+                                        onPressed: () => Navigator.of(context).pop(true),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: Colors.red,
+                                        ),
+                                        child: const Text('Delete'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ) ?? false;
+                            },
+                            onDismissed: (direction) async {
+                              final notificationToDelete = notification;
+                              final originalIndex = index;
+                              
+                              setState(() {
+                                _notifications.removeAt(index);
+                              });
+                              
+                              try {
+                                await _deleteNotification(notificationToDelete);
+                              } catch (e) {
+                                setState(() {
+                                  _notifications.insert(originalIndex, notificationToDelete);
+                                });
+                              }
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isRead ? Colors.white : Colors.blue.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isRead ? Colors.grey.withOpacity(0.2) : Colors.blue.withOpacity(0.2),
+                                ),
+                              ),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: _getNotificationColor(type).withOpacity(0.1),
+                                  child: Icon(
+                                    _getNotificationIcon(type),
+                                    color: _getNotificationColor(type),
+                                    size: 20,
+                                  ),
+                                ),
+                                title: FutureBuilder<String>(
+                                  future: _getDisplayTitle(notification),
+                                  builder: (context, snapshot) {
+                                    return Text(
+                                      snapshot.data ?? (notification['title'] ?? 'Notification'),
+                                      style: TextStyle(
+                                        fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                                        color: Colors.black,
+                                        fontSize: 16,
+                                      ),
+                                    );
+                                  },
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      notification['message'] ?? '',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 14,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _formatTime(notification['created_at']),
+                                      style: TextStyle(
+                                        color: Colors.grey[500],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                trailing: !isRead
+                                    ? Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFF5A35E3),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      )
+                                    : null,
+                                onTap: () {
+                                  if (!isRead) {
+                                    _markAsRead(notification['id']);
+                                  }
+                                },
+                              ),
                             ),
                           );
                         },
