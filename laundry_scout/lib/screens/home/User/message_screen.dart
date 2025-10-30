@@ -9,6 +9,7 @@ import '../../../services/connection_service.dart';
 import '../../../services/message_queue_service.dart';
 import '../../../services/realtime_message_service.dart';
 import '../../../widgets/optimized_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MessageScreen extends StatefulWidget {
   const MessageScreen({super.key});
@@ -411,10 +412,10 @@ class _MessageScreenState extends State<MessageScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
-      print('Mark all as read pressed for user: ${user.id}');
+      log('Mark all as read pressed for user: ${user.id}');
 
     } catch (e) {
-      print('Error marking all messages as read: $e');
+      log('Error marking all messages as read: $e');
     }
   }
 }
@@ -447,8 +448,10 @@ class _ChatScreenState extends State<ChatScreen> {
   late StreamSubscription _messageSubscription;
   RealtimeChannel? _currentChannel;
   Timer? _backgroundRefreshTimer;
+  Timer? _businessStatusTimer;
   String? _userUsername;
-  String? _userProfileImage; 
+  String? _userProfileImage;
+  bool _showChatAssist = false; 
 
   @override
   void initState() {
@@ -461,6 +464,8 @@ class _ChatScreenState extends State<ChatScreen> {
     _setupRealtimeSubscription();
     _setupQualityListener();
     _startBackgroundRefresh();
+    _startBusinessStatusRefresh();
+    _checkBusinessOnlineStatus();
   }
 
   @override
@@ -471,6 +476,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _connectionService.stopMonitoring();
     _messageQueue.stopQueue();
     _backgroundRefreshTimer?.cancel();
+    _businessStatusTimer?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -480,6 +486,14 @@ class _ChatScreenState extends State<ChatScreen> {
     _backgroundRefreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
       if (mounted) {
         _refreshMessagesInBackground();
+      }
+    });
+  }
+
+  void _startBusinessStatusRefresh() {
+    _businessStatusTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted) {
+        _checkBusinessOnlineStatus();
       }
     });
   }
@@ -516,6 +530,7 @@ class _ChatScreenState extends State<ChatScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
+      // Refresh messages
       final response = await Supabase.instance.client
           .from('messages')
           .select('*')
@@ -535,6 +550,9 @@ class _ChatScreenState extends State<ChatScreen> {
           _scrollToBottom();
         }
       }
+
+      // Also refresh business online status in background
+      await _checkBusinessOnlineStatus();
     } catch (e) {
       log('Background message refresh error: $e');
     }
@@ -560,6 +578,24 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       },
     );
+
+    // Add realtime subscription for business profile changes (online/offline status)
+    Supabase.instance.client
+        .channel('business_profile_${widget.businessId}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'business_profiles',
+          callback: (payload) {
+            if (mounted && payload.newRecord['id'] == widget.businessId) {
+              final isOnline = payload.newRecord['owner_is_online'] ?? true;
+              setState(() {
+                _showChatAssist = !isOnline;
+              });
+            }
+          },
+        )
+        .subscribe();
 
     _messageSubscription = _messageQueue.sentMessageStream.listen((sentMessage) {
       if (mounted) {
@@ -623,9 +659,9 @@ class _ChatScreenState extends State<ChatScreen> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.3)),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -714,6 +750,9 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
+          // Show chat assist widget when business owner is offline
+          if (_showChatAssist)
+            ChatAssistWidget(businessName: widget.businessName),
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
@@ -962,6 +1001,24 @@ class _ChatScreenState extends State<ChatScreen> {
       log('Error loading messages: $e');
     }
   }
+  
+  Future<void> _checkBusinessOnlineStatus() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('owner_is_online')
+          .eq('id', widget.businessId)
+          .single();
+      
+      if (mounted) {
+        setState(() {
+          _showChatAssist = !(response['owner_is_online'] ?? true);
+        });
+      }
+    } catch (e) {
+      log('Error checking business online status: $e');
+    }
+  }
 
   void _setupQualityListener() {
     _qualitySubscription = _connectionService.qualityStream.listen((quality) {
@@ -996,6 +1053,151 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
     
+}
+
+// Chat Assist Widget for offline business owners
+class ChatAssistWidget extends StatelessWidget {
+  final String businessName;
+
+  const ChatAssistWidget({
+    super.key,
+    required this.businessName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF5A35E3).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.support_agent,
+                  color: Color(0xFF5A35E3),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Chat Assistant',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFF5A35E3),
+                      ),
+                    ),
+                    Text(
+                      '$businessName is currently offline',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'While you wait for a response, you can:',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildAssistOption(
+            context,
+            icon: Icons.schedule,
+            title: 'Check business hours',
+            onTap: () {
+              Navigator.pop(context);
+              // Navigate to business profile or hours page
+            },
+          ),
+          _buildAssistOption(
+            context,
+            icon: Icons.question_answer,
+            title: 'View FAQ',
+            onTap: () {
+              Navigator.pop(context);
+              // Navigate to FAQ page
+            },
+          ),
+          _buildAssistOption(
+            context,
+            icon: Icons.phone,
+            title: 'Contact via phone',
+            onTap: () async {
+              final Uri phoneUri = Uri(scheme: 'tel', path: '');
+              if (await canLaunchUrl(phoneUri)) {
+                await launchUrl(phoneUri);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAssistOption(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: const Color(0xFF5A35E3),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class FeedbackModal extends StatefulWidget {
@@ -1216,7 +1418,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
                       color: const Color(0xFF5A35E3), // Changed to solid color
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF5A35E3).withOpacity(0.3),
+                          color: const Color(0xFF5A35E3).withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
