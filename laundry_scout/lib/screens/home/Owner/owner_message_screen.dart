@@ -878,6 +878,47 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
     }
   }
 
+  Future<void> _deleteMessage(String messageId) async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      // Find the message to check if it belongs to the current user
+      final message = _messages.firstWhere(
+        (msg) => msg['id'].toString() == messageId,
+        orElse: () => {},
+      );
+
+      if (message.isEmpty || message['sender_id'] != user.id) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('You can only delete your own messages')),
+          );
+        }
+        return;
+      }
+
+      await Supabase.instance.client
+          .from('messages')
+          .delete()
+          .eq('id', messageId)
+          .eq('sender_id', user.id); // Additional safety check
+
+      if (mounted) {
+        setState(() {
+          _messages.removeWhere((message) => message['id'] == messageId);
+        });
+      }
+    } catch (e) {
+      print('Error deleting message: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete message')),
+        );
+      }
+    }
+  }
+
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -994,127 +1035,171 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                 final message = _messages[index];
                 final isMe = message['sender_id'] == user?.id;
                 
-                return Align(
-                  alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        
-                        if (!isMe) ...[
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: Colors.grey[300],
-                            child: widget.userImage != null
-                                ? ClipOval(
-                                    child: OptimizedImage(
-                                      imageUrl: widget.userImage!,
-                                      width: 32,
-                                      height: 32,
-                                      fit: BoxFit.cover,
-                                      placeholder: const Icon(Icons.person, size: 16, color: Colors.grey),
-                                    ),
-                                  )
-                                : const Icon(Icons.person, size: 16, color: Colors.grey),
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                        
-                       
-                        Flexible(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: MediaQuery.of(context).size.width * 0.75,
+                return Dismissible(
+                  key: Key('message_${message['id'] ?? index}'),
+                  direction: isMe ? DismissDirection.horizontal : DismissDirection.none,
+                  background: isMe ? Container(
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    color: Colors.red,
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ) : null,
+                  secondaryBackground: isMe ? Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    color: Colors.red,
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ) : null,
+                  confirmDismiss: (direction) async {
+                    if (!isMe) return false;
+                    
+                    return await showDialog<bool>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('Delete Message', style: TextStyle(color: Colors.black)),
+                          content: const Text('Are you sure you want to delete this message?', style: TextStyle(color: Colors.black)),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('Cancel', style: TextStyle(color: Colors.black)),
                             ),
-                            child: Column(
-                              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                              children: [
-                                
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    bottom: 4,
-                                    left: isMe ? 0 : 8,
-                                    right: isMe ? 8 : 0,
-                                  ),
-                                  child: Text(
-                                    isMe ? ( 'You') : widget.userName,
-                                    style: const TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                
-                              
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: isMe ? const Color(0xFF5A35E3) : const Color(0xFFE0E0E0),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    message['content'],
-                                    style: TextStyle(
-                                      color: isMe ? Colors.white : Colors.black,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                                
-                              
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        _formatMessageTime(message['created_at']),
-                                        style: const TextStyle(
-                                          color: Colors.grey,
-                                          fontSize: 12,
-                                        ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text('Delete', style: TextStyle(color: Colors.black)),
+                            ),
+                          ],
+                        );
+                      },
+                    ) ?? false;
+                  },
+                  onDismissed: (direction) {
+                    if (isMe && message['id'] != null) {
+                      _deleteMessage(message['id'].toString());
+                    }
+                  },
+                  child: Align(
+                    alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          
+                          if (!isMe) ...[
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: Colors.grey[300],
+                              child: widget.userImage != null
+                                  ? ClipOval(
+                                      child: OptimizedImage(
+                                        imageUrl: widget.userImage!,
+                                        width: 32,
+                                        height: 32,
+                                        fit: BoxFit.cover,
+                                        placeholder: const Icon(Icons.person, size: 16, color: Colors.grey),
                                       ),
-                                      if (isMe) ...[
-                                        const SizedBox(width: 4),
-                                        Icon(
-                                          Icons.done_all,
-                                          size: 14,
-                                          color: Colors.blue,
-                                        ),
-                                      ],
-                                    ],
+                                    )
+                                  : const Icon(Icons.person, size: 16, color: Colors.grey),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          
+                         
+                          Flexible(
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: MediaQuery.of(context).size.width * 0.75,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                children: [
+                                  
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: 4,
+                                      left: isMe ? 0 : 8,
+                                      right: isMe ? 8 : 0,
+                                    ),
+                                    child: Text(
+                                      isMe ? ( 'You') : widget.userName,
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  
+                                
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: isMe ? const Color(0xFF5A35E3) : const Color(0xFFE0E0E0),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      message['content'],
+                                      style: TextStyle(
+                                        color: isMe ? Colors.white : Colors.black,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                  
+                                
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          _formatMessageTime(message['created_at']),
+                                          style: const TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        if (isMe) ...[
+                                          const SizedBox(width: 4),
+                                          Icon(
+                                            Icons.done_all,
+                                            size: 14,
+                                            color: Colors.blue,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        
+                          
 
-                        if (isMe) ...[
-                          const SizedBox(width: 8),
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: const Color(0xFF5A35E3),
-                            backgroundImage: _businessCoverPhotoUrl != null 
-                                ? NetworkImage(_businessCoverPhotoUrl!)
-                                : null,
-                            child: _businessCoverPhotoUrl == null
-                                ? Text(
-                                    user?.userMetadata?['full_name']?.substring(0, 1).toUpperCase() ?? 'O',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  )
-                                : null,
-                          ),
+                          if (isMe) ...[
+                            const SizedBox(width: 8),
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: const Color(0xFF5A35E3),
+                              backgroundImage: _businessCoverPhotoUrl != null 
+                                  ? NetworkImage(_businessCoverPhotoUrl!)
+                                  : null,
+                              child: _businessCoverPhotoUrl == null
+                                  ? Text(
+                                      user?.userMetadata?['full_name']?.substring(0, 1).toUpperCase() ?? 'O',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 );
