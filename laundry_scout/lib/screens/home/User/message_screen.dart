@@ -6,6 +6,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:math';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
 import '../../../services/connection_service.dart';
 import '../../../services/message_queue_service.dart';
 import '../../../services/realtime_message_service.dart';
@@ -72,16 +75,14 @@ class _MessageScreenState extends State<MessageScreen> {
               owner_is_online
             )
           ''')
-          .eq('user_id', user.id)
-          .order('last_message_at', ascending: false);
+          .eq('user_id', user.id);
 
       for (var conversation in response) {
         final lastMessage = await Supabase.instance.client
             .from('messages')
-            .select('content, created_at, sender_id')
+            .select('content, sender_id, created_at')
             .or('sender_id.eq.${user.id},receiver_id.eq.${user.id}')
             .eq('business_id', conversation['business_id'])
-            .order('created_at', ascending: false)
             .limit(1)
             .maybeSingle();
 
@@ -123,16 +124,14 @@ class _MessageScreenState extends State<MessageScreen> {
               owner_is_online
             )
           ''')
-          .eq('user_id', user.id)
-          .order('last_message_at', ascending: false);
+          .eq('user_id', user.id);
 
       for (var conversation in response) {
         final lastMessage = await Supabase.instance.client
             .from('messages')
-            .select('content, created_at, sender_id')
+            .select('content, sender_id, created_at')
             .or('sender_id.eq.${user.id},receiver_id.eq.${user.id}')
             .eq('business_id', conversation['business_id'])
-            .order('created_at', ascending: false)
             .limit(1)
             .maybeSingle();
 
@@ -666,8 +665,7 @@ class _ChatScreenState extends State<ChatScreen> {
           .from('messages')
           .select('*')
           .or('sender_id.eq.${user.id},receiver_id.eq.${user.id}')
-          .eq('business_id', widget.businessId)
-          .order('created_at', ascending: true);
+          .eq('business_id', widget.businessId);
 
       if (mounted) {
         final newMessages = List<Map<String, dynamic>>.from(response);
@@ -981,8 +979,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return Supabase.instance.client
         .from('business_profiles')
         .stream(primaryKey: ['id'])
-        .eq('id', businessId)
-        .order('id', ascending: true);
+        .eq('id', businessId);
   }
 
   void _scrollToBottom() {
@@ -1050,6 +1047,7 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: ListView.builder(
+              key: ValueKey(_messages.length),
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
               itemCount: _messages.length,
@@ -1168,13 +1166,50 @@ class _ChatScreenState extends State<ChatScreen> {
                                         bottomRight: Radius.circular(isMe ? 2 : 12),
                                       ),
                                     ),
-                                    child: Text(
-                                      message['content'],
-                                      style: TextStyle(
-                                        color: isMe ? Colors.white : Colors.black87,
-                                        fontSize: 15,
-                                      ),
-                                    ),
+                                    child: message['is_image'] == true
+                                      ? Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            ClipRRect(
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: OptimizedImage(
+                                                imageUrl: message['image_url'] ?? '',
+                                                width: 200,
+                                                height: 150,
+                                                fit: BoxFit.cover,
+                                                placeholder: Container(
+                                                  width: 200,
+                                                  height: 150,
+                                                  color: Colors.grey[300],
+                                                  child: const Icon(Icons.image, size: 50, color: Colors.grey),
+                                                ),
+                                                errorWidget: Container(
+                                                  width: 200,
+                                                  height: 150,
+                                                  color: Colors.grey[300],
+                                                  child: const Icon(Icons.broken_image, size: 50, color: Colors.red),
+                                                ),
+                                              ),
+                                            ),
+                                            if (message['content']?.isNotEmpty == true && message['content'] != '📷 Image') ...[
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                message['content'],
+                                                style: TextStyle(
+                                                  color: isMe ? Colors.white : Colors.black87,
+                                                  fontSize: 15,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        )
+                                      : Text(
+                                          message['content'],
+                                          style: TextStyle(
+                                            color: isMe ? Colors.white : Colors.black87,
+                                            fontSize: 15,
+                                          ),
+                                        ),
                                   ),
                                 ),
                                 
@@ -1264,15 +1299,11 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.camera_alt, color: Color(0xFF5A35E3)),
-                  onPressed: () {
-                    // Handle camera action
-                  },
+                  onPressed: _handleCameraAction,
                 ),
                 IconButton(
                   icon: const Icon(Icons.photo, color: Color(0xFF5A35E3)),
-                  onPressed: () {
-                    // Handle photo action
-                  },
+                  onPressed: _handlePhotoAction,
                 ),
                 Expanded(
                   child: TextField(
@@ -1319,6 +1350,130 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  Future<void> _handleCameraAction() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+      
+      if (photo != null) {
+        await _sendImageMessage(File(photo.path));
+      }
+    } catch (e) {
+      print('Error handling camera action: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to take photo')),
+        );
+      }
+    }
+  }
+
+  Future<void> _handlePhotoAction() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? photo = await picker.pickImage(source: ImageSource.gallery);
+      
+      if (photo != null) {
+        await _sendImageMessage(File(photo.path));
+      }
+    } catch (e) {
+      print('Error handling photo action: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to select photo')),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendImageMessage(File imageFile) async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      // Create optimistic message
+      final optimisticMessage = {
+        'id': DateTime.now().millisecondsSinceEpoch.toString(),
+        'sender_id': user.id,
+        'receiver_id': widget.businessId,
+        'business_id': widget.businessId,
+        'content': '',
+        'is_image': true,
+        'image_url': imageFile.path, // Local path for optimistic UI
+        'created_at': DateTime.now().toIso8601String(),
+        'is_optimistic': true,
+          };
+
+          // Add optimistic message to UI
+          if (mounted) {
+            setState(() {
+              _messages.add(optimisticMessage);
+              print('Before sort: ${_messages.map((m) => m['created_at']).toList()}');
+              _messages.sort((a, b) => DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+              print('After sort: ${_messages.map((m) => m['created_at']).toList()}');
+            });
+            _scrollToBottom();
+          }
+
+          // Upload image to Supabase storage
+          final fileName = '${user.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final filePath = 'chat_images/$fileName';
+
+      // Read the image file as bytes
+      final XFile imageXFile = XFile(imageFile.path);
+      final Uint8List imageBytes = await imageXFile.readAsBytes();
+      
+      await Supabase.instance.client.storage
+          .from('chat_images')
+          .uploadBinary(filePath, imageBytes,
+              fileOptions: const FileOptions(contentType: 'image/jpeg'));
+
+      final String publicUrl = Supabase.instance.client.storage
+          .from('chat_images')
+          .getPublicUrl(filePath);
+      final imageUrl = publicUrl;
+
+      // Send message to database
+      final response = await Supabase.instance.client
+          .from('messages')
+          .insert({
+            'sender_id': user.id,
+            'receiver_id': widget.businessId,
+            'business_id': widget.businessId,
+            'content': '', // Ensure content is never null for image messages
+            'is_image': true,
+            'image_url': imageUrl,
+          })
+          .select()
+          .single();
+
+      // Replace optimistic message with real one
+      if (mounted) {
+        setState(() {
+          _messages.removeWhere((msg) => 
+            msg['id'] == optimisticMessage['id'] && msg['is_optimistic'] == true);
+          _messages.add(response);
+          _messages.sort((a, b) => a['created_at'].compareTo(b['created_at']));
+        });
+      }
+
+    } catch (e) {
+      print('Error sending image message: $e');
+      
+      // Remove optimistic message on error
+      if (mounted) {
+        setState(() {
+          _messages.removeWhere((msg) => 
+            msg['is_optimistic'] == true);
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send image: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _loadMessages() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
@@ -1328,8 +1483,7 @@ class _ChatScreenState extends State<ChatScreen> {
           .from('messages')
           .select('*')
           .or('sender_id.eq.${user.id},receiver_id.eq.${user.id}')
-          .eq('business_id', widget.businessId)
-          .order('created_at', ascending: true);
+          .eq('business_id', widget.businessId);
 
       if (mounted) {
         setState(() {

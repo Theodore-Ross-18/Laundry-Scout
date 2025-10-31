@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
 import '../../../services/session_service.dart';
 import '../../../services/connection_service.dart';
 import '../../../services/realtime_message_service.dart';
@@ -686,6 +688,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
   Timer? _backgroundRefreshTimer; // Add background refresh timer
   String? _businessName; // Store business name from business_profiles table
   String? _businessCoverPhotoUrl; // Store cover photo URL from business_profiles table
+  bool _isSending = false; // Track if a message is being sent
 
   @override
   void initState() {
@@ -975,6 +978,98 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
         .order('id', ascending: true);
   }
 
+  Future<void> _handleCameraAction() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+      
+      if (photo != null) {
+        await _sendImageMessage(photo.path);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error taking photo: $e')),
+      );
+    }
+  }
+
+  Future<void> _handlePhotoAction() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? photo = await picker.pickImage(source: ImageSource.gallery);
+      
+      if (photo != null) {
+        await _sendImageMessage(photo.path);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error selecting photo: $e')),
+      );
+    }
+  }
+
+  Future<void> _sendImageMessage(String imagePath) async {
+    try {
+      setState(() {
+        _isSending = true;
+      });
+
+      // Upload image to storage
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final storagePath = 'chat_images/$fileName';
+
+      // Read the image file as bytes
+      final XFile imageXFile = XFile(imagePath);
+      final Uint8List imageBytes = await imageXFile.readAsBytes();
+      
+      await Supabase.instance.client.storage
+          .from('chat_images')
+          .uploadBinary(storagePath, imageBytes,
+              fileOptions: const FileOptions(contentType: 'image/jpeg'));
+
+      final imageUrl = Supabase.instance.client.storage
+          .from('chat_images')
+          .getPublicUrl(storagePath);
+
+      // Get current user for business_id
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      // Send image message using the message queue
+      final tempId = _messageQueue.queueMessage(
+        content: '📷 Image',
+        receiverId: widget.userId,
+        businessId: user.id,
+        imageUrl: imageUrl,
+      );
+
+      // Add optimistic UI update
+      setState(() {
+        _messages.add({
+          'tempId': tempId,
+          'sender_id': user.id,
+          'receiver_id': widget.userId,
+          'business_id': user.id,
+          'content': '📷 Image',
+          'created_at': DateTime.now().toIso8601String(),
+          'is_image': true,
+          'image_url': imageUrl,
+        });
+      });
+    } catch (e) {
+      print('Error sending image message: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send image: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSending = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
@@ -1139,13 +1234,51 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                                       color: isMe ? const Color(0xFF5A35E3) : const Color(0xFFE0E0E0),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: Text(
-                                      message['content'],
-                                      style: TextStyle(
-                                        color: isMe ? Colors.white : Colors.black,
-                                        fontSize: 16,
-                                      ),
-                                    ),
+                                    child: message['is_image'] == true
+                                        ? Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              ClipRRect(
+                                                borderRadius: BorderRadius.circular(8),
+                                                child: OptimizedImage(
+                                                  imageUrl: message['image_url'] ?? '',
+                                                  width: 200,
+                                                  height: 150,
+                                                  fit: BoxFit.cover,
+                                                  placeholder: Container(
+                                                    width: 200,
+                                                    height: 150,
+                                                    color: Colors.grey[300],
+                                                    child: const Icon(Icons.image, size: 50, color: Colors.grey),
+                                                  ),
+                                                  errorWidget: Container(
+                                                    width: 200,
+                                                    height: 150,
+                                                    color: Colors.grey[300],
+                                                    child: const Icon(Icons.broken_image, size: 50, color: Colors.red),
+                                                  ),
+                                                ),
+                                              ),
+                                              if (message['content'] != null && message['content'].toString().isNotEmpty && message['content'] != '📷 Image')
+                                                Padding(
+                                                  padding: const EdgeInsets.only(top: 8),
+                                                  child: Text(
+                                                    message['content'],
+                                                    style: TextStyle(
+                                                      color: isMe ? Colors.white : Colors.black,
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          )
+                                        : Text(
+                                            message['content'],
+                                            style: TextStyle(
+                                              color: isMe ? Colors.white : Colors.black,
+                                              fontSize: 16,
+                                            ),
+                                          ),
                                   ),
                                   
                                 
@@ -1223,15 +1356,11 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.camera_alt, color: Color(0xFF5A35E3)),
-                  onPressed: () {
-                    // Handle camera action
-                  },
+                  onPressed: _handleCameraAction,
                 ),
                 IconButton(
                   icon: const Icon(Icons.photo, color: Color(0xFF5A35E3)),
-                  onPressed: () {
-                    // Handle photo action
-                  },
+                  onPressed: _handlePhotoAction,
                 ),
                 Expanded(
                   child: TextField(
@@ -1283,20 +1412,14 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
-    int hour = dateTime.hour;
-    String period = hour >= 12 ? 'PM' : 'AM';
-    if (hour == 0) {
-      hour = 12;
-    } else if (hour > 12) {
-      hour = hour - 12;
-    }
-    
-    String timeString = '${hour.toString()}:${dateTime.minute.toString().padLeft(2, '0')} $period';
-
     if (difference.inDays > 0) {
-      return '${dateTime.day}/${dateTime.month} $timeString';
+      return '${difference.inDays}d';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m';
     } else {
-      return timeString;
+      return 'now';
     }
   }
 }
