@@ -152,7 +152,7 @@ class MessageQueueService {
         'sender_id': user.id,
         'receiver_id': message.receiverId,
         'business_id': message.businessId,
-        'content': message.content ?? '', // Ensure content is never null
+        'content': message.content, // Content is non-nullable
         'is_compressed': message.isCompressed,
         'created_at': message.timestamp.toIso8601String(),
         'message_type': message.isImage ? 'image' : 'text', // Explicitly set message_type

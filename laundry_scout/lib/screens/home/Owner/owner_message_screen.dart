@@ -71,8 +71,7 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
       final conversationsResponse = await Supabase.instance.client
           .from('conversations')
           .select('*')
-          .eq('business_id', Supabase.instance.client.auth.currentUser!.id)
-          .order('last_message_at', ascending: false);
+          .eq('business_id', Supabase.instance.client.auth.currentUser!.id);
   
       for (var conversation in conversationsResponse) {
         final userProfile = await Supabase.instance.client
@@ -97,7 +96,6 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
             .select('content, created_at, sender_id')
             .eq('business_id', conversation['business_id'])
             .or('sender_id.eq.${conversation['user_id']},receiver_id.eq.${conversation['user_id']}')
-            .order('created_at', ascending: false)
             .limit(1)
             .maybeSingle();
 
@@ -152,8 +150,7 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
       final conversationsResponse = await Supabase.instance.client
           .from('conversations')
           .select('*')
-          .eq('business_id', Supabase.instance.client.auth.currentUser!.id)
-          .order('last_message_at', ascending: false);
+          .eq('business_id', Supabase.instance.client.auth.currentUser!.id);
   
       for (var conversation in conversationsResponse) {
         print('Conversation user_id: ${conversation['user_id']}');
@@ -184,7 +181,6 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
             .select('content, created_at, sender_id')
             .eq('business_id', conversation['business_id'])
             .or('sender_id.eq.${conversation['user_id']},receiver_id.eq.${conversation['user_id']}')
-            .order('created_at', ascending: false)
             .limit(1)
             .maybeSingle();
 
@@ -758,8 +754,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
           .from('messages')
           .select('*')
           .eq('business_id', user.id)
-          .or('sender_id.eq.${widget.userId},receiver_id.eq.${widget.userId}')
-          .order('created_at', ascending: true);
+          .or('sender_id.eq.${widget.userId},receiver_id.eq.${widget.userId}');
 
       if (mounted) {
         final newMessages = List<Map<String, dynamic>>.from(response);
@@ -867,8 +862,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
           .from('messages')
           .select('*')
           .eq('business_id', user.id)
-          .or('sender_id.eq.${widget.userId},receiver_id.eq.${widget.userId}')
-          .order('created_at', ascending: true);
+          .or('sender_id.eq.${widget.userId},receiver_id.eq.${widget.userId}');
 
       if (mounted) {
         setState(() {
@@ -974,8 +968,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
     return Supabase.instance.client
         .from('user_profiles')
         .stream(primaryKey: ['id'])
-        .eq('id', userId)
-        .order('id', ascending: true);
+        .eq('id', userId);
   }
 
   Future<void> _handleCameraAction() async {
