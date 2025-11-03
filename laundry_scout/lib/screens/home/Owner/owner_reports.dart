@@ -403,9 +403,9 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
               pw.SizedBox(height: 20),
             ],
             
-            // Recent Transactions
+            // All Transactions
             pw.Text(
-              'Recent Transactions',
+              'All Transactions',
               style: pw.TextStyle(
                 fontSize: 16,
                 fontWeight: pw.FontWeight.bold,
@@ -423,7 +423,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                     _buildPDFTableCell('Date', isHeader: true),
                   ],
                 ),
-                ..._filteredOrders.take(10).map((order) {
+                ..._filteredOrders.map((order) {
                   final customerName = order['user_profiles']?['first_name'] != null && order['user_profiles']?['last_name'] != null
                       ? '${order['user_profiles']['first_name']} ${order['user_profiles']['last_name']}'
                       : order['customer_name'] != null
@@ -446,14 +446,6 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                 }).toList(),
               ],
             ),
-            if (_filteredOrders.length > 10)
-              pw.Text(
-                '... and ${_filteredOrders.length - 10} more transactions',
-                style: pw.TextStyle(
-                  fontSize: 10,
-                  fontStyle: pw.FontStyle.italic,
-                ),
-              ),
           ];
         },
       ),
