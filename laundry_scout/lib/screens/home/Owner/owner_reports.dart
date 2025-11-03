@@ -403,9 +403,9 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
               pw.SizedBox(height: 20),
             ],
             
-            // All Transactions
+            // Recent Transactions
             pw.Text(
-              'All Transactions',
+              'Recent Transactions',
               style: pw.TextStyle(
                 fontSize: 16,
                 fontWeight: pw.FontWeight.bold,
