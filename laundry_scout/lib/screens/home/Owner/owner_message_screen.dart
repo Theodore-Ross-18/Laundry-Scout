@@ -999,16 +999,31 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
 
   Future<void> _handleCameraAction() async {
     try {
+      // Request camera permission if needed
       final ImagePicker picker = ImagePicker();
-      final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+      final XFile? photo = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      );
       
       if (photo != null) {
         await _sendImageMessage(photo.path);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error taking photo: $e')),
-      );
+      String errorMessage = 'Error taking photo: $e';
+      if (e.toString().contains('permission')) {
+        errorMessage = 'Camera permission denied. Please enable camera access in your device settings.';
+      } else if (e.toString().contains('no camera')) {
+        errorMessage = 'No camera device found on this device.';
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
     }
   }
 

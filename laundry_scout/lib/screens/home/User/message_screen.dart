@@ -1364,17 +1364,30 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _handleCameraAction() async {
     try {
+      // Request camera permission if needed
       final ImagePicker picker = ImagePicker();
-      final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+      final XFile? photo = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      );
       
       if (photo != null) {
         await _sendImageMessage(File(photo.path));
       }
     } catch (e) {
+      String errorMessage = 'Failed to take photo';
+      if (e.toString().contains('permission')) {
+        errorMessage = 'Camera permission denied. Please enable camera access in your device settings.';
+      } else if (e.toString().contains('no camera')) {
+        errorMessage = 'No camera device found on this device.';
+      }
+      
       print('Error handling camera action: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to take photo')),
+          SnackBar(content: Text(errorMessage)),
         );
       }
     }
