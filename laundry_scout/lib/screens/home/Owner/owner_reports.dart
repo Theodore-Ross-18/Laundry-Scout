@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element, unused_field
+
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -509,6 +511,59 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
     );
   }
 
+  Widget _buildSummaryCard( {required String label, required String value, required IconData icon, required Color color, bool alignLeft = false, bool whiteBackgroundIcon = false, double valueFontSize = 18}) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      color: color,
+      child: Container(
+        height: 125,
+        padding: const EdgeInsets.all(14.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: whiteBackgroundIcon ? BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ) : null,
+              child: Icon(
+                icon,
+                color: whiteBackgroundIcon ? const Color(0xFF5A35E3) : Colors.white,
+                size: 26,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8), 
+                fontSize: 12,
+                fontWeight: FontWeight.w500
+              ),
+              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: valueFontSize,
+                fontWeight: FontWeight.bold, 
+                color: Colors.white
+              ),
+              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -538,7 +593,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                     if (_monthYears.indexOf(_selectedMonthYear!) > 0)
                       GestureDetector(
                         onTap: () {
-                          final currentIndex = _monthYears.indexOf(_selectedMonthYear!);
+                          final currentIndex = _monthYears.indexOf(_selectedMonthYear!); 
                           if (currentIndex > 0) {
                             setState(() {
                               _selectedMonthYear = _monthYears[currentIndex - 1];
@@ -567,7 +622,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                     const SizedBox(width: 8),
                     Text(
                       _selectedMonthYear!,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.black,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -578,7 +633,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                     if (_monthYears.indexOf(_selectedMonthYear!) < _monthYears.length - 1)
                       GestureDetector(
                         onTap: () {
-                          final currentIndex = _monthYears.indexOf(_selectedMonthYear!);
+                          final currentIndex = _monthYears.indexOf(_selectedMonthYear!); 
                           if (currentIndex < _monthYears.length - 1) {
                             setState(() {
                               _selectedMonthYear = _monthYears[currentIndex + 1];
@@ -607,151 +662,49 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                   ],
                 ),
               ),
-              SizedBox(height: 16),
-              // Summary Cards Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Expanded(
-                    child: Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      color: const Color(0xFF6F5ADC),
-                      child: Container(
-                        height: 120,
-                        padding: const EdgeInsets.all(16.0),
-                        alignment: Alignment.center,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.shopping_bag,
-                              color: Colors.white.withOpacity(0.8),
-                              size: 24,
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Total Bookings',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9), 
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              '${_filteredOrderStats['total'] ?? 0}',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold, 
-                                color: Colors.white
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      flex: 2, // Bookings card takes less space
+                      child: _buildSummaryCard(
+                        label: 'Bookings',
+                        value: '${_filteredOrderStats['total'] ?? 0}',
+                        icon: Icons.shopping_bag,
+                        color: const Color(0xFF5A35E3),
+                        valueFontSize: 15,
                       ),
                     ),
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      color: const Color(0xFF6F5ADC),
-                      child: Container(
-                        height: 120,
-                        padding: const EdgeInsets.all(16.0),
-                        alignment: Alignment.topCenter,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.star,
-                              color: Colors.white.withOpacity(0.8),
-                              size: 24,
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Top Service',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9), 
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              _topUsedService.length > 8 ? '${_topUsedService.substring(0, 8)}...' : _topUsedService,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold, 
-                                color: Colors.white
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
+                    const SizedBox(width: 1),
+                    Expanded(
+                      flex: 2, // Top Service card takes less space
+                      child: _buildSummaryCard(
+                        label: 'Top Service',
+                        value: _topUsedService.length > 10 ? '${_topUsedService.substring(0, 10)}...' : _topUsedService,
+                        icon: Icons.star,
+                        color: const Color(0xFF5A35E3),
+                        valueFontSize: 12,
                       ),
                     ),
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      color: const Color(0xFF6F5ADC),
-                      child: Container(
-                        height: 120,
-                        padding: const EdgeInsets.all(16.0),
-                        alignment: Alignment.center,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.attach_money,
-                              color: Colors.white.withOpacity(0.8),
-                              size: 24,
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Total Earnings',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9), 
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              '₱${_totalEarnings.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold, 
-                                color: Colors.white
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
+                    const SizedBox(width: 1),
+                    Expanded(
+                      flex: 3, // Total Earnings card takes more space (50% longer)
+                      child: _buildSummaryCard(
+                        label: 'Total Earnings',
+                        value: 'P${_totalEarnings.toStringAsFixed(2)}',
+                        icon: Icons.attach_money,
+                        color: const Color(0xFF5A35E3),
+                        alignLeft: true,
+                        whiteBackgroundIcon: true,
+                        valueFontSize: 15,
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 1),
               // Order Status Breakdown Section
               Card(
                 color: Colors.white,
