@@ -13,6 +13,7 @@ import '../../../services/connection_service.dart';
 import '../../../services/message_queue_service.dart';
 import '../../../services/realtime_message_service.dart';
 import '../../../widgets/optimized_image.dart';
+import '../../../widgets/image_preview.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:laundry_scout/screens/home/User/getdirection.dart';
@@ -1172,22 +1173,33 @@ class _ChatScreenState extends State<ChatScreen> {
                                           children: [
                                             ClipRRect(
                                               borderRadius: BorderRadius.circular(8),
-                                              child: OptimizedImage(
-                                                imageUrl: message['image_url'] ?? '',
-                                                width: 200,
-                                                height: 150,
-                                                fit: BoxFit.cover,
-                                                placeholder: Container(
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  if (message['image_url']?.isNotEmpty == true) {
+                                                    showImagePreview(
+                                                      context,
+                                                      message['image_url'],
+                                                      heroTag: 'chat_image_${message['id'] ?? DateTime.now().millisecondsSinceEpoch}',
+                                                    );
+                                                  }
+                                                },
+                                                child: OptimizedImage(
+                                                  imageUrl: message['image_url'] ?? '',
                                                   width: 200,
                                                   height: 150,
-                                                  color: Colors.grey[300],
-                                                  child: const Icon(Icons.image, size: 50, color: Colors.grey),
-                                                ),
-                                                errorWidget: Container(
-                                                  width: 200,
-                                                  height: 150,
-                                                  color: Colors.grey[300],
-                                                  child: const Icon(Icons.broken_image, size: 50, color: Colors.red),
+                                                  fit: BoxFit.cover,
+                                                  placeholder: Container(
+                                                    width: 200,
+                                                    height: 150,
+                                                    color: Colors.grey[300],
+                                                    child: const Icon(Icons.image, size: 50, color: Colors.grey),
+                                                  ),
+                                                  errorWidget: Container(
+                                                    width: 200,
+                                                    height: 150,
+                                                    color: Colors.grey[300],
+                                                    child: const Icon(Icons.broken_image, size: 50, color: Colors.red),
+                                                  ),
                                                 ),
                                               ),
                                             ),

@@ -10,6 +10,8 @@ import '../../../services/connection_service.dart';
 import '../../../services/realtime_message_service.dart';
 import '../../../services/message_queue_service.dart';
 import '../../../widgets/optimized_image.dart';
+import '../../../widgets/image_preview.dart';
+import 'automated.dart';
 
 class OwnerMessageScreen extends StatefulWidget {
   const OwnerMessageScreen({super.key});
@@ -308,10 +310,34 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.mark_email_read, color: Colors.white),
-                    onPressed: _markAllAsRead,
-                    tooltip: 'Mark all as read',
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Automated message logo/icon
+                      IconButton(
+                        icon: const Icon(
+                          Icons.smart_toy, // Robot icon for automated messages
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        onPressed: () {
+                          // Navigate to automated messages screen
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AutomatedMessagesScreen(),
+                            ),
+                          );
+                        },
+                        tooltip: 'Automated Messages Settings',
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.mark_email_read, color: Colors.white),
+                        onPressed: _markAllAsRead,
+                        tooltip: 'Mark all as read',
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1233,22 +1259,33 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                                             children: [
                                               ClipRRect(
                                                 borderRadius: BorderRadius.circular(8),
-                                                child: OptimizedImage(
-                                                  imageUrl: message['image_url'] ?? '',
-                                                  width: 200,
-                                                  height: 150,
-                                                  fit: BoxFit.cover,
-                                                  placeholder: Container(
+                                                child: GestureDetector(
+                                                  onTap: () {
+                                                    if (message['image_url']?.isNotEmpty == true) {
+                                                      showImagePreview(
+                                                        context,
+                                                        message['image_url'],
+                                                        heroTag: 'chat_image_${message['id'] ?? DateTime.now().millisecondsSinceEpoch}',
+                                                      );
+                                                    }
+                                                  },
+                                                  child: OptimizedImage(
+                                                    imageUrl: message['image_url'] ?? '',
                                                     width: 200,
                                                     height: 150,
-                                                    color: Colors.grey[300],
-                                                    child: const Icon(Icons.image, size: 50, color: Colors.grey),
-                                                  ),
-                                                  errorWidget: Container(
-                                                    width: 200,
-                                                    height: 150,
-                                                    color: Colors.grey[300],
-                                                    child: const Icon(Icons.broken_image, size: 50, color: Colors.red),
+                                                    fit: BoxFit.cover,
+                                                    placeholder: Container(
+                                                      width: 200,
+                                                      height: 150,
+                                                      color: Colors.grey[300],
+                                                      child: const Icon(Icons.image, size: 50, color: Colors.grey),
+                                                    ),
+                                                    errorWidget: Container(
+                                                      width: 200,
+                                                      height: 150,
+                                                      color: Colors.grey[300],
+                                                      child: const Icon(Icons.broken_image, size: 50, color: Colors.red),
+                                                    ),
                                                   ),
                                                 ),
                                               ),
