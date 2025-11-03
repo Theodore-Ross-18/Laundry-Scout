@@ -515,7 +515,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(12),
       ),
       color: color,
       child: Container(
@@ -575,9 +575,16 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
         foregroundColor: Colors.white, // Set AppBar text/icon color to white
         titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Poppins'), // Set title text color to white and font to Poppins
       ),
-      backgroundColor: Colors.white, // Set Scaffold background to white
-      body: SingleChildScrollView(
-        child: Padding(
+      backgroundColor: const Color(0xFF5A35E3), // Set Scaffold background to purple
+      body: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(25),
+            topRight: Radius.circular(25),
+          ),
+        ),
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Center(
           child: Column(
@@ -711,7 +718,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                 elevation: 0,
                 shadowColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(12),
                   side: BorderSide(color: Color(0xFFE3E3E3), width: 1),
                 ),
                 child: Padding(
@@ -772,7 +779,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                   elevation: 0,
                   shadowColor: Colors.transparent,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(12),
                     side: const BorderSide(color: Color(0xFFE3E3E3), width: 1),
                   ),
                   child: Padding(
@@ -890,7 +897,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                 elevation: 0,
                 shadowColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(12),
                   side: const BorderSide(color: Color(0xFFE3E3E3), width: 1),
                 ),
                 child: Padding(
@@ -1060,30 +1067,32 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                               textAlign: TextAlign.center,
                             ),
                           ),
-                    ],
+                        SizedBox(height: 16),
+                        // Generate Report Button moved to end of Transactions section
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _generatePDF,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFF5A35E3),
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              'Generate Report',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton(
-          onPressed: _generatePDF,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF5A35E3),
-            foregroundColor: Colors.white,
-            padding: EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              ],
             ),
-          ),
-          child: Text(
-            'Generate Report',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
       ),
