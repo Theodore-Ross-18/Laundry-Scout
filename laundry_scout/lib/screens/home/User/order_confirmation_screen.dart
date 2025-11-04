@@ -617,6 +617,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
       });
 
+      // Send order confirmation message to chat
+      await _sendOrderConfirmationToChat(orderId);
+
       if (mounted) {
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -642,6 +645,53 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
           _isPlacingOrder = false;
         });
       }
+    }
+  }
+
+  Future<void> _sendOrderConfirmationToChat(String orderId) async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      // Check if conversation exists, if not create it
+      final conversationResponse = await Supabase.instance.client
+          .from('conversations')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('business_id', widget.businessData['id'])
+          .maybeSingle();
+
+      if (conversationResponse == null) {
+        // Create conversation if it doesn't exist
+        await Supabase.instance.client.from('conversations').insert({
+          'user_id': user.id,
+          'business_id': widget.businessData['id'],
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      }
+
+      // Send the order confirmation message
+      final confirmationMessage = "🎉 **Order Confirmed!** 🎉\n\n"
+          "Your order **#$orderId** has been successfully placed!\n\n"
+          "📋 **Order Details:**\n"
+          "• Services: ${widget.services.keys.join(', ')}\n"
+          "• Total: ₱${_total.toStringAsFixed(2)}\n"
+          "• Pickup: ${widget.schedule['pickup'] ?? 'Scheduled'}\n"
+          "• Drop-off: ${widget.schedule['dropoff'] ?? 'Scheduled'}\n\n"
+          "✅ We'll process your order and keep you updated on the status.\n\n"
+          "Thank you for choosing our services!";
+
+      await Supabase.instance.client.from('messages').insert({
+        'sender_id': widget.businessData['id'],
+        'receiver_id': user.id,
+        'business_id': widget.businessData['id'],
+        'content': confirmationMessage,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+    } catch (e) {
+      print('Error sending order confirmation to chat: $e');
     }
   }
 

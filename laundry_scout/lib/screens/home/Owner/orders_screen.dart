@@ -86,11 +86,31 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   Future<void> _setOrderAsComplete(String orderId) async {
     try {
+      // Get order details first
+      final orderResponse = await Supabase.instance.client
+          .from('orders')
+          .select('*')
+          .eq('id', orderId)
+          .single();
+
       await Supabase.instance.client
           .from('orders')
           .update({'status': 'completed'})
           .eq('id', orderId);
+
+      // Send order accepted message to chat
+      await _sendOrderStatusMessage(orderResponse, 'accepted');
+
       _loadOrders();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order accepted successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -357,10 +377,21 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   Future<void> _cancelOrder(String orderId) async {
     try {
+      // Get order details first
+      final orderResponse = await Supabase.instance.client
+          .from('orders')
+          .select('*')
+          .eq('id', orderId)
+          .single();
+
       await Supabase.instance.client
           .from('orders')
           .update({'status': 'cancelled'})
           .eq('id', orderId);
+
+      // Send order cancelled message to chat
+      await _sendOrderStatusMessage(orderResponse, 'cancelled');
+
       _loadOrders();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -379,6 +410,83 @@ class _OrdersScreenState extends State<OrdersScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _sendOrderStatusMessage(Map<String, dynamic> orderData, String status) async {
+    try {
+      final businessId = orderData['business_id'];
+      final userId = orderData['user_id'];
+      final orderNumber = orderData['order_number'];
+
+      // Fetch business availability status
+      final businessProfileResponse = await Supabase.instance.client
+          .from('business_profiles')
+          .select('availability_status')
+          .eq('id', businessId)
+          .single();
+      final availabilityStatus = businessProfileResponse['availability_status'] ?? 'Unavailable';
+      
+      if (businessId == null || userId == null || orderNumber == null) return;
+
+      // Check if conversation exists, if not create it
+      final conversationResponse = await Supabase.instance.client
+          .from('conversations')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('business_id', businessId)
+          .maybeSingle();
+
+      if (conversationResponse == null) {
+        // Create conversation if it doesn't exist
+        await Supabase.instance.client.from('conversations').insert({
+          'user_id': userId,
+          'business_id': businessId,
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      }
+
+      // Create status message based on status
+      String statusMessage;
+      if (status == 'accepted') {
+        statusMessage = "✅ **Order Accepted!** ✅\n\n"
+            "Great news! Your order **#$orderNumber** has been accepted and is now being processed.\n\n"
+            "👨‍💼 Our team is preparing your laundry and we'll keep you updated on the progress.\n\n"
+            "Thank you for choosing our services!";
+      } else if (status == 'cancelled') {
+        String cancellationReason;
+        switch (availabilityStatus) {
+          case 'Filling Up':
+            cancellationReason = "We are very sorry, but we could not handle your order at the moment due to limited slots. We hope to serve you soon!";
+            break;
+          case 'Full':
+            cancellationReason = "We sincerely apologize, but we are currently full and unable to process your order today. Please check back with us later!";
+            break;
+          case 'Unavailable':
+            cancellationReason = "We regret to inform you that we are currently closed and cannot fulfill your order. Please visit us during our operating hours.";
+            break;
+          case 'Open Slots':
+          default:
+            cancellationReason = "We regret to inform you that your order **#$orderNumber** has been cancelled. If you have any questions, please don't hesitate to reach out to us. We apologize for any inconvenience caused.";
+            break;
+        }
+        statusMessage = "❌ **Order Cancelled!** ❌\n\n" + cancellationReason;
+      } else {
+        return; // Don't send message for other statuses
+      }
+
+      // Send the status message
+      await Supabase.instance.client.from('messages').insert({
+        'sender_id': businessId,
+        'receiver_id': userId,
+        'business_id': businessId,
+        'content': statusMessage,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+    } catch (e) {
+      print('Error sending order status message: $e');
     }
   }
 }

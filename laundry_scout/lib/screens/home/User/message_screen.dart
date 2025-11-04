@@ -840,6 +840,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+
   Future<void> _sendAutomaticGreeting() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
