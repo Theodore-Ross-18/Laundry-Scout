@@ -327,6 +327,16 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                 _buildPDFCard('Top Service', _topUsedService),
               ],
             ),
+            pw.SizedBox(height: 5),
+            pw.Text(
+              'Only Completed Orders are counted',
+              textAlign: pw.TextAlign.center,
+              style: pw.TextStyle(
+                fontSize: 10,
+                fontStyle: pw.FontStyle.italic,
+                color: PdfColors.grey700,
+              ),
+            ),
             pw.SizedBox(height: 20),
             
             // Order Status Breakdown
@@ -418,13 +428,14 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
               border: pw.TableBorder.all(),
               children: [
                 pw.TableRow(
-                  children: [
-                    _buildPDFTableCell('Customer', isHeader: true),
-                    _buildPDFTableCell('Services', isHeader: true),
-                    _buildPDFTableCell('Amount', isHeader: true),
-                    _buildPDFTableCell('Date', isHeader: true),
-                  ],
-                ),
+                    children: [
+                      _buildPDFTableCell('Customer', isHeader: true),
+                      _buildPDFTableCell('Services', isHeader: true),
+                      _buildPDFTableCell('Status', isHeader: true),
+                      _buildPDFTableCell('Amount', isHeader: true),
+                      _buildPDFTableCell('Date', isHeader: true),
+                    ],
+                  ),
                 ..._filteredOrders.map((order) {
                   final customerName = order['user_profiles']?['first_name'] != null && order['user_profiles']?['last_name'] != null
                       ? '${order['user_profiles']['first_name']} ${order['user_profiles']['last_name']}'
@@ -441,6 +452,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                     children: [
                       _buildPDFTableCell(customerName),
                       _buildPDFTableCell(services),
+                      _buildPDFTableCell(order['status'] ?? 'N/A'),
                       _buildPDFTableCell('Php $totalAmount'),
                       _buildPDFTableCell(createdAt),
                     ],
