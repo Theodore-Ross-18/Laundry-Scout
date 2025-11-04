@@ -136,7 +136,9 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
   void _calculateTotalEarnings() {
     _totalEarnings = 0.0;
     for (var order in _filteredOrders) {
-      _totalEarnings += (order['total_amount'] as num? ?? 0.0).toDouble();
+      if (order['status'] == 'completed') {
+        _totalEarnings += (order['total_amount'] as num? ?? 0.0).toDouble();
+      }
     }
   }
 
