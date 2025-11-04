@@ -11,7 +11,6 @@ import '../../../services/realtime_message_service.dart';
 import '../../../services/message_queue_service.dart';
 import '../../../widgets/optimized_image.dart';
 import '../../../widgets/image_preview.dart';
-import 'automated.dart';
 
 class OwnerMessageScreen extends StatefulWidget {
   const OwnerMessageScreen({super.key});
@@ -322,12 +321,6 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
                         ),
                         onPressed: () {
                           // Navigate to automated messages screen
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const AutomatedMessagesScreen(),
-                            ),
-                          );
                         },
                         tooltip: 'Automated Messages Settings',
                       ),
