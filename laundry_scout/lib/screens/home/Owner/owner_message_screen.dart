@@ -312,18 +312,6 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Automated message logo/icon
-                      IconButton(
-                        icon: const Icon(
-                          Icons.smart_toy, // Robot icon for automated messages
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                        onPressed: () {
-                          // Navigate to automated messages screen
-                        },
-                        tooltip: 'Automated Messages Settings',
-                      ),
                       const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.mark_email_read, color: Colors.white),
