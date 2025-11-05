@@ -600,6 +600,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         'user_id': userId,
         'business_id': businessId,
         'customer_name': '${widget.firstName ?? ''} ${widget.lastName ?? ''}',
+        'latitude': widget.businessData['latitude'],
+        'longitude': widget.businessData['longitude'],
         'laundry_shop_name': widget.laundryShopName ?? widget.businessData['business_name'],
         'pickup_address': widget.address,
         'delivery_address': widget.address, 
