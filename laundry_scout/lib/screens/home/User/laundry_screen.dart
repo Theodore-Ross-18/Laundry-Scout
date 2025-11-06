@@ -134,58 +134,69 @@ class _LaundryScreenState extends State<LaundryScreen> {
       body: Column(
         children: [
           
-          Container(
-            padding: const EdgeInsets.only(top: 50, left: 16, right: 16, bottom: 20),
-            decoration: const BoxDecoration(
-              color: Color(0xFF5A35E3),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(28),
-                bottomRight: Radius.circular(28),
-              ),
-            ),
-            child: Column(
-              children: [
-               
-                const SizedBox(height: 20),
-                // Search Bar
-                Row(
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('lib/assets/bg.png'),
+                    fit: BoxFit.cover,
+                  ),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
+                ),
+                child: Column(
                   children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        onChanged: _filterLaundryShops,
-                        style: const TextStyle(color: Colors.black),
-                        decoration: InputDecoration(
-                          hintText: 'Search Here',
-                          hintStyle: const TextStyle(color: Colors.grey),
-                          prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(25),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                        ),
-                      ),
+                    const Text(
+                    'Laundry Scout',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
-                    const SizedBox(width: 10),
-                    GestureDetector(
-                      onTap: _showFilterModal,
-                      child: Container(
-                        padding: const EdgeInsets.all(12.0),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(18),
+                  ),
+                  SizedBox(height: 20),
+                    // Search Bar
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: _filterLaundryShops,
+                            style: const TextStyle(color: Colors.black),
+                            decoration: InputDecoration(
+                              hintText: 'Search Here',
+                              hintStyle: const TextStyle(color: Colors.grey),
+                              prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(25),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                            ),
+                          ),
                         ),
-                        child: Image.asset('lib/assets/icons/filter.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
-                      ),
+                        const SizedBox(width: 10),
+                        GestureDetector(
+                          onTap: _showFilterModal,
+                          child: Container(
+                            padding: const EdgeInsets.all(12.0),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            child: Image.asset('lib/assets/icons/filter.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
+              ),
           // Content
           Expanded(
             child: _isLoading
