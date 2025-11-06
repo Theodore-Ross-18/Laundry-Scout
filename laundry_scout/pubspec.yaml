@@ -78,6 +78,7 @@ flutter:
     - lib/assets/owner/
     - lib/assets/owner/reviews.png
     - lib/assets/owner/reports.png
+    - lib/assets/bg.png
   
   fonts:
     - family: Poppins
