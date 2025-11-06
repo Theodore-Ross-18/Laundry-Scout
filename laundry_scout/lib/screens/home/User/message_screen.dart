@@ -2051,7 +2051,7 @@ class _ChatAssistWidgetState extends State<ChatAssistWidget> {
                     'Chat Assistant',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 12,
                       color: Colors.white,
                     ),
                   ),
@@ -2061,17 +2061,18 @@ class _ChatAssistWidgetState extends State<ChatAssistWidget> {
                       Text(
                         widget.businessName,
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 9,
                           color: Colors.white.withValues(alpha: 0.8),
                         ),
                       ),
                       Text(
                         'is currently offline',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 9,
                           color: Colors.white.withValues(alpha: 0.8),
                         ),
                       ),
+                      const SizedBox(height: 1),
                     ],
                   ),
                 ],
