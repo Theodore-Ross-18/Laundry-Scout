@@ -606,32 +606,41 @@ Please check your orders for more details.
     return Scaffold(
       backgroundColor: const Color(0xFF5A35E3),
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(100), 
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.mark_email_read, color: Colors.white),
-                  onPressed: _markAllAsRead,
-                  tooltip: 'Mark all as read',
-                ),
-                const SizedBox(width: 16), 
-              ],
+        preferredSize: const Size.fromHeight(130), // Adjusted height
+        child: Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('lib/assets/bg.png'),
+              fit: BoxFit.cover,
             ),
-            TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(text: 'Notifications'),
-                Tab(text: 'Orders'),
-              ],
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-              indicatorColor: Colors.white,
-            ),
-          ],
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.mark_email_read, color: Colors.white),
+                    onPressed: _markAllAsRead,
+                    tooltip: 'Mark all as read',
+                  ),
+                  const SizedBox(width: 16),
+                ],
+              ),
+              TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(child: Text('Notifications', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Poppins'))),
+                  Tab(child: Text('Orders', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Poppins'))),
+                ],
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                indicatorColor: Colors.transparent,
+              ),
+            ],
+          ),
         ),
       ),
       body: TabBarView(
@@ -640,10 +649,6 @@ Please check your orders for more details.
           Container(
             decoration: const BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(25),
-                topRight: Radius.circular(25),
-              ),
             ),
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -838,10 +843,6 @@ Please check your orders for more details.
           Container(
             decoration: const BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(25),
-                topRight: Radius.circular(25),
-              ),
             ),
             child: _ordersLoading
                 ? const Center(child: CircularProgressIndicator())
