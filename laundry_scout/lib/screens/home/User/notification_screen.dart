@@ -348,6 +348,259 @@ class NotificationScreenState extends State<NotificationScreen> with SingleTicke
     }
   }
 
+  void _showCancelOrderDialog(Map<String, dynamic> order) {
+    String? selectedReason;
+    final TextEditingController customMessageController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Cancel Order', style: TextStyle(color: Colors.black)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Why are you cancelling this order?', style: TextStyle(color: Colors.black)),
+                    const SizedBox(height: 16),
+                    _buildCancellationOption(
+                      'Need to change service',
+                      selectedReason,
+                      (value) => setState(() => selectedReason = value),
+                    ),
+                    _buildCancellationOption(
+                      'Wrong address',
+                      selectedReason,
+                      (value) => setState(() => selectedReason = value),
+                    ),
+                    _buildCancellationOption(
+                      'Wrong number',
+                      selectedReason,
+                      (value) => setState(() => selectedReason = value),
+                    ),
+                    _buildCancellationOption(
+                      'Need to change pick up or drop off time',
+                      selectedReason,
+                      (value) => setState(() => selectedReason = value),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('Additional details (optional):', style: TextStyle(color: Colors.black)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: customMessageController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        hintText: 'Add any additional details...',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.all(12),
+                        hintStyle: TextStyle(color: Colors.black54),
+                      ),
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel', style: TextStyle(color: Colors.black)),
+                ),
+                ElevatedButton(
+                  onPressed: selectedReason != null
+                      ? () => _confirmOrderCancellation(
+                            order,
+                            selectedReason!,
+                            customMessageController.text.trim(),
+                          )
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Confirm Cancellation', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildCancellationOption(
+    String title,
+    String? selectedReason,
+    Function(String) onSelected,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: InkWell(
+        onTap: () => onSelected(title),
+        child: Row(
+          children: [
+            Radio<String>(
+              value: title,
+              groupValue: selectedReason,
+              onChanged: (value) => onSelected(value!),
+            ),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontSize: 14, color: Colors.black),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmOrderCancellation(
+    Map<String, dynamic> order,
+    String reason,
+    String customMessage,
+  ) async {
+    Navigator.of(context).pop(); // Close the dialog
+    
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      // Combine reason and custom message
+      final String fullCancellationMessage = customMessage.isNotEmpty
+          ? '$reason - $customMessage'
+          : reason;
+
+      // Update order status and save cancellation message
+      await Supabase.instance.client
+          .from('orders')
+          .update({
+            'status': 'cancelled',
+            'custom_message_cancellation': fullCancellationMessage,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', order['id']);
+
+      // Send message to business owner
+      await _sendCancellationMessageToBusiness(order, fullCancellationMessage);
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order cancelled successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Refresh orders list
+      await _loadOrders();
+    } catch (e) {
+      print('Error cancelling order: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel order: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendCancellationMessageToBusiness(
+    Map<String, dynamic> order,
+    String cancellationMessage,
+  ) async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final businessId = order['business_id'];
+      final orderNumber = order['order_number'] ?? 'Unknown';
+      
+      // Get business owner details
+      final businessResponse = await Supabase.instance.client
+          .from('business_profiles')
+          .select('owner_id, business_name')
+          .eq('id', businessId)
+          .single();
+
+      final ownerId = businessResponse['owner_id'];
+      final businessName = businessResponse['business_name'];
+
+      // Get user details for the message
+      final userProfile = await Supabase.instance.client
+          .from('user_profiles')
+          .select('first_name, last_name')
+          .eq('id', user.id)
+          .single();
+
+      final userName = '${userProfile['first_name']} ${userProfile['last_name']}'.trim();
+
+      // Create the cancellation message
+      final messageContent = '''
+🚫 ORDER CANCELLED
+
+Order ID: #$orderNumber
+Business: $businessName
+Customer: $userName
+
+Cancellation Reason:
+$cancellationMessage
+
+Please check your orders for more details.
+      '''.trim();
+
+      // Send message to business owner
+      await Supabase.instance.client.from('messages').insert({
+        'sender_id': ownerId,
+        'receiver_id': user.id,
+        'business_id': businessId,
+        'content': messageContent,
+        'message_type': 'text',
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      // Ensure conversation exists
+      await _ensureConversationExists(user.id, businessId);
+
+    } catch (e) {
+      print('Error sending cancellation message: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _ensureConversationExists(String customerId, String businessId) async {
+    try {
+      // Check if conversation already exists
+      final existingConversation = await Supabase.instance.client
+          .from('conversations')
+          .select('id')
+          .eq('user_id', customerId)
+          .eq('business_id', businessId)
+          .maybeSingle();
+
+      if (existingConversation == null) {
+        // Create new conversation
+        await Supabase.instance.client.from('conversations').insert({
+          'user_id': customerId,
+          'business_id': businessId,
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      }
+    } catch (e) {
+      print('Error ensuring conversation exists: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -732,6 +985,13 @@ class NotificationScreenState extends State<NotificationScreen> with SingleTicke
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                if (status == 'pending') ...[
+                  TextButton(
+                    onPressed: () => _showCancelOrderDialog(order),
+                    child: const Text('Cancel', style: TextStyle(color: Colors.red)),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 TextButton(
                   onPressed: () {
                     Navigator.push(
