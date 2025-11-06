@@ -1142,7 +1142,7 @@ class HomeScreenBody extends StatelessWidget {
                       animationType: 'bounce',
                       color: const Color(0xFF5A35E3),
                       onTap: () {
-                        // Handle tap
+                        onNavigateToNotifications(4);
                       },
                     ),
                     // Active Orders Animation
@@ -1163,7 +1163,7 @@ class HomeScreenBody extends StatelessWidget {
                       animationType: 'slide',
                       color: Colors.black,
                       onTap: () {
-                        // Handle tap
+                        onNavigateToNotifications(4);
                       },
                     ),
                   ],
