@@ -501,31 +501,15 @@ class _LocationScreenState extends State<LocationScreen> {
         backgroundColor: const Color(0xFF5A35E3),
         appBar: AppBar(
           title: const Text('Nearby Laundry Shops'),
-          backgroundColor: const Color(0xFF5A35E3),
           foregroundColor: Colors.white,
-          actions: [
-            DropdownButton<MapType>(
-              value: _selectedMapType,
-              dropdownColor: const Color(0xFF5A35E3),
-              icon: const Icon(Icons.map, color: Colors.white),
-              onChanged: _onMapTypeChanged,
-              items: const [
-                DropdownMenuItem(
-                  value: MapType.defaultMap,
-                  child: Text('Default', style: TextStyle(color: Colors.white)),
-                ),
-                DropdownMenuItem(
-                  value: MapType.satellite,
-                  child: Text('Satellite', style: TextStyle(color: Colors.white)),
-                ),
-                DropdownMenuItem(
-                  value: MapType.terrain,
-                  child: Text('Terrain', style: TextStyle(color: Colors.white)),
-                ),
-              ],
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('lib/assets/bg.png'),
+                fit: BoxFit.cover,
+              ),
             ),
-            const SizedBox(width: 16),
-          ],
+          ),
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -541,13 +525,13 @@ class _LocationScreenState extends State<LocationScreen> {
                         children: [
                           Expanded(
                             child: FlutterMap(
-                                key: ValueKey(_currentPosition), 
+                                key: ValueKey(_currentPosition),
                                 mapController: _mapController,
                                 options: MapOptions(
                                   center: _currentPosition != null
                                       ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
-                                      : LatLng(12.8797, 121.7740), 
-                                  zoom: _currentPosition != null ? 16.0 : 6.0, 
+                                      : LatLng(12.8797, 121.7740),
+                                  zoom: _currentPosition != null ? 16.0 : 6.0,
                                   minZoom: 5.0,
                                   maxZoom: 20.0,
                                   initialZoom: _currentPosition != null ? 16.0 : 6.0,
@@ -562,7 +546,7 @@ class _LocationScreenState extends State<LocationScreen> {
                                       circles: [
                                         CircleMarker(
                                           point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-                                          useRadiusInMeter: true, 
+                                          useRadiusInMeter: true,
                                           radius: _searchRadius * 1000,
                                           color: const Color(0xFF5A35E3).withOpacity(0.2),
                                           borderColor: const Color(0xFF5A35E3),
@@ -572,18 +556,17 @@ class _LocationScreenState extends State<LocationScreen> {
                                     ),
                                   MarkerLayer(
                                     markers: [
-                                    
-                                      Marker(
-                                        width: 80.0,
-                                        height: 80.0,
-                                        point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-                                        child: const Icon(
-                                          Icons.my_location,
-                                          color: Colors.blue,
-                                          size: 40.0,
+                                      if (_currentPosition != null)
+                                        Marker(
+                                          width: 80.0,
+                                          height: 80.0,
+                                          point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                                          child: const Icon(
+                                            Icons.my_location,
+                                            color: Colors.blue,
+                                            size: 40.0,
+                                          ),
                                         ),
-                                      ),
-                                   
                                       ..._businessProfiles.map((business) {
                                         final lat = business['latitude'];
                                         final lng = business['longitude'];
@@ -602,21 +585,20 @@ class _LocationScreenState extends State<LocationScreen> {
                                                     height: 40.0,
                                                   ),
                                                   if (business['average_rating'] != null && business['average_rating'] > 0)
-                                                    Container(
+                                                  Container(
                                                       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.white,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white,
                                                         borderRadius: BorderRadius.circular(4),
-                                                      ),
-                                                      child: Text(
+                                                    ),
+                                                    child: Text(
                                                         business['average_rating'].toStringAsFixed(1),
-                                                        style: const TextStyle(
-                                                          color: Colors.black,
-                                                          fontSize: 10,
-                                                          fontWeight: FontWeight.bold,
-                                                        ),
+                                                      style: const TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.black,
                                                       ),
                                                     ),
+                                                  ),
                                                 ],
                                               ),
                                             ),
@@ -626,10 +608,40 @@ class _LocationScreenState extends State<LocationScreen> {
                                       }).toList(),
                                     ],
                                   ),
-                                ],
-                              ),
+                                ]),
                           ),
                         ],
+                      ),
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF5A35E3).withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: DropdownButton<MapType>(
+                            value: _selectedMapType,
+                            dropdownColor: const Color(0xFF5A35E3).withOpacity(0.9),
+                            icon: const Icon(Icons.map, color: Colors.white),
+                            onChanged: _onMapTypeChanged,
+                            items: const [
+                              DropdownMenuItem(
+                                value: MapType.defaultMap,
+                                child: Text('Default', style: TextStyle(color: Colors.white)),
+                              ),
+                              DropdownMenuItem(
+                                value: MapType.satellite,
+                                child: Text('Satellite', style: TextStyle(color: Colors.white)),
+                              ),
+                              DropdownMenuItem(
+                                value: MapType.terrain,
+                                child: Text('Terrain', style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                       Positioned(
                         bottom: 16,
@@ -653,17 +665,17 @@ class _LocationScreenState extends State<LocationScreen> {
                             children: [
                               Text(
                                 'Search Radius: ${_searchRadius.toStringAsFixed(1)} km',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF5A35E3),
+                                  color: Colors.black,
                                 ),
                               ),
                               Slider(
                                 value: _searchRadius,
-                                min: 1.0,
-                                max: 30.0,
-                                divisions: 9,
+                                min: 0.5,
+                                max: 10.0,
+                                divisions: 19,
                                 label: _searchRadius.toStringAsFixed(1),
                                 onChanged: _onSearchRadiusChanged,
                                 activeColor: const Color(0xFF5A35E3),
