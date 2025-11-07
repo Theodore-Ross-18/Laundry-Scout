@@ -151,7 +151,7 @@ class _AllServicesRelatedScreenState extends State<AllServicesRelatedScreen> {
           Text(
             status,
             style: TextStyle(
-              color: Colors.black,
+              color: Colors.white,
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
@@ -175,6 +175,7 @@ class _AllServicesRelatedScreenState extends State<AllServicesRelatedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text('${widget.serviceName} Services'),
         backgroundColor: const Color(0xFF5A35E3),
@@ -225,6 +226,7 @@ class _AllServicesRelatedScreenState extends State<AllServicesRelatedScreen> {
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
                           elevation: 2,
+                          color: const Color(0xFF5A35E3),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -276,7 +278,7 @@ class _AllServicesRelatedScreenState extends State<AllServicesRelatedScreen> {
                                                 style: const TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.bold,
-                                                  color: Colors.black,
+                                                  color: Colors.white,
                                                 ),
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
@@ -290,7 +292,7 @@ class _AllServicesRelatedScreenState extends State<AllServicesRelatedScreen> {
                                           shop['business_address'] ?? 'No address available',
                                           style: const TextStyle(
                                             fontSize: 14,
-                                            color: Colors.black,
+                                            color: Colors.white,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -304,14 +306,14 @@ class _AllServicesRelatedScreenState extends State<AllServicesRelatedScreen> {
                                               const SizedBox(width: 4),
                                               Text(
                                                 '${shop['average_rating'].toStringAsFixed(1)}',
-                                                style: const TextStyle(fontSize: 14, color: Colors.black),
+                                                style: const TextStyle(fontSize: 14, color: Colors.white),
                                               ),
                                               const SizedBox(width: 8),
                                               Text(
                                                 '(${shop['total_reviews']} reviews)',
                                                 style: const TextStyle(
                                                   fontSize: 12,
-                                                  color: Colors.black,
+                                                  color: Colors.white,
                                                 ),
                                               ),
                                             ] else ...[
@@ -319,7 +321,7 @@ class _AllServicesRelatedScreenState extends State<AllServicesRelatedScreen> {
                                                 'No reviews yet',
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color: Colors.black,
+                                                  color: Colors.white,
                                                 ),
                                               ),
                                             ],
@@ -348,7 +350,7 @@ class _AllServicesRelatedScreenState extends State<AllServicesRelatedScreen> {
                                                       'Delivery',
                                                       style: TextStyle(
                                                         fontSize: 12,
-                                                        color: Colors.black,
+                                                        color: Colors.white,
                                                         fontWeight: FontWeight.w500,
                                                       ),
                                                     ),
@@ -363,7 +365,7 @@ class _AllServicesRelatedScreenState extends State<AllServicesRelatedScreen> {
                                   const Icon(
                                     Icons.arrow_forward_ios,
                                     size: 16,
-                                    color: Colors.black,
+                                    color: Colors.white,
                                   ),
                                 ],
                               ),
