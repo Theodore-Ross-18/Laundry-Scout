@@ -1116,14 +1116,44 @@ class HomeScreenBody extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         GestureDetector(
-                          onTap: showFilterModal,
+                          onTap: () {
+                            onNavigateToNotifications(4); // Assuming 4 is the index for active orders
+                          },
                           child: Container(
                             padding: const EdgeInsets.all(12.0),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
+                              borderRadius: BorderRadius.circular(15),
                             ),
-                            child: Image.asset('lib/assets/icons/filter.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
+                            child: Stack(
+                              children: [
+                                Image.asset('lib/assets/orders/orders.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
+                                if (activeOrdersCount >= 0)
+                                  Positioned(
+                                    right: 0,
+                                    top: 0,
+                                    child: Container(
+                                      padding: EdgeInsets.all(2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      constraints: BoxConstraints(
+                                        minWidth: 12,
+                                        minHeight: 12,
+                                      ),
+                                      child: Text(
+                                        '$activeOrdersCount',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 8,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -1133,46 +1163,47 @@ class HomeScreenBody extends StatelessWidget {
               ),
               const SizedBox(height: 20),
             
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    // Pick Up Animation
-                    _AnimatedServiceIcon(
-                      icon: Image.asset('lib/assets/orders/pickup.png', width: 50, height: 50),
-                      label: '',
-                      animationType: 'bounce',
-                      color: const Color(0xFF5A35E3),
-                      onTap: () {
-                        onNavigateToNotifications(4);
-                      },
-                    ),
-                    // Active Orders Animation
-                    _AnimatedServiceIcon(
-                      icon: Image.asset('lib/assets/orders/orders.png', width: 44, height: 44),
-                      label: '$activeOrdersCount Active Orders',
-                      animationType: '',
-                      color: Colors.black,
-                      count: activeOrdersCount,
-                      onTap: () {
-                        onNavigateToNotifications(4);
-                      },
-                    ),
-                    
-                    _AnimatedServiceIcon(
-                      icon: Image.asset('lib/assets/orders/delivery.png', width: 60, height: 60),
-                      label: '',
-                      animationType: 'slide',
-                      color: Colors.black,
-                      onTap: () {
-                        onNavigateToNotifications(4);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
+              // Removed the three icon below the search bar
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              //   child: Row(
+              //     mainAxisAlignment: MainAxisAlignment.spaceAround,
+              //     children: [
+              //       // Pick Up Animation
+              //       _AnimatedServiceIcon(
+              //         icon: Image.asset('lib/assets/orders/pickup.png', width: 50, height: 50),
+              //         label: '',
+              //         animationType: 'bounce',
+              //         color: const Color(0xFF5A35E3),
+              //         onTap: () {
+              //           onNavigateToNotifications(4);
+              //         },
+              //       ),
+              //       // Active Orders Animation
+              //       _AnimatedServiceIcon(
+              //         icon: Image.asset('lib/assets/orders/orders.png', width: 44, height: 44),
+              //         label: '$activeOrdersCount Active Orders',
+              //         animationType: '',
+              //         color: Colors.black,
+              //         count: activeOrdersCount,
+              //         onTap: () {
+              //           onNavigateToNotifications(4);
+              //         },
+              //       ),
+              //       
+              //       _AnimatedServiceIcon(
+              //         icon: Image.asset('lib/assets/orders/delivery.png', width: 60, height: 60),
+              //         label: '',
+              //         animationType: 'slide',
+              //         color: Colors.black,
+              //         onTap: () {
+              //           onNavigateToNotifications(4);
+              //         },
+              //       ),
+              //     ],
+              //   ),
+              // ),
+              // const SizedBox(height: 20),
               // Promos Section
               if (!isSearching) // Use passed isSearching
                 Padding(
