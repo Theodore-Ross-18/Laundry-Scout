@@ -78,7 +78,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     try {
       final response = await Supabase.instance.client
           .from('business_profiles')
-          .select('service_prices') // Removed delivery_fee
+          .select('service_prices, latitude, longitude')
           .eq('id', widget.businessData['id'])
           .single();
 

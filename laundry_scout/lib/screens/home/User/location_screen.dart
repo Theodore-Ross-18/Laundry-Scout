@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -226,6 +227,7 @@ class _LocationScreenState extends State<LocationScreen> {
   Position? _currentPosition;
   bool _isLoading = true;
   String _locationPermissionMessage = "Location permission not granted.";
+  String? _currentAddress;
   List<Map<String, dynamic>> _businessProfiles = [];
   final MapController _mapController = MapController();
   double _searchRadius = 1.0; 
@@ -286,7 +288,31 @@ class _LocationScreenState extends State<LocationScreen> {
       setState(() {
         _currentPosition = position;
       });
-      print('Current Location: Latitude: ${_currentPosition!.latitude}, Longitude: ${_currentPosition!.longitude}, Accuracy: ${position.accuracy}m');
+      List<geocoding.Placemark> placemarks = await geocoding.placemarkFromCoordinates(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude
+      );
+      if (placemarks.isNotEmpty) {
+        geocoding.Placemark place = placemarks[0];
+        setState(() {
+          _currentAddress = "${place.street}, ${place.locality}, ${place.administrativeArea}";
+        });
+        // Update user_profiles table with current location and address
+        final user = Supabase.instance.client.auth.currentUser;
+          if (user != null && _currentAddress != null && _currentAddress!.isNotEmpty) {
+            try {
+              await Supabase.instance.client.from('user_profiles').update({
+                'latitude': _currentPosition!.latitude,
+                'longitude': _currentPosition!.longitude,
+                'current_address': _currentAddress,
+              }).eq('id', user.id);
+            } catch (e) {
+            }
+          } else if (user == null) {
+          }
+          else if (_currentAddress == null || _currentAddress!.isEmpty) {
+          }
+        }
       _mapController.move(LatLng(_currentPosition!.latitude, _currentPosition!.longitude), 14.0); // Move map to current location and set zoom
       await _fetchBusinessProfiles(radius: _searchRadius);
       setState(() {
@@ -500,32 +526,17 @@ class _LocationScreenState extends State<LocationScreen> {
       return Scaffold(
         backgroundColor: const Color(0xFF5A35E3),
         appBar: AppBar(
-          title: const Text('Nearby Laundry Shops'),
-          backgroundColor: const Color(0xFF5A35E3),
+          title: const Text('Laundry Scout'),
+          centerTitle: true,
           foregroundColor: Colors.white,
-          actions: [
-            DropdownButton<MapType>(
-              value: _selectedMapType,
-              dropdownColor: const Color(0xFF5A35E3),
-              icon: const Icon(Icons.map, color: Colors.white),
-              onChanged: _onMapTypeChanged,
-              items: const [
-                DropdownMenuItem(
-                  value: MapType.defaultMap,
-                  child: Text('Default', style: TextStyle(color: Colors.white)),
-                ),
-                DropdownMenuItem(
-                  value: MapType.satellite,
-                  child: Text('Satellite', style: TextStyle(color: Colors.white)),
-                ),
-                DropdownMenuItem(
-                  value: MapType.terrain,
-                  child: Text('Terrain', style: TextStyle(color: Colors.white)),
-                ),
-              ],
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('lib/assets/bg.png'),
+                fit: BoxFit.cover,
+              ),
             ),
-            const SizedBox(width: 16),
-          ],
+          ),
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -537,99 +548,170 @@ class _LocationScreenState extends State<LocationScreen> {
                   )
                 : Stack(
                     children: [
-                      Column(
-                        children: [
-                          Expanded(
-                            child: FlutterMap(
-                                key: ValueKey(_currentPosition), 
-                                mapController: _mapController,
-                                options: MapOptions(
-                                  center: _currentPosition != null
-                                      ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
-                                      : LatLng(12.8797, 121.7740), 
-                                  zoom: _currentPosition != null ? 16.0 : 6.0, 
-                                  minZoom: 5.0,
-                                  maxZoom: 20.0,
-                                  initialZoom: _currentPosition != null ? 16.0 : 6.0,
-                                ),
-                                children: [
-                                  TileLayer(
-                                    urlTemplate: _getTileLayerUrlTemplate(_selectedMapType),
-                                    subdomains: const ['a', 'b', 'c'],
-                                  ),
-                                  if (_currentPosition != null)
-                                    CircleLayer(
-                                      circles: [
-                                        CircleMarker(
-                                          point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-                                          useRadiusInMeter: true, 
-                                          radius: _searchRadius * 1000,
-                                          color: const Color(0xFF5A35E3).withOpacity(0.2),
-                                          borderColor: const Color(0xFF5A35E3),
-                                          borderStrokeWidth: 2,
-                                        ),
-                                      ],
-                                    ),
-                                  MarkerLayer(
-                                    markers: [
-                                    
-                                      Marker(
-                                        width: 80.0,
-                                        height: 80.0,
-                                        point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-                                        child: const Icon(
-                                          Icons.my_location,
-                                          color: Colors.blue,
-                                          size: 40.0,
-                                        ),
-                                      ),
-                                   
-                                      ..._businessProfiles.map((business) {
-                                        final lat = business['latitude'];
-                                        final lng = business['longitude'];
-                                        if (lat != null && lng != null) {
-                                          return Marker(
-                                            width: 80.0,
-                                            height: 80.0,
-                                            point: LatLng(lat, lng),
-                                            child: GestureDetector(
-                                              onTap: () => _onTapBusinessMarker(business),
-                                              child: Column(
-                                                children: [
-                                                  Image.asset(
-                                                    'lib/assets/official.png',
-                                                    width: 40.0,
-                                                    height: 40.0,
-                                                  ),
-                                                  if (business['average_rating'] != null && business['average_rating'] > 0)
-                                                    Container(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.white,
-                                                        borderRadius: BorderRadius.circular(4),
-                                                      ),
-                                                      child: Text(
-                                                        business['average_rating'].toStringAsFixed(1),
-                                                        style: const TextStyle(
-                                                          color: Colors.black,
-                                                          fontSize: 10,
-                                                          fontWeight: FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                        return Marker(point: LatLng(0,0), child: Container()); // Placeholder for null lat/lng
-                                      }).toList(),
-                                    ],
+                      FlutterMap(
+                          key: ValueKey(_currentPosition),
+                          mapController: _mapController,
+                          options: MapOptions(
+                            center: _currentPosition != null
+                                ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+                                : LatLng(12.8797, 121.7740),
+                            zoom: _currentPosition != null ? 16.0 : 6.0,
+                            minZoom: 5.0,
+                            maxZoom: 20.0,
+                            initialZoom: _currentPosition != null ? 16.0 : 6.0,
+                          ),
+                          children: [
+                            TileLayer(
+                              urlTemplate: _getTileLayerUrlTemplate(_selectedMapType),
+                              subdomains: const ['a', 'b', 'c'],
+                            ),
+                            if (_currentPosition != null)
+                              CircleLayer(
+                                circles: [
+                                  CircleMarker(
+                                    point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                                    useRadiusInMeter: true,
+                                    radius: _searchRadius * 1000,
+                                    color: const Color(0xFF5A35E3).withOpacity(0.2),
+                                    borderColor: const Color(0xFF5A35E3),
+                                    borderStrokeWidth: 2,
                                   ),
                                 ],
                               ),
+                            MarkerLayer(
+                              markers: [
+                                if (_currentPosition != null)
+                                  Marker(
+                                    width: 80.0,
+                                    height: 80.0,
+                                    point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                                    child: const Icon(
+                                      Icons.my_location,
+                                      color: Colors.blue,
+                                      size: 40.0,
+                                    ),
+                                  ),
+                                ..._businessProfiles.map((business) {
+                                  final lat = business['latitude'];
+                                  final lng = business['longitude'];
+                                  if (lat != null && lng != null) {
+                                    return Marker(
+                                      width: 80.0,
+                                      height: 80.0,
+                                      point: LatLng(lat, lng),
+                                      child: GestureDetector(
+                                        onTap: () => _onTapBusinessMarker(business),
+                                        child: Column(
+                                          children: [
+                                            Image.asset(
+                                              'lib/assets/official.png',
+                                              width: 40.0,
+                                              height: 40.0,
+                                            ),
+                                            if (business['average_rating'] != null && business['average_rating'] > 0)
+                                            Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                  borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                  business['average_rating'].toStringAsFixed(1),
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.black,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return Marker(point: LatLng(0,0), child: Container()); // Placeholder for null lat/lng
+                                }).toList(),
+                              ],
+                            ),
+                          ],
+                        ),
+                      Positioned(
+                        top: 10,
+                        left: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(15),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
                           ),
-                        ],
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.location_on, color: Color(0xFF5A35E3), size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Your Location',
+                                    style: TextStyle(
+                                      color: Colors.grey[700],
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _currentAddress != null && _currentAddress!.isNotEmpty ? _currentAddress! : 'No Current Address',
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF5A35E3).withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: DropdownButton<MapType>(
+                            value: _selectedMapType,
+                            dropdownColor: const Color(0xFF5A35E3).withOpacity(0.9),
+                            icon: const Icon(Icons.map, color: Colors.white),
+                            onChanged: _onMapTypeChanged,
+                            items: const [
+                              DropdownMenuItem(
+                                value: MapType.defaultMap,
+                                child: Text('Default', style: TextStyle(color: Colors.white)),
+                              ),
+                              DropdownMenuItem(
+                                value: MapType.satellite,
+                                child: Text('Satellite', style: TextStyle(color: Colors.white)),
+                              ),
+                              DropdownMenuItem(
+                                value: MapType.terrain,
+                                child: Text('Terrain', style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                       Positioned(
                         bottom: 16,
@@ -653,17 +735,17 @@ class _LocationScreenState extends State<LocationScreen> {
                             children: [
                               Text(
                                 'Search Radius: ${_searchRadius.toStringAsFixed(1)} km',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF5A35E3),
+                                  color: Colors.black,
                                 ),
                               ),
                               Slider(
                                 value: _searchRadius,
-                                min: 1.0,
-                                max: 30.0,
-                                divisions: 9,
+                                min: 0.5,
+                                max: 10.0,
+                                divisions: 19,
                                 label: _searchRadius.toStringAsFixed(1),
                                 onChanged: _onSearchRadiusChanged,
                                 activeColor: const Color(0xFF5A35E3),

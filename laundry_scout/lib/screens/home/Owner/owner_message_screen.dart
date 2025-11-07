@@ -3,11 +3,14 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
 import '../../../services/session_service.dart';
 import '../../../services/connection_service.dart';
 import '../../../services/realtime_message_service.dart';
 import '../../../services/message_queue_service.dart';
 import '../../../widgets/optimized_image.dart';
+import '../../../widgets/image_preview.dart';
 
 class OwnerMessageScreen extends StatefulWidget {
   const OwnerMessageScreen({super.key});
@@ -69,8 +72,7 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
       final conversationsResponse = await Supabase.instance.client
           .from('conversations')
           .select('*')
-          .eq('business_id', Supabase.instance.client.auth.currentUser!.id)
-          .order('last_message_at', ascending: false);
+          .eq('business_id', Supabase.instance.client.auth.currentUser!.id);
   
       for (var conversation in conversationsResponse) {
         final userProfile = await Supabase.instance.client
@@ -95,7 +97,6 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
             .select('content, created_at, sender_id')
             .eq('business_id', conversation['business_id'])
             .or('sender_id.eq.${conversation['user_id']},receiver_id.eq.${conversation['user_id']}')
-            .order('created_at', ascending: false)
             .limit(1)
             .maybeSingle();
 
@@ -150,8 +151,7 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
       final conversationsResponse = await Supabase.instance.client
           .from('conversations')
           .select('*')
-          .eq('business_id', Supabase.instance.client.auth.currentUser!.id)
-          .order('last_message_at', ascending: false);
+          .eq('business_id', Supabase.instance.client.auth.currentUser!.id);
   
       for (var conversation in conversationsResponse) {
         print('Conversation user_id: ${conversation['user_id']}');
@@ -182,7 +182,6 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
             .select('content, created_at, sender_id')
             .eq('business_id', conversation['business_id'])
             .or('sender_id.eq.${conversation['user_id']},receiver_id.eq.${conversation['user_id']}')
-            .order('created_at', ascending: false)
             .limit(1)
             .maybeSingle();
 
@@ -241,17 +240,69 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
     });
   }
 
+  Future<void> _deleteConversation(Map<String, dynamic> conversation) async {
+    try {
+      final businessId = Supabase.instance.client.auth.currentUser?.id;
+      if (businessId == null) return;
+
+      final userId = conversation['user_id'];
+      
+      // Delete all messages for this conversation using sender_id/receiver_id instead of user_id
+      await Supabase.instance.client
+          .from('messages')
+          .delete()
+          .or('sender_id.eq.${userId},receiver_id.eq.${userId}')
+          .eq('business_id', businessId);
+
+      // Delete the conversation
+      await Supabase.instance.client
+          .from('conversations')
+          .delete()
+          .eq('business_id', businessId)
+          .eq('user_id', userId);
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Conversation deleted successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error deleting conversation: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete conversation: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      // Re-throw the error so the Dismissible knows the deletion failed
+      rethrow;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF5A35E3),
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 10),
+            
             // Messages section header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('lib/assets/bg.png'),
+                  fit: BoxFit.cover,
+                ),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -263,10 +314,16 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.mark_email_read, color: Colors.white),
-                    onPressed: _markAllAsRead,
-                    tooltip: 'Mark all as read',
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.mark_email_read, color: Colors.white),
+                        onPressed: _markAllAsRead,
+                        tooltip: 'Mark all as read',
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -276,10 +333,6 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
               child: Container(
                 decoration: const BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(25),
-                    topRight: Radius.circular(25),
-                  ),
                 ),
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
@@ -298,123 +351,211 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
                               final user = conversation['user_profiles'];
                               final lastMessage = conversation['last_message'];
                               
-                              return Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                child: InkWell(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => OwnerChatScreen(
-                        userId: conversation['user_id'],
-                        userName: _getDisplayName(user, conversation['user_id']),
-                        userImage: user?['profile_image_url'],
-                      ),
+                              return Dismissible(
+                                key: Key(conversation['conversation_id'].toString()),
+                                direction: DismissDirection.endToStart,
+                                background: Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 20),
+                                  child: const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.delete,
+                                        color: Colors.white,
+                                        size: 28,
                                       ),
-                                    );
-                                  },
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Row(
-                                      children: [
-                                        // Avatar with online indicator
-                                        Stack(
-                                          children: [
-                                            CircleAvatar(
-                                              radius: 28,
-                                              backgroundColor: Colors.grey[200],
-                                              child: user?['profile_image_url'] != null
-                                                  ? ClipOval(
-                                                      child: OptimizedImage(
-                                                        imageUrl: user!['profile_image_url'],
-                                                        width: 56,
-                                                        height: 56,
-                                                        fit: BoxFit.cover,
-                                                        placeholder: const Icon(Icons.person, color: Colors.grey),
-                                                      ),
-                                                    )
-                                                  : const Icon(Icons.person, color: Colors.grey, size: 30),
-                                            ),
-                                            // Online/Offline indicator
-                                            if ((user?['user_is_online'] ?? false) == true) // Green for online
-                                              Positioned(
-                                                bottom: 2,
-                                                right: 2,
-                                                child: Container(
-                                                  width: 12,
-                                                  height: 12,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.green,
-                                                    shape: BoxShape.circle,
-                                                    border: Border.all(color: Colors.white, width: 2),
-                                                  ),
-                                                ),
-                                              )
-                                            else if ((user?['user_is_online'] ?? false) == false) // Red for offline
-                                              Positioned(
-                                                bottom: 2,
-                                                right: 2,
-                                                child: Container(
-                                                  width: 12,
-                                                  height: 12,
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.red,
-                                                    shape: BoxShape.circle,
-                                                    border: Border.all(color: Colors.white, width: 2),
-                                                  ),
-                                                ),
-                                              ),
-                                          ],
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'Delete',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
                                         ),
-                                        const SizedBox(width: 16),
-                                        // Message content
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                confirmDismiss: (direction) async {
+                                  return await showDialog<bool>(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: const Text(
+                                          'Delete Conversation',
+                                          style: TextStyle(color: Colors.black),
+                                        ),
+                                        content: Text(
+                                          'Are you sure you want to delete your conversation with ${_getDisplayName(user, conversation['user_id'])}? This will also delete all messages in the conversation.',
+                                          style: const TextStyle(color: Colors.black),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(false),
+                                            child: const Text(
+                                              'Cancel',
+                                              style: TextStyle(color: Colors.black),
+                                            ),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(true),
+                                            child: const Text(
+                                              'Delete',
+                                              style: TextStyle(color: Colors.red),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ) ?? false;
+                                },
+                                onDismissed: (direction) async {
+                                  // Remove the conversation from the local list immediately
+                                  final conversationId = conversation['conversation_id'].toString();
+                                  final removedConversation = conversation;
+                                  final removedIndex = index;
+                                  
+                                  setState(() {
+                                    _filteredConversations.removeAt(index);
+                                    _conversations.removeWhere((conv) => conv['conversation_id'].toString() == conversationId);
+                                  });
+                                  
+                                  try {
+                                    await _deleteConversation(conversation);
+                                  } catch (e) {
+                                    // If deletion fails, add the conversation back
+                                    setState(() {
+                                      _filteredConversations.insert(removedIndex, removedConversation);
+                                      _conversations.add(removedConversation);
+                                    });
+                                    // Re-throw to show the error message
+                                    rethrow;
+                                  }
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                  child: InkWell(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => OwnerChatScreen(
+                          userId: conversation['user_id'],
+                          userName: _getDisplayName(user, conversation['user_id']),
+                          userImage: user?['profile_image_url'],
+                        ),
+                                        ),
+                                      );
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Row(
+                                        children: [
+                                          // Avatar with online indicator
+                                          Stack(
                                             children: [
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                children: [
-                                                  Expanded(
-                                                    child: Text(
-                                                      _getDisplayName(user, conversation['user_id']),
-                                                      style: const TextStyle(
-                                                        fontWeight: FontWeight.w600,
-                                                        fontSize: 16,
-                                                        color: Colors.black,
-                                                      ),
-                                                      overflow: TextOverflow.ellipsis,
-                                                      maxLines: 2,
+                                              CircleAvatar(
+                                                radius: 28,
+                                                backgroundColor: Colors.grey[200],
+                                                child: user?['profile_image_url'] != null
+                                                    ? ClipOval(
+                                                        child: OptimizedImage(
+                                                          imageUrl: user!['profile_image_url'],
+                                                          width: 56,
+                                                          height: 56,
+                                                          fit: BoxFit.cover,
+                                                          placeholder: const Icon(Icons.person, color: Colors.grey),
+                                                        ),
+                                                      )
+                                                    : const Icon(Icons.person, color: Colors.grey, size: 30),
+                                              ),
+                                              // Online/Offline indicator
+                                              if ((user?['user_is_online'] ?? false) == true) // Green for online
+                                                Positioned(
+                                                  bottom: 2,
+                                                  right: 2,
+                                                  child: Container(
+                                                    width: 12,
+                                                    height: 12,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.green,
+                                                      shape: BoxShape.circle,
+                                                      border: Border.all(color: Colors.white, width: 2),
                                                     ),
                                                   ),
-                                                  if (lastMessage != null)
-                                                    Flexible(
-                                                      child: Text(
-                                                        _formatTime(lastMessage['created_at']),
-                                                        style: TextStyle(
-                                                          color: Colors.grey[500],
-                                                          fontSize: 12,
-                                                        ),
-                                                        overflow: TextOverflow.ellipsis,
-                                                      ),
+                                                )
+                                              else if ((user?['user_is_online'] ?? false) == false) // Red for offline
+                                                Positioned(
+                                                  bottom: 2,
+                                                  right: 2,
+                                                  child: Container(
+                                                    width: 12,
+                                                    height: 12,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.red,
+                                                      shape: BoxShape.circle,
+                                                      border: Border.all(color: Colors.white, width: 2),
                                                     ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                lastMessage?['content'] ?? 'No messages yet',
-                                                style: TextStyle(
-                                                  color: Colors.grey[600],
-                                                  fontSize: 14,
+                                                  ),
                                                 ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
                                             ],
                                           ),
-                                        ),
-                                      ],
+                                          const SizedBox(width: 16),
+                                          // Message content
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        _getDisplayName(user, conversation['user_id']),
+                                                        style: const TextStyle(
+                                                          fontWeight: FontWeight.w600,
+                                                          fontSize: 16,
+                                                          color: Colors.black,
+                                                        ),
+                                                        overflow: TextOverflow.ellipsis,
+                                                        maxLines: 2,
+                                                      ),
+                                                    ),
+                                                    if (lastMessage != null)
+                                                      Flexible(
+                                                        child: Text(
+                                                          _formatTime(lastMessage['created_at']),
+                                                          style: TextStyle(
+                                                            color: Colors.grey[500],
+                                                            fontSize: 12,
+                                                          ),
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  lastMessage?['content'] ?? 'No messages yet',
+                                                  style: TextStyle(
+                                                    color: Colors.grey[600],
+                                                    fontSize: 14,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -551,6 +692,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
   Timer? _backgroundRefreshTimer; // Add background refresh timer
   String? _businessName; // Store business name from business_profiles table
   String? _businessCoverPhotoUrl; // Store cover photo URL from business_profiles table
+  bool _isSending = false; // Track if a message is being sent
 
   @override
   void initState() {
@@ -620,8 +762,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
           .from('messages')
           .select('*')
           .eq('business_id', user.id)
-          .or('sender_id.eq.${widget.userId},receiver_id.eq.${widget.userId}')
-          .order('created_at', ascending: true);
+          .or('sender_id.eq.${widget.userId},receiver_id.eq.${widget.userId}');
 
       if (mounted) {
         final newMessages = List<Map<String, dynamic>>.from(response);
@@ -729,8 +870,7 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
           .from('messages')
           .select('*')
           .eq('business_id', user.id)
-          .or('sender_id.eq.${widget.userId},receiver_id.eq.${widget.userId}')
-          .order('created_at', ascending: true);
+          .or('sender_id.eq.${widget.userId},receiver_id.eq.${widget.userId}');
 
       if (mounted) {
         setState(() {
@@ -740,6 +880,47 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
       }
     } catch (e) {
       print('Error loading messages: $e');
+    }
+  }
+
+  Future<void> _deleteMessage(String messageId) async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      // Find the message to check if it belongs to the current user
+      final message = _messages.firstWhere(
+        (msg) => msg['id'].toString() == messageId,
+        orElse: () => {},
+      );
+
+      if (message.isEmpty || message['sender_id'] != user.id) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('You can only delete your own messages')),
+          );
+        }
+        return;
+      }
+
+      await Supabase.instance.client
+          .from('messages')
+          .delete()
+          .eq('id', messageId)
+          .eq('sender_id', user.id); // Additional safety check
+
+      if (mounted) {
+        setState(() {
+          _messages.removeWhere((message) => message['id'] == messageId);
+        });
+      }
+    } catch (e) {
+      print('Error deleting message: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete message')),
+        );
+      }
     }
   }
 
@@ -795,8 +976,114 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
     return Supabase.instance.client
         .from('user_profiles')
         .stream(primaryKey: ['id'])
-        .eq('id', userId)
-        .order('id', ascending: true);
+        .eq('id', userId);
+  }
+
+  Future<void> _handleCameraAction() async {
+    try {
+      // Request camera permission if needed
+      final ImagePicker picker = ImagePicker();
+      final XFile? photo = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      );
+      
+      if (photo != null) {
+        await _sendImageMessage(photo.path);
+      }
+    } catch (e) {
+      String errorMessage = 'Error taking photo: $e';
+      if (e.toString().contains('permission')) {
+        errorMessage = 'Camera permission denied. Please enable camera access in your device settings.';
+      } else if (e.toString().contains('no camera')) {
+        errorMessage = 'No camera device found on this device.';
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
+    }
+  }
+
+  Future<void> _handlePhotoAction() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? photo = await picker.pickImage(source: ImageSource.gallery);
+      
+      if (photo != null) {
+        await _sendImageMessage(photo.path);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error selecting photo: $e')),
+      );
+    }
+  }
+
+  Future<void> _sendImageMessage(String imagePath) async {
+    try {
+      setState(() {
+        _isSending = true;
+      });
+
+      // Upload image to storage
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final storagePath = 'chat_images/$fileName';
+
+      // Read the image file as bytes
+      final XFile imageXFile = XFile(imagePath);
+      final Uint8List imageBytes = await imageXFile.readAsBytes();
+      
+      await Supabase.instance.client.storage
+          .from('chat_images')
+          .uploadBinary(storagePath, imageBytes,
+              fileOptions: const FileOptions(contentType: 'image/jpeg'));
+
+      final imageUrl = Supabase.instance.client.storage
+          .from('chat_images')
+          .getPublicUrl(storagePath);
+
+      // Get current user for business_id
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      // Send image message using the message queue
+      final tempId = _messageQueue.queueMessage(
+        content: '📷 Image',
+        receiverId: widget.userId,
+        businessId: user.id,
+        imageUrl: imageUrl,
+      );
+
+      // Add optimistic UI update
+      setState(() {
+        _messages.add({
+          'tempId': tempId,
+          'sender_id': user.id,
+          'receiver_id': widget.userId,
+          'business_id': user.id,
+          'content': '📷 Image',
+          'created_at': DateTime.now().toIso8601String(),
+          'is_image': true,
+          'image_url': imageUrl,
+        });
+      });
+    } catch (e) {
+      print('Error sending image message: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send image: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSending = false;
+        });
+      }
+    }
   }
 
   @override
@@ -859,127 +1146,220 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
                 final message = _messages[index];
                 final isMe = message['sender_id'] == user?.id;
                 
-                return Align(
-                  alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        
-                        if (!isMe) ...[
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: Colors.grey[300],
-                            child: widget.userImage != null
-                                ? ClipOval(
-                                    child: OptimizedImage(
-                                      imageUrl: widget.userImage!,
-                                      width: 32,
-                                      height: 32,
-                                      fit: BoxFit.cover,
-                                      placeholder: const Icon(Icons.person, size: 16, color: Colors.grey),
-                                    ),
-                                  )
-                                : const Icon(Icons.person, size: 16, color: Colors.grey),
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                        
-                       
-                        Flexible(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: MediaQuery.of(context).size.width * 0.75,
+                return Dismissible(
+                  key: Key('message_${message['id'] ?? index}'),
+                  direction: isMe ? DismissDirection.horizontal : DismissDirection.none,
+                  background: isMe ? Container(
+                    alignment: Alignment.centerLeft,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    color: Colors.red,
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ) : null,
+                  secondaryBackground: isMe ? Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    color: Colors.red,
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ) : null,
+                  confirmDismiss: (direction) async {
+                    if (!isMe) return false;
+                    
+                    return await showDialog<bool>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('Delete Message', style: TextStyle(color: Colors.black)),
+                          content: const Text('Are you sure you want to delete this message?', style: TextStyle(color: Colors.black)),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('Cancel', style: TextStyle(color: Colors.black)),
                             ),
-                            child: Column(
-                              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                              children: [
-                                
-                                Padding(
-                                  padding: EdgeInsets.only(
-                                    bottom: 4,
-                                    left: isMe ? 0 : 8,
-                                    right: isMe ? 8 : 0,
-                                  ),
-                                  child: Text(
-                                    isMe ? ( 'You') : widget.userName,
-                                    style: const TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                
-                              
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: isMe ? const Color(0xFF5A35E3) : const Color(0xFFE0E0E0),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    message['content'],
-                                    style: TextStyle(
-                                      color: isMe ? Colors.white : Colors.black,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                                
-                              
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        _formatMessageTime(message['created_at']),
-                                        style: const TextStyle(
-                                          color: Colors.grey,
-                                          fontSize: 12,
-                                        ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text('Delete', style: TextStyle(color: Colors.black)),
+                            ),
+                          ],
+                        );
+                      },
+                    ) ?? false;
+                  },
+                  onDismissed: (direction) {
+                    if (isMe && message['id'] != null) {
+                      _deleteMessage(message['id'].toString());
+                    }
+                  },
+                  child: Align(
+                    alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          
+                          if (!isMe) ...[
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: Colors.grey[300],
+                              child: widget.userImage != null
+                                  ? ClipOval(
+                                      child: OptimizedImage(
+                                        imageUrl: widget.userImage!,
+                                        width: 32,
+                                        height: 32,
+                                        fit: BoxFit.cover,
+                                        placeholder: const Icon(Icons.person, size: 16, color: Colors.grey),
                                       ),
-                                      if (isMe) ...[
-                                        const SizedBox(width: 4),
-                                        Icon(
-                                          Icons.done_all,
-                                          size: 14,
-                                          color: Colors.blue,
-                                        ),
-                                      ],
-                                    ],
+                                    )
+                                  : const Icon(Icons.person, size: 16, color: Colors.grey),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          
+                         
+                          Flexible(
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: MediaQuery.of(context).size.width * 0.75,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                                children: [
+                                  
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: 4,
+                                      left: isMe ? 0 : 8,
+                                      right: isMe ? 8 : 0,
+                                    ),
+                                    child: Text(
+                                      isMe ? ( 'You') : widget.userName,
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  
+                                
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: isMe ? const Color(0xFF5A35E3) : const Color(0xFFE0E0E0),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: message['is_image'] == true
+                                        ? Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              ClipRRect(
+                                                borderRadius: BorderRadius.circular(8),
+                                                child: GestureDetector(
+                                                  onTap: () {
+                                                    if (message['image_url']?.isNotEmpty == true) {
+                                                      showImagePreview(
+                                                        context,
+                                                        message['image_url'],
+                                                        heroTag: 'chat_image_${message['id'] ?? DateTime.now().millisecondsSinceEpoch}',
+                                                      );
+                                                    }
+                                                  },
+                                                  child: OptimizedImage(
+                                                    imageUrl: message['image_url'] ?? '',
+                                                    width: 200,
+                                                    height: 150,
+                                                    fit: BoxFit.cover,
+                                                    placeholder: Container(
+                                                      width: 200,
+                                                      height: 150,
+                                                      color: Colors.grey[300],
+                                                      child: const Icon(Icons.image, size: 50, color: Colors.grey),
+                                                    ),
+                                                    errorWidget: Container(
+                                                      width: 200,
+                                                      height: 150,
+                                                      color: Colors.grey[300],
+                                                      child: const Icon(Icons.broken_image, size: 50, color: Colors.red),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              if (message['content'] != null && message['content'].toString().isNotEmpty && message['content'] != '📷 Image')
+                                                Padding(
+                                                  padding: const EdgeInsets.only(top: 8),
+                                                  child: Text(
+                                                    message['content'],
+                                                    style: TextStyle(
+                                                      color: isMe ? Colors.white : Colors.black,
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          )
+                                        : Text(
+                                            message['content'],
+                                            style: TextStyle(
+                                              color: isMe ? Colors.white : Colors.black,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                  ),
+                                  
+                                
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          _formatMessageTime(message['created_at']),
+                                          style: const TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        if (isMe) ...[
+                                          const SizedBox(width: 4),
+                                          Icon(
+                                            Icons.done_all,
+                                            size: 14,
+                                            color: Colors.blue,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        
+                          
 
-                        if (isMe) ...[
-                          const SizedBox(width: 8),
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: const Color(0xFF5A35E3),
-                            backgroundImage: _businessCoverPhotoUrl != null 
-                                ? NetworkImage(_businessCoverPhotoUrl!)
-                                : null,
-                            child: _businessCoverPhotoUrl == null
-                                ? Text(
-                                    user?.userMetadata?['full_name']?.substring(0, 1).toUpperCase() ?? 'O',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  )
-                                : null,
-                          ),
+                          if (isMe) ...[
+                            const SizedBox(width: 8),
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: const Color(0xFF5A35E3),
+                              backgroundImage: _businessCoverPhotoUrl != null 
+                                  ? NetworkImage(_businessCoverPhotoUrl!)
+                                  : null,
+                              child: _businessCoverPhotoUrl == null
+                                  ? Text(
+                                      user?.userMetadata?['full_name']?.substring(0, 1).toUpperCase() ?? 'O',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 );
@@ -1001,6 +1381,14 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
             ),
             child: Row(
               children: [
+                IconButton(
+                  icon: const Icon(Icons.camera_alt, color: Color(0xFF5A35E3)),
+                  onPressed: _handleCameraAction,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.photo, color: Color(0xFF5A35E3)),
+                  onPressed: _handlePhotoAction,
+                ),
                 Expanded(
                   child: TextField(
                     controller: _messageController,
@@ -1051,20 +1439,14 @@ class _OwnerChatScreenState extends State<OwnerChatScreen> {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
-    int hour = dateTime.hour;
-    String period = hour >= 12 ? 'PM' : 'AM';
-    if (hour == 0) {
-      hour = 12;
-    } else if (hour > 12) {
-      hour = hour - 12;
-    }
-    
-    String timeString = '${hour.toString()}:${dateTime.minute.toString().padLeft(2, '0')} $period';
-
     if (difference.inDays > 0) {
-      return '${dateTime.day}/${dateTime.month} $timeString';
+      return '${difference.inDays}d';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m';
     } else {
-      return timeString;
+      return 'now';
     }
   }
 }

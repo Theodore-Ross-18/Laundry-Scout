@@ -275,6 +275,33 @@ class NotificationScreenState extends State<NotificationScreen> with SingleTicke
     }
   }
 
+  Future<void> _deleteNotification(Map<String, dynamic> notification) async {
+    try {
+      final notificationId = notification['id'];
+      
+      await Supabase.instance.client
+          .from('notifications')
+          .delete()
+          .eq('id', notificationId);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Notification deleted'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print('Error deleting notification: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting notification: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      rethrow;
+    }
+  }
+
   IconData _getNotificationIcon(String type) {
     switch (type) {
       case 'promo':
@@ -321,37 +348,299 @@ class NotificationScreenState extends State<NotificationScreen> with SingleTicke
     }
   }
 
+  void _showCancelOrderDialog(Map<String, dynamic> order) {
+    String? selectedReason;
+    final TextEditingController customMessageController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Cancel Order', style: TextStyle(color: Colors.black)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Why are you cancelling this order?', style: TextStyle(color: Colors.black)),
+                    const SizedBox(height: 16),
+                    _buildCancellationOption(
+                      'Need to change service',
+                      selectedReason,
+                      (value) => setState(() => selectedReason = value),
+                    ),
+                    _buildCancellationOption(
+                      'Wrong address',
+                      selectedReason,
+                      (value) => setState(() => selectedReason = value),
+                    ),
+                    _buildCancellationOption(
+                      'Wrong number',
+                      selectedReason,
+                      (value) => setState(() => selectedReason = value),
+                    ),
+                    _buildCancellationOption(
+                      'Need to change pick up or drop off time',
+                      selectedReason,
+                      (value) => setState(() => selectedReason = value),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('Additional details (optional):', style: TextStyle(color: Colors.black)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: customMessageController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        hintText: 'Add any additional details...',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.all(12),
+                        hintStyle: TextStyle(color: Colors.black54),
+                      ),
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel', style: TextStyle(color: Colors.black)),
+                ),
+                ElevatedButton(
+                  onPressed: selectedReason != null
+                      ? () => _confirmOrderCancellation(
+                            order,
+                            selectedReason!,
+                            customMessageController.text.trim(),
+                          )
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Confirm Cancellation', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildCancellationOption(
+    String title,
+    String? selectedReason,
+    Function(String) onSelected,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: InkWell(
+        onTap: () => onSelected(title),
+        child: Row(
+          children: [
+            Radio<String>(
+              value: title,
+              groupValue: selectedReason,
+              onChanged: (value) => onSelected(value!),
+            ),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontSize: 14, color: Colors.black),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmOrderCancellation(
+    Map<String, dynamic> order,
+    String reason,
+    String customMessage,
+  ) async {
+    Navigator.of(context).pop(); // Close the dialog
+    
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      // Combine reason and custom message
+      final String fullCancellationMessage = customMessage.isNotEmpty
+          ? '$reason - $customMessage'
+          : reason;
+
+      // Update order status and save cancellation message
+      await Supabase.instance.client
+          .from('orders')
+          .update({
+            'status': 'cancelled',
+            'custom_message_cancellation': fullCancellationMessage,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', order['id']);
+
+      // Send message to business owner
+      await _sendCancellationMessageToBusiness(order, fullCancellationMessage);
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order cancelled successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Refresh orders list
+      await _loadOrders();
+    } catch (e) {
+      print('Error cancelling order: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to cancel order: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendCancellationMessageToBusiness(
+    Map<String, dynamic> order,
+    String cancellationMessage,
+  ) async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final businessId = order['business_id'];
+      final orderNumber = order['order_number'] ?? 'Unknown';
+      
+      // Get business owner details
+      final businessResponse = await Supabase.instance.client
+          .from('business_profiles')
+          .select('owner_id, business_name')
+          .eq('id', businessId)
+          .single();
+
+      final ownerId = businessResponse['owner_id'];
+      final businessName = businessResponse['business_name'];
+
+      // Get user details for the message
+      final userProfile = await Supabase.instance.client
+          .from('user_profiles')
+          .select('first_name, last_name')
+          .eq('id', user.id)
+          .single();
+
+      final userName = '${userProfile['first_name']} ${userProfile['last_name']}'.trim();
+
+      // Create the cancellation message
+      final messageContent = '''
+🚫 ORDER CANCELLED
+
+Order ID: #$orderNumber
+Business: $businessName
+Customer: $userName
+
+Cancellation Reason:
+$cancellationMessage
+
+Please check your orders for more details.
+      '''.trim();
+
+      // Send message to business owner
+      await Supabase.instance.client.from('messages').insert({
+        'sender_id': ownerId,
+        'receiver_id': user.id,
+        'business_id': businessId,
+        'content': messageContent,
+        'message_type': 'text',
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      // Ensure conversation exists
+      await _ensureConversationExists(user.id, businessId);
+
+    } catch (e) {
+      print('Error sending cancellation message: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _ensureConversationExists(String customerId, String businessId) async {
+    try {
+      // Check if conversation already exists
+      final existingConversation = await Supabase.instance.client
+          .from('conversations')
+          .select('id')
+          .eq('user_id', customerId)
+          .eq('business_id', businessId)
+          .maybeSingle();
+
+      if (existingConversation == null) {
+        // Create new conversation
+        await Supabase.instance.client.from('conversations').insert({
+          'user_id': customerId,
+          'business_id': businessId,
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      }
+    } catch (e) {
+      print('Error ensuring conversation exists: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF5A35E3),
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(100), 
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.mark_email_read, color: Colors.white),
-                  onPressed: _markAllAsRead,
-                  tooltip: 'Mark all as read',
-                ),
-                const SizedBox(width: 16), 
-              ],
+        preferredSize: const Size.fromHeight(130), // Adjusted height
+        child: Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('lib/assets/bg.png'),
+              fit: BoxFit.cover,
             ),
-            TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(text: 'Notifications'),
-                Tab(text: 'Orders'),
-              ],
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-              indicatorColor: Colors.white,
-            ),
-          ],
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.mark_email_read, color: Colors.white),
+                    onPressed: _markAllAsRead,
+                    tooltip: 'Mark all as read',
+                  ),
+                  const SizedBox(width: 16),
+                ],
+              ),
+              TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(child: Text('Notifications', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Poppins'))),
+                  Tab(child: Text('Orders', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Poppins'))),
+                ],
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                indicatorColor: Colors.transparent,
+              ),
+            ],
+          ),
         ),
       ),
       body: TabBarView(
@@ -360,10 +649,6 @@ class NotificationScreenState extends State<NotificationScreen> with SingleTicke
           Container(
             decoration: const BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(25),
-                topRight: Radius.circular(25),
-              ),
             ),
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -396,78 +681,160 @@ class NotificationScreenState extends State<NotificationScreen> with SingleTicke
                           final isRead = notification['is_read'] ?? false;
                           final type = notification['type'] ?? 'general';
                           
-                          return Container(
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isRead ? Colors.white : Colors.blue.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isRead ? Colors.grey.withOpacity(0.2) : Colors.blue.withOpacity(0.2),
+                          return Dismissible(
+                            key: Key(notification['id'].toString()),
+                            background: Container(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 4,
                               ),
-                            ),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: _getNotificationColor(type).withOpacity(0.1),
-                                child: Icon(
-                                  _getNotificationIcon(type),
-                                  color: _getNotificationColor(type),
-                                  size: 20,
-                                ),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              title: FutureBuilder<String>(
-                                future: _getDisplayTitle(notification),
-                                builder: (context, snapshot) {
-                                  return Text(
-                                    snapshot.data ?? (notification['title'] ?? 'Notification'),
-                                    style: TextStyle(
-                                      fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-                                      color: Colors.black,
-                                      fontSize: 16,
-                                    ),
-                                  );
-                                },
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              child: const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    notification['message'] ?? '',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 14,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
+                                  Icon(
+                                    Icons.delete,
+                                    color: Colors.white,
+                                    size: 28,
                                   ),
-                                  const SizedBox(height: 4),
+                                  SizedBox(height: 4),
                                   Text(
-                                    _formatTime(notification['created_at']),
+                                    'Delete',
                                     style: TextStyle(
-                                      color: Colors.grey[500],
+                                      color: Colors.white,
                                       fontSize: 12,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ],
                               ),
-                              trailing: !isRead
-                                  ? Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFF5A35E3),
-                                        shape: BoxShape.circle,
+                            ),
+                            direction: DismissDirection.endToStart,
+                            confirmDismiss: (direction) async {
+                              return await showDialog<bool>(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text(
+                                      'Delete Notification',
+                                      style: TextStyle(color: Colors.black),
+                                    ),
+                                    content: const Text(
+                                      'Are you sure you want to delete this notification?',
+                                      style: TextStyle(color: Colors.black),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(context).pop(false),
+                                        child: const Text(
+                                          'Cancel',
+                                          style: TextStyle(color: Colors.black),
+                                        ),
                                       ),
-                                    )
-                                  : null,
-                              onTap: () {
-                                if (!isRead) {
-                                  _markAsRead(notification['id']);
-                                }
-                              },
+                                      TextButton(
+                                        onPressed: () => Navigator.of(context).pop(true),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: Colors.red,
+                                        ),
+                                        child: const Text('Delete'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ) ?? false;
+                            },
+                            onDismissed: (direction) async {
+                              final notificationToDelete = notification;
+                              final originalIndex = index;
+                              
+                              setState(() {
+                                _notifications.removeAt(index);
+                              });
+                              
+                              try {
+                                await _deleteNotification(notificationToDelete);
+                              } catch (e) {
+                                setState(() {
+                                  _notifications.insert(originalIndex, notificationToDelete);
+                                });
+                              }
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isRead ? Colors.white : Colors.blue.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isRead ? Colors.grey.withOpacity(0.2) : Colors.blue.withOpacity(0.2),
+                                ),
+                              ),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: _getNotificationColor(type).withOpacity(0.1),
+                                  child: Icon(
+                                    _getNotificationIcon(type),
+                                    color: _getNotificationColor(type),
+                                    size: 20,
+                                  ),
+                                ),
+                                title: FutureBuilder<String>(
+                                  future: _getDisplayTitle(notification),
+                                  builder: (context, snapshot) {
+                                    return Text(
+                                      snapshot.data ?? (notification['title'] ?? 'Notification'),
+                                      style: TextStyle(
+                                        fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                                        color: Colors.black,
+                                        fontSize: 16,
+                                      ),
+                                    );
+                                  },
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      notification['message'] ?? '',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 14,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _formatTime(notification['created_at']),
+                                      style: TextStyle(
+                                        color: Colors.grey[500],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                trailing: !isRead
+                                    ? Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFF5A35E3),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      )
+                                    : null,
+                                onTap: () {
+                                  if (!isRead) {
+                                    _markAsRead(notification['id']);
+                                  }
+                                },
+                              ),
                             ),
                           );
                         },
@@ -476,10 +843,6 @@ class NotificationScreenState extends State<NotificationScreen> with SingleTicke
           Container(
             decoration: const BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(25),
-                topRight: Radius.circular(25),
-              ),
             ),
             child: _ordersLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -623,6 +986,13 @@ class NotificationScreenState extends State<NotificationScreen> with SingleTicke
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                if (status == 'pending') ...[
+                  TextButton(
+                    onPressed: () => _showCancelOrderDialog(order),
+                    child: const Text('Cancel', style: TextStyle(color: Colors.red)),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 TextButton(
                   onPressed: () {
                     Navigator.push(

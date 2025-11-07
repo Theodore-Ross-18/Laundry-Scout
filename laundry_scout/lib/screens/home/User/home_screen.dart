@@ -1027,7 +1027,10 @@ class HomeScreenBody extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF5A35E3), 
+                  image: DecorationImage(
+                    image: AssetImage('lib/assets/bg.png'),
+                    fit: BoxFit.cover,
+                  ),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(30),
                     bottomRight: Radius.circular(30),
@@ -1142,7 +1145,7 @@ class HomeScreenBody extends StatelessWidget {
                       animationType: 'bounce',
                       color: const Color(0xFF5A35E3),
                       onTap: () {
-                        // Handle tap
+                        onNavigateToNotifications(4);
                       },
                     ),
                     // Active Orders Animation
@@ -1163,7 +1166,7 @@ class HomeScreenBody extends StatelessWidget {
                       animationType: 'slide',
                       color: Colors.black,
                       onTap: () {
-                        // Handle tap
+                        onNavigateToNotifications(4);
                       },
                     ),
                   ],

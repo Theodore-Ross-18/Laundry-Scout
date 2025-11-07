@@ -71,6 +71,7 @@ class _FilterModalState extends State<FilterModal> {
       final response = await supabase
           .from('feedback')
           .select('rating')
+          .eq('feedback_type', 'user')
           .not('business_id', 'is', null);
 
       final feedback = List<Map<String, dynamic>>.from(response);

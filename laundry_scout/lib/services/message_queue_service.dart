@@ -14,6 +14,8 @@ class QueuedMessage {
   bool isCompressed;
   bool isSent;
   String? tempId; // For optimistic updates
+  String? imageUrl; // URL for image messages
+  bool isImage; // Whether this message contains an image
 
   QueuedMessage({
     required this.id,
@@ -25,6 +27,8 @@ class QueuedMessage {
     this.isCompressed = false,
     this.isSent = false,
     this.tempId,
+    this.imageUrl,
+    this.isImage = false,
   });
 }
 
@@ -57,8 +61,10 @@ class MessageQueueService {
     required String content,
     required String receiverId,
     required String businessId,
+    String? imageUrl,
   }) {
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final isImage = imageUrl != null;
     final message = QueuedMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       content: _shouldCompress(content) ? _compressMessage(content) : content,
@@ -67,10 +73,26 @@ class MessageQueueService {
       timestamp: DateTime.now(),
       isCompressed: _shouldCompress(content),
       tempId: tempId,
+      imageUrl: imageUrl,
+      isImage: isImage,
     );
 
     _messageQueue.add(message);
     return tempId; // Return temp ID for optimistic updates
+  }
+
+  String queueImageMessage({
+    required String imageUrl,
+    required String receiverId,
+    required String businessId,
+    String? caption,
+  }) {
+    return queueMessage(
+      content: caption ?? '',
+      receiverId: receiverId,
+      businessId: businessId,
+      imageUrl: imageUrl,
+    );
   }
 
   bool _shouldCompress(String content) {
@@ -126,14 +148,26 @@ class MessageQueueService {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
-      await Supabase.instance.client.from('messages').insert({
+      final messageData = {
         'sender_id': user.id,
         'receiver_id': message.receiverId,
         'business_id': message.businessId,
-        'content': message.content,
+        'content': message.content, // Content is non-nullable
         'is_compressed': message.isCompressed,
         'created_at': message.timestamp.toIso8601String(),
-      });
+        'message_type': message.isImage ? 'image' : 'text', // Explicitly set message_type
+        'is_image': message.isImage, // Explicitly set is_image field
+      };
+
+      // Add image URL if this is an image message
+      final imageUrl = message.imageUrl;
+      if (message.isImage && imageUrl != null) {
+        messageData['image_url'] = imageUrl;
+      }
+
+      print('DEBUG: messageData before insert: $messageData'); // Added debug print
+
+      await Supabase.instance.client.from('messages').insert(messageData);
 
       // Update conversation timestamp efficiently
       await _updateConversationTimestamp(message, user.id);
@@ -143,7 +177,7 @@ class MessageQueueService {
         senderId: user.id,
         receiverId: message.receiverId,
         businessId: message.businessId,
-        messageContent: message.content,
+        messageContent: message.isImage ? '📷 Image' : message.content,
       );
 
       message.isSent = true;
