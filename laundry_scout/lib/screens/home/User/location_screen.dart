@@ -297,8 +297,28 @@ class _LocationScreenState extends State<LocationScreen> {
         setState(() {
           _currentAddress = "${place.street}, ${place.locality}, ${place.administrativeArea}";
         });
-      }
-      print('Current Location: Latitude: ${_currentPosition!.latitude}, Longitude: ${_currentPosition!.longitude}, Accuracy: ${position.accuracy}m');
+        // Update user_profiles table with current location and address
+        final user = Supabase.instance.client.auth.currentUser;
+          if (user != null && _currentAddress != null && _currentAddress!.isNotEmpty) {
+            try {
+              print('Attempting to update user_profiles for user ID: ${user.id}');
+              print('Latitude: ${_currentPosition!.latitude}, Longitude: ${_currentPosition!.longitude}, Current Address: $_currentAddress');
+              await Supabase.instance.client.from('user_profiles').update({
+                'latitude': _currentPosition!.latitude,
+                'longitude': _currentPosition!.longitude,
+                'current_address': _currentAddress,
+              }).eq('id', user.id);
+              print('User profile updated successfully in Supabase.');
+            } catch (e) {
+              print('Error updating user profile in Supabase: $e');
+            }
+          } else if (user == null) {
+            print('Supabase user is null, cannot update profile.');
+          } else if (_currentAddress == null || _currentAddress!.isEmpty) {
+            print('Current address is null or empty, skipping Supabase update.');
+          }
+        }
+        print('Current Location: Latitude: ${_currentPosition!.latitude}, Longitude: ${_currentPosition!.longitude}, Accuracy: ${position.accuracy}m');
       _mapController.move(LatLng(_currentPosition!.latitude, _currentPosition!.longitude), 14.0); // Move map to current location and set zoom
       await _fetchBusinessProfiles(radius: _searchRadius);
       setState(() {

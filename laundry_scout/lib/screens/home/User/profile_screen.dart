@@ -211,6 +211,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: TextStyle(color: Colors.white),
         ),
         centerTitle: true,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('lib/assets/bg.png'),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             bottom: Radius.circular(30),
