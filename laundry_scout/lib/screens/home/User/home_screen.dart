@@ -12,6 +12,7 @@ import 'notification_screen.dart';
 import 'business_detail_screen.dart';
 import 'promo_preview.dart';
 import 'all_promos_screen.dart';
+import 'all_services_related.dart';
 import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -1496,24 +1497,43 @@ class HomeScreenBody extends StatelessWidget {
                           itemCount: allServices.length,
                           itemBuilder: (context, index) {
                             final service = allServices[index];
-                            return Container(
-                              margin: EdgeInsets.only(right: 8.0, left: index == 0 ? 0 : 0),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF5A35E3).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: const Color(0xFF5A35E3).withOpacity(0.3),
-                                    width: 1,
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => AllServicesRelatedScreen(
+                                      serviceName: service,
+                                    ),
                                   ),
-                                ),
-                                child: Text(
-                                  service,
-                                  style: const TextStyle(
-                                    color: Color(0xFF5A35E3),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
+                                );
+                              },
+                              child: Container(
+                                margin: EdgeInsets.only(right: 8.0, left: index == 0 ? 0 : 0),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF5A35E3).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: const Color(0xFF5A35E3).withOpacity(0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        service,
+                                        style: const TextStyle(
+                                          color: Color(0xFF5A35E3),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                     
+                                    ],
                                   ),
                                 ),
                               ),
