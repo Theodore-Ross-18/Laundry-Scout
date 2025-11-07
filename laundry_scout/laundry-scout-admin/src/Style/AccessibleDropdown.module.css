@@ -1,0 +1,52 @@
+/* Scoped styles for AccessibleDropdown component only */
+
+.container {
+  position: relative;
+  display: inline-block;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 200px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  padding: 6px;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+/* Allow right alignment when requested via inline style */
+.menu[style*="right:"] {
+  left: auto;
+}
+
+.option {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  border-radius: 8px;
+}
+
+/* Match hover with other buttons */
+.option:hover,
+.option:focus {
+  background: #6a5ae0; /* same as .a-date-btn:hover and .h-all-btn:hover */
+  color: #ffffff;
+  outline: none;
+}
+
+.active {
+  background:   #6a5ae0;
+  color: #ffffff;
+  font-weight: 500;
+}

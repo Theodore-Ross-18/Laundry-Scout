@@ -1,35 +1,92 @@
+/* Simple, common, and easy-to-use DateRangePicker styles */
+
+/* Container holds the trigger button and popover */
 .date-range-container {
   position: relative;
+  display: inline-block;
+  overflow: visible; /* ensure popover is not clipped by container */
+  z-index: 10; /* create local stacking context so popover sits above neighbors */
+  isolation: isolate; /* isolate stacking for predictable z-index behavior */
 }
 
+/* Popover: lightweight card that adapts to theme */
 .date-picker-popover {
   position: absolute;
-  top: 100%;
-  right: 0;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  padding: 10px;
-  z-index: 100;
+  top: calc(100% + 8px);
+  right: 0; /* component sets left/right inline based on alignment */
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  padding: 12px;
+  z-index: 200;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 220px;
+  max-width: 320px;
 }
 
+/* Inputs stack vertically for clarity */
 .date-picker-input {
   display: flex;
   flex-direction: column;
 }
 
 .date-picker-input label {
-  margin-bottom: 5px;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: var(--text-color, #444);
 }
 
+.date-picker-input input[type="date"] {
+  width: 90%;
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  background: var(--card-bg, #fff);
+  color: var(--text-color, #444);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.date-picker-input input[type="date"]:hover {
+  border-color: #d1d5db;
+}
+
+.date-picker-input input[type="date"]:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+/* Apply button: consistent primary action */
 .apply-btn {
   background-color: #4f46e5;
-  color: white;
+  color: #ffffff;
   border: none;
   padding: 8px 12px;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: background-color 0.2s ease, transform 0.02s ease-in-out;
+}
+
+.apply-btn:hover {
+  background-color: #4338ca; /* darker indigo on hover */
+}
+
+.apply-btn:active {
+  transform: scale(0.98);
+}
+
+/* Small screens: make popover full-width under button for ease of use */
+@media (max-width: 420px) {
+  .date-picker-popover {
+    left: 0 !important;
+    right: 0 !important;
+    min-width: auto;
+    max-width: none;
+  }
 }

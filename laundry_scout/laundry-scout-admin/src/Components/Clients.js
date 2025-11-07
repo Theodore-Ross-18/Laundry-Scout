@@ -3,35 +3,34 @@ import { supabase } from "../Supabase/supabaseClient";
 import "../Style/Clients.css";
 import { FiMenu, FiSearch, FiSettings } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-
-// ✅ Import the shared components
 import Sidebar from "./Sidebar";
 import Notifications from "./Notifications";
+import DateRangePicker from "./DateRangePicker";
 
 function Clients() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-
   // added to support search history
   const [searchHistory, setSearchHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
-
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showSettings, setShowSettings] = useState(false); // settings dropdown
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  // Removed selectedStatus state; we always show Approved only
   const searchRef = useRef(null);
 
   const navigate = useNavigate();
 
-  // 🔹 Fetch APPROVED clients from Supabase
+  // 🔹 Fetch clients from Supabase: Approved only
   useEffect(() => {
     const fetchClients = async () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("business_profiles")
         .select("*")
-        .eq("status", "approved"); // only approved
-
+        .eq("status", "approved");
       if (error) {
         console.error("Error fetching clients:", error.message);
       } else {
@@ -39,14 +38,22 @@ function Clients() {
       }
       setLoading(false);
     };
-
     fetchClients();
   }, []);
 
-  // 🔹 Filter clients by search text
+  // 🔹 Filter clients by search text and date range
   const filteredClients = clients.filter((client) => {
     const name = client?.business_name || client?.name || "";
-    return name.toLowerCase().includes(search.toLowerCase());
+    const textMatch = name.toLowerCase().includes(search.toLowerCase());
+    const dateMatch = (() => {
+      if (!startDate || !endDate) return true;
+      if (!client?.created_at) return false;
+      const created = new Date(client.created_at).getTime();
+      const start = new Date(startDate).getTime();
+      const end = new Date(endDate).getTime();
+      return created >= start && created <= end;
+    })();
+    return textMatch && dateMatch;
   });
 
   // 🔹 handle Enter key for search history
@@ -99,7 +106,7 @@ function Clients() {
                 size={22}
                 className="settings-icon"
                 onClick={() => navigate("/settings")}
-                />
+              />
             </div>
             <div className="dropdown-wrapper">
               <img
@@ -107,15 +114,15 @@ function Clients() {
                 alt="profile"
                 className="profile-avatar"
                 onClick={() => navigate("/profile")}
-                />
-              </div>
+              />
+            </div>
           </div>
         </header>
 
         {/* Search + Filter */}
         <div className="clients-filters">
           <div className="clients-filter-tab">
-            <span className="clients-filter-label">All Clients</span>
+            <span className="clients-filter-label">Approved Clients</span>
             <span className="count">{filteredClients.length}</span>
           </div>
           <div className="clients-search-box" ref={searchRef}>
@@ -149,8 +156,16 @@ function Clients() {
             )}
           </div>
           <div className="clients-filter-right">
-            <button className="c-date-btn">19 Dec - 20 Dec 2024</button>
-            <button className="c-all-btn">All Transactions</button>
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onChangeStart={setStartDate}
+              onChangeEnd={setEndDate}
+              onApply={() => {
+                // Filtering happens client-side using created_at
+              }}
+            />
+            {/* Removed AccessibleDropdown; status fixed to Approved */}
           </div>
         </div>
 
