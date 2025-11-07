@@ -3,100 +3,13 @@ import { supabase } from "../Supabase/supabaseClient";
 import "../Style/Applications.css";
 import { FiMenu, FiSearch, FiSettings } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import AccessibleDropdown from "./AccessibleDropdown";
+import DateRangePicker from "./DateRangePicker";
 
 // ✅ Sidebar + Notifications
 import Sidebar from "./Sidebar";
 import Notifications from "./Notifications";
 
-// ✅ Filter Right Section (date dropdown + transaction dropdown)
-const ApplicationsFilterRight = ({
-  startDate,
-  endDate,
-  setStartDate,
-  setEndDate,
-  showDateDropdown,
-  setShowDateDropdown,
-  handleCustomDateFilter,
-  handleFilterStatus,
-  selectedStatus,
-}) => {
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-
-  return (
-    <div className="applications-filter-right">
-      {/* 📅 Date Button */}
-      <div className="date-dropdown-wrapper">
-        <button
-          className="a-date-btn"
-          onClick={() => setShowDateDropdown(!showDateDropdown)}
-        >
-          {startDate && endDate
-            ? `${new Date(startDate).toLocaleDateString()} - ${new Date(
-                endDate
-              ).toLocaleDateString()}`
-            : "Filter by Date Range"}
-        </button>
-
-        {/* ✅ Date Dropdown with calendar inputs */}
-        {showDateDropdown && (
-          <div className="date-dropdown">
-            <label>
-              Start Date:
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </label>
-            <label>
-              End Date:
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </label>
-            <button
-              className="apply-btn"
-              onClick={() => handleCustomDateFilter()}
-            >
-              Apply Filter
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* 💼 All Transactions Button with Dropdown */}
-      <div className="dropdown-container">
-        <button
-          className="a-all-btn"
-          onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-        >
-          {selectedStatus ? selectedStatus : "All Transactions"}
-        </button>
-
-        {showStatusDropdown && (
-          <div className="dropdown-menu">
-            {["All Transactions", "Pending", "Approved", "Rejected"].map(
-              (status) => (
-                <div
-                  key={status}
-                  className={selectedStatus === status ? "active" : ""}
-                  onClick={() => {
-                    handleFilterStatus(status);
-                    setShowStatusDropdown(false);
-                  }}
-                >
-                  {status}
-                </div>
-              )
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
 
 function Applications() {
   const [businesses, setBusinesses] = useState([]);
@@ -114,9 +27,8 @@ function Applications() {
   const [specificReason, setSpecificReason] = useState("");
 
   // ✅ Date Filter States
-  const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+   const [endDate, setEndDate] = useState("");
 
   // ✅ Transaction Filter
   const [selectedStatus, setSelectedStatus] = useState("All Transactions");
@@ -168,17 +80,21 @@ function Applications() {
       return;
     }
 
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
     const { data, error } = await supabase
       .from("business_profiles")
       .select("*")
-      .gte("created_at", new Date(startDate).toISOString())
-      .lte("created_at", new Date(endDate).toISOString());
+      .gte("created_at", start.toISOString())
+      .lte("created_at", end.toISOString());
 
     if (error) {
       console.error("Error filtering by date:", error.message);
     } else {
       setBusinesses(data || []);
-      setShowDateDropdown(false);
     }
   };
 
@@ -202,7 +118,6 @@ function Applications() {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setShowHistory(false);
-        setShowDateDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -352,17 +267,30 @@ function Applications() {
               </div>
 
               {/* ✅ Date & Transaction Filters */}
-              <ApplicationsFilterRight
-                startDate={startDate}
-                endDate={endDate}
-                setStartDate={setStartDate}
-                setEndDate={setEndDate}
-                showDateDropdown={showDateDropdown}
-                setShowDateDropdown={setShowDateDropdown}
-                handleCustomDateFilter={handleCustomDateFilter}
-                handleFilterStatus={handleFilterStatus}
-                selectedStatus={selectedStatus}
-              />
+              <div className="applications-filter-right">
+                <DateRangePicker
+                  startDate={startDate}
+                  endDate={endDate}
+                  onChangeStart={setStartDate}
+                  onChangeEnd={setEndDate}
+                  onApply={handleCustomDateFilter}
+                  buttonClassName="a-date-btn"
+                  formatLabel={(s, e) =>
+                    s && e
+                      ? `${new Date(s).toLocaleDateString()} - ${new Date(e).toLocaleDateString()}`
+                      : "Filter by Date Range"
+                  }
+                  align="right"
+                />
+                <AccessibleDropdown
+                  buttonClassName="a-all-btn"
+                  selected={selectedStatus}
+                  options={["All Transactions", "Pending", "Approved", "Rejected"]}
+                  onSelect={handleFilterStatus}
+                  placeholder="All Transactions"
+                  align="right"
+                />
+              </div>
             </div>
 
             {/* Table */}

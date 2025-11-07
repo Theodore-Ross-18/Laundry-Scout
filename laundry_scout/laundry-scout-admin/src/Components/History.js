@@ -5,6 +5,8 @@ import { FiMenu, FiSearch, FiSettings } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import Notifications from "./Notifications";
 import Sidebar from "./Sidebar";
+import DateRangePicker from "./DateRangePicker";
+import AccessibleDropdown from "./AccessibleDropdown";
 
 function History() {
   const [records, setRecords] = useState([]);
@@ -13,7 +15,9 @@ function History() {
   const [search, setSearch] = useState("");
   const [searchHistory, setSearchHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
-
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("All Transactions");
   const [showSettings, setShowSettings] = useState(false); // ✅ Profile dropdown
   const searchRef = useRef(null);
   const navigate = useNavigate();
@@ -75,11 +79,37 @@ function History() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredRecords = records.filter((rec) =>
-    [rec.business_name, rec.owner_name, rec.action, rec.status]
-      .filter(Boolean)
-      .some((field) => field.toLowerCase().includes(search.toLowerCase()))
-  );
+  const handleFilterStatus = (status) => {
+    setSelectedStatus(status);
+  };
+  
+  const applyDateFilter = () => {
+    // Filtering happens via derived filteredRecords, this triggers re-render.
+  };
+
+  const filteredRecords = records
+    .filter((rec) =>
+      [rec.business_name, rec.owner_name, rec.action, rec.status]
+        .filter(Boolean)
+        .some((field) => field.toLowerCase().includes(search.toLowerCase()))
+    )
+    .filter((rec) => {
+      if (selectedStatus !== "All Transactions") {
+        return rec.status?.toLowerCase() === selectedStatus.toLowerCase();
+      }
+      return true;
+    })
+    .filter((rec) => {
+      if (startDate && endDate && rec.created_at) {
+        const created = new Date(rec.created_at);
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        return created >= start && created <= end;
+      }
+      return true;
+    });
 
   return (
     <div className="history-root">
@@ -157,8 +187,28 @@ function History() {
           </div>
 
           <div className="history-filter-right">
-            <button className="h-date-btn">19 Dec - 20 Dec 2024</button>
-            <button className="h-all-btn">All Transactions</button>
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onChangeStart={setStartDate}
+              onChangeEnd={setEndDate}
+              onApply={applyDateFilter}
+              buttonClassName="h-date-btn"
+              formatLabel={(s, e) =>
+                s && e
+                  ? `${new Date(s).toLocaleDateString()} - ${new Date(e).toLocaleDateString()}`
+                  : "Filter by Date Range"
+              }
+              align="right"
+            />
+            <AccessibleDropdown
+              buttonClassName="h-all-btn"
+              selected={selectedStatus}
+              options={["All Transactions", "Approved", "Rejected"]}
+              onSelect={handleFilterStatus}
+              placeholder="All Transactions"
+              align="right"
+            />
           </div>
         </div>
 

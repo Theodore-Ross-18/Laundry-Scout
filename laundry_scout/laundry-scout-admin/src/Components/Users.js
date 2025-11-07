@@ -5,6 +5,8 @@ import { FiSearch, FiSettings } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Notifications from "./Notifications";
+import DateRangePicker from "./DateRangePicker";
+import AccessibleDropdown from "./AccessibleDropdown";
 
 const statusColor = (status) =>
   status === "Verified" ? { color: "green" } : { color: "red" };
@@ -19,7 +21,9 @@ function Users() {
   const [showSettings, setShowSettings] = useState(false);
   const [toast, setToast] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null); // For overlay confirmation
-
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("All Users");
   const navigate = useNavigate();
   const searchRef = useRef(null);
 
@@ -81,11 +85,35 @@ function Users() {
   };
 
   // ✅ Search filter
-  const filteredUsers = users.filter((u) =>
-    [u.first_name, u.last_name, u.email, u.mobile_number, u.customer_id]
+  const filteredUsers = users.filter((u) => {
+    const textMatch = [
+      u.first_name,
+      u.last_name,
+      u.email,
+      u.mobile_number,
+      u.customer_id,
+    ]
       .filter(Boolean)
-      .some((f) => f.toLowerCase().includes(search.toLowerCase()))
-  );
+      .some((f) => f.toLowerCase().includes(search.toLowerCase()));
+
+    const dateMatch = (() => {
+      if (!startDate || !endDate) return true;
+      if (!u.created_at) return false;
+      const created = new Date(u.created_at).getTime();
+      const start = new Date(startDate).getTime();
+      const end = new Date(endDate).getTime();
+      return created >= start && created <= end;
+    })();
+
+    const statusMatch = (() => {
+      if (selectedStatus === "All Users") return true;
+      if (selectedStatus === "Verified") return u.verified_status === "Verified";
+      if (selectedStatus === "Not Verified") return u.verified_status !== "Verified";
+      return true;
+    })();
+
+    return textMatch && dateMatch && statusMatch;
+  });
 
   // ✅ Hide search history when clicking outside
   useEffect(() => {
@@ -197,8 +225,21 @@ function Users() {
             )}
           </div>
           <div className="users-filter-right">
-            <button className="u-date-btn">19 Dec - 20 Dec 2024</button>
-            <button className="u-all-btn">All Transactions</button>
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onChangeStart={setStartDate}
+              onChangeEnd={setEndDate}
+              onApply={() => {}}
+            />
+            <AccessibleDropdown
+              buttonClassName="u-all-btn"
+              selected={selectedStatus}
+              options={["All Users", "Verified", "Not Verified"]}
+              onSelect={setSelectedStatus}
+              placeholder="All Transactions"
+              align="right"
+            />
           </div>
         </div>
 
