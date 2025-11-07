@@ -574,21 +574,25 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false, // Remove the back button
-        title: const Text('General Report'),
-        centerTitle: false,
-        backgroundColor: const Color(0xFF5A35E3), // Set AppBar background to purple
-        foregroundColor: Colors.white, // Set AppBar text/icon color to white
-        titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Poppins'), // Set title text color to white and font to Poppins
-      ),
-      backgroundColor: const Color(0xFF5A35E3), // Set Scaffold background to purple
+            automaticallyImplyLeading: false,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('lib/assets/bg.png'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            title: const Text('General Report'),
+            centerTitle: true,
+            foregroundColor: Colors.white,
+            titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
+          ),
       body: Container(
         decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(25),
-            topRight: Radius.circular(25),
-          ),
         ),
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),

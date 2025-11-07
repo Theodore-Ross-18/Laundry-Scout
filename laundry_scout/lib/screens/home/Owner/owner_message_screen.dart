@@ -290,14 +290,19 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF5A35E3),
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 10),
+            
             // Messages section header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('lib/assets/bg.png'),
+                  fit: BoxFit.cover,
+                ),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -328,10 +333,6 @@ class OwnerMessageScreenState extends State<OwnerMessageScreen> {
               child: Container(
                 decoration: const BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(25),
-                    topRight: Radius.circular(25),
-                  ),
                 ),
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
