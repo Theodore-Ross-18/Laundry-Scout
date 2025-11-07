@@ -372,7 +372,7 @@ class _LaundryScreenState extends State<LaundryScreen> {
                   Row(
                     children: [
                       if (shop['services_offered'] != null)
-                        ...(shop['services_offered'] as List<dynamic>).map((service) {
+                        ...(shop['services_offered'] as List<dynamic>).take(4).map((service) {
                           Color backgroundColor;
                           Color textColor;
                           switch (service) {
