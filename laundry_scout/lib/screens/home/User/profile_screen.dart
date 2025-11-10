@@ -36,6 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _lastName = '';
   String _email = '';
   String _phoneNumber = '';
+  String _username = ''; // Add this line
   String? _profileImageUrl;
   bool _isLoading = true;
   bool _isUploadingImage = false;
@@ -50,6 +51,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _lastNameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneNumberController;
+  late TextEditingController _usernameController; // Add this line
   late TextEditingController _passwordController;
   late TextEditingController _confirmPasswordController;
 
@@ -65,6 +67,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _lastNameController = TextEditingController();
     _emailController = TextEditingController();
     _phoneNumberController = TextEditingController();
+    _usernameController = TextEditingController(); // Add this line
     _passwordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
   }
@@ -77,6 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _phoneNumberController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _usernameController.dispose(); // Add this line
     super.dispose();
   }
 
@@ -96,7 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
  
       final response = await Supabase.instance.client
           .from('user_profiles')
-          .select('first_name, last_name, email, mobile_number, profile_image_url') 
+          .select('first_name, last_name, email, mobile_number, profile_image_url, username') 
           .eq('id', user.id)
           .single(); 
 
@@ -107,6 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _email = response['email'] ?? user.email ?? ''; 
           _phoneNumber = response['mobile_number'] ?? '';
           _profileImageUrl = response['profile_image_url'];
+          _username = response['username'] ?? ''; // Add this line
           _isLoading = false;
           
           // Update controllers with loaded data
@@ -114,6 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _lastNameController.text = _lastName;
           _emailController.text = _email;
           _phoneNumberController.text = _phoneNumber;
+          _usernameController.text = _username; // Add this line
         });
       }
     } catch (e) {
@@ -139,6 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _lastNameController.text = _lastName;
         _emailController.text = _email;
         _phoneNumberController.text = _phoneNumber;
+        _usernameController.text = _username; // Add this line
         _passwordController.clear();
         _confirmPasswordController.clear();
       }
@@ -181,6 +188,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'last_name': _lastNameController.text.trim(),
         'email': _emailController.text.trim(),
         'mobile_number': _phoneNumberController.text.trim(),
+        'username': _usernameController.text.trim(), // Add this line
         'updated_at': DateTime.now().toIso8601String(),
       };
       
@@ -210,6 +218,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _lastName = _lastNameController.text.trim();
         _email = _emailController.text.trim();
         _phoneNumber = _phoneNumberController.text.trim();
+        _username = _usernameController.text.trim(); // Add this line
         _isEditing = false;
         _isSaving = false;
         _passwordController.clear();
@@ -445,6 +454,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 30),
                       if (_isEditing) ...[
+                        _buildEditableProfileField('Username', _usernameController), // Add this line
+                        _buildDivider(),
                         _buildEditableProfileField('First Name', _firstNameController),
                         _buildDivider(),
                         _buildEditableProfileField('Last Name', _lastNameController),
@@ -500,6 +511,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         ),
                       ] else ...[
+                        _buildProfileField('Username', _username), // Add this line
+                        _buildDivider(),
                         _buildProfileField('First Name', _firstName),
                         _buildDivider(),
                         _buildProfileField('Last Name', _lastName),
