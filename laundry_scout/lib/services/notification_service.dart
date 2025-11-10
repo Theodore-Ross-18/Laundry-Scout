@@ -239,7 +239,7 @@ class NotificationService {
       // Determine notification type based on sender and receiver
       if (senderId == businessOwnerId) {
         // Business owner is sending to customer
-        print('📤 Business owner sending to customer, business name: $businessName');
+        print('📤 Laundry Shop Owner sending to customer, business name: $businessName');
         await createMessageNotification(
           receiverId: receiverId,
           senderId: senderId,
@@ -249,7 +249,7 @@ class NotificationService {
         );
       } else if (receiverId == businessOwnerId) {
         // Customer is sending to business owner
-        print('📥 Customer sending to business owner');
+        print('📥 Customer sending to Laundry Shop Owner');
         await createBusinessMessageNotification(
           businessOwnerId: businessOwnerId,
           customerName: senderName,  // This correctly uses customer name

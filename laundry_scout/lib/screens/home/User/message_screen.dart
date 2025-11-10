@@ -1768,7 +1768,7 @@ class _ChatAssistWidgetState extends State<ChatAssistWidget> {
       // Show notification to user
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${_businessData?['business_name'] ?? 'Business owner'} is now online. Returning to chat...'),
+          content: Text('${_businessData?['business_name'] ?? 'Laundry Shop Owner'} is now online. Returning to chat...'),
           duration: const Duration(seconds: 2),
           backgroundColor: Colors.green,
         ),

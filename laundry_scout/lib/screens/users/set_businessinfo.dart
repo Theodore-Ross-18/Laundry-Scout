@@ -48,7 +48,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   final List<Map<String, String>> slides = [
     {
       'image': 'lib/assets/user/slides/first.png',
-      'title': 'Welcome, Business Owner!',
+      'title': 'Welcome, Laundry Shop Owner!',
       'description': 'Let\'s get your laundry business set up on Laundry Scout.',
     },
     {

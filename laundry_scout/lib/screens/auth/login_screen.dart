@@ -99,7 +99,7 @@ Future<void> _setIntroShownDate() async {
   List<Map<String, String>> get businessSlides => [
     {
       'image': 'lib/assets/user/slides/first.png',
-      'title': 'Welcome Back, Business Owner',
+      'title': 'Welcome Back, Laundry Shop Owner',
       'description': 'Manage your laundry business and connect with more customers!',
     },
     {
