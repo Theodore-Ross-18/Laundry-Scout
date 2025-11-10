@@ -100,7 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
  
       final response = await Supabase.instance.client
           .from('user_profiles')
-          .select('first_name, last_name, email, mobile_number, profile_image_url, username') 
+          .select('first_name, last_name, email, mobile_number, profile_image_url, username, user_push_notif') 
           .eq('id', user.id)
           .single(); 
 
@@ -111,7 +111,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _email = response['email'] ?? user.email ?? ''; 
           _phoneNumber = response['mobile_number'] ?? '';
           _profileImageUrl = response['profile_image_url'];
-          _username = response['username'] ?? ''; // Add this line
+          _username = response['username'] ?? '';
+          _notificationsEnabled = response['user_push_notif'] ?? false;
           _isLoading = false;
           
           // Update controllers with loaded data
@@ -119,7 +120,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _lastNameController.text = _lastName;
           _emailController.text = _email;
           _phoneNumberController.text = _phoneNumber;
-          _usernameController.text = _username; // Add this line
+          _usernameController.text = _username;
         });
       }
     } catch (e) {
@@ -241,6 +242,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
       print('Error updating profile: $e');
+    }
+  }
+
+  Future<void> _updateNotificationPreference(bool value) async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      await Supabase.instance.client
+          .from('user_profiles')
+          .update({'user_push_notif': value})
+          .eq('id', user.id);
+
+      setState(() {
+        _notificationsEnabled = value;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Push notifications ${value ? 'enabled' : 'disabled'})')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating notification preference: $e')),
+        );
+      }
+      print('Error updating notification preference: $e');
     }
   }
 
@@ -589,10 +619,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Switch(
                               value: _notificationsEnabled,
                               onChanged: (bool value) {
-                                setState(() {
-                                  _notificationsEnabled = value;
-                                });
-                                // Handle notification toggle logic here
+                                _updateNotificationPreference(value);
                               },
                               activeColor: const Color(0xFF5A35E3),
                             ),
