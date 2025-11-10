@@ -51,17 +51,5 @@
 	<string>This app needs access to photo library to select photos for chat messages</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>This app needs access to save photos to your photo library</string>
-	<!-- FCM Configuration -->
-	<key>FirebaseAppDelegateProxyEnabled</key>
-	<false/>
-	<key>FirebaseScreenReportingEnabled</key>
-	<false/>
-	<key>FirebaseMessagingAutoInitEnabled</key>
-	<true/>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>fetch</string>
-		<string>remote-notification</string>
-	</array>
 </dict>
 </plist>
