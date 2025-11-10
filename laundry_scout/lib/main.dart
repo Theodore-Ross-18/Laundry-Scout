@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:laundry_scout/widgets/auth_wrapper.dart';
 import 'package:flutter/foundation.dart';
+import 'package:laundry_scout/services/firebase_notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +29,10 @@ Future<void> main() async {
     url: supabaseUrl,
     anonKey: supabaseAnonKey,
   );
+  
+  // Initialize Firebase and FCM
+  final notificationService = FirebaseNotificationService();
+  await notificationService.initialize();
   
   runApp(const MyApp());
 }

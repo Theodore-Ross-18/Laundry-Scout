@@ -1,9 +1,12 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:laundry_scout/services/firebase_notification_service.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
+
+  final FirebaseNotificationService _firebaseNotificationService = FirebaseNotificationService();
 
   /// Test method to verify notifications table exists and works
   /// Prevents spam by checking if test was already done for this user
@@ -92,6 +95,18 @@ class NotificationService {
       });
 
       print('✅ Message notification created for user: $receiverId');
+      
+      // Send FCM notification
+      await _firebaseNotificationService.sendNotificationToUser(
+        userId: receiverId,
+        title: 'New Message from $senderName',
+        body: notificationMessage,
+        data: {
+          'type': 'message',
+          'sender_id': senderId,
+          'business_id': businessId,
+        },
+      );
     } catch (e) {
       print('❌ Failed to create message notification: $e');
     }
@@ -128,6 +143,18 @@ class NotificationService {
       });
 
       print('✅ Business message notification created for owner: $businessOwnerId');
+      
+      // Send FCM notification
+      await _firebaseNotificationService.sendNotificationToUser(
+        userId: businessOwnerId,
+        title: 'New Message from Customer',
+        body: '$customerName: $notificationMessage',
+        data: {
+          'type': 'message',
+          'customer_id': customerId,
+          'customer_name': customerName,
+        },
+      );
     } catch (e) {
       print('❌ Failed to create business message notification: $e');
     }
