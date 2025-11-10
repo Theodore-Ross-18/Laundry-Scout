@@ -59,7 +59,6 @@ class _AnimatedLocationPinState extends State<AnimatedLocationPin>
 
   @override
   void dispose() {
-    _controller.dispose();
     super.dispose();
   }
 
@@ -233,7 +232,7 @@ class _LocationScreenState extends State<LocationScreen> {
   final MapController _mapController = MapController();
   double _searchRadius = 1.0; 
   MapType _selectedMapType = MapType.defaultMap; 
-  final TextEditingController _addressController = TextEditingController();
+
 
   void _onMapTypeChanged(MapType? newMapType) {
     if (newMapType != null) {
@@ -246,99 +245,12 @@ class _LocationScreenState extends State<LocationScreen> {
   @override
   void initState() {
     super.initState();
-    _checkLocationPermission().then((_) {
-      _addressController.text = _currentAddress ?? '';
-    });
+    _checkLocationPermission();
   }
 
   @override
   void dispose() {
-    _addressController.dispose();
     super.dispose();
-  }
-
-  Future<void> _showAddressEditSheet() async {
-    _addressController.text = _currentAddress ?? '';
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.5,
-          minChildSize: 0.25,
-          maxChildSize: 0.75,
-          builder: (BuildContext context, ScrollController scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              child: SingleChildScrollView(
-                controller: scrollController,
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Edit Address',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 16.0),
-                    TextFormField(
-                      controller: _addressController,
-                      decoration: const InputDecoration(
-                        labelText: 'Address',
-                        border: OutlineInputBorder(),
-                      ),
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 16.0),
-                    ElevatedButton(
-                      onPressed: () async {
-                        setState(() {
-                          _currentAddress = _addressController.text;
-                        });
-                        final user = Supabase.instance.client.auth.currentUser;
-                        if (user != null && _currentAddress != null && _currentAddress!.isNotEmpty) {
-                          try {
-                            await Supabase.instance.client.from('user_profiles').update({
-                              'current_address': _currentAddress,
-                            }).eq('id', user.id);
-                            print('Supabase user profile address updated successfully from edit sheet.');
-                          } catch (e) {
-                            print('Error updating user profile address from edit sheet: $e');
-                          }
-                        }
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Save'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
   }
 
   Future<void> _checkLocationPermission() async {
@@ -849,17 +761,14 @@ class _LocationScreenState extends State<LocationScreen> {
                                 ],
                               ),
                               const SizedBox(height: 4),
-                              GestureDetector(
-                                onTap: _showAddressEditSheet,
-                                child: Text(
-                                  _currentAddress != null && _currentAddress!.isNotEmpty ? _currentAddress! : 'No Current Address',
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
+                              Text(
+                                _currentAddress != null && _currentAddress!.isNotEmpty ? _currentAddress! : 'No Current Address',
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),

@@ -697,7 +697,7 @@ Future<void> _setIntroShownDate() async {
                   ),
                   child: Text(
                     _userType == 'business' ? 'START MANAGING' : 'GET STARTED',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, decoration: TextDecoration.none),
                   ),
                 )
               else
@@ -713,7 +713,7 @@ Future<void> _setIntroShownDate() async {
                   ),
                   child: const Text(
                     'Next',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, decoration: TextDecoration.none),
                   ),
                 ),
             ],

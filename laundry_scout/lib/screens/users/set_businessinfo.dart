@@ -469,7 +469,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 ),
                 child: Text(
                   _currentPage == slides.length - 1 ? 'GET STARTED' : 'Next',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, decoration: TextDecoration.none),
                 ),
               ),
             ],

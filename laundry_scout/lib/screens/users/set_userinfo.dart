@@ -304,7 +304,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                   ),
                   child: const Text(
                     'GET STARTED',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, decoration: TextDecoration.none),
                   ),
                 )
               else
@@ -320,7 +320,7 @@ class _SetUserInfoScreenState extends State<SetUserInfoScreen> {
                   ),
                   child: const Text(
                     'Next',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, decoration: TextDecoration.none),
                   ),
                 ),
             ],
