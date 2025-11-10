@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_null_comparison
+
 import 'dart:ui';
 import 'package:flutter/scheduler.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
@@ -231,7 +233,12 @@ class _LocationScreenState extends State<LocationScreen> {
   List<Map<String, dynamic>> _businessProfiles = [];
   final MapController _mapController = MapController();
   double _searchRadius = 1.0; 
-  MapType _selectedMapType = MapType.defaultMap; 
+  MapType _selectedMapType = MapType.defaultMap;
+  
+  // Address editing state variables
+  bool _isEditingAddress = false;
+  final TextEditingController _addressController = TextEditingController();
+  ScrollController? _scrollController; 
 
 
   void _onMapTypeChanged(MapType? newMapType) {
@@ -250,6 +257,8 @@ class _LocationScreenState extends State<LocationScreen> {
 
   @override
   void dispose() {
+    _addressController.dispose();
+    _scrollController?.dispose();
     super.dispose();
   }
 
@@ -729,48 +738,51 @@ class _LocationScreenState extends State<LocationScreen> {
                       Positioned(
                         top: 10,
                         left: 10,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 10,
-                                spreadRadius: 2,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.location_on, color: Color(0xFF5A35E3), size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Your Location',
-                                    style: TextStyle(
-                                      color: Colors.grey[700],
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _currentAddress != null && _currentAddress!.isNotEmpty ? _currentAddress! : 'No Current Address',
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                        child: GestureDetector(
+                          onTap: _showAddressEditSheet,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(15),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  spreadRadius: 2,
+                                  offset: const Offset(0, 5),
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.location_on, color: Color(0xFF5E35E3), size: 20),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Your Location',
+                                      style: TextStyle(
+                                        color: Colors.grey[700],
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.normal,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _currentAddress != null && _currentAddress!.isNotEmpty ? _currentAddress! : 'No Current Address',
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -857,5 +869,203 @@ class _LocationScreenState extends State<LocationScreen> {
       _searchRadius = newRadius;
     });
     _fetchBusinessProfiles(radius: _searchRadius);
+  }
+
+  // Address editing methods
+  void _toggleAddressEdit() {
+    setState(() {
+      _isEditingAddress = !_isEditingAddress;
+      if (!_isEditingAddress) {
+        _currentAddress = _addressController.text;
+      }
+    });
+  }
+
+  Future<void> _saveAddressToSupabase() async {
+    final addressToSave = _addressController.text.trim();
+    if (addressToSave.isNotEmpty) {
+      try {
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user != null) {
+          await Supabase.instance.client
+              .from('user_profiles')
+              .update({'current_address': addressToSave})
+              .eq('id', user.id);
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Address updated successfully!')),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error updating address: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  void _showAddressEditSheet() {
+    _addressController.text = _currentAddress ?? '';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.4,
+          minChildSize: 0.3,
+          maxChildSize: 0.7,
+          builder: (BuildContext context, ScrollController scrollController) {
+            _scrollController = scrollController;
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: SingleChildScrollView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Edit Address',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF5A35E3),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildAddressEditField(),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              // Update the current address with the text from controller
+                              setState(() {
+                                _currentAddress = _addressController.text;
+                              });
+                              // Save to Supabase
+                              await _saveAddressToSupabase();
+                              // Close the bottom sheet
+                              if (mounted) {
+                                Navigator.of(context).pop();
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF5A35E3),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text('Save Address'),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildAddressEditField() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF5A35E3).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.location_on_outlined, color: Color(0xFF5A35E3), size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Current Address',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                TextField(
+                  controller: _addressController,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black,
+                  ),
+                  decoration: const InputDecoration(
+                    hintText: 'Enter your address',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                    isDense: true,
+                  ),
+                  maxLines: 3,
+                  autofocus: true,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
