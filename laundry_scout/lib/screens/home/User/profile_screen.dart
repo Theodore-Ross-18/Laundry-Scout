@@ -40,15 +40,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = true;
   bool _isUploadingImage = false;
   bool _notificationsEnabled = false; // Add this line
+  
+  // Edit mode state
+  bool _isEditing = false;
+  bool _isSaving = false;
+  
+  // Text controllers for editable fields
+  late TextEditingController _firstNameController;
+  late TextEditingController _lastNameController;
+  late TextEditingController _emailController;
+  late TextEditingController _phoneNumberController;
+  late TextEditingController _passwordController;
+  late TextEditingController _confirmPasswordController;
 
   @override
   void initState() {
     super.initState();
+    _initializeControllers();
     _loadUserProfile();
+  }
+  
+  void _initializeControllers() {
+    _firstNameController = TextEditingController();
+    _lastNameController = TextEditingController();
+    _emailController = TextEditingController();
+    _phoneNumberController = TextEditingController();
+    _passwordController = TextEditingController();
+    _confirmPasswordController = TextEditingController();
   }
 
   @override
   void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _phoneNumberController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -80,6 +108,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _phoneNumber = response['mobile_number'] ?? '';
           _profileImageUrl = response['profile_image_url'];
           _isLoading = false;
+          
+          // Update controllers with loaded data
+          _firstNameController.text = _firstName;
+          _lastNameController.text = _lastName;
+          _emailController.text = _email;
+          _phoneNumberController.text = _phoneNumber;
         });
       }
     } catch (e) {
@@ -93,6 +127,111 @@ class _ProfileScreenState extends State<ProfileScreen> {
           SnackBar(content: Text('Error loading user profile: $e')),
         );
       }
+    }
+  }
+  
+  void _toggleEditMode() {
+    setState(() {
+      _isEditing = !_isEditing;
+      if (!_isEditing) {
+        // Reset controllers to original values if canceling
+        _firstNameController.text = _firstName;
+        _lastNameController.text = _lastName;
+        _emailController.text = _email;
+        _phoneNumberController.text = _phoneNumber;
+        _passwordController.clear();
+        _confirmPasswordController.clear();
+      }
+    });
+  }
+  
+  Future<void> _saveProfile() async {
+    try {
+      // Validate password fields if provided
+      if (_passwordController.text.isNotEmpty || _confirmPasswordController.text.isNotEmpty) {
+        if (_passwordController.text != _confirmPasswordController.text) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Passwords do not match!')),
+            );
+          }
+          return;
+        }
+        
+        if (_passwordController.text.length < 6) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Password must be at least 6 characters!')),
+            );
+          }
+          return;
+        }
+      }
+      
+      setState(() {
+        _isSaving = true;
+      });
+      
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+      
+      // Prepare update data
+      Map<String, dynamic> updateData = {
+        'first_name': _firstNameController.text.trim(),
+        'last_name': _lastNameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'mobile_number': _phoneNumberController.text.trim(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+      
+      // Update user profile in database
+      await Supabase.instance.client
+          .from('user_profiles')
+          .update(updateData)
+          .eq('id', user.id);
+      
+      // Update email in auth if changed
+      if (_emailController.text != _email) {
+        await Supabase.instance.client.auth.updateUser(
+          UserAttributes(email: _emailController.text.trim()),
+        );
+      }
+      
+      // Update password if provided
+      if (_passwordController.text.isNotEmpty) {
+        await Supabase.instance.client.auth.updateUser(
+          UserAttributes(password: _passwordController.text),
+        );
+      }
+      
+      // Update local state
+      setState(() {
+        _firstName = _firstNameController.text.trim();
+        _lastName = _lastNameController.text.trim();
+        _email = _emailController.text.trim();
+        _phoneNumber = _phoneNumberController.text.trim();
+        _isEditing = false;
+        _isSaving = false;
+        _passwordController.clear();
+        _confirmPasswordController.clear();
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully!')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isSaving = false;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating profile: $e')),
+        );
+      }
+      print('Error updating profile: $e');
     }
   }
 
@@ -211,6 +350,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: TextStyle(color: Colors.white),
         ),
         centerTitle: true,
+        actions: [
+          if (!_isLoading)
+            IconButton(
+              icon: Icon(
+                _isEditing ? Icons.close : Icons.edit,
+                color: Colors.white,
+              ),
+              onPressed: _isSaving ? null : _toggleEditMode,
+            ),
+        ],
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             image: DecorationImage(
@@ -295,13 +444,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       const SizedBox(height: 30),
-                      _buildProfileField('First Name', _firstName),
-                      _buildDivider(),
-                      _buildProfileField('Last Name', _lastName),
-                      _buildDivider(),
-                      _buildProfileField('Email', _email),
-                      _buildDivider(),
-                      _buildProfileField('Phone Number', _phoneNumber),
+                      if (_isEditing) ...[
+                        _buildEditableProfileField('First Name', _firstNameController),
+                        _buildDivider(),
+                        _buildEditableProfileField('Last Name', _lastNameController),
+                        _buildDivider(),
+                        _buildEditableProfileField('Email', _emailController),
+                        _buildDivider(),
+                        _buildEditableProfileField('Phone Number', _phoneNumberController),
+                        _buildDivider(),
+                        _buildPasswordField('Password', _passwordController),
+                        _buildDivider(),
+                        _buildPasswordField('Confirm Password', _confirmPasswordController),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton(
+                              onPressed: _isSaving ? null : _saveProfile,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF5A35E3),
+                                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: _isSaving
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Save',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                            ),
+                            OutlinedButton(
+                              onPressed: _isSaving ? null : _toggleEditMode,
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                                side: const BorderSide(color: Color(0xFF5A35E3)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text(
+                                'Cancel',
+                                style: TextStyle(color: Color(0xFF5A35E3)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        _buildProfileField('First Name', _firstName),
+                        _buildDivider(),
+                        _buildProfileField('Last Name', _lastName),
+                        _buildDivider(),
+                        _buildProfileField('Email', _email),
+                        _buildDivider(),
+                        _buildProfileField('Phone Number', _phoneNumber),
+                      ],
                       const SizedBox(height: 40),
                      
                       Align(
@@ -440,5 +646,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildDivider() {
     return const Divider(height: 20, thickness: 1, color: Colors.black12);
+  }
+  
+  Widget _buildEditableProfileField(String label, TextEditingController controller) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: controller,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFF5A35E3)),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            ),
+            style: const TextStyle(fontSize: 16, color: Colors.black87),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildPasswordField(String label, TextEditingController controller) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: controller,
+            obscureText: true,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFF5A35E3)),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              hintText: label.contains('Confirm') ? 'Re-enter new password' : 'Enter new password (optional)',
+              hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+            ),
+            style: const TextStyle(fontSize: 16, color: Colors.black87),
+          ),
+        ],
+      ),
+    );
   }
 }
