@@ -849,8 +849,8 @@ class _LocationScreenState extends State<LocationScreen> {
                         ),
                       ),
                       Positioned(
-                        top: 10,
-                        right: 10,
+                        top: 17,
+                        right: 1,
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           decoration: BoxDecoration(
