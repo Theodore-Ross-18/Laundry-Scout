@@ -833,7 +833,7 @@ class _LocationScreenState extends State<LocationScreen> {
                                         _formatAddressForDisplay(_currentAddress),
                                         style: const TextStyle(
                                           color: Colors.black,
-                                          fontSize: 16,
+                                          fontSize: 13,
                                           fontWeight: FontWeight.bold,
                                         ),
                                         maxLines: 2,
@@ -1116,6 +1116,7 @@ class _LocationScreenState extends State<LocationScreen> {
                   ),
                   decoration: const InputDecoration(
                     hintText: 'Enter your address',
+                    hintStyle: TextStyle(color: Colors.black),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                     isDense: true,
