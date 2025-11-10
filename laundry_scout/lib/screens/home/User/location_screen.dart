@@ -240,6 +240,59 @@ class _LocationScreenState extends State<LocationScreen> {
   final TextEditingController _addressController = TextEditingController();
   ScrollController? _scrollController; 
 
+  // Helper method to format long addresses for better display
+  String _formatAddressForDisplay(String? address) {
+    if (address == null || address.isEmpty) {
+      return 'No Current Address Yet\nTap Here';
+    }
+    
+    // If address is already short enough for 2 lines, return as is
+    if (address.length <= 50) {
+      return address;
+    }
+    
+    // For very long addresses, try to split at natural break points
+    // First try to split at comma
+    int commaIndex = address.indexOf(',');
+    if (commaIndex != -1 && commaIndex < address.length - 1) {
+      String firstPart = address.substring(0, commaIndex).trim();
+      String secondPart = address.substring(commaIndex + 1).trim();
+      
+      // If first part is still too long, truncate it
+      if (firstPart.length > 30) {
+        firstPart = '${firstPart.substring(0, 27)}...';
+      }
+      
+      // If second part is too long, truncate it
+      if (secondPart.length > 30) {
+        secondPart = '${secondPart.substring(0, 27)}...';
+      }
+      
+      return '$firstPart,\n$secondPart';
+    }
+    
+    // If no comma found, split at word boundary around 25 characters
+    int splitPoint = 25;
+    if (address.length > splitPoint) {
+      // Find the last space before splitPoint
+      int lastSpace = address.lastIndexOf(' ', splitPoint);
+      if (lastSpace != -1) {
+        String firstPart = address.substring(0, lastSpace).trim();
+        String secondPart = address.substring(lastSpace + 1).trim();
+        
+        // Truncate second part if too long
+        if (secondPart.length > 25) {
+          secondPart = '${secondPart.substring(0, 22)}...';
+        }
+        
+        return '$firstPart\n$secondPart';
+      }
+    }
+    
+    // Fallback: just truncate and add ellipsis
+    return '${address.substring(0, 47)}...';
+  }
+
 
   void _onMapTypeChanged(MapType? newMapType) {
     if (newMapType != null) {
@@ -738,10 +791,11 @@ class _LocationScreenState extends State<LocationScreen> {
                       Positioned(
                         top: 10,
                         left: 10,
+                        right: 100, // Added to constrain width
                         child: GestureDetector(
                           onTap: _showAddressEditSheet,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(15),
@@ -755,7 +809,7 @@ class _LocationScreenState extends State<LocationScreen> {
                               ],
                             ),
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Row(
                                   children: [
@@ -772,14 +826,22 @@ class _LocationScreenState extends State<LocationScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  _currentAddress != null && _currentAddress!.isNotEmpty ? _currentAddress! : 'No Current Address',
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _formatAddressForDisplay(_currentAddress),
+                                        style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.left,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
