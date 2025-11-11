@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { FiSettings, FiBell } from "react-icons/fi";
 import "../../Style/Settings.css";
 import Sidebar from "../Sidebar";
+import Notifications from "../Notifications";
 
 function Settings() {
   const navigate = useNavigate();
@@ -94,7 +95,9 @@ function Settings() {
           </div>
 
           <div className="settings-header-actions">
-            <FiBell className="icon" />
+            <div className="notification-wrapper">
+              <Notifications />
+            </div>
             <FiSettings
               size={22}
               className="icon"

@@ -87,6 +87,7 @@
 
 .icon:hover {
   opacity: 0.8;
+  color: var(--primary-color);
 }
 
 .settings-avatar {

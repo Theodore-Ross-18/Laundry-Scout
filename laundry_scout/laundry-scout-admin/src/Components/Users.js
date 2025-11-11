@@ -20,14 +20,13 @@ function Users() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [toast, setToast] = useState(null);
-  const [confirmDelete, setConfirmDelete] = useState(null); // For overlay confirmation
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Users");
   const navigate = useNavigate();
   const searchRef = useRef(null);
 
-  // ✅ Fetch all users
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -40,7 +39,6 @@ function Users() {
     setLoading(false);
   };
 
-  // ✅ Real-time user inserts
   useEffect(() => {
     const channel = supabase
       .channel("user-changes")
@@ -57,34 +55,35 @@ function Users() {
     return () => supabase.removeChannel(channel);
   }, []);
 
-  // ✅ Show confirmation overlay
   const confirmDeleteUser = (user) => {
     setConfirmDelete(user);
   };
 
-  // ✅ Handle deletion
+  // ✅ Correct deletion using RPC + cascade from auth.users
   const handleDelete = async () => {
     if (!confirmDelete) return;
-    const { uid, email } = confirmDelete;
+    const { id, email } = confirmDelete;
 
-    const { error } = await supabase.from("user_profiles").delete().eq("uid", uid);
+    const { error } = await supabase.rpc("delete_user_account", {
+      user_id: id,
+    });
+
     if (error) {
       console.error(error);
       showToast("❌ Failed to delete user.");
     } else {
-      setUsers((prev) => prev.filter((u) => u.uid !== uid));
+      setUsers((prev) => prev.filter((u) => u.id !== id));
       showToast(`✅ ${email} deleted successfully.`);
     }
+
     setConfirmDelete(null);
   };
 
-  // ✅ Toast helper
   const showToast = (message) => {
     setToast(message);
     setTimeout(() => setToast(null), 2500);
   };
 
-  // ✅ Search filter
   const filteredUsers = users.filter((u) => {
     const textMatch = [
       u.first_name,
@@ -115,7 +114,6 @@ function Users() {
     return textMatch && dateMatch && statusMatch;
   });
 
-  // ✅ Hide search history when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -140,7 +138,6 @@ function Users() {
       <Sidebar isOpen={sidebarOpen} activePage="users" />
 
       <main className={`users-main ${sidebarOpen ? "" : "expanded"}`}>
-        {/* Header */}
         <header className="users-header">
           <div className="users-header-left">
             <div>
@@ -188,7 +185,6 @@ function Users() {
           </div>
         </header>
 
-        {/* Filters */}
         <div className="users-filters">
           <div className="users-filter-tab">
             <span className="app-filter-label">All Users</span>
@@ -230,20 +226,17 @@ function Users() {
               endDate={endDate}
               onChangeStart={setStartDate}
               onChangeEnd={setEndDate}
-              onApply={() => {}}
             />
             <AccessibleDropdown
               buttonClassName="u-all-btn"
               selected={selectedStatus}
               options={["All Users", "Verified", "Not Verified"]}
               onSelect={setSelectedStatus}
-              placeholder="All Transactions"
               align="right"
             />
           </div>
         </div>
 
-        {/* Table */}
         <div className="users-table-wrapper">
           <h3 className="user-profiles-title">User Profiles</h3>
           <table className="users-table">
@@ -266,7 +259,7 @@ function Users() {
                 </tr>
               ) : filteredUsers.length > 0 ? (
                 filteredUsers.map((user, idx) => (
-                  <tr key={user.uid || idx}>
+                  <tr key={user.id || idx}>
                     <td>{user.customer_id || `000${idx + 1}`}</td>
                     <td>{user.first_name}</td>
                     <td>{user.last_name}</td>
@@ -282,15 +275,10 @@ function Users() {
                         : ""}
                     </td>
                     <td style={statusColor(user.verified_status)}>
-                      {user.verified_status === "Verified"
-                        ? "Verified"
-                        : "Not Verified"}
+                      {user.verified_status === "Verified" ? "Verified" : "Not Verified"}
                     </td>
                     <td className="actions-cell">
-                      <button
-                        className="danger"
-                        onClick={() => confirmDeleteUser(user)}
-                      >
+                      <button className="danger" onClick={() => confirmDeleteUser(user)}>
                         Delete
                       </button>
                     </td>
@@ -305,14 +293,12 @@ function Users() {
           </table>
         </div>
 
-        {/* ✅ Delete Confirmation Overlay */}
         {confirmDelete && (
           <div className="confirm-overlay">
             <div className="confirm-box">
               <h3>Confirm Deletion</h3>
               <p>
-                Are you sure you want to delete{" "}
-                <strong>{confirmDelete.email}</strong>?<br />
+                Are you sure you want to delete <strong>{confirmDelete.email}</strong>?<br />
                 This action cannot be undone.
               </p>
               <div className="confirm-actions">
@@ -327,7 +313,6 @@ function Users() {
           </div>
         )}
 
-        {/* ✅ Toast Notification */}
         {toast && <div className="toast-message">{toast}</div>}
       </main>
     </div>

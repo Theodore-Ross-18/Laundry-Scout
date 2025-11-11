@@ -51,6 +51,7 @@
   gap: 18px;
   margin-left: auto;
   position: relative;
+  color: var(--text-color);
 }
 
 .notification-badge {
