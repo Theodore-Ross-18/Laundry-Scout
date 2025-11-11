@@ -369,7 +369,9 @@ class _LaundryScreenState extends State<LaundryScreen> {
                   ),
                   const SizedBox(height: 12),
                  
-                  Row(
+                  Wrap(
+                    spacing: 6.0, // Space between chips
+                    runSpacing: 6.0, // Space between lines
                     children: [
                       if (shop['services_offered'] != null)
                         ...(shop['services_offered'] as List<dynamic>).take(4).map((service) {
