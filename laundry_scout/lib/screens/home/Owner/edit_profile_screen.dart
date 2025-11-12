@@ -139,7 +139,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       
           _aboutUsController.text = _businessProfile!['about_business'] ?? '';
           _termsAndConditionsController.text = _businessProfile!['terms_and_conditions'] ?? ''; // Load terms and conditions
-          _deliveryAvailable = _businessProfile!['does_delivery'] ?? false;
+          _deliveryAvailable = false;
           _isDeliveryFree = _businessProfile!['is_delivery_free'] ?? false; // Add this line
           _deliveryFee = double.tryParse(_businessProfile!['delivery_fee'].toString()) ?? 0.0;
           _deliveryFeeController.text = _deliveryFee.toString(); // Add this line

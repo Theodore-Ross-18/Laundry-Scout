@@ -1413,7 +1413,7 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
           // Place Order Button
           SizedBox(
             width: double.infinity,
-            child: _fullBusinessData!['does_delivery'] == true
+            child: (_fullBusinessData!['does_delivery'] == true && _fullBusinessData!['availability_status'] != 'Unavailable')
                 ? ElevatedButton(
                     onPressed: _placeOrder,
                     style: ElevatedButton.styleFrom(
@@ -1438,9 +1438,11 @@ class _BusinessDetailScreenState extends State<BusinessDetailScreen> with Ticker
                       color: Colors.grey.withOpacity(0.5),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Text(
-                        'Delivery Not Available for Now',
+                        _fullBusinessData!['availability_status'] == 'Unavailable' 
+                            ? 'Currently Unavailable' 
+                            : 'Delivery Not Available for Now',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
