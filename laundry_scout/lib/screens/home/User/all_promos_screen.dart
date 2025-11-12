@@ -48,10 +48,20 @@ class _AllPromosScreenState extends State<AllPromosScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('All Promos'),
-        backgroundColor: const Color(0xFF5A35E3),
         foregroundColor: Colors.white,
+        flexibleSpace: FlexibleSpaceBar(
+          centerTitle: true,
+          title: const Text(
+            'All Promos',
+            style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.bold),
+          ),
+          background: Image.asset(
+            'lib/assets/bg.png',
+            fit: BoxFit.cover,
+          ),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -84,19 +94,19 @@ class _AllPromosScreenState extends State<AllPromosScreen> {
                                   ? OptimizedImage(
                                       imageUrl: promo['image_url'],
                                       width: double.infinity,
-                                      height: 180,
+                                      height: 200,
                                       fit: BoxFit.cover,
                                       errorWidget: Image.asset(
                                         'lib/assets/promo_example.png',
                                         width: double.infinity,
-                                        height: 180,
+                                        height: 200,
                                         fit: BoxFit.cover,
                                       ),
                                     )
                                   : Image.asset(
                                       'lib/assets/promo_example.png',
                                       width: double.infinity,
-                                      height: 180,
+                                      height: 200,
                                       fit: BoxFit.cover,
                                     ),
                             ],

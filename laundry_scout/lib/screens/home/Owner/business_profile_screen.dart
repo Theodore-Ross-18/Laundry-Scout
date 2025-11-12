@@ -50,12 +50,13 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
       if (user == null) return;
       final response = await Supabase.instance.client
           .from('business_profiles')
-          .select()
+          .select('*, owner_push_notif')
           .eq('id', user.id)
           .single();
       if (mounted) {
         setState(() {
           _businessProfile = response;
+          _notificationsEnabled = response['owner_push_notif'] ?? false;
           _isLoading = false;
         });
       }
@@ -68,6 +69,35 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
           SnackBar(content: Text('Error loading profile: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _updateNotificationPreference(bool value) async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      await Supabase.instance.client
+          .from('business_profiles')
+          .update({'owner_push_notif': value})
+          .eq('id', user.id);
+
+      setState(() {
+        _notificationsEnabled = value;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Push notifications ${value ? 'enabled' : 'disabled'})')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating notification preference: $e')),
+        );
+      }
+      print('Error updating notification preference: $e');
     }
   }
 
@@ -235,14 +265,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                                   color: Color(0xFF7B61FF),
                                   fontWeight: FontWeight.bold,
                                   fontSize: 24,
-                                ),
-                              ),
-                              TextSpan(
-                                text: "'s Profile",
-                                style: TextStyle(
-                                  color: Colors.black87,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 24,
+                                  fontFamily: 'Popins',
                                 ),
                               ),
                             ],
@@ -298,10 +321,7 @@ class _BusinessProfileScreenState extends State<BusinessProfileScreen> {
                               Switch(
                                 value: _notificationsEnabled,
                                 onChanged: (bool value) {
-                                  setState(() {
-                                    _notificationsEnabled = value;
-                                  });
-                                  // Handle notification toggle logic here
+                                  _updateNotificationPreference(value);
                                 },
                                 activeColor: Color(0xFF5A35E3),
                               ),

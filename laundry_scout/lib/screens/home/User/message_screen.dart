@@ -4,11 +4,20 @@ import 'package:flutter/material.dart';
 import '../../../services/session_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
-import 'dart:developer';
+import 'dart:developer' as developer;
+import 'dart:math';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
 import '../../../services/connection_service.dart';
 import '../../../services/message_queue_service.dart';
 import '../../../services/realtime_message_service.dart';
 import '../../../widgets/optimized_image.dart';
+import '../../../widgets/image_preview.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:laundry_scout/screens/home/User/getdirection.dart';
+
 
 class MessageScreen extends StatefulWidget {
   const MessageScreen({super.key});
@@ -67,16 +76,14 @@ class _MessageScreenState extends State<MessageScreen> {
               owner_is_online
             )
           ''')
-          .eq('user_id', user.id)
-          .order('last_message_at', ascending: false);
+          .eq('user_id', user.id);
 
       for (var conversation in response) {
         final lastMessage = await Supabase.instance.client
             .from('messages')
-            .select('content, created_at, sender_id')
+            .select('content, sender_id, created_at')
             .or('sender_id.eq.${user.id},receiver_id.eq.${user.id}')
             .eq('business_id', conversation['business_id'])
-            .order('created_at', ascending: false)
             .limit(1)
             .maybeSingle();
 
@@ -95,7 +102,7 @@ class _MessageScreenState extends State<MessageScreen> {
         });
       }
     } catch (e) {
-      log('Background refresh error: $e');
+      print('Background refresh error: $e');
     }
   }
 
@@ -118,16 +125,14 @@ class _MessageScreenState extends State<MessageScreen> {
               owner_is_online
             )
           ''')
-          .eq('user_id', user.id)
-          .order('last_message_at', ascending: false);
+          .eq('user_id', user.id);
 
       for (var conversation in response) {
         final lastMessage = await Supabase.instance.client
             .from('messages')
-            .select('content, created_at, sender_id')
+            .select('content, sender_id, created_at')
             .or('sender_id.eq.${user.id},receiver_id.eq.${user.id}')
             .eq('business_id', conversation['business_id'])
-            .order('created_at', ascending: false)
             .limit(1)
             .maybeSingle();
 
@@ -142,7 +147,7 @@ class _MessageScreenState extends State<MessageScreen> {
         });
       }
     } catch (e) {
-      log('Error loading conversations: $e');
+      print('Error loading conversations: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -199,6 +204,53 @@ class _MessageScreenState extends State<MessageScreen> {
     );
   }
 
+  Future<void> _deleteConversation(Map<String, dynamic> conversation) async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final businessId = conversation['business_id'];
+      
+      // Delete all messages for this conversation using sender_id/receiver_id instead of user_id
+      await Supabase.instance.client
+          .from('messages')
+          .delete()
+          .or('sender_id.eq.${user.id},receiver_id.eq.${user.id}')
+          .eq('business_id', businessId);
+
+      // Delete the conversation
+      await Supabase.instance.client
+          .from('conversations')
+          .delete()
+          .eq('business_id', businessId)
+          .eq('user_id', user.id);
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Conversation deleted successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error deleting conversation: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete conversation: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      // Re-throw the error so the Dismissible knows the deletion failed
+      rethrow;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -206,10 +258,16 @@ class _MessageScreenState extends State<MessageScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 10),
             // Messages section header
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.all(16.0),
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('lib/assets/bg.png'),
+                  fit: BoxFit.fill,
+                ),
+                
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -234,10 +292,6 @@ class _MessageScreenState extends State<MessageScreen> {
               child: Container(
                 decoration: const BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(25),
-                    topRight: Radius.circular(25),
-                  ),
                 ),
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
@@ -256,107 +310,186 @@ class _MessageScreenState extends State<MessageScreen> {
                               final business = conversation['business_profiles'];
                               final lastMessage = conversation['last_message'];
                               
-                              return Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                                child: InkWell(
-                                  onTap: () => _navigateToChat(conversation),
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Row(
-                                      children: [
-                                        // Avatar with online indicator
-                                        Stack(
-                                          children: [
-                                            CircleAvatar(
-                                              radius: 28,
-                                              backgroundColor: Colors.grey[200],
-                                              child: business['cover_photo_url'] != null
-                                                  ? ClipOval(
-                                                      child: OptimizedImage(
-                                                        imageUrl: business['cover_photo_url'],
-                                                        width: 56,
-                                                        height: 56,
-                                                        fit: BoxFit.cover,
-                                                        placeholder: const Icon(Icons.business, color: Colors.grey),
-                                                      ),
-                                                    )
-                                                  : const Icon(Icons.business, color: Colors.grey, size: 30),
-                                            ),
-                                          
-                                            Positioned(
-                                              bottom: 2,
-                                              right: 2,
-                                              child: (business['owner_is_online'] ?? false) == true
-                                                  ? Container(
-                                                      width: 12,
-                                                      height: 12,
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.green,
-                                                        shape: BoxShape.circle,
-                                                        border: Border.all(color: Colors.white, width: 2),
-                                                      ),
-                                                    )
-                                                  : Container(
-                                                      width: 12,
-                                                      height: 12,
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.red,
-                                                        shape: BoxShape.circle,
-                                                        border: Border.all(color: Colors.white, width: 2),
-                                                      ),
-                                                    ),
-                                            ),
-                                          ],
+                              return Dismissible(
+                                key: Key('conversation_${conversation['business_id']}'),
+                                direction: DismissDirection.endToStart,
+                                background: Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 20),
+                                  child: const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.delete,
+                                        color: Colors.white,
+                                        size: 28,
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'Delete',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
                                         ),
-                                        const SizedBox(width: 16),
-                                        
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                confirmDismiss: (direction) async {
+                                  return await showDialog<bool>(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: const Text('Delete Conversation', style: TextStyle(color: Colors.black)),
+                                        content: Text(
+                                          'Are you sure you want to delete your conversation with ${business['business_name'] ?? 'this business'}? This will also delete all messages in the conversation.',
+                                          style: const TextStyle(color: Colors.black),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(false),
+                                            child: const Text('Cancel', style: TextStyle(color: Colors.black)),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(true),
+                                            style: TextButton.styleFrom(
+                                              foregroundColor: Colors.red,
+                                            ),
+                                            child: const Text('Delete'),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ) ?? false;
+                                },
+                                onDismissed: (direction) async {
+                                  // Remove from local list immediately
+                                  setState(() {
+                                    _conversations.removeWhere((c) => c['business_id'] == conversation['business_id']);
+                                    _filteredConversations.removeWhere((c) => c['business_id'] == conversation['business_id']);
+                                  });
+                                  
+                                  try {
+                                    await _deleteConversation(conversation);
+                                  } catch (e) {
+                                    // If deletion fails, add the conversation back
+                                    setState(() {
+                                      _conversations.add(conversation);
+                                      if (_searchController.text.isEmpty || 
+                                          conversation['business_profiles']['business_name'].toLowerCase().contains(_searchController.text.toLowerCase())) {
+                                        _filteredConversations.add(conversation);
+                                      }
+                                    });
+                                  }
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                  child: InkWell(
+                                    onTap: () => _navigateToChat(conversation),
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Row(
+                                        children: [
+                                          // Avatar with online indicator
+                                          Stack(
                                             children: [
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                children: [
-                                                  Expanded(
-                                                    child: Text(
-                                                      business['business_name'] ?? 'Business',
-                                                      style: const TextStyle(
-                                                        fontWeight: FontWeight.w600,
-                                                        fontSize: 16,
-                                                        color: Colors.black,
-                                                      ),
-                                                      overflow: TextOverflow.ellipsis,
-                                                      maxLines: 2,
-                                                    ),
-                                                  ),
-                                                  if (lastMessage != null)
-                                                    Flexible(
-                                                      child: Text(
-                                                        _formatTime(lastMessage['created_at']),
-                                                        style: TextStyle(
-                                                          color: Colors.grey[500],
-                                                          fontSize: 12,
+                                              CircleAvatar(
+                                                radius: 28,
+                                                backgroundColor: Colors.grey[200],
+                                                child: business['cover_photo_url'] != null
+                                                    ? ClipOval(
+                                                        child: OptimizedImage(
+                                                          imageUrl: business['cover_photo_url'],
+                                                          width: 56,
+                                                          height: 56,
+                                                          fit: BoxFit.cover,
+                                                          placeholder: const Icon(Icons.business, color: Colors.grey),
                                                         ),
-                                                        overflow: TextOverflow.ellipsis,
-                                                      ),
-                                                    ),
-                                                ],
+                                                      )
+                                                    : const Icon(Icons.business, color: Colors.grey, size: 30),
                                               ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                lastMessage?['content'] ?? 'No messages yet',
-                                                style: TextStyle(
-                                                  color: Colors.grey[600],
-                                                  fontSize: 14,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
+                                            
+                                              Positioned(
+                                                bottom: 2,
+                                                right: 2,
+                                                child: (business['owner_is_online'] ?? false) == true
+                                                    ? Container(
+                                                        width: 12,
+                                                        height: 12,
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.green,
+                                                          shape: BoxShape.circle,
+                                                          border: Border.all(color: Colors.white, width: 2),
+                                                        ),
+                                                      )
+                                                    : Container(
+                                                        width: 12,
+                                                        height: 12,
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.red,
+                                                          shape: BoxShape.circle,
+                                                          border: Border.all(color: Colors.white, width: 2),
+                                                        ),
+                                                      ),
                                               ),
                                             ],
                                           ),
-                                        ),
-                                      ],
+                                          const SizedBox(width: 16),
+                                          
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        business['business_name'] ?? 'Business',
+                                                        style: const TextStyle(
+                                                          fontWeight: FontWeight.w600,
+                                                          fontSize: 16,
+                                                          color: Colors.black,
+                                                        ),
+                                                        overflow: TextOverflow.ellipsis,
+                                                        maxLines: 2,
+                                                      ),
+                                                    ),
+                                                    if (lastMessage != null)
+                                                      Flexible(
+                                                        child: Text(
+                                                          _formatTime(lastMessage['created_at']),
+                                                          style: TextStyle(
+                                                            color: Colors.grey[500],
+                                                            fontSize: 12,
+                                                          ),
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  lastMessage?['content'] ?? 'No messages yet',
+                                                  style: TextStyle(
+                                                    color: Colors.grey[600],
+                                                    fontSize: 14,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -390,7 +523,7 @@ class _MessageScreenState extends State<MessageScreen> {
 
   Future<void> _checkAndShowFeedbackModal() async {
     if (!_sessionService.hasShownUserFeedbackModalThisSession) {
-      _feedbackTimer = Timer(const Duration(minutes: 20), () {
+      _feedbackTimer = Timer(const Duration(minutes: 5), () {
         if (mounted) {
           _showFeedbackModal();
           _sessionService.hasShownUserFeedbackModalThisSession = true;
@@ -414,7 +547,7 @@ class _MessageScreenState extends State<MessageScreen> {
       print('Mark all as read pressed for user: ${user.id}');
 
     } catch (e) {
-      print('Error marking all messages as read: $e');
+      developer.log('Error marking all messages as read: $e');
     }
   }
 }
@@ -447,8 +580,11 @@ class _ChatScreenState extends State<ChatScreen> {
   late StreamSubscription _messageSubscription;
   RealtimeChannel? _currentChannel;
   Timer? _backgroundRefreshTimer;
+  Timer? _businessStatusTimer;
   String? _userUsername;
-  String? _userProfileImage; 
+  String? _userProfileImage;
+  static bool _isNavigatingToChatAssist = false; // Prevent multiple navigations
+ 
 
   @override
   void initState() {
@@ -461,6 +597,8 @@ class _ChatScreenState extends State<ChatScreen> {
     _setupRealtimeSubscription();
     _setupQualityListener();
     _startBackgroundRefresh();
+    _startBusinessStatusRefresh();
+    _checkBusinessOnlineStatus();
   }
 
   @override
@@ -471,6 +609,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _connectionService.stopMonitoring();
     _messageQueue.stopQueue();
     _backgroundRefreshTimer?.cancel();
+    _businessStatusTimer?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -478,8 +617,16 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _startBackgroundRefresh() {
     _backgroundRefreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      if (mounted) {
+      if (mounted && !_isNavigatingToChatAssist) {
         _refreshMessagesInBackground();
+      }
+    });
+  }
+
+  void _startBusinessStatusRefresh() {
+    _businessStatusTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted && !_isNavigatingToChatAssist) {
+        _checkBusinessOnlineStatus();
       }
     });
   }
@@ -502,7 +649,7 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }
     } catch (e) {
-      log('Error loading user profile: $e');
+      developer.log('Error loading user profile: $e');
       if (mounted) {
         setState(() {
           _userUsername = 'You';
@@ -516,12 +663,12 @@ class _ChatScreenState extends State<ChatScreen> {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return;
 
+      // Refresh messages
       final response = await Supabase.instance.client
           .from('messages')
           .select('*')
           .or('sender_id.eq.${user.id},receiver_id.eq.${user.id}')
-          .eq('business_id', widget.businessId)
-          .order('created_at', ascending: true);
+          .eq('business_id', widget.businessId);
 
       if (mounted) {
         final newMessages = List<Map<String, dynamic>>.from(response);
@@ -535,8 +682,13 @@ class _ChatScreenState extends State<ChatScreen> {
           _scrollToBottom();
         }
       }
+
+      // Also refresh business online status in background (only if not already navigating)
+      if (!_isNavigatingToChatAssist) {
+        await _checkBusinessOnlineStatus();
+      }
     } catch (e) {
-      log('Background message refresh error: $e');
+      developer.log('Background message refresh error: $e');
     }
   }
 
@@ -561,6 +713,21 @@ class _ChatScreenState extends State<ChatScreen> {
       },
     );
 
+    // Add realtime subscription for business profile changes (online/offline status)
+    Supabase.instance.client
+        .channel('business_profile_${widget.businessId}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'business_profiles',
+          callback: (payload) {
+            if (mounted && payload.newRecord['id'] == widget.businessId) {
+              // Handle online status change - navigation will be handled elsewhere
+            }
+          },
+        )
+        .subscribe();
+
     _messageSubscription = _messageQueue.sentMessageStream.listen((sentMessage) {
       if (mounted) {
         setState(() {
@@ -576,6 +743,153 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  Future<bool> _isFirstMessageToBusiness(String userId, String businessId) async {
+    try {
+      final response = await Supabase.instance.client
+          .from('messages')
+          .select('id')
+          .eq('sender_id', userId)
+          .eq('business_id', businessId)
+          .limit(1);
+
+      return response.isEmpty;
+    } catch (e) {
+      developer.log('Error checking first message: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _isBusinessOnline(String businessId) async {
+    try {
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('owner_is_online')
+          .eq('id', businessId)
+          .single();
+
+      return response['owner_is_online'] == true;
+    } catch (e) {
+      developer.log('Error checking business online status: $e');
+      return false;
+    }
+  }
+
+  bool _containsThankYou(String content) {
+    // Check for various forms of "thank you" in the message
+    final thankYouPatterns = [
+      'thank you',
+      'thanks',
+      'thankyou',
+      'thx',
+      'ty',
+      'thank u',
+      'thanx'
+    ];
+    
+    final lowerContent = content.toLowerCase();
+    return thankYouPatterns.any((pattern) => lowerContent.contains(pattern));
+  }
+
+  Future<void> _sendThankYouResponse() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final thankYouResponses = [
+        "You're welcome! 😊",
+        "My pleasure! 🙂",
+        "Anytime! Happy to help 👍",
+        "You're very welcome! 🌟",
+        "No problem at all! 👌"
+      ];
+      
+      final random = Random();
+      final response = thankYouResponses[random.nextInt(thankYouResponses.length)];
+
+      // Insert the thank you response directly into the messages table
+      final responseData = await Supabase.instance.client
+          .from('messages')
+          .insert({
+            'sender_id': widget.businessId,
+            'receiver_id': user.id,
+            'business_id': widget.businessId,
+            'content': response,
+            'created_at': DateTime.now().toIso8601String(),
+          })
+          .select()
+          .single();
+
+      // Add the response to the UI immediately
+      final responseMessage = {
+        'id': responseData['id'],
+        'sender_id': widget.businessId,
+        'receiver_id': user.id,
+        'business_id': widget.businessId,
+        'content': response,
+        'created_at': responseData['created_at'],
+        'is_sending': false,
+      };
+
+      if (mounted) {
+        setState(() {
+          _messages.add(responseMessage);
+        });
+        _scrollToBottom();
+      }
+
+    } catch (e) {
+      developer.log('Error sending thank you response: $e');
+    }
+  }
+
+
+  Future<void> _sendAutomaticGreeting() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      final greetings = [
+        "Hello! Welcome to ${widget.businessName}! How can I help you today? 😊",
+        "Hi there! Thanks for reaching out to ${widget.businessName}. What can I assist you with?",
+        "Welcome to ${widget.businessName}! I'm here to help. What brings you here today?",
+        "Hello! Great to hear from you at ${widget.businessName}. How may I assist you?",
+        "Hi! Welcome to ${widget.businessName}. I'm online and ready to help with anything you need!"
+      ];
+
+      final randomGreeting = greetings[DateTime.now().millisecond % greetings.length];
+
+      // Insert the greeting message directly to the database
+      // The business owner is the sender, user is the receiver
+      await Supabase.instance.client.from('messages').insert({
+        'sender_id': widget.businessId,  // Business owner sends the greeting
+        'receiver_id': user.id,          // User receives the greeting
+        'business_id': widget.businessId,
+        'content': randomGreeting,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      // Add optimistic message to the UI - business owner is the sender
+      final greetingMessage = {
+        'sender_id': widget.businessId,
+        'receiver_id': user.id,
+        'business_id': widget.businessId,
+        'content': randomGreeting,
+        'created_at': DateTime.now().toIso8601String(),
+        'is_sending': false,
+      };
+
+      if (mounted) {
+        setState(() {
+          _messages.add(greetingMessage);
+        });
+        _scrollToBottom();
+      }
+
+    } catch (e) {
+      developer.log('Error sending automatic greeting: $e');
+    }
+  }
+
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
 
@@ -584,6 +898,19 @@ class _ChatScreenState extends State<ChatScreen> {
 
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
+      // Check if this is the first message and business is online
+      final isFirstMessage = await _isFirstMessageToBusiness(user.id, widget.businessId);
+      final isBusinessOnline = await _isBusinessOnline(widget.businessId);
+      
+      if (isFirstMessage && isBusinessOnline) {
+        // Send automatic greeting after a short delay
+        Timer(const Duration(seconds: 2), () {
+          if (mounted) {
+            _sendAutomaticGreeting();
+          }
+        });
+      }
+
       final tempId = _messageQueue.queueMessage(
         content: content,
         receiverId: widget.businessId,
@@ -604,6 +931,15 @@ class _ChatScreenState extends State<ChatScreen> {
         _messages.add(optimisticMessage);
       });
       _scrollToBottom();
+
+      // Check if user said "thank you" and business is online
+      if (_containsThankYou(content) && isBusinessOnline) {
+        Timer(const Duration(seconds: 3), () {
+          if (mounted) {
+            _sendThankYouResponse();
+          }
+        });
+      }
     }
   }
 
@@ -623,9 +959,9 @@ class _ChatScreenState extends State<ChatScreen> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.3)),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -647,8 +983,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return Supabase.instance.client
         .from('business_profiles')
         .stream(primaryKey: ['id'])
-        .eq('id', businessId)
-        .order('id', ascending: true);
+        .eq('id', businessId);
   }
 
   void _scrollToBottom() {
@@ -716,6 +1051,7 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: ListView.builder(
+              key: ValueKey(_messages.length),
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
               itemCount: _messages.length,
@@ -724,144 +1060,237 @@ class _ChatScreenState extends State<ChatScreen> {
                 final isMe = message['sender_id'] == user?.id;
                 final isSending = message['is_sending'] == true;
                 
-                return Align(
-                  alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        // Business/Owner avatar (left side for incoming messages)
-                        if (!isMe) ...[
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: Colors.grey[300],
-                            child: widget.businessImage != null
-                                ? ClipOval(
-                                    child: OptimizedImage(
-                                      imageUrl: widget.businessImage!,
-                                      width: 32,
-                                      height: 32,
-                                      fit: BoxFit.cover,
-                                      placeholder: const Icon(Icons.business, size: 16, color: Colors.grey),
-                                    ),
-                                  )
-                                : const Icon(Icons.business, size: 16, color: Colors.grey),
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                        
+                return Dismissible(
+                  key: Key(message['id'].toString()),
+                  direction: isMe ? DismissDirection.endToStart : DismissDirection.none,
+                  background: isMe ? Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    color: Colors.red,
+                    child: const Icon(
+                      Icons.delete,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ) : null,
+                  confirmDismiss: (direction) async {
+                    if (!isMe) return false;
                     
-                        Flexible(
-                          child: Column(
-                            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                            children: [
-                             
-                              Padding(
-                                padding: EdgeInsets.only(
-                                  bottom: 4,
-                                  left: isMe ? 0 : 8,
-                                  right: isMe ? 8 : 0,
-                                ),
-                                child: Text(
-                                  isMe ? ( 'You') : widget.businessName,
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                    return await showDialog<bool>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('Delete Message', style: TextStyle(color: Colors.black)),
+                          content: const Text('Are you sure you want to delete this message?', style: TextStyle(color: Colors.black)),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('Cancel', style: TextStyle(color: Colors.black)),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text(
+                                'Delete',
+                                style: TextStyle(color: Colors.black),
                               ),
-                              
-                             
-                              ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth: MediaQuery.of(context).size.width * 0.7,
-                                ),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: isMe ? const Color(0xFF5A35E3) : Colors.grey[200],
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: const Radius.circular(12),
-                                      topRight: const Radius.circular(12),
-                                      bottomLeft: Radius.circular(isMe ? 12 : 2),
-                                      bottomRight: Radius.circular(isMe ? 2 : 12),
-                                    ),
+                            ),
+                          ],
+                        );
+                      },
+                    ) ?? false;
+                  },
+                  onDismissed: (direction) {
+                    if (isMe) {
+                      _deleteMessage(message['id'].toString());
+                    }
+                  },
+                  child: Align(
+                    alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          // Business/Owner avatar (left side for incoming messages)
+                          if (!isMe) ...[
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: Colors.grey[300],
+                              child: widget.businessImage != null
+                                  ? ClipOval(
+                                      child: OptimizedImage(
+                                        imageUrl: widget.businessImage!,
+                                        width: 32,
+                                        height: 32,
+                                        fit: BoxFit.cover,
+                                        placeholder: const Icon(Icons.business, size: 16, color: Colors.grey),
+                                      ),
+                                    )
+                                  : const Icon(Icons.business, size: 16, color: Colors.grey),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          
+                      
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                              children: [
+                               
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom: 4,
+                                    left: isMe ? 0 : 8,
+                                    right: isMe ? 8 : 0,
                                   ),
                                   child: Text(
-                                    message['content'],
-                                    style: TextStyle(
-                                      color: isMe ? Colors.white : Colors.black87,
-                                      fontSize: 15,
+                                    isMe ? ( 'You') : widget.businessName,
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ),
-                              ),
-                              
-                             
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      _formatMessageTime(message['created_at']),
-                                      style: const TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 12,
+                                
+                               
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxWidth: MediaQuery.of(context).size.width * 0.7,
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: isMe ? const Color(0xFF5A35E3) : Colors.grey[200],
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: const Radius.circular(12),
+                                        topRight: const Radius.circular(12),
+                                        bottomLeft: Radius.circular(isMe ? 12 : 2),
+                                        bottomRight: Radius.circular(isMe ? 2 : 12),
                                       ),
                                     ),
-                                    if (isMe) ...[
-                                      const SizedBox(width: 4),
-                                      Icon(
-                                        isSending ? Icons.access_time : Icons.done_all,
-                                        size: 14,
-                                        color: isSending ? Colors.orange : Colors.blue,
-                                      ),
-                                    ],
-                                  ],
+                                    child: message['is_image'] == true
+                                      ? Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            ClipRRect(
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: GestureDetector(
+                                                onTap: () {
+                                                  if (message['image_url']?.isNotEmpty == true) {
+                                                    showImagePreview(
+                                                      context,
+                                                      message['image_url'],
+                                                      heroTag: 'chat_image_${message['id'] ?? DateTime.now().millisecondsSinceEpoch}',
+                                                    );
+                                                  }
+                                                },
+                                                child: OptimizedImage(
+                                                  imageUrl: message['image_url'] ?? '',
+                                                  width: 200,
+                                                  height: 150,
+                                                  fit: BoxFit.cover,
+                                                  placeholder: Container(
+                                                    width: 200,
+                                                    height: 150,
+                                                    color: Colors.grey[300],
+                                                    child: const Icon(Icons.image, size: 50, color: Colors.grey),
+                                                  ),
+                                                  errorWidget: Container(
+                                                    width: 200,
+                                                    height: 150,
+                                                    color: Colors.grey[300],
+                                                    child: const Icon(Icons.broken_image, size: 50, color: Colors.red),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            if (message['content']?.isNotEmpty == true && message['content'] != '📷 Image') ...[
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                message['content'],
+                                                style: TextStyle(
+                                                  color: isMe ? Colors.white : Colors.black87,
+                                                  fontSize: 15,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        )
+                                      : Text(
+                                          message['content'],
+                                          style: TextStyle(
+                                            color: isMe ? Colors.white : Colors.black87,
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        
-                      
-                        if (isMe) ...[
-                          const SizedBox(width: 8),
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: const Color(0xFF5A35E3),
-                            child: _userProfileImage != null
-                                ? ClipOval(
-                                    child: OptimizedImage(
-                                      imageUrl: _userProfileImage!,
-                                      width: 32,
-                                      height: 32,
-                                      fit: BoxFit.cover,
-                                      placeholder: Text(
-                                        _userUsername?.substring(0, 1).toUpperCase() ?? 'U',
+                                
+                               
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        _formatMessageTime(message['created_at']),
                                         style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey,
+                                          fontSize: 12,
                                         ),
                                       ),
-                                    ),
-                                  )
-                                : Text(
-                                    _userUsername?.substring(0, 1).toUpperCase() ?? 'U',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                      if (isMe) ...[
+                                        const SizedBox(width: 4),
+                                        Icon(
+                                          isSending ? Icons.access_time : Icons.done_all,
+                                          size: 14,
+                                          color: isSending ? Colors.orange : Colors.blue,
+                                        ),
+                                      ],
+                                    ],
                                   ),
+                                ),
+                              ],
+                            ),
                           ),
+                          
+                        
+                          if (isMe) ...[
+                            const SizedBox(width: 8),
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: const Color(0xFF5A35E3),
+                              child: _userProfileImage != null
+                                  ? ClipOval(
+                                      child: OptimizedImage(
+                                        imageUrl: _userProfileImage!,
+                                        width: 32,
+                                        height: 32,
+                                        fit: BoxFit.cover,
+                                        placeholder: Text(
+                                          _userUsername?.substring(0, 1).toUpperCase() ?? 'U',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Text(
+                                      _userUsername?.substring(0, 1).toUpperCase() ?? 'U',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 );
@@ -883,6 +1312,14 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             child: Row(
               children: [
+                IconButton(
+                  icon: const Icon(Icons.camera_alt, color: Color(0xFF5A35E3)),
+                  onPressed: _handleCameraAction,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.photo, color: Color(0xFF5A35E3)),
+                  onPressed: _handlePhotoAction,
+                ),
                 Expanded(
                   child: TextField(
                     controller: _messageController,
@@ -928,6 +1365,143 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  Future<void> _handleCameraAction() async {
+    try {
+      // Request camera permission if needed
+      final ImagePicker picker = ImagePicker();
+      final XFile? photo = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      );
+      
+      if (photo != null) {
+        await _sendImageMessage(File(photo.path));
+      }
+    } catch (e) {
+      String errorMessage = 'Failed to take photo';
+      if (e.toString().contains('permission')) {
+        errorMessage = 'Camera permission denied. Please enable camera access in your device settings.';
+      } else if (e.toString().contains('no camera')) {
+        errorMessage = 'No camera device found on this device.';
+      }
+      
+      print('Error handling camera action: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
+    }
+  }
+
+  Future<void> _handlePhotoAction() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? photo = await picker.pickImage(source: ImageSource.gallery);
+      
+      if (photo != null) {
+        await _sendImageMessage(File(photo.path));
+      }
+    } catch (e) {
+      print('Error handling photo action: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to select photo')),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendImageMessage(File imageFile) async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      // Create optimistic message
+      final optimisticMessage = {
+        'id': DateTime.now().millisecondsSinceEpoch.toString(),
+        'sender_id': user.id,
+        'receiver_id': widget.businessId,
+        'business_id': widget.businessId,
+        'content': '',
+        'is_image': true,
+        'image_url': imageFile.path, // Local path for optimistic UI
+        'created_at': DateTime.now().toIso8601String(),
+        'is_optimistic': true,
+          };
+
+          // Add optimistic message to UI
+          if (mounted) {
+            setState(() {
+              _messages.add(optimisticMessage);
+              print('Before sort: ${_messages.map((m) => m['created_at']).toList()}');
+              _messages.sort((a, b) => DateTime.parse(a['created_at']).compareTo(DateTime.parse(b['created_at'])));
+              print('After sort: ${_messages.map((m) => m['created_at']).toList()}');
+            });
+            _scrollToBottom();
+          }
+
+          // Upload image to Supabase storage
+          final fileName = '${user.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final filePath = 'chat_images/$fileName';
+
+      // Read the image file as bytes
+      final XFile imageXFile = XFile(imageFile.path);
+      final Uint8List imageBytes = await imageXFile.readAsBytes();
+      
+      await Supabase.instance.client.storage
+          .from('chat_images')
+          .uploadBinary(filePath, imageBytes,
+              fileOptions: const FileOptions(contentType: 'image/jpeg'));
+
+      final String publicUrl = Supabase.instance.client.storage
+          .from('chat_images')
+          .getPublicUrl(filePath);
+      final imageUrl = publicUrl;
+
+      // Send message to database
+      final response = await Supabase.instance.client
+          .from('messages')
+          .insert({
+            'sender_id': user.id,
+            'receiver_id': widget.businessId,
+            'business_id': widget.businessId,
+            'content': '', // Ensure content is never null for image messages
+            'is_image': true,
+            'image_url': imageUrl,
+          })
+          .select()
+          .single();
+
+      // Replace optimistic message with real one
+      if (mounted) {
+        setState(() {
+          _messages.removeWhere((msg) => 
+            msg['id'] == optimisticMessage['id'] && msg['is_optimistic'] == true);
+          _messages.add(response);
+          _messages.sort((a, b) => a['created_at'].compareTo(b['created_at']));
+        });
+      }
+
+    } catch (e) {
+      print('Error sending image message: $e');
+      
+      // Remove optimistic message on error
+      if (mounted) {
+        setState(() {
+          _messages.removeWhere((msg) => 
+            msg['is_optimistic'] == true);
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send image: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _loadMessages() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
@@ -937,8 +1511,7 @@ class _ChatScreenState extends State<ChatScreen> {
           .from('messages')
           .select('*')
           .or('sender_id.eq.${user.id},receiver_id.eq.${user.id}')
-          .eq('business_id', widget.businessId)
-          .order('created_at', ascending: true);
+          .eq('business_id', widget.businessId);
 
       if (mounted) {
         setState(() {
@@ -947,7 +1520,87 @@ class _ChatScreenState extends State<ChatScreen> {
         _scrollToBottom();
       }
     } catch (e) {
-      log('Error loading messages: $e');
+      print('Error loading messages: $e');
+    }
+  }
+
+  Future<void> _deleteMessage(String messageId) async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) return;
+
+      // Find the message to check if it belongs to the current user
+      final message = _messages.firstWhere(
+        (msg) => msg['id'].toString() == messageId,
+        orElse: () => {},
+      );
+
+      if (message.isEmpty || message['sender_id'] != user.id) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('You can only delete your own messages')),
+          );
+        }
+        return;
+      }
+
+      await Supabase.instance.client
+          .from('messages')
+          .delete()
+          .eq('id', messageId)
+          .eq('sender_id', user.id); // Additional safety check
+
+      if (mounted) {
+        setState(() {
+          _messages.removeWhere((message) => message['id'] == messageId);
+        });
+      }
+    } catch (e) {
+      print('Error deleting message: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete message')),
+        );
+      }
+    }
+  }
+  
+  Future<void> _checkBusinessOnlineStatus() async {
+    // Prevent multiple navigations
+    if (_isNavigatingToChatAssist) return;
+    
+    try {
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('owner_is_online')
+          .eq('id', widget.businessId)
+          .single();
+      
+      if (mounted) {
+        final isOffline = !(response['owner_is_online'] ?? true);
+        if (isOffline && !_isNavigatingToChatAssist) {
+          // Set flag to prevent multiple navigations
+          _isNavigatingToChatAssist = true;
+          
+          // Navigate to chat assistant when business is offline
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatAssistWidget(
+                businessName: widget.businessName,
+                businessId: widget.businessId,
+              ),
+            ),
+          ).then((_) {
+            // Reset flag when navigation completes
+            _isNavigatingToChatAssist = false;
+          });
+        }
+      }
+    } catch (e) {
+      print('Error checking business online status: $e');
+      // Reset flag on error
+      _isNavigatingToChatAssist = false;
     }
   }
 
@@ -984,6 +1637,854 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
     
+}
+
+// Chat Assist Widget for offline business owners - Now with AI chat functionality
+class ChatAssistWidget extends StatefulWidget {
+  final String businessId;
+  final String businessName;
+
+  const ChatAssistWidget({
+    super.key,
+    required this.businessId,
+    required this.businessName,
+  });
+
+  @override
+  State<ChatAssistWidget> createState() => _ChatAssistWidgetState();
+}
+
+class _ChatAssistWidgetState extends State<ChatAssistWidget> {
+  final TextEditingController _messageController = TextEditingController();
+  final List<Map<String, dynamic>> _chatMessages = [];
+  bool _isTyping = false;
+  Map<String, dynamic>? _businessData;
+  bool _isLoadingData = true;
+  DateTime? _lastMessageTime;
+  static const Duration _messageCooldown = Duration(seconds: 3);
+  StreamSubscription? _businessStatusSubscription;
+  Timer? _statusCheckTimer;
+  bool _isCheckingStatus = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBusinessData();
+    _addWelcomeMessage();
+    // Only start monitoring after confirming business is offline
+    _loadBusinessData().then((_) {
+      if (mounted && _businessData?['owner_is_online'] != true) {
+        _setupBusinessStatusMonitoring();
+        _startPeriodicStatusCheck();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _businessStatusSubscription?.cancel();
+    _statusCheckTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadBusinessData() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('*, service_prices, services_offered, open_hours, business_phone_number, business_address, about_business, does_delivery, delivery_fee')
+          .eq('id', widget.businessId)
+          .single();
+
+      setState(() {
+        _businessData = response;
+        _isLoadingData = false;
+      });
+    } catch (e) {
+      print('Error loading business data: $e');
+      setState(() {
+        _isLoadingData = false;
+      });
+    }
+  }
+
+  void _setupBusinessStatusMonitoring() {
+    try {
+      // First check if business is already online before setting up monitoring
+      _checkBusinessOnlineStatus();
+      
+      // Only set up stream monitoring if business is offline
+      if (_isCheckingStatus) {
+        _businessStatusSubscription = Supabase.instance.client
+            .from('business_profiles')
+            .stream(primaryKey: ['id'])
+            .eq('id', widget.businessId)
+            .listen((data) {
+              if (mounted && data.isNotEmpty) {
+                final businessData = data.first;
+                if (businessData['owner_is_online'] == true) {
+                  _onBusinessOwnerOnline();
+                }
+              }
+            });
+      }
+    } catch (e) {
+      debugPrint('Error setting up business status monitoring: $e');
+    }
+  }
+
+  void _startPeriodicStatusCheck() {
+    // Check status every 5 seconds
+    _statusCheckTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (mounted && _isCheckingStatus) {
+        _checkBusinessOnlineStatus();
+      }
+    });
+  }
+
+  Future<void> _checkBusinessOnlineStatus() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('owner_is_online')
+          .eq('id', widget.businessId)
+          .single();
+      
+      if (mounted && response['owner_is_online'] == true) {
+        _onBusinessOwnerOnline();
+      }
+    } catch (e) {
+      debugPrint('Error checking business status: $e');
+    }
+  }
+
+  void _onBusinessOwnerOnline() {
+    if (mounted) {
+      // Stop monitoring
+      _isCheckingStatus = false;
+      _statusCheckTimer?.cancel();
+      _businessStatusSubscription?.cancel();
+      
+      // Show notification to user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${_businessData?['business_name'] ?? 'Laundry Shop Owner'} is now online. Returning to chat...'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      // Navigate back after a short delay
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      });
+    }
+  }
+
+  void _addWelcomeMessage() {
+    setState(() {
+      _chatMessages.add({
+        'isBot': true,
+        'message': 'Hello! I\'m ${widget.businessName}\'s assistant. I can help you with information about our services, prices, business hours, and more. What would you like to know?',
+        'timestamp': DateTime.now(),
+      });
+    });
+  }
+
+  void _handleUserMessage(String message) {
+    if (message.trim().isEmpty) return;
+    
+    // Prevent processing if already typing (prevents spam)
+    if (_isTyping) {
+      return;
+    }
+    
+    // Rate limiting: Check if enough time has passed since last message
+    final now = DateTime.now();
+    if (_lastMessageTime != null && now.difference(_lastMessageTime!) < _messageCooldown) {
+      return; // Too soon, ignore this message
+    }
+    
+    _lastMessageTime = now;
+
+    setState(() {
+      _chatMessages.add({
+        'isBot': false,
+        'message': message.trim(),
+        'timestamp': DateTime.now(),
+      });
+      _isTyping = true;
+    });
+
+    _messageController.clear();
+
+    // Generate response immediately (typing indicator will handle the delay)
+    _generateBotResponse(message.trim().toLowerCase());
+  }
+
+  void _generateBotResponse(String userMessage) {
+    if (_businessData == null) {
+      _addBotMessage('I\'m sorry, but I couldn\'t load the business information. Please try again later.');
+      return;
+    }
+
+    // Add typing indicator
+    setState(() {
+      _chatMessages.add({
+        'isBot': true,
+        'message': '',
+        'isTyping': true,
+        'timestamp': DateTime.now(),
+      });
+    });
+
+    // Simulate processing time
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      // Remove typing indicator
+      setState(() {
+        _chatMessages.removeWhere((msg) => msg['isTyping'] == true);
+      });
+
+      String response = _processUserQuery(userMessage);
+      _addBotMessage(response);
+    });
+  }
+
+  String _processUserQuery(String query) {
+    // Price-related questions
+    if (query.contains('price') || query.contains('cost') || query.contains('how much')) {
+      return _getPriceInformation(query);
+    }
+    
+    // Service-related questions
+    if (query.contains('service') || query.contains('what do you offer') || query.contains('available')) {
+      return _getServiceInformation();
+    }
+    
+    // Hours-related questions
+    if (query.contains('hour') || query.contains('open') || query.contains('close') || query.contains('time')) {
+      return _getHoursInformation();
+    }
+    
+    // Location/delivery questions
+    if (query.contains('location') || query.contains('address') || query.contains('where')) {
+      return _getLocationInformation();
+    }
+    
+    // Delivery questions
+    if (query.contains('delivery') || query.contains('deliver')) {
+      return _getDeliveryInformation();
+    }
+    
+    // Contact questions
+    if (query.contains('contact') || query.contains('phone') || query.contains('call')) {
+      return _getContactInformation();
+    }
+    
+    // About business
+    if (query.contains('about') || query.contains('tell me')) {
+      return _getAboutInformation();
+    }
+    
+    // Default response
+    return 'I\'m here to help! You can ask me about our services, prices, business hours, location, delivery options, or contact information. What would you like to know?';
+  }
+
+  String _getPriceInformation(String query) {
+    final servicePrices = _businessData!['service_prices'] as List<dynamic>?;
+    if (servicePrices == null || servicePrices.isEmpty) {
+      return 'I don\'t have specific pricing information available at the moment. Please contact us directly for pricing details.';
+    }
+
+    // Check if user asked about a specific service
+    for (var item in servicePrices) {
+      if (item is Map<String, dynamic>) {
+        String serviceName = item['service']?.toString().toLowerCase() ?? '';
+        String price = item['price']?.toString() ?? '0';
+        
+        // Check if query mentions this specific service
+        if (query.contains(serviceName.toLowerCase())) {
+          return 'Our ${item['service']} service costs ₱${double.parse(price).toStringAsFixed(2)}.';
+        }
+      }
+    }
+
+    // General price response
+    String priceList = servicePrices.map((item) {
+      if (item is Map<String, dynamic>) {
+        String service = item['service'] ?? 'Service';
+        String price = item['price']?.toString() ?? '0';
+        return '• $service: ₱${double.parse(price).toStringAsFixed(2)}';
+      }
+      return '';
+    }).join('\n');
+
+    return 'Here are our service prices:\n$priceList\n\nPrices may vary based on specific requirements.';
+  }
+
+  String _getServiceInformation() {
+    final servicesOffered = _businessData!['services_offered'];
+    final servicePrices = _businessData!['service_prices'] as List<dynamic>?;
+    
+    String serviceList = '';
+    if (servicePrices != null && servicePrices.isNotEmpty) {
+      serviceList = servicePrices.map((item) {
+        if (item is Map<String, dynamic>) {
+          return '• ${item['service'] ?? 'Service'}';
+        }
+        return '';
+      }).join('\n');
+    } else if (servicesOffered is List) {
+      serviceList = servicesOffered.map((service) => '• $service').join('\n');
+    } else if (servicesOffered is String) {
+      serviceList = '• $servicesOffered';
+    }
+
+    return 'We offer the following laundry services:\n$serviceList\n\nEach service is designed to meet your specific laundry needs with quality care.';
+  }
+
+  String _getHoursInformation() {
+    final openHours = _businessData!['open_hours'];
+    if (openHours == null || openHours.toString().isEmpty) {
+      return 'Our business hours are not specified. Please contact us directly for our operating hours.';
+    }
+    return 'Our business hours are:\n$openHours\n\nWe\'re here to serve you during these times. Feel free to drop off or pick up your laundry!';
+  }
+
+  String _getLocationInformation() {
+    final address = _businessData!['business_address'] ?? 'Address not specified';
+    final latitude = _businessData!['latitude'];
+    final longitude = _businessData!['longitude'];
+    
+    if (latitude != null && longitude != null) {
+      // Return special marker to indicate location with map
+      return 'MAP_LOCATION:$address';
+    }
+    
+    return 'You can find us at:\n$address\n\nWe\'re conveniently located to serve your laundry needs. Feel free to visit us!';
+  }
+
+  String _getDeliveryInformation() {
+    final doesDelivery = _businessData!['does_delivery'] ?? false;
+    final deliveryFee = _businessData!['delivery_fee'];
+    
+    if (!doesDelivery) {
+      return 'We currently do not offer delivery services. Please visit our location to drop off and pick up your laundry.';
+    }
+    
+    if (deliveryFee != null && deliveryFee > 0) {
+      return 'Yes, we offer delivery services! The delivery fee is ₱${double.parse(deliveryFee.toString()).toStringAsFixed(2)}. We\'ll deliver your clean laundry right to your doorstep.';
+    }
+    
+    return 'Yes, we offer free delivery services! We\'ll deliver your clean laundry right to your doorstep at no extra cost.';
+  }
+
+  String _getContactInformation() {
+    final phoneNumber = _businessData!['business_phone_number'];
+    if (phoneNumber == null || phoneNumber.toString().isEmpty) {
+      return 'I don\'t have our phone number available. Please visit our location or check our business profile for contact details.';
+    }
+    return 'You can reach us at: $phoneNumber\n\nFeel free to call us for any questions, scheduling, or special requests!';
+  }
+
+  String _getAboutInformation() {
+    final aboutBusiness = _businessData!['about_business'];
+    if (aboutBusiness == null || aboutBusiness.toString().isEmpty) {
+      return '${widget.businessName} is your trusted local laundry service provider. We\'re committed to providing high-quality laundry care with convenient service options.';
+    }
+    return aboutBusiness.toString();
+  }
+
+  void _addBotMessage(String message) {
+    setState(() {
+      _isTyping = false;
+      
+      if (message.startsWith('MAP_LOCATION:')) {
+        final address = message.substring('MAP_LOCATION:'.length);
+        final latitude = _businessData!['latitude'];
+        final longitude = _businessData!['longitude'];
+        
+        _chatMessages.add({
+          'isBot': true,
+          'message': 'You can find us at:\n$address\n\nWe\'re conveniently located to serve your laundry needs. Feel free to visit us!',
+          'timestamp': DateTime.now(),
+          'showMap': true,
+          'latitude': latitude,
+          'longitude': longitude,
+        });
+      } else {
+        _chatMessages.add({
+          'isBot': true,
+          'message': message,
+          'timestamp': DateTime.now(),
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF5A35E3),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.support_agent,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Chat Assistant',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.businessName,
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: Colors.white.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      Text(
+                        'is currently offline',
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: Colors.white.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Column(
+        children: [
+          // Chat messages area
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                border: Border(top: BorderSide(color: Colors.grey[300]!)),
+              ),
+              child: Column(
+                children: [
+                  // Messages list
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _chatMessages.length,
+                      itemBuilder: (context, index) {
+                        final message = _chatMessages[index];
+                        return _buildChatMessage(message);
+                      },
+                    ),
+                  ),
+                  
+                  // Typing indicator
+                  if (_isTyping)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[600],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[600],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[600],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Message input
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  spreadRadius: 1,
+                  blurRadius: 3,
+                  offset: const Offset(0, -1),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    decoration: InputDecoration(
+                      hintText: _isTyping ? 'Assistant is typing...' : 'Ask about services, prices, hours...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: _isTyping ? Colors.grey[200] : Colors.grey[100],
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      hintStyle: TextStyle(
+                        color: _isTyping ? Colors.grey[500] : Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                    ),
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 14,
+                    ),
+                    enabled: !_isTyping,
+                    onSubmitted: _handleUserMessage,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF5A35E3),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: IconButton(
+                    onPressed: _isTyping ? null : () => _handleUserMessage(_messageController.text),
+                    icon: Icon(Icons.send, color: _isTyping ? Colors.white.withValues(alpha: 0.5) : Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Quick suggestions
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: Colors.grey[200]!)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Quick questions you can ask:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildQuickQuestion('Services'),
+                      const SizedBox(width: 8),
+                      _buildQuickQuestion('Prices'),
+                      const SizedBox(width: 8),
+                      _buildQuickQuestion('Hours'),
+                      const SizedBox(width: 8),
+                      _buildQuickQuestion('Location'),
+                      const SizedBox(width: 8),
+                      _buildQuickQuestion('Delivery'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChatMessage(Map<String, dynamic> message) {
+    final isBot = message['isBot'] as bool;
+    final isTyping = message['isTyping'] as bool? ?? false;
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: isBot ? MainAxisAlignment.start : MainAxisAlignment.end,
+        children: [
+          if (isBot) ...[
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: const Color(0xFF5A35E3).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.support_agent,
+                color: Color(0xFF5A35E3),
+                size: 16,
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+          
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isBot ? Colors.white : const Color(0xFF5A35E3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isBot ? Colors.grey[300]! : Colors.transparent,
+                ),
+              ),
+              child: isTyping
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[600],
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[600],
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[600],
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ],
+                    )
+                  : message['showMap'] == true
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              message['message'] as String,
+                              style: TextStyle(
+                                color: isBot ? Colors.black87 : Colors.white,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Column(
+                              children: [
+                                Container(
+                                  height: 200,
+                                  width: 250,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.grey[300]!),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: FlutterMap(
+                                      options: MapOptions(
+                                        initialCenter: LatLng(
+                                          message['latitude'] as double,
+                                          message['longitude'] as double,
+                                        ),
+                                        initialZoom: 15.0,
+                                        minZoom: 15.0,
+                                        maxZoom: 15.0,
+                                        interactionOptions: const InteractionOptions(
+                                          flags: InteractiveFlag.none,
+                                        ),
+                                      ),
+                                      children: [
+                                        TileLayer(
+                                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                        ),
+                                        MarkerLayer(
+                                          markers: [
+                                            Marker(
+                                              point: LatLng(
+                                                message['latitude'] as double,
+                                                message['longitude'] as double,
+                                              ),
+                                              width: 40,
+                                              height: 40,
+                                              child: const Icon(
+                                                Icons.location_pin,
+                                                color: Colors.red,
+                                                size: 30,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: 250,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => GetDirectionScreen(
+                                            destinationLatitude: message['latitude'] as double,
+                                            destinationLongitude: message['longitude'] as double,
+                                            businessName: widget.businessName,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF5A35E3),
+                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Get Direction',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        )
+                      : Text(
+                          message['message'] as String,
+                          style: TextStyle(
+                            color: isBot ? Colors.black87 : Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
+            ),
+          ),
+          
+          if (!isBot) ...[
+            const SizedBox(width: 8),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: const Color(0xFF5A35E3).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.person,
+                color: Color(0xFF5A35E3),
+                size: 16,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickQuestion(String question) {
+    return GestureDetector(
+      onTap: () {
+        // Only handle if not currently typing (prevents spam)
+        if (!_isTyping) {
+          _messageController.text = question.toLowerCase();
+          _handleUserMessage(question.toLowerCase());
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: _isTyping 
+              ? const Color(0xFF5A35E3).withValues(alpha: 0.05)
+              : const Color(0xFF5A35E3).withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _isTyping
+                ? const Color(0xFF5A35E3).withValues(alpha: 0.1)
+                : const Color(0xFF5A35E3).withValues(alpha: 0.3),
+          ),
+        ),
+        child: Text(
+          question,
+          style: TextStyle(
+            color: _isTyping 
+                ? const Color(0xFF5A35E3).withValues(alpha: 0.5)
+                : const Color(0xFF5A35E3),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+
 }
 
 class FeedbackModal extends StatefulWidget {
@@ -1204,7 +2705,7 @@ class _FeedbackModalState extends State<FeedbackModal> {
                       color: const Color(0xFF5A35E3), // Changed to solid color
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF5A35E3).withOpacity(0.3),
+                          color: const Color(0xFF5A35E3).withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),

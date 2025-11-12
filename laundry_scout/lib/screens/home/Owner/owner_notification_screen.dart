@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'package:laundry_scout/screens/home/Owner/edit_profile_screen.dart';
 import 'package:collection/collection.dart';
+import 'package:laundry_scout/screens/home/Owner/business_docs_screen.dart';
 
 class OwnerNotificationScreen extends StatefulWidget {
   const OwnerNotificationScreen({super.key});
@@ -176,6 +177,33 @@ class OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
     }
   }
 
+  Future<void> _deleteNotification(Map<String, dynamic> notification) async {
+    try {
+      final notificationId = notification['id'];
+      
+      await Supabase.instance.client
+          .from('notifications')
+          .delete()
+          .eq('id', notificationId);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Notification deleted'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print('Error deleting notification: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting notification: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      rethrow;
+    }
+  }
+
   IconData _getNotificationIcon(String type) {
     switch (type) {
       case 'order':
@@ -188,6 +216,8 @@ class OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
         return Icons.settings;
       case 'profile_setup': 
         return Icons.person_add;
+      case 'profile_setup_rejected':
+        return Icons.cancel;
       default:
         return Icons.notifications;
     }
@@ -205,6 +235,8 @@ class OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
         return Colors.grey;
       case 'profile_setup':
         return Color(0xFF5A35E3);
+      case 'profile_setup_rejected':
+        return Colors.red;
       default:
         return const Color(0xFF7B61FF);
     }
@@ -280,7 +312,50 @@ class OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
 
       if (!mounted) return;
 
-      if (!isProfileComplete) {
+      final profileStatus = profileData['status'];
+
+      if (profileStatus == 'rejected') {
+        print('🔍 [OWNER] _checkAndAddProfileSetupNotification: Profile is REJECTED. Managing notifications.');
+
+        // Find all existing profile setup related notifications
+        final allProfileSetupNotifications = _notifications.where(
+            (n) => n['type'] == 'profile_setup' || n['type'] == 'profile_setup_rejected').toList();
+
+        // Mark all existing profile setup related notifications as read
+        for (var notification in allProfileSetupNotifications) {
+          if (!(notification['is_read'] ?? false)) {
+            await Supabase.instance.client
+                .from('notifications')
+                .update({'is_read': true})
+                .eq('id', notification['id']);
+            print('✅ [OWNER] _checkAndAddProfileSetupNotification: Marked notification ${notification['id']} as read due to profile rejection.');
+          }
+        }
+
+        // Check if an unread 'profile_setup_rejected' notification already exists
+        final existingUnreadRejectedNotification = _notifications.firstWhereOrNull(
+            (n) => n['type'] == 'profile_setup_rejected' && !(n['is_read'] ?? false));
+
+        if (existingUnreadRejectedNotification == null) {
+          // Insert new 'profile_setup_rejected' notification
+          final newNotification = {
+            'user_id': user.id,
+            'type': 'profile_setup_rejected',
+            'status_type': 'rejected',
+            'title': 'Business Profile Rejected',
+            'message': 'Your business profile has been rejected. Reason: ${profileData['rejection_reason'] ?? 'N/A'}. Notes: ${profileData['rejection_notes'] ?? 'N/A'}',
+            'is_read': false,
+            'created_at': DateTime.now().toIso8601String(),
+          };
+          await Supabase.instance.client.from('notifications').insert(newNotification);
+          setState(() {
+            _notifications.insert(0, newNotification);
+          });
+          print('✅ [OWNER] _checkAndAddProfileSetupNotification: Added new unread rejected profile setup notification.');
+        } else {
+          print('ℹ️ [OWNER] _checkAndAddProfileSetupNotification: Unread rejected profile setup notification already exists.');
+        }
+      } else if (!isProfileComplete) {
         print('🔍 [OWNER] _checkAndAddProfileSetupNotification: Profile is INCOMPLETE. Checking for existing incomplete notification.');
         // Check if an 'profile_setup_incomplete' notification already exists (read or unread)
         final existingIncompleteNotification = _notifications.firstWhereOrNull(
@@ -370,6 +445,8 @@ class OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
           return 'Business Profile Complete!';
         }
         return 'Profile Setup Notification';
+      case 'profile_setup_rejected':
+        return 'Business Profile Rejected';
       default:
         return 'New Notification';
     }
@@ -377,15 +454,17 @@ class OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
 
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF5A35E3),
       body: SafeArea(
         child: Column(
           children: [
-           
-            const SizedBox(height: 10),            const SizedBox(height: 10),
-           
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('lib/assets/bg.png'),
+                  fit: BoxFit.cover,
+                ),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -409,10 +488,6 @@ class OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
               child: Container(
                 decoration: const BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(25),
-                    topRight: Radius.circular(25),
-                  ),
                 ),
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
@@ -444,80 +519,159 @@ class OwnerNotificationScreenState extends State<OwnerNotificationScreen> {
                               final notification = _notifications[index];
                               final isRead = notification['is_read'] ?? false;
                               
-                              return Container(
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isRead ? Colors.white : Colors.blue.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: isRead ? Colors.grey.withOpacity(0.2) : Colors.blue.withOpacity(0.2),
+                              return Dismissible(
+                                key: Key(notification['id']),
+                                background: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 4,
                                   ),
-                                ),
-                                child: ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundColor: _getNotificationColor(notification['type'] ?? 'general').withOpacity(0.1),
-                                    child: Icon(
-                                      _getNotificationIcon(notification['type'] ?? 'general'),
-                                      color: _getNotificationColor(notification['type'] ?? 'general'),
-                                      size: 20,
-                                    ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  title: Text(
-                                    _getDisplayTitle(notification),
-                                    style: TextStyle(
-                                      fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-                                      color: Colors.black,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                  child: const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        notification['message'] ?? '',
-                                        style: TextStyle(
-                                          color: Colors.grey[600],
-                                          fontSize: 14,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
+                                      Icon(
+                                        Icons.delete,
+                                        color: Colors.white,
+                                        size: 28,
                                       ),
-                                      const SizedBox(height: 4),
+                                      SizedBox(height: 4),
                                       Text(
-                                        _formatTime(notification['created_at']),
+                                        'Delete',
                                         style: TextStyle(
-                                          color: Colors.grey[500],
+                                          color: Colors.white,
                                           fontSize: 12,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ],
                                   ),
-                                  trailing: !isRead
-                                      ? Container(
-                                          width: 8,
-                                          height: 8,
-                                          decoration: const BoxDecoration(
-                                            color: Color(0xFF5A35E3),
+                                ),
+                                direction: DismissDirection.endToStart,
+                                confirmDismiss: (direction) async {
+                                  return await showDialog<bool>(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: const Text('Confirm Delete'),
+                                        content: const Text('Are you sure you want to delete this notification?'),
+                                        actions: <Widget>[
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(false),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(true),
+                                            child: const Text('Delete'),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                },
+                                onDismissed: (direction) {
+                                  _deleteNotification(notification['id']);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Notification dismissed')),
+                                  );
+                                },
+                                child: InkWell(
+                                  onTap: () {
+                                    // Navigate based on notification type and status
+                                    if (notification['type'] == 'profile_setup') {
+                                      if (notification['status_type'] == 'incomplete') {
+                                        // "Complete business profile" -> go to edit profile
+                                        Navigator.push(context, MaterialPageRoute(builder: (context) => EditProfileScreen()));
+                                      } else if (notification['status_type'] == 'rejected') {
+                                        // "Profile setup" (rejected) -> go to business docs
+                                        Navigator.push(context, MaterialPageRoute(builder: (context) => BusinessDocsScreen()));
+                                      } else {
+                                        // Default "Profile setup" -> go to business docs
+                                        Navigator.push(context, MaterialPageRoute(builder: (context) => BusinessDocsScreen()));
+                                      }
+                                    } else if (notification['type'] == 'profile_setup_rejected') {
+                                      // "Business Profile Rejected" -> go to business docs
+                                      Navigator.push(context, MaterialPageRoute(builder: (context) => BusinessDocsScreen()));
+                                    }
+                                    _markAsRead(notification['id']);
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: isRead ? Colors.white : Colors.blue.shade50,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.1),
+                                          spreadRadius: 1,
+                                          blurRadius: 5,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: _getNotificationColor(notification['type']),
                                             shape: BoxShape.circle,
                                           ),
-                                        )
-                                      : null,
-                                  onTap: () {
-                                    if (!isRead) {
-                                      _markAsRead(notification['id']);
-                                    }
-                                    if (notification['type'] == 'profile_setup') {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (context) => const EditProfileScreen(),
+                                          child: Icon(
+                                            _getNotificationIcon(notification['type']),
+                                            color: Colors.white,
+                                            size: 20,
+                                          ),
                                         ),
-                                      );
-                                    }
-                                  },
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                _getDisplayTitle(notification),
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                  color: isRead ? Colors.grey.shade700 : Colors.black,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                notification['message'] ?? '',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: isRead ? Colors.grey.shade500 : Colors.grey.shade700,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                _formatTime(notification['created_at']),
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey.shade400,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (!isRead)
+                                          Container(
+                                            width: 10,
+                                            height: 10,
+                                            decoration: BoxDecoration(
+                                              color: Colors.blue,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               );
                             },

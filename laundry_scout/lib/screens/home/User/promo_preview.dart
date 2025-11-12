@@ -93,8 +93,8 @@ class _PromoPreviewScreenState extends State<PromoPreviewScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 300,
-            pinned: true,
+            expandedHeight: 200,
+            pinned: false,
             flexibleSpace: FlexibleSpaceBar(
               background: promoImageUrl != null
                   ? OptimizedImage(

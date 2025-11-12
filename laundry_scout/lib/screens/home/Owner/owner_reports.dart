@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element, unused_field
+
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -29,13 +31,22 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
   void initState() {
     super.initState();
     _monthYears = _generateMonthYears(); // Initialize with default before async call
-    _selectedMonthYear = _monthYears.first;
+    // Default selection to the current month
+    final now = DateTime.now();
+    final currentLabel = '${_getMonthName(now.month)} ${now.year}';
+    _selectedMonthYear = _monthYears.contains(currentLabel)
+        ? currentLabel
+        : (_monthYears.isNotEmpty ? _monthYears.last : null);
     _filterDataByMonth();
     _loadBusinessProfileCreationDate().then((_) {
       // After business creation date is loaded, regenerate month years and filter data
       setState(() {
         _monthYears = _generateMonthYears();
-        _selectedMonthYear = _monthYears.first;
+        final now2 = DateTime.now();
+        final currentLabel2 = '${_getMonthName(now2.month)} ${now2.year}';
+        _selectedMonthYear = _monthYears.contains(currentLabel2)
+            ? currentLabel2
+            : (_monthYears.isNotEmpty ? _monthYears.last : null);
         _filterDataByMonth();
       });
     });
@@ -125,7 +136,9 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
   void _calculateTotalEarnings() {
     _totalEarnings = 0.0;
     for (var order in _filteredOrders) {
-      _totalEarnings += (order['total_amount'] as num? ?? 0.0).toDouble();
+      if (order['status'] == 'completed') {
+        _totalEarnings += (order['total_amount'] as num? ?? 0.0).toDouble();
+      }
     }
   }
 
@@ -157,23 +170,37 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
     }
   }
 
+  // Determine earliest order date from all orders to build month range
+  DateTime? _getEarliestOrderDate() {
+    DateTime? earliest;
+    for (var order in widget.allOrders) {
+      final createdAt = order['created_at'];
+      if (createdAt == null) continue;
+      try {
+        final date = DateTime.parse(createdAt);
+        if (earliest == null || date.isBefore(earliest)) {
+          earliest = date;
+        }
+      } catch (_) {
+        // Ignore parse errors
+      }
+    }
+    return earliest;
+  }
+
   List<String> _generateMonthYears() {
     List<String> monthYears = [];
     DateTime now = DateTime.now();
-    
-    // Start from business creation date or current date if not available
-    DateTime startDate = _businessCreationDate ?? now;
-    
-    // Ensure we don't go beyond the current date
-    DateTime endDate = DateTime(now.year + 1, now.month, now.day);
-    
-    // Generate months from start date to end date
-    for (DateTime date = DateTime(startDate.year, startDate.month, 1); 
-         date.isBefore(endDate) || date.isAtSameMomentAs(endDate); 
-         date = DateTime(date.year, date.month + 1, 1)) {
+    // Always include 12 months before and 12 months after the current month
+    DateTime startDate = DateTime(now.year, now.month - 12, 1);
+    DateTime endDate = DateTime(now.year, now.month + 12, 1);
+
+    for (DateTime date = startDate;
+        date.isBefore(endDate) || date.isAtSameMomentAs(endDate);
+        date = DateTime(date.year, date.month + 1, 1)) {
       monthYears.add('${_getMonthName(date.month)} ${date.year}');
     }
-    
+
     return monthYears;
   }
 
@@ -210,17 +237,16 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
 
   Widget _buildStatusChip(String label, int count, Color color, IconData icon) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color, size: 16),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             count.toString(),
             style: TextStyle(
@@ -229,7 +255,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
               color: color,
             ),
           ),
-          SizedBox(height: 2),
+          const SizedBox(height: 2),
           Text(
             label,
             style: TextStyle(
@@ -300,6 +326,16 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                 _buildPDFCard('Total Earnings', 'Php ${_totalEarnings.toStringAsFixed(2)}'),
                 _buildPDFCard('Top Service', _topUsedService),
               ],
+            ),
+            pw.SizedBox(height: 5),
+            pw.Text(
+              'Only Completed Orders are counted',
+              textAlign: pw.TextAlign.center,
+              style: pw.TextStyle(
+                fontSize: 10,
+                fontStyle: pw.FontStyle.italic,
+                color: PdfColors.grey700,
+              ),
             ),
             pw.SizedBox(height: 20),
             
@@ -392,14 +428,15 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
               border: pw.TableBorder.all(),
               children: [
                 pw.TableRow(
-                  children: [
-                    _buildPDFTableCell('Customer', isHeader: true),
-                    _buildPDFTableCell('Services', isHeader: true),
-                    _buildPDFTableCell('Amount', isHeader: true),
-                    _buildPDFTableCell('Date', isHeader: true),
-                  ],
-                ),
-                ..._filteredOrders.take(10).map((order) {
+                    children: [
+                      _buildPDFTableCell('Customer', isHeader: true),
+                      _buildPDFTableCell('Services', isHeader: true),
+                      _buildPDFTableCell('Status', isHeader: true),
+                      _buildPDFTableCell('Amount', isHeader: true),
+                      _buildPDFTableCell('Date', isHeader: true),
+                    ],
+                  ),
+                ..._filteredOrders.map((order) {
                   final customerName = order['user_profiles']?['first_name'] != null && order['user_profiles']?['last_name'] != null
                       ? '${order['user_profiles']['first_name']} ${order['user_profiles']['last_name']}'
                       : order['customer_name'] != null
@@ -415,6 +452,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                     children: [
                       _buildPDFTableCell(customerName),
                       _buildPDFTableCell(services),
+                      _buildPDFTableCell(order['status'] ?? 'N/A'),
                       _buildPDFTableCell('Php $totalAmount'),
                       _buildPDFTableCell(createdAt),
                     ],
@@ -422,14 +460,6 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                 }).toList(),
               ],
             ),
-            if (_filteredOrders.length > 10)
-              pw.Text(
-                '... and ${_filteredOrders.length - 10} more transactions',
-                style: pw.TextStyle(
-                  fontSize: 10,
-                  fontStyle: pw.FontStyle.italic,
-                ),
-              ),
           ];
         },
       ),
@@ -487,23 +517,90 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
     );
   }
 
+  Widget _buildSummaryCard( {required String label, required String value, required IconData icon, required Color color, bool alignLeft = false, bool whiteBackgroundIcon = false, double valueFontSize = 18}) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      color: color,
+      child: Container(
+        height: 125,
+        padding: const EdgeInsets.all(14.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: whiteBackgroundIcon ? BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ) : null,
+              child: Icon(
+                icon,
+                color: whiteBackgroundIcon ? const Color(0xFF5A35E3) : Colors.white,
+                size: 26,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8), 
+                fontSize: 12,
+                fontWeight: FontWeight.w500
+              ),
+              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: valueFontSize,
+                fontWeight: FontWeight.bold, 
+                color: Colors.white
+              ),
+              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false, // Remove the back button
-        title: const Text('General Report'),
-        centerTitle: false,
-        backgroundColor: const Color(0xFF5A35E3), // Set AppBar background to purple
-        foregroundColor: Colors.white, // Set AppBar text/icon color to white
-        titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Poppins'), // Set title text color to white and font to Poppins
-      ),
-      backgroundColor: Colors.white, // Set Scaffold background to white
-      body: SingleChildScrollView(
-        child: Center(
+            automaticallyImplyLeading: false,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('lib/assets/bg.png'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            title: const Text('General Report'),
+            centerTitle: true,
+            foregroundColor: Colors.white,
+            titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
+          ),
+      body: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
@@ -511,10 +608,9 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                   children: [
                     // Only show previous button if not at the first month
                     if (_monthYears.indexOf(_selectedMonthYear!) > 0)
-                      IconButton(
-                        icon: Icon(Icons.arrow_back_ios, color: const Color(0xFF5A35E3)),
-                        onPressed: () {
-                          final currentIndex = _monthYears.indexOf(_selectedMonthYear!);
+                      GestureDetector(
+                        onTap: () {
+                          final currentIndex = _monthYears.indexOf(_selectedMonthYear!); 
                           if (currentIndex > 0) {
                             setState(() {
                               _selectedMonthYear = _monthYears[currentIndex - 1];
@@ -522,177 +618,133 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                             });
                           }
                         },
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF5A35E3),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.chevron_left,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
                       )
                     else
-                      SizedBox(width: 48), // Placeholder to maintain alignment
+                      const SizedBox(width: 48), // Placeholder to maintain alignment
+                    const SizedBox(width: 8),
                     Text(
                       _selectedMonthYear!,
-                      style: TextStyle(
-                        color: const Color(0xFF5A35E3),
+                      style: const TextStyle(
+                        color: Colors.black,
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.arrow_forward_ios, color: const Color(0xFF5A35E3)),
-                      onPressed: () {
-                        final currentIndex = _monthYears.indexOf(_selectedMonthYear!);
-                        if (currentIndex < _monthYears.length - 1) {
-                          setState(() {
-                            _selectedMonthYear = _monthYears[currentIndex + 1];
-                            _filterDataByMonth();
-                          });
-                        }
-                      },
+                    const SizedBox(width: 8),
+                    // Only show next button if not at the last month
+                    if (_monthYears.indexOf(_selectedMonthYear!) < _monthYears.length - 1)
+                      GestureDetector(
+                        onTap: () {
+                          final currentIndex = _monthYears.indexOf(_selectedMonthYear!); 
+                          if (currentIndex < _monthYears.length - 1) {
+                            setState(() {
+                              _selectedMonthYear = _monthYears[currentIndex + 1];
+                              _filterDataByMonth();
+                            });
+                          }
+                        },
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF5A35E3),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.chevron_right,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      const SizedBox(width: 48),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      flex: 2, // Bookings card takes less space
+                      child: _buildSummaryCard(
+                        label: 'Bookings',
+                        value: '${_filteredOrderStats['total'] ?? 0}',
+                        icon: Icons.shopping_bag,
+                        color: const Color(0xFF5A35E3),
+                        valueFontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(width: 1),
+                    Expanded(
+                      flex: 2, // Top Service card takes less space
+                      child: _buildSummaryCard(
+                        label: 'Top Service',
+                        value: _topUsedService.length > 10 ? '${_topUsedService.substring(0, 10)}...' : _topUsedService,
+                        icon: Icons.star,
+                        color: const Color(0xFF5A35E3),
+                        valueFontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(width: 1),
+                    Expanded(
+                      flex: 3, // Total Earnings card takes more space (50% longer)
+                      child: _buildSummaryCard(
+                        label: 'Total Earnings',
+                        value: 'P${_totalEarnings.toStringAsFixed(2)}',
+                        icon: Icons.attach_money,
+                        color: const Color(0xFF5A35E3),
+                        alignLeft: true,
+                        whiteBackgroundIcon: true,
+                        valueFontSize: 15,
+                      ),
                     ),
                   ],
                 ),
               ),
-              SizedBox(height: 16),
-              // Summary Cards Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Expanded(
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      color: const Color(0xFF5A35E3),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.shopping_bag,
-                              color: Colors.white.withOpacity(0.8),
-                              size: 24,
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Total Bookings',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9), 
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              '${_filteredOrderStats['total'] ?? 0}',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold, 
-                                color: Colors.white
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      color: const Color(0xFF5A35E3),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.attach_money,
-                              color: Colors.white.withOpacity(0.8),
-                              size: 24,
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Total Earnings',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9), 
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              '₱${_totalEarnings.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold, 
-                                color: Colors.white
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      color: const Color(0xFF5A35E3),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.star,
-                              color: Colors.white.withOpacity(0.8),
-                              size: 24,
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Top Service',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9), 
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              _topUsedService.length > 8 ? '${_topUsedService.substring(0, 8)}...' : _topUsedService,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold, 
-                                color: Colors.white
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16),
+              const SizedBox(height: 1),
               // Order Status Breakdown Section
               Card(
                 color: Colors.white,
-                elevation: 2,
+                elevation: 0,
+                shadowColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Color(0xFFE3E3E3), width: 1),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Order Status Overview',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF5A35E3),
+                      Center(
+                        child: Text(
+                          'Order Status Overview',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: const Color.fromARGB(255, 2, 2, 2),
+                          ),
                         ),
                       ),
                       SizedBox(height: 16),
@@ -734,8 +786,14 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
               if (_serviceData.isNotEmpty)
                 Card(
                   color: const Color.fromARGB(255, 255, 255, 255),
+                  elevation: 0,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: Color(0xFFE3E3E3), width: 1),
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
                     child: Column(
                       children: [
                         Text(
@@ -743,7 +801,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                           style: TextStyle(
                             fontSize: 18, 
                             fontWeight: FontWeight.bold, 
-                            color: const Color(0xFF5A35E3)
+                            color: Colors.black,
                           ),
                         ),
                         SizedBox(height: 16),
@@ -754,7 +812,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                             Expanded(
                               flex: 2,
                               child: Container(
-                                height: 200,
+                                height: 150,
                                 child: PieChart(
                                   PieChartData(
                                     sections: _serviceData.asMap().entries.map((entry) {
@@ -765,7 +823,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                                         color: colors[index % colors.length],
                                         value: service.value,
                                         title: '${service.value.toStringAsFixed(0)}',
-                                        radius: 70,
+                                        radius: 40,
                                         titleStyle: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
@@ -774,7 +832,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                                       );
                                     }).toList(),
                                     sectionsSpace: 2,
-                                    centerSpaceRadius: 40,
+                                    centerSpaceRadius: 30,
                                     pieTouchData: PieTouchData(
                                       touchCallback: (FlTouchEvent event, pieTouchResponse) {},
                                     ),
@@ -789,21 +847,12 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    'Top Services',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF5A35E3)
-                                    ),
-                                  ),
-                                  SizedBox(height: 8),
                                   ..._serviceData.asMap().entries.map((entry) {
                                     int index = entry.key;
                                     MapEntry<String, double> service = entry.value;
                                     final colors = _getPieChartColors();
                                     return Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                      padding: const EdgeInsets.symmetric(vertical: 2.0),
                                       child: Row(
                                         children: [
                                           Container(
@@ -855,6 +904,12 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
               // Recent Transactions Section
               Card(
                 color: const Color.fromARGB(255, 255, 255, 255),
+                elevation: 0,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: Color(0xFFE3E3E3), width: 1),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -868,7 +923,7 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                             style: TextStyle(
                               fontSize: 18, 
                               fontWeight: FontWeight.bold, 
-                              color: const Color(0xFF5A35E3)
+                              color: Colors.black
                             ),
                           ),
                           Text(
@@ -1022,29 +1077,32 @@ class _OwnerReportsScreenState extends State<OwnerReportsScreen> {
                               textAlign: TextAlign.center,
                             ),
                           ),
-                    ],
+                        SizedBox(height: 16),
+                        // Generate Report Button moved to end of Transactions section
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _generatePDF,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xFF5A35E3),
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              'Generate Report',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton(
-          onPressed: _generatePDF,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF5A35E3),
-            foregroundColor: Colors.white,
-            padding: EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              ],
             ),
-          ),
-          child: Text(
-            'Generate Report',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
       ),

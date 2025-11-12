@@ -413,7 +413,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                           borderRadius: BorderRadius.circular(16),
                           child: OptimizedImage(
                             imageUrl: _businessProfile!["cover_photo_url"],
-                            height: 180,
+                            height: 250,
                             width: double.infinity,
                             fit: BoxFit.cover,
                             placeholder: Container(
@@ -454,14 +454,7 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute(builder: (context) => const OrdersScreen()),
-                                          );
-                                        },
-                                        child: _analyticsCard(Image.asset('lib/assets/owner/history.png', width: 24, height: 24, color: Color(0xFF5A35E3)), '${_orderStats['total']}', 'Orders', Color(0xFF5A35E3)),
-                                      ),
+                                      child: _analyticsCard(Image.asset('lib/assets/owner/history.png', width: 24, height: 24, color: Color(0xFF5A35E3)), '${_orderStats['total']}', 'Orders', Color(0xFF5A35E3)),
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
@@ -487,9 +480,19 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
                         child: Column(
                           children: [
-                         
                             Row(
                               children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (context) => const OrdersScreen()),
+                                      );
+                                    },
+                                    child: _actionCard(Image.asset('lib/assets/owner/history.png', width: 28, height: 28, color: Color(0xFF5A35E3)), 'Orders', Color(0xFF5A35E3)),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
                                 Expanded(
                                   child: GestureDetector(
                                     onTap: () {
@@ -498,6 +501,21 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                                       );
                                     },
                                     child: _actionCard(Image.asset('lib/assets/owner/promos.png', width: 28, height: 28, color: Colors.deepPurple), 'Promos', Colors.deepPurple),
+                                    ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(builder: (context) => const OwnerFeedbackScreen()),
+                                      );
+                                    },
+                                    child: _actionCard(Image.asset('lib/assets/owner/reviews.png', width: 28, height: 28, color: Colors.deepPurple), 'Reviews', Colors.deepPurple),
                                     ),
                                 ),
                                 const SizedBox(width: 12),
@@ -516,17 +534,6 @@ class _OwnerHomeScreenState extends State<OwnerHomeScreen> {
                             const SizedBox(height: 16),
                             Row(
                               children: [
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(builder: (context) => const OwnerFeedbackScreen()),
-                                      );
-                                    },
-                                    child: _actionCard(Image.asset('lib/assets/owner/reviews.png', width: 28, height: 28, color: Colors.deepPurple), 'Reviews', Colors.deepPurple),
-                                    ),
-                                ),
-                                const SizedBox(width: 12),
                                 Expanded(
                                   child: GestureDetector(
                                     onTap: () async {

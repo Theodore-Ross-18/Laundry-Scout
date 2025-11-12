@@ -20,15 +20,8 @@ class _FilterModalState extends State<FilterModal> {
   List<Map<String, dynamic>> _ratings = [];
   bool _isLoadingRatings = true;
   
-  final List<String> _services = [
-    'Drop Off',
-    'Wash & Fold',
-    'Delivery',
-    'Pick Up',
-    'Self Service',
-    'Dry Clean',
-    'Ironing',
-  ];
+  List<String> _availableServices = [];
+  bool _isLoadingServices = true;
 
   @override
   void initState() {
@@ -37,12 +30,37 @@ class _FilterModalState extends State<FilterModal> {
     
     // Initialize default filter values if not present
     _filters['selectedServices'] ??= <String>[];
-    _filters['useCurrentLocation'] ??= true;
-    _filters['customLocation'] ??= '';
     _filters['minimumRating'] ??= 0;
     
     // Load actual rating data
     _loadRatingData();
+    _loadServicesOffered();
+  }
+
+  Future<void> _loadServicesOffered() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('services_offered')
+          .not('services_offered', 'is', null);
+
+      Set<String> uniqueServices = {};
+      for (var shop in response) {
+        if (shop['services_offered'] != null) {
+          uniqueServices.addAll(List<String>.from(shop['services_offered']));
+        }
+      }
+
+      setState(() {
+        _availableServices = uniqueServices.toList();
+        _isLoadingServices = false;
+      });
+    } catch (e) {
+      print('Error loading services offered: $e');
+      setState(() {
+        _isLoadingServices = false;
+      });
+    }
   }
 
   Future<void> _loadRatingData() async {
@@ -53,6 +71,7 @@ class _FilterModalState extends State<FilterModal> {
       final response = await supabase
           .from('feedback')
           .select('rating')
+          .eq('feedback_type', 'user')
           .not('business_id', 'is', null);
 
       final feedback = List<Map<String, dynamic>>.from(response);
@@ -277,133 +296,17 @@ class _FilterModalState extends State<FilterModal> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Wrap(
-                      children: _services.map((service) => _buildServiceChip(service)).toList(),
-                    ),
-                    const SizedBox(height: 24),
-                    
-                    // Location Section
-                    const Text(
-                      'Location',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    
-                    // Current Location Option
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _filters['useCurrentLocation'] = true;
-                        });
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 20,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: _filters['useCurrentLocation'] 
-                                      ? const Color(0xFF5A35E3) 
-                                      : Colors.grey[400]!,
-                                  width: 2,
-                                ),
-                                color: _filters['useCurrentLocation'] 
-                                    ? const Color(0xFF5A35E3) 
-                                    : Colors.transparent,
-                              ),
-                              child: _filters['useCurrentLocation']
-                                  ? const Icon(
-                                      Icons.check,
-                                      size: 12,
-                                      color: Colors.white,
-                                    )
-                                  : null,
+                    _isLoadingServices
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20),
+                              child: CircularProgressIndicator(),
                             ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'Your Location',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    
-                    // Add Location Option
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _filters['useCurrentLocation'] = false;
-                        });
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 20,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: !_filters['useCurrentLocation'] 
-                                      ? const Color(0xFF5A35E3) 
-                                      : Colors.grey[400]!,
-                                  width: 2,
-                                ),
-                                color: !_filters['useCurrentLocation'] 
-                                    ? const Color(0xFF5A35E3) 
-                                    : Colors.transparent,
-                              ),
-                              child: !_filters['useCurrentLocation']
-                                  ? const Icon(
-                                      Icons.check,
-                                      size: 12,
-                                      color: Colors.white,
-                                    )
-                                  : null,
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'Add location',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    
-                    if (!_filters['useCurrentLocation']) ...[
-                      const SizedBox(height: 8),
-                      TextField(
-                        onChanged: (value) {
-                          _filters['customLocation'] = value;
-                        },
-                        style: const TextStyle(color: Colors.black), // Make text black
-                        decoration: const InputDecoration(
-                          hintText: 'Enter location',
-                          hintStyle: TextStyle(color: Colors.grey),
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                      ),
-                    ],
-                    
-                    const SizedBox(height: 24),
+                          )
+                        : Wrap(
+                            children: _availableServices.map((service) => _buildServiceChip(service)).toList(),
+                          ),
+                    const SizedBox(height: 24),    
                     
                     // Minimum Rating Section
                     const Text(

@@ -9,7 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:universal_html/html.dart'
-    if (dart.library.io) '../../web_html_stub.dart' as html;
+    if (dart.library.io) '../../../web_html_stub.dart' as html;
 
 import 'package:laundry_scout/screens/home/Owner/owner_order_preview.dart';
 

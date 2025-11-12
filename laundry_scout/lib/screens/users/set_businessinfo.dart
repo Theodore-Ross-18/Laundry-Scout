@@ -48,7 +48,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
   final List<Map<String, String>> slides = [
     {
       'image': 'lib/assets/user/slides/first.png',
-      'title': 'Welcome, Business Owner!',
+      'title': 'Welcome, Laundry Shop Owner!',
       'description': 'Let\'s get your laundry business set up on Laundry Scout.',
     },
     {
@@ -469,7 +469,7 @@ class _SetBusinessInfoScreenState extends State<SetBusinessInfoScreen> {
                 ),
                 child: Text(
                   _currentPage == slides.length - 1 ? 'GET STARTED' : 'Next',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, decoration: TextDecoration.none),
                 ),
               ),
             ],

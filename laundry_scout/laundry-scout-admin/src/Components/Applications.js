@@ -5,9 +5,18 @@ import { FiSearch, FiSettings } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import AccessibleDropdown from "./AccessibleDropdown";
 import DateRangePicker from "./DateRangePicker";
+<<<<<<< HEAD
 import Sidebar from "./Sidebar";
 import Notifications from "./Notifications";
 
+=======
+
+// ✅ Sidebar + Notifications
+import Sidebar from "./Sidebar";
+import Notifications from "./Notifications";
+
+
+>>>>>>> f5615fdd80d0ceac6fb28889d0236b852237681d
 function Applications() {
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,8 +31,12 @@ function Applications() {
   const [reason, setReason] = useState("");
   const [specificReason, setSpecificReason] = useState("");
 
+<<<<<<< HEAD
+=======
+  // ✅ Date Filter States
+>>>>>>> f5615fdd80d0ceac6fb28889d0236b852237681d
   const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+   const [endDate, setEndDate] = useState("");
 
   const [selectedStatus, setSelectedStatus] = useState("All Transactions");
 
@@ -77,14 +90,27 @@ function Applications() {
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
 
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
     const { data, error } = await supabase
       .from("business_profiles")
       .select("*")
       .gte("created_at", start.toISOString())
       .lte("created_at", end.toISOString());
 
+<<<<<<< HEAD
     if (error) console.error(error.message);
     else setBusinesses(data || []);
+=======
+    if (error) {
+      console.error("Error filtering by date:", error.message);
+    } else {
+      setBusinesses(data || []);
+    }
+>>>>>>> f5615fdd80d0ceac6fb28889d0236b852237681d
   };
 
   const handleFilterStatus = async (status) => {
@@ -270,6 +296,10 @@ function Applications() {
                 )}
               </div>
 
+<<<<<<< HEAD
+=======
+              {/* ✅ Date & Transaction Filters */}
+>>>>>>> f5615fdd80d0ceac6fb28889d0236b852237681d
               <div className="applications-filter-right">
                 <DateRangePicker
                   startDate={startDate}

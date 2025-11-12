@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element_parameter
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../auth/login_screen.dart';
@@ -12,6 +14,7 @@ import 'notification_screen.dart';
 import 'business_detail_screen.dart';
 import 'promo_preview.dart';
 import 'all_promos_screen.dart';
+import 'all_services_related.dart';
 import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -30,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> _filteredLaundryShops = []; 
   Map<String, dynamic> _currentFilters = {};
   int _activeOrdersCount = 0; 
+  List<String> _allServices = []; 
 
   final TextEditingController _searchController = TextEditingController(); 
   final ScrollController _scrollController = ScrollController(); 
@@ -63,6 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
         loadLaundryShops: _loadLaundryShops,
         loadPromos: _loadPromos,
         activeOrdersCount: _activeOrdersCount,
+        allServices: _allServices,
         onNavigateToNotifications: (index) {
           setState(() {
             _selectedIndex = index;
@@ -76,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
     
     _loadActiveOrdersCount(); 
+    _loadAllServices();
   }
 
 
@@ -97,6 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
         loadLaundryShops: _loadLaundryShops,
         loadPromos: _loadPromos,
         activeOrdersCount: _activeOrdersCount,
+        allServices: _allServices,
         onNavigateToNotifications: (index) {
           setState(() {
             _selectedIndex = index;
@@ -166,6 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
             cover_photo_url, 
             does_delivery, 
             availability_status,
+            services_offered,
             feedback(rating)
           ''')
           .eq('status', 'approved')
@@ -201,6 +209,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
         _laundryShops = List<Map<String, dynamic>>.from(processedShops);
         _filteredLaundryShops = _laundryShops;
+        
+        // Debugging: Print services_offered for each shop
+        for (var shop in _laundryShops) {
+          print('Shop: ${shop['business_name']}, Services Offered: ${shop['services_offered']}');
+        }
         
         _updateHomeScreenBodyState(); 
       }
@@ -263,20 +276,15 @@ class _HomeScreenState extends State<HomeScreen> {
         bool hasService = false;
         
         for (String service in selectedServices) {
-          switch (service) {
-            case 'Delivery':
-              if (shop['does_delivery'] == true) hasService = true;
+          if (service == 'Delivery') {
+            if (shop['does_delivery'] == true) {
+              hasService = true;
               break;
-            case 'Drop Off':
-            case 'Pick Up':
-            case 'Wash & Fold':
-            case 'Self Service':
-            case 'Dry Clean':
-            case 'Ironing':
-              if (shopServices.contains(service)) hasService = true;
-              break;
+            }
+          } else if (shopServices.contains(service)) {
+            hasService = true;
+            break;
           }
-          if (hasService) break;
         }
         
         return hasService;
@@ -383,6 +391,66 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _loadAllServices() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('services_offered, all_available_services')
+          .eq('status', 'approved')
+          .not('services_offered', 'is', null);
+
+      if (mounted) {
+        Set<String> uniqueServices = {};
+        
+        for (var shop in response) {
+          // Extract services from services_offered JSONB array
+          if (shop['services_offered'] != null) {
+            try {
+              List<dynamic> services = List<dynamic>.from(shop['services_offered']);
+              uniqueServices.addAll(services.map((s) => s.toString()
+                  .replaceAll(RegExp(r'["\[\]]'), '') // Remove quotes and brackets
+                  .trim())
+                  .where((s) => s.isNotEmpty));
+            } catch (e) {
+              print('Error parsing services_offered: $e');
+            }
+          }
+          
+          // Extract services from all_available_services text field
+          if (shop['all_available_services'] != null) {
+            try {
+              String servicesText = shop['all_available_services'].toString();
+              // Split by common delimiters and clean up
+              List<String> services = servicesText
+                  .split(RegExp(r'[,|/]'))
+                  .map((s) => s.trim()
+                      .replaceAll(RegExp(r'["\[\]]'), '') // Remove quotes and brackets
+                      .trim())
+                  .where((s) => s.isNotEmpty)
+                  .toList();
+              uniqueServices.addAll(services);
+            } catch (e) {
+              print('Error parsing all_available_services: $e');
+            }
+          }
+        }
+        
+        setState(() {
+          _allServices = uniqueServices.toList()..sort();
+          _updateHomeScreenBodyState();
+        });
+      }
+    } catch (e) {
+      print('Error loading all services: $e');
+      if (mounted) {
+        setState(() {
+          _allServices = [];
+          _updateHomeScreenBodyState();
+        });
+      }
+    }
+  }
+
   void _onItemTapped(int index) {
     if (!mounted) return;
 
@@ -411,6 +479,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _loadLaundryShopsBackground(),
         _loadPromosBackground(),
         _loadActiveOrdersCountBackground(),
+        _loadAllServicesBackground(),
       ]);
       _notificationScreenKey.currentState?.refreshData();
     } catch (e) {
@@ -451,6 +520,7 @@ class _HomeScreenState extends State<HomeScreen> {
             cover_photo_url, 
             does_delivery, 
             availability_status,
+            services_offered,
             feedback(rating)
           ''')
           .eq('status', 'approved')
@@ -551,6 +621,64 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _loadAllServicesBackground() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('business_profiles')
+          .select('services_offered, all_available_services')
+          .eq('status', 'approved')
+          .not('services_offered', 'is', null);
+
+      if (mounted) {
+        Set<String> uniqueServices = {};
+        
+        for (var shop in response) {
+          // Extract services from services_offered JSONB array
+          if (shop['services_offered'] != null) {
+            try {
+              List<dynamic> services = List<dynamic>.from(shop['services_offered']);
+              uniqueServices.addAll(services.map((s) => s.toString()
+                  .replaceAll(RegExp(r'["\[\]]'), '') // Remove quotes and brackets
+                  .trim())
+                  .where((s) => s.isNotEmpty));
+            } catch (e) {
+              print('Background error parsing services_offered: $e');
+            }
+          }
+          
+          // Extract services from all_available_services text field
+          if (shop['all_available_services'] != null) {
+            try {
+              String servicesText = shop['all_available_services'].toString();
+              // Split by common delimiters and clean up
+              List<String> services = servicesText
+                  .split(RegExp(r'[,|/]'))
+                  .map((s) => s.trim()
+                      .replaceAll(RegExp(r'["\[\]]'), '') // Remove quotes and brackets
+                      .trim())
+                  .where((s) => s.isNotEmpty)
+                  .toList();
+              uniqueServices.addAll(services);
+            } catch (e) {
+              print('Background error parsing all_available_services: $e');
+            }
+          }
+        }
+        
+        setState(() {
+          _allServices = uniqueServices.toList()..sort();
+        });
+      }
+    } catch (e) {
+      print('Background all services load error: $e');
+      if (mounted) {
+        setState(() {
+          _allServices = [];
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     
@@ -569,6 +697,7 @@ class _HomeScreenState extends State<HomeScreen> {
         loadLaundryShops: _loadLaundryShops,
         loadPromos: _loadPromos,
         activeOrdersCount: _activeOrdersCount,
+        allServices: _allServices,
         onNavigateToNotifications: (index) {
           setState(() {
             _selectedIndex = index;
@@ -927,6 +1056,7 @@ class HomeScreenBody extends StatelessWidget {
   final Future<void> Function() loadLaundryShops;
   final Future<void> Function() loadPromos;
   final int activeOrdersCount;
+  final List<String> allServices;
   final Function(int) onNavigateToNotifications; 
 
   const HomeScreenBody({
@@ -945,6 +1075,7 @@ class HomeScreenBody extends StatelessWidget {
     required this.loadLaundryShops,
     required this.loadPromos,
     required this.activeOrdersCount,
+    required this.allServices,
     required this.onNavigateToNotifications, 
   });
 
@@ -1025,7 +1156,10 @@ class HomeScreenBody extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF5A35E3), 
+                  image: DecorationImage(
+                    image: AssetImage('lib/assets/bg.png'),
+                    fit: BoxFit.cover,
+                  ),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(30),
                     bottomRight: Radius.circular(30),
@@ -1111,14 +1245,44 @@ class HomeScreenBody extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         GestureDetector(
-                          onTap: showFilterModal,
+                          onTap: () {
+                            onNavigateToNotifications(4); // Assuming 4 is the index for active orders
+                          },
                           child: Container(
                             padding: const EdgeInsets.all(12.0),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(18),
+                              borderRadius: BorderRadius.circular(15),
                             ),
-                            child: Image.asset('lib/assets/icons/filter.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
+                            child: Stack(
+                              children: [
+                                Image.asset('lib/assets/orders/orders.png', width: 24, height: 24, color: Color(0xFF5A35E3)),
+                                if (activeOrdersCount >= 0)
+                                  Positioned(
+                                    right: 0,
+                                    top: 0,
+                                    child: Container(
+                                      padding: EdgeInsets.all(2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      constraints: BoxConstraints(
+                                        minWidth: 12,
+                                        minHeight: 12,
+                                      ),
+                                      child: Text(
+                                        '$activeOrdersCount',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 8,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -1128,46 +1292,47 @@ class HomeScreenBody extends StatelessWidget {
               ),
               const SizedBox(height: 20),
             
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    // Pick Up Animation
-                    _AnimatedServiceIcon(
-                      icon: Image.asset('lib/assets/orders/pickup.png', width: 50, height: 50),
-                      label: '',
-                      animationType: 'bounce',
-                      color: const Color(0xFF5A35E3),
-                      onTap: () {
-                        // Handle tap
-                      },
-                    ),
-                    // Active Orders Animation
-                    _AnimatedServiceIcon(
-                      icon: Image.asset('lib/assets/orders/orders.png', width: 44, height: 44),
-                      label: '$activeOrdersCount Active Orders',
-                      animationType: '',
-                      color: Colors.black,
-                      count: activeOrdersCount,
-                      onTap: () {
-                        onNavigateToNotifications(4);
-                      },
-                    ),
-                    
-                    _AnimatedServiceIcon(
-                      icon: Image.asset('lib/assets/orders/delivery.png', width: 60, height: 60),
-                      label: '',
-                      animationType: 'slide',
-                      color: Colors.black,
-                      onTap: () {
-                        // Handle tap
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
+              // Removed the three icon below the search bar
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              //   child: Row(
+              //     mainAxisAlignment: MainAxisAlignment.spaceAround,
+              //     children: [
+              //       // Pick Up Animation
+              //       _AnimatedServiceIcon(
+              //         icon: Image.asset('lib/assets/orders/pickup.png', width: 50, height: 50),
+              //         label: '',
+              //         animationType: 'bounce',
+              //         color: const Color(0xFF5A35E3),
+              //         onTap: () {
+              //           onNavigateToNotifications(4);
+              //         },
+              //       ),
+              //       // Active Orders Animation
+              //       _AnimatedServiceIcon(
+              //         icon: Image.asset('lib/assets/orders/orders.png', width: 44, height: 44),
+              //         label: '$activeOrdersCount Active Orders',
+              //         animationType: '',
+              //         color: Colors.black,
+              //         count: activeOrdersCount,
+              //         onTap: () {
+              //           onNavigateToNotifications(4);
+              //         },
+              //       ),
+              //       
+              //       _AnimatedServiceIcon(
+              //         icon: Image.asset('lib/assets/orders/delivery.png', width: 60, height: 60),
+              //         label: '',
+              //         animationType: 'slide',
+              //         color: Colors.black,
+              //         onTap: () {
+              //           onNavigateToNotifications(4);
+              //         },
+              //       ),
+              //     ],
+              //   ),
+              // ),
+              // const SizedBox(height: 20),
               // Promos Section
               if (!isSearching) // Use passed isSearching
                 Padding(
@@ -1303,6 +1468,84 @@ class HomeScreenBody extends StatelessWidget {
                       ),
               const SizedBox(height: 20),
               
+              // Services Section
+              if (!isSearching)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'All Services',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                              fontSize: 11,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (!isSearching)
+                const SizedBox(height: 10),
+              if (!isSearching)
+                SizedBox(
+                  height: 40, // Fixed height for the horizontal list
+                  child: allServices.isEmpty
+                      ? const Center(child: Text('No services available.', style: TextStyle(color: Colors.black)))
+                      : ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          itemCount: allServices.length,
+                          itemBuilder: (context, index) {
+                            final service = allServices[index];
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => AllServicesRelatedScreen(
+                                      serviceName: service,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                margin: EdgeInsets.only(right: 8.0, left: index == 0 ? 0 : 0),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF5A35E3).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: const Color(0xFF5A35E3).withOpacity(0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        service,
+                                        style: const TextStyle(
+                                          color: Color(0xFF5A35E3),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                     
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              
+              const SizedBox(height: 20),
+              
               if (!isSearching)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -1418,7 +1661,7 @@ class HomeScreenBody extends StatelessWidget {
                                 children: [
                                   LaundryShopImageCard(
                                     imageUrl: shop['cover_photo_url'],
-                                    height: 90,
+                                    height: 100,
                                     borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
                                   ),
                                   Padding(
@@ -1477,7 +1720,7 @@ class HomeScreenBody extends StatelessWidget {
                         },
                       ),
               ),
-              const SizedBox(height: 20), 
+              const SizedBox(height: 2), 
             ],
           ),
         ),

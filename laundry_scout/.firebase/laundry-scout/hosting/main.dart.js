@@ -86710,7 +86710,7 @@ h=A.a2("Select User",k,k,k,h==null?k:h.v3(B.e,32,B.E),B.an,k)
 s=l.NY("lib/assets/user/user.png",a,new A.arv(l,a),"Laundry Service User")
 r=j.w
 r=A.a2("Or",k,k,k,r==null?k:r.aO(A.ad(204,B.e.q()>>>16&255,B.e.q()>>>8&255,B.e.q()&255)),B.an,k)
-q=l.NY("lib/assets/user/owner.png",a,new A.arw(l,a),"Business Owner")
+q=l.NY("lib/assets/user/owner.png",a,new A.arw(l,a),"Laundry Shop Owner")
 p=j.Q
 o=p==null
 n=A.a2("Laundry Scout \xa9 2024",k,k,k,o?k:p.aO(A.ad(B.d.ao(178.5),B.e.q()>>>16&255,B.e.q()>>>8&255,B.e.q()&255)),B.an,k)
@@ -87654,7 +87654,7 @@ return new A.oO(A.a2(a,s,s,s,s,s,s),B.en,B.X,s)},
 $S:554}
 A.qJ.prototype={
 ac(){var s=A.aDO(),r=$.al(),q=t.N
-return new A.Gh(s,new A.bi(null,t.am),new A.cd(B.a5,r),new A.cd(B.a5,r),new A.cd(B.a5,r),new A.cd(B.a5,r),new A.cd(B.a5,r),new A.cd(B.a5,r),new A.cd(B.a5,r),new A.cd(B.a5,r),A.b([A.a5(["image","lib/assets/user/slides/first.png","title","Welcome, Business Owner!","description","Let's get your laundry business set up on Laundry Scout."],q,q),A.a5(["image","lib/assets/user/slides/second.png","title","Showcase Your Services","description","Reach new customers and manage your operations efficiently."],q,q),A.a5(["image","lib/assets/user/slides/third.png","title","Grow Your Business","description","Join our network and make laundry services more accessible."],q,q)],t.m0))}}
+return new A.Gh(s,new A.bi(null,t.am),new A.cd(B.a5,r),new A.cd(B.a5,r),new A.cd(B.a5,r),new A.cd(B.a5,r),new A.cd(B.a5,r),new A.cd(B.a5,r),new A.cd(B.a5,r),new A.cd(B.a5,r),A.b([A.a5(["image","lib/assets/user/slides/first.png","title","Welcome, Laundry Shop Owner!","description","Let's get your laundry business set up on Laundry Scout."],q,q),A.a5(["image","lib/assets/user/slides/second.png","title","Showcase Your Services","description","Reach new customers and manage your operations efficiently."],q,q),A.a5(["image","lib/assets/user/slides/third.png","title","Grow Your Business","description","Join our network and make laundry services more accessible."],q,q)],t.m0))}}
 A.Gh.prototype={
 ar(){var s,r,q=this
 q.aN()

@@ -20,7 +20,11 @@ function Users() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [toast, setToast] = useState(null);
+<<<<<<< HEAD
   const [confirmDelete, setConfirmDelete] = useState(null);
+=======
+  const [confirmDelete, setConfirmDelete] = useState(null); // For overlay confirmation
+>>>>>>> f5615fdd80d0ceac6fb28889d0236b852237681d
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Users");
@@ -84,6 +88,10 @@ function Users() {
     setTimeout(() => setToast(null), 2500);
   };
 
+<<<<<<< HEAD
+=======
+  // ✅ Search filter
+>>>>>>> f5615fdd80d0ceac6fb28889d0236b852237681d
   const filteredUsers = users.filter((u) => {
     const textMatch = [
       u.first_name,
@@ -226,12 +234,20 @@ function Users() {
               endDate={endDate}
               onChangeStart={setStartDate}
               onChangeEnd={setEndDate}
+<<<<<<< HEAD
+=======
+              onApply={() => {}}
+>>>>>>> f5615fdd80d0ceac6fb28889d0236b852237681d
             />
             <AccessibleDropdown
               buttonClassName="u-all-btn"
               selected={selectedStatus}
               options={["All Users", "Verified", "Not Verified"]}
               onSelect={setSelectedStatus}
+<<<<<<< HEAD
+=======
+              placeholder="All Transactions"
+>>>>>>> f5615fdd80d0ceac6fb28889d0236b852237681d
               align="right"
             />
           </div>

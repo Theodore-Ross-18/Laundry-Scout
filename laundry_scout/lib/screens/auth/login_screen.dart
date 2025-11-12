@@ -99,7 +99,7 @@ Future<void> _setIntroShownDate() async {
   List<Map<String, String>> get businessSlides => [
     {
       'image': 'lib/assets/user/slides/first.png',
-      'title': 'Welcome Back, Business Owner',
+      'title': 'Welcome Back, Laundry Shop Owner',
       'description': 'Manage your laundry business and connect with more customers!',
     },
     {
@@ -697,7 +697,7 @@ Future<void> _setIntroShownDate() async {
                   ),
                   child: Text(
                     _userType == 'business' ? 'START MANAGING' : 'GET STARTED',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, decoration: TextDecoration.none),
                   ),
                 )
               else
@@ -713,7 +713,7 @@ Future<void> _setIntroShownDate() async {
                   ),
                   child: const Text(
                     'Next',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic, decoration: TextDecoration.none),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, decoration: TextDecoration.none),
                   ),
                 ),
             ],

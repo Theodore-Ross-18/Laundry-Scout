@@ -1,4 +1,8 @@
+// ignore_for_file: unnecessary_null_comparison, unused_element
+
 import 'dart:ui';
+import 'package:flutter/scheduler.dart';
+import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -57,7 +61,6 @@ class _AnimatedLocationPinState extends State<AnimatedLocationPin>
 
   @override
   void dispose() {
-    _controller.dispose();
     super.dispose();
   }
 
@@ -226,10 +229,70 @@ class _LocationScreenState extends State<LocationScreen> {
   Position? _currentPosition;
   bool _isLoading = true;
   String _locationPermissionMessage = "Location permission not granted.";
+  String? _currentAddress;
   List<Map<String, dynamic>> _businessProfiles = [];
   final MapController _mapController = MapController();
   double _searchRadius = 1.0; 
-  MapType _selectedMapType = MapType.defaultMap; 
+  MapType _selectedMapType = MapType.defaultMap;
+  
+  // Address editing state variables
+  bool _isEditingAddress = false;
+  final TextEditingController _addressController = TextEditingController();
+  ScrollController? _scrollController; 
+
+  // Helper method to format long addresses for better display
+  String _formatAddressForDisplay(String? address) {
+    if (address == null || address.isEmpty) {
+      return 'No Current Address Yet\nTap Here';
+    }
+    
+    // If address is already short enough for 2 lines, return as is
+    if (address.length <= 50) {
+      return address;
+    }
+    
+    // For very long addresses, try to split at natural break points
+    // First try to split at comma
+    int commaIndex = address.indexOf(',');
+    if (commaIndex != -1 && commaIndex < address.length - 1) {
+      String firstPart = address.substring(0, commaIndex).trim();
+      String secondPart = address.substring(commaIndex + 1).trim();
+      
+      // If first part is still too long, truncate it
+      if (firstPart.length > 30) {
+        firstPart = '${firstPart.substring(0, 27)}...';
+      }
+      
+      // If second part is too long, truncate it
+      if (secondPart.length > 30) {
+        secondPart = '${secondPart.substring(0, 27)}...';
+      }
+      
+      return '$firstPart,\n$secondPart';
+    }
+    
+    // If no comma found, split at word boundary around 25 characters
+    int splitPoint = 25;
+    if (address.length > splitPoint) {
+      // Find the last space before splitPoint
+      int lastSpace = address.lastIndexOf(' ', splitPoint);
+      if (lastSpace != -1) {
+        String firstPart = address.substring(0, lastSpace).trim();
+        String secondPart = address.substring(lastSpace + 1).trim();
+        
+        // Truncate second part if too long
+        if (secondPart.length > 25) {
+          secondPart = '${secondPart.substring(0, 22)}...';
+        }
+        
+        return '$firstPart\n$secondPart';
+      }
+    }
+    
+    // Fallback: just truncate and add ellipsis
+    return '${address.substring(0, 47)}...';
+  }
+
 
   void _onMapTypeChanged(MapType? newMapType) {
     if (newMapType != null) {
@@ -243,6 +306,13 @@ class _LocationScreenState extends State<LocationScreen> {
   void initState() {
     super.initState();
     _checkLocationPermission();
+  }
+
+  @override
+  void dispose() {
+    _addressController.dispose();
+    _scrollController?.dispose();
+    super.dispose();
   }
 
   Future<void> _checkLocationPermission() async {
@@ -281,18 +351,128 @@ class _LocationScreenState extends State<LocationScreen> {
       _locationPermissionMessage = "";
     });
     try {
+      final user = Supabase.instance.client.auth.currentUser;
+      String? fetchedAddressFromProfile;
+
+      if (user != null) {
+        try {
+          final response = await Supabase.instance.client
+              .from('user_profiles')
+              .select('current_address')
+              .eq('id', user.id)
+              .single();
+          if (response.isNotEmpty && response['current_address'] != null) {
+            fetchedAddressFromProfile = response['current_address'] as String;
+            setState(() {
+              _currentAddress = fetchedAddressFromProfile;
+            });
+            print('Fetched address from user profile: $_currentAddress');
+          }
+        } catch (e) {
+          print('Error fetching address from user profile: $e');
+        }
+      }
+
       Position position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.best);
       setState(() {
         _currentPosition = position;
       });
-      print('Current Location: Latitude: ${_currentPosition!.latitude}, Longitude: ${_currentPosition!.longitude}, Accuracy: ${position.accuracy}m');
-      _mapController.move(LatLng(_currentPosition!.latitude, _currentPosition!.longitude), 14.0); // Move map to current location and set zoom
+      print('Current Position: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}');
+
+      // Always update Supabase with the latest coordinates
+      if (user != null && _currentPosition != null) {
+        try {
+          await Supabase.instance.client.from('user_profiles').update({
+            'latitude': _currentPosition!.latitude,
+            'longitude': _currentPosition!.longitude,
+          }).eq('id', user.id);
+          print('Supabase user profile coordinates updated successfully.');
+        } catch (e) {
+          print('Error updating user profile coordinates: $e');
+        }
+      }
+
+      // If no address was fetched from profile, try geocoding
+      if (_currentAddress == null || _currentAddress!.isEmpty) {
+        try {
+          if (_currentPosition == null) {
+            print('Current position is null, cannot perform geocoding.');
+            setState(() {
+              _currentAddress = "No current address yet";
+            });
+          } else {
+            print('Geocoding coordinates: Latitude: ${_currentPosition?.latitude}, Longitude: ${_currentPosition?.longitude}');
+            List<geocoding.Placemark>? placemarks = await geocoding.placemarkFromCoordinates(
+                _currentPosition!.latitude,
+                _currentPosition!.longitude
+            );
+            print('Geocoding placemarks result: $placemarks');
+
+            if (placemarks != null && placemarks.isNotEmpty && placemarks[0] != null) {
+              geocoding.Placemark place = placemarks[0];
+              String address = "";
+
+              // Build address from available placemark fields
+              if (place.street != null && place.street!.isNotEmpty) {
+                address += place.street!;
+              }
+              if (place.locality != null && place.locality!.isNotEmpty) {
+                if (address.isNotEmpty) address += ", ";
+                address += place.locality!;
+              }
+              if (place.administrativeArea != null && place.administrativeArea!.isNotEmpty) {
+                if (address.isNotEmpty) address += ", ";
+                address += place.administrativeArea!;
+              }
+
+              setState(() {
+                _currentAddress = address.isNotEmpty ? address : "Location detected but address unavailable";
+              });
+              print('Constructed Address: $_currentAddress');
+            } else {
+              setState(() {
+                _currentAddress = "No current address yet";
+              });
+              print('No placemarks found for the current position.');
+            }
+          }
+        } catch (e, stackTrace) {
+          print('Error during geocoding: $e\nStackTrace: $stackTrace');
+          setState(() {
+            _currentAddress = "Geocoding failed: $e";
+          });
+        }
+      }
+
+      // Update current_address in Supabase if it was determined
+      if (user != null && _currentAddress != null && _currentAddress!.isNotEmpty) {
+        try {
+          await Supabase.instance.client.from('user_profiles').update({
+            'current_address': _currentAddress,
+          }).eq('id', user.id);
+          print('Supabase user profile address updated successfully.');
+        } catch (e) {
+          print('Error updating user profile address: $e');
+        }
+      } else if (user == null) {
+        print('Supabase user is null, cannot update profile address.');
+      } else if (_currentAddress == null || _currentAddress!.isEmpty) {
+        print('Current address is null or empty, cannot update profile address.');
+      }
+
       await _fetchBusinessProfiles(radius: _searchRadius);
       setState(() {
         _isLoading = false;
       });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_currentPosition != null) {
+          _mapController.move(LatLng(_currentPosition!.latitude, _currentPosition!.longitude), 14.0);
+        }
+      });
     } catch (e) {
+      print('Error getting current location: $e');
       setState(() {
         _locationPermissionMessage = "Could not get your location: $e";
         _isLoading = false;
@@ -500,32 +680,17 @@ class _LocationScreenState extends State<LocationScreen> {
       return Scaffold(
         backgroundColor: const Color(0xFF5A35E3),
         appBar: AppBar(
-          title: const Text('Nearby Laundry Shops'),
-          backgroundColor: const Color(0xFF5A35E3),
+          title: const Text('Laundry Scout'),
+          centerTitle: true,
           foregroundColor: Colors.white,
-          actions: [
-            DropdownButton<MapType>(
-              value: _selectedMapType,
-              dropdownColor: const Color(0xFF5A35E3),
-              icon: const Icon(Icons.map, color: Colors.white),
-              onChanged: _onMapTypeChanged,
-              items: const [
-                DropdownMenuItem(
-                  value: MapType.defaultMap,
-                  child: Text('Default', style: TextStyle(color: Colors.white)),
-                ),
-                DropdownMenuItem(
-                  value: MapType.satellite,
-                  child: Text('Satellite', style: TextStyle(color: Colors.white)),
-                ),
-                DropdownMenuItem(
-                  value: MapType.terrain,
-                  child: Text('Terrain', style: TextStyle(color: Colors.white)),
-                ),
-              ],
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('lib/assets/bg.png'),
+                fit: BoxFit.cover,
+              ),
             ),
-            const SizedBox(width: 16),
-          ],
+          ),
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -537,99 +702,182 @@ class _LocationScreenState extends State<LocationScreen> {
                   )
                 : Stack(
                     children: [
-                      Column(
-                        children: [
-                          Expanded(
-                            child: FlutterMap(
-                                key: ValueKey(_currentPosition), 
-                                mapController: _mapController,
-                                options: MapOptions(
-                                  center: _currentPosition != null
-                                      ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
-                                      : LatLng(12.8797, 121.7740), 
-                                  zoom: _currentPosition != null ? 16.0 : 6.0, 
-                                  minZoom: 5.0,
-                                  maxZoom: 20.0,
-                                  initialZoom: _currentPosition != null ? 16.0 : 6.0,
-                                ),
-                                children: [
-                                  TileLayer(
-                                    urlTemplate: _getTileLayerUrlTemplate(_selectedMapType),
-                                    subdomains: const ['a', 'b', 'c'],
-                                  ),
-                                  if (_currentPosition != null)
-                                    CircleLayer(
-                                      circles: [
-                                        CircleMarker(
-                                          point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-                                          useRadiusInMeter: true, 
-                                          radius: _searchRadius * 1000,
-                                          color: const Color(0xFF5A35E3).withOpacity(0.2),
-                                          borderColor: const Color(0xFF5A35E3),
-                                          borderStrokeWidth: 2,
-                                        ),
-                                      ],
-                                    ),
-                                  MarkerLayer(
-                                    markers: [
-                                    
-                                      Marker(
-                                        width: 80.0,
-                                        height: 80.0,
-                                        point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-                                        child: const Icon(
-                                          Icons.my_location,
-                                          color: Colors.blue,
-                                          size: 40.0,
-                                        ),
-                                      ),
-                                   
-                                      ..._businessProfiles.map((business) {
-                                        final lat = business['latitude'];
-                                        final lng = business['longitude'];
-                                        if (lat != null && lng != null) {
-                                          return Marker(
-                                            width: 80.0,
-                                            height: 80.0,
-                                            point: LatLng(lat, lng),
-                                            child: GestureDetector(
-                                              onTap: () => _onTapBusinessMarker(business),
-                                              child: Column(
-                                                children: [
-                                                  Image.asset(
-                                                    'lib/assets/official.png',
-                                                    width: 40.0,
-                                                    height: 40.0,
-                                                  ),
-                                                  if (business['average_rating'] != null && business['average_rating'] > 0)
-                                                    Container(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.white,
-                                                        borderRadius: BorderRadius.circular(4),
-                                                      ),
-                                                      child: Text(
-                                                        business['average_rating'].toStringAsFixed(1),
-                                                        style: const TextStyle(
-                                                          color: Colors.black,
-                                                          fontSize: 10,
-                                                          fontWeight: FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                        return Marker(point: LatLng(0,0), child: Container()); // Placeholder for null lat/lng
-                                      }).toList(),
-                                    ],
+                      FlutterMap(
+                          key: ValueKey(_currentPosition),
+                          mapController: _mapController,
+                          options: MapOptions(
+                            center: _currentPosition != null
+                                ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+                                : LatLng(12.8797, 121.7740),
+                            zoom: _currentPosition != null ? 16.0 : 6.0,
+                            minZoom: 5.0,
+                            maxZoom: 20.0,
+                            initialZoom: _currentPosition != null ? 16.0 : 6.0,
+                          ),
+                          children: [
+                            TileLayer(
+                              urlTemplate: _getTileLayerUrlTemplate(_selectedMapType),
+                              subdomains: const ['a', 'b', 'c'],
+                            ),
+                            if (_currentPosition != null)
+                              CircleLayer(
+                                circles: [
+                                  CircleMarker(
+                                    point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                                    useRadiusInMeter: true,
+                                    radius: _searchRadius * 1000,
+                                    color: const Color(0xFF5A35E3).withOpacity(0.2),
+                                    borderColor: const Color(0xFF5A35E3),
+                                    borderStrokeWidth: 2,
                                   ),
                                 ],
                               ),
+                            MarkerLayer(
+                              markers: [
+                                if (_currentPosition != null)
+                                  Marker(
+                                    width: 80.0,
+                                    height: 80.0,
+                                    point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                                    child: const Icon(
+                                      Icons.my_location,
+                                      color: Colors.blue,
+                                      size: 40.0,
+                                    ),
+                                  ),
+                                ..._businessProfiles.map((business) {
+                                  final lat = business['latitude'];
+                                  final lng = business['longitude'];
+                                  if (lat != null && lng != null) {
+                                    return Marker(
+                                      width: 80.0,
+                                      height: 80.0,
+                                      point: LatLng(lat, lng),
+                                      child: GestureDetector(
+                                        onTap: () => _onTapBusinessMarker(business),
+                                        child: Column(
+                                          children: [
+                                            Image.asset(
+                                              'lib/assets/official.png',
+                                              width: 40.0,
+                                              height: 40.0,
+                                            ),
+                                            if (business['average_rating'] != null && business['average_rating'] > 0)
+                                            Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                  borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                  business['average_rating'].toStringAsFixed(1),
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.black,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return Marker(point: LatLng(0,0), child: Container()); // Placeholder for null lat/lng
+                                }).toList(),
+                              ],
+                            ),
+                          ],
+                        ),
+                      Positioned(
+                        top: 10,
+                        left: 10,
+                        right: 100, // Added to constrain width
+                        child: GestureDetector(
+                          onTap: _showAddressEditSheet,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(15),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  spreadRadius: 2,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.location_on, color: Color(0xFF5E35E3), size: 20),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Your Location',
+                                      style: TextStyle(
+                                        color: Colors.grey[700],
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.normal,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _formatAddressForDisplay(_currentAddress),
+                                        style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.left,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
+                        ),
+                      ),
+                      Positioned(
+                        top: 17,
+                        right: 1,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF5A35E3).withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: DropdownButton<MapType>(
+                            value: _selectedMapType,
+                            dropdownColor: const Color(0xFF5A35E3).withOpacity(0.9),
+                            icon: const Icon(Icons.map, color: Colors.white),
+                            onChanged: _onMapTypeChanged,
+                            items: const [
+                              DropdownMenuItem(
+                                value: MapType.defaultMap,
+                                child: Text('Default', style: TextStyle(color: Colors.white)),
+                              ),
+                              DropdownMenuItem(
+                                value: MapType.satellite,
+                                child: Text('Satellite', style: TextStyle(color: Colors.white)),
+                              ),
+                              DropdownMenuItem(
+                                value: MapType.terrain,
+                                child: Text('Terrain', style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                       Positioned(
                         bottom: 16,
@@ -653,17 +901,17 @@ class _LocationScreenState extends State<LocationScreen> {
                             children: [
                               Text(
                                 'Search Radius: ${_searchRadius.toStringAsFixed(1)} km',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF5A35E3),
+                                  color: Colors.black,
                                 ),
                               ),
                               Slider(
                                 value: _searchRadius,
-                                min: 1.0,
-                                max: 30.0,
-                                divisions: 9,
+                                min: 0.5,
+                                max: 10.0,
+                                divisions: 19,
                                 label: _searchRadius.toStringAsFixed(1),
                                 onChanged: _onSearchRadiusChanged,
                                 activeColor: const Color(0xFF5A35E3),
@@ -683,5 +931,204 @@ class _LocationScreenState extends State<LocationScreen> {
       _searchRadius = newRadius;
     });
     _fetchBusinessProfiles(radius: _searchRadius);
+  }
+
+  // Address editing methods
+  void _toggleAddressEdit() {
+    setState(() {
+      _isEditingAddress = !_isEditingAddress;
+      if (!_isEditingAddress) {
+        _currentAddress = _addressController.text;
+      }
+    });
+  }
+
+  Future<void> _saveAddressToSupabase() async {
+    final addressToSave = _addressController.text.trim();
+    if (addressToSave.isNotEmpty) {
+      try {
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user != null) {
+          await Supabase.instance.client
+              .from('user_profiles')
+              .update({'current_address': addressToSave})
+              .eq('id', user.id);
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Address updated successfully!')),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error updating address: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  void _showAddressEditSheet() {
+    _addressController.text = _currentAddress ?? '';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.4,
+          minChildSize: 0.3,
+          maxChildSize: 0.7,
+          builder: (BuildContext context, ScrollController scrollController) {
+            _scrollController = scrollController;
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: SingleChildScrollView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Edit Address',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF5A35E3),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildAddressEditField(),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              // Update the current address with the text from controller
+                              setState(() {
+                                _currentAddress = _addressController.text;
+                              });
+                              // Save to Supabase
+                              await _saveAddressToSupabase();
+                              // Close the bottom sheet
+                              if (mounted) {
+                                Navigator.of(context).pop();
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF5A35E3),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text('Save Address'),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildAddressEditField() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF5A35E3).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.location_on_outlined, color: Color(0xFF5A35E3), size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Current Address',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                TextField(
+                  controller: _addressController,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black,
+                  ),
+                  decoration: const InputDecoration(
+                    hintText: 'Enter your address',
+                    hintStyle: TextStyle(color: Colors.black),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                    isDense: true,
+                  ),
+                  maxLines: 3,
+                  autofocus: true,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
