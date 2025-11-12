@@ -3,7 +3,7 @@ import { supabase } from "../../Supabase/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import "../../Style/Profile.css";
 import Sidebar from "../Sidebar";
-import { FiUpload, FiSettings, FiTrash } from "react-icons/fi";
+import { FiUpload, FiSettings, FiTrash, FiUser } from "react-icons/fi";
 import Notifications from "../Notifications";
 
 function Profile({ adminUser }) {
@@ -123,9 +123,9 @@ function Profile({ adminUser }) {
               />
             </div>
             <div className="dropdown-wrapper">
-              <img
-                src={form.profile_img || "https://via.placeholder.com/32"}
-                alt="profile"
+              <FiUser
+                size={32}
+
                 className="profile-avatar"
                 onClick={() => navigate("/profile")}
               />
@@ -136,12 +136,15 @@ function Profile({ adminUser }) {
         {/* ✅ Profile Account Section */}
         <div className="profile-account">
           <div className="profile-left">
-            {form.profile_img && (
+            {form.profile_img ? (
               <img
                 src={form.profile_img}
                 alt="Avatar"
                 className="profile-main-avatar"
               />
+
+            ) : (
+              <FiUser size={100} className="profile-main-avatar" />
             )}
             <div className="profile-account-info">
               <div className="profile-account-name">

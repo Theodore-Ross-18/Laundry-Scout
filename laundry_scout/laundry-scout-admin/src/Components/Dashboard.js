@@ -9,6 +9,7 @@ import {
   FiGrid,
   FiMail,
 } from "react-icons/fi";
+import { FiUser } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import "../Style/Dashboard.css";
 import Notifications from "./Notifications";
@@ -186,9 +187,9 @@ function Dashboard() {
                 />
             </div>
             <div className="dropdown-wrapper">
-              <img
-                src="https://via.placeholder.com/32"
-                alt="profile"
+              <FiUser
+                size={32}
+
                 className="profile-avatar"
                 onClick={() => navigate("/profile")}
                 />
