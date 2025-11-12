@@ -131,7 +131,7 @@ function Feedback() {
           </div>
 
           {/* Notifications + Profile */}
-          <div className="applications-header-icons">
+          <div className="feedback-header-icons">
             <div className="notification-wrapper">
               <Notifications />
             </div>

@@ -17,6 +17,7 @@
 .feedback-main {
   flex: 1;
   padding: 20px;
+  background: var(--bg-color);
 }
 
 /* Header */
@@ -63,11 +64,12 @@
     align-items: center;
     gap: 16px;
     z-index: 1000;
+    color: var(--text-color);
 }
 .feedback-header-icons .icon {
   font-size: 20px;
   cursor: pointer;
-  color: #555;
+  color: var(--text-color);
 }
 
 /* .profile-avatar {
@@ -110,7 +112,7 @@
 
 /* Card */
 .feedback-card {
-  background: #fff;
+  background: var(--card-bg);
   border: 1px solid #e5e5e5;
   border-radius: 12px;
   padding: 18px 20px;
@@ -128,6 +130,19 @@
   align-items: center;
   gap: 12px;
 }
+
+.feedback-username {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted-text);
+}
+
+.feedback-date {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted-text);
+}
+
 .feedback-avatar {
   width: 48px;
   height: 48px;
@@ -139,10 +154,11 @@
   font-size: 15px;
   font-weight: 600;
   margin: 0;
+  color: var(--text-color);
 }
 
 .feedback-title {
-  color: #333333;
+  color: var(--text-color);
   margin: 0 0 5px 0;
   font-size: 1.5rem;
   font-weight: 700;
@@ -151,7 +167,7 @@
 .feedback-subtitle {
   margin-top: 0px;
   font-size: 0.9rem;
-  color: #888;
+  color: var(--muted-text);
 }
 
 /* Rating */
@@ -165,14 +181,14 @@
 .rating-value {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--muted-text); 
   margin-left: 4px;
 }
 
 /* Comment */
 .feedback-message {
   font-size: 14px;
-  color: #555;
+  color: var(--muted-text);
   margin-top: 10px;
   line-height: 1.5;
 }
@@ -185,7 +201,7 @@
   gap: 16px;
   width: 28.5%;
   box-sizing: border-box;
-  background: #ffffff; /* white container, as requested */
+  background: var(--card-bg); /* white container, as requested */
   border: 1px solid #e5eaf2; /* keep existing border color */
   border-radius: 15px;
   padding: 10px 14px;
@@ -194,7 +210,7 @@
 
 .feedback-tabs .tab-button {
   background: transparent;
-  color: #111;
+  color: var(--text-color);
   border: none;
   border-radius: 16px;
   padding: 10px 20px;
@@ -209,7 +225,7 @@
 
 .feedback-tabs .tab-button:not(.active):hover {
   background-color: rgba(111, 92, 246, 0.12);
-  color: #111;
+  color: var(--text-color);
 }
 
 .feedback-tabs .tab-button.active {

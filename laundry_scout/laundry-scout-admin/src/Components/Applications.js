@@ -1,102 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "../Supabase/supabaseClient";
 import "../Style/Applications.css";
-import { FiMenu, FiSearch, FiSettings } from "react-icons/fi";
+import { FiSearch, FiSettings } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-
-// ✅ Sidebar + Notifications
+import AccessibleDropdown from "./AccessibleDropdown";
+import DateRangePicker from "./DateRangePicker";
 import Sidebar from "./Sidebar";
 import Notifications from "./Notifications";
-
-// ✅ Filter Right Section (date dropdown + transaction dropdown)
-const ApplicationsFilterRight = ({
-  startDate,
-  endDate,
-  setStartDate,
-  setEndDate,
-  showDateDropdown,
-  setShowDateDropdown,
-  handleCustomDateFilter,
-  handleFilterStatus,
-  selectedStatus,
-}) => {
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-
-  return (
-    <div className="applications-filter-right">
-      {/* 📅 Date Button */}
-      <div className="date-dropdown-wrapper">
-        <button
-          className="a-date-btn"
-          onClick={() => setShowDateDropdown(!showDateDropdown)}
-        >
-          {startDate && endDate
-            ? `${new Date(startDate).toLocaleDateString()} - ${new Date(
-                endDate
-              ).toLocaleDateString()}`
-            : "Filter by Date Range"}
-        </button>
-
-        {/* ✅ Date Dropdown with calendar inputs */}
-        {showDateDropdown && (
-          <div className="date-dropdown">
-            <label>
-              Start Date:
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </label>
-            <label>
-              End Date:
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </label>
-            <button
-              className="apply-btn"
-              onClick={() => handleCustomDateFilter()}
-            >
-              Apply Filter
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* 💼 All Transactions Button with Dropdown */}
-      <div className="dropdown-container">
-        <button
-          className="a-all-btn"
-          onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-        >
-          {selectedStatus ? selectedStatus : "All Transactions"}
-        </button>
-
-        {showStatusDropdown && (
-          <div className="dropdown-menu">
-            {["All Transactions", "Pending", "Approved", "Rejected"].map(
-              (status) => (
-                <div
-                  key={status}
-                  className={selectedStatus === status ? "active" : ""}
-                  onClick={() => {
-                    handleFilterStatus(status);
-                    setShowStatusDropdown(false);
-                  }}
-                >
-                  {status}
-                </div>
-              )
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
 
 function Applications() {
   const [businesses, setBusinesses] = useState([]);
@@ -108,23 +18,18 @@ function Applications() {
   const [preview, setPreview] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Reject Modal
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [reason, setReason] = useState("");
   const [specificReason, setSpecificReason] = useState("");
 
-  // ✅ Date Filter States
-  const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // ✅ Transaction Filter
   const [selectedStatus, setSelectedStatus] = useState("All Transactions");
 
   const navigate = useNavigate();
   const searchRef = useRef(null);
 
-  // ✅ Supabase public file URL helper
   const getFileUrl = (path, bucketName = "businessdocuments") => {
     if (!path) return null;
     if (path.startsWith("http")) return path;
@@ -149,40 +54,39 @@ function Applications() {
     );
   };
 
-  // ✅ Fetch all businesses
+  // Fetch businesses
   useEffect(() => {
     fetchBusinesses();
   }, []);
 
   const fetchBusinesses = async () => {
     setLoading(true);
-    const { data } = await supabase.from("business_profiles").select("*");
+    const { data, error } = await supabase.from("business_profiles").select("*");
+    if (error) console.error(error.message);
     setBusinesses(data || []);
     setLoading(false);
   };
 
-  // ✅ Custom Date Filter
   const handleCustomDateFilter = async () => {
     if (!startDate || !endDate) {
       alert("Please select both start and end dates.");
       return;
     }
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
 
     const { data, error } = await supabase
       .from("business_profiles")
       .select("*")
-      .gte("created_at", new Date(startDate).toISOString())
-      .lte("created_at", new Date(endDate).toISOString());
+      .gte("created_at", start.toISOString())
+      .lte("created_at", end.toISOString());
 
-    if (error) {
-      console.error("Error filtering by date:", error.message);
-    } else {
-      setBusinesses(data || []);
-      setShowDateDropdown(false);
-    }
+    if (error) console.error(error.message);
+    else setBusinesses(data || []);
   };
 
-  // ✅ Filter by Status
   const handleFilterStatus = async (status) => {
     setSelectedStatus(status);
     if (status === "All Transactions") {
@@ -197,19 +101,16 @@ function Applications() {
     }
   };
 
-  // ✅ Search history outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setShowHistory(false);
-        setShowDateDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ✅ Save search history
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && search.trim() !== "") {
       if (!history.includes(search)) {
@@ -232,74 +133,94 @@ function Applications() {
       .some((f) => f.toLowerCase().includes(search.toLowerCase()))
   );
 
-  // ✅ Approve
+  // Approve applicant
   const handleApprove = async () => {
     if (!selectedBiz) return;
-    const { data } = await supabase
-      .from("business_profiles")
-      .update({ status: "approved" })
-      .eq("id", selectedBiz.id)
-      .select();
-    if (data?.length) {
-      setBusinesses((prev) =>
-        prev.map((b) =>
-          b.id === selectedBiz.id ? { ...b, status: "approved" } : b
-        )
-      );
-      setSelectedBiz(null);
+    try {
+      const { data, error } = await supabase
+        .from("business_profiles")
+        .update({ status: "approved", updated_at: new Date().toISOString() })
+        .eq("id", selectedBiz.id)
+        .select("*");
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setBusinesses((prev) =>
+          prev.map((b) =>
+            b.id === selectedBiz.id ? { ...b, status: "approved" } : b
+          )
+        );
+        setSelectedBiz(null);
+        alert("Applicant approved successfully!");
+      }
+    } catch (err) {
+      console.error("Error approving applicant:", err);
+      alert("Failed to approve applicant. Please try again.");
     }
   };
 
-  // ✅ Reject
+  // ✅ Reject applicant
   const handleReject = async () => {
     if (!selectedBiz) return;
-    await supabase
-      .from("business_profiles")
-      .update({
-        status: "rejected",
-        rejection_reason: reason,
-        rejection_notes: specificReason,
-      })
-      .eq("id", selectedBiz.id);
+    if (!reason) {
+      alert("Please select a reason for rejection.");
+      return;
+    }
 
-    setBusinesses((prev) =>
-      prev.map((b) =>
-        b.id === selectedBiz.id
-          ? { ...b, status: "rejected", rejection_reason: reason }
-          : b
-      )
-    );
-    setSelectedBiz(null);
-    setShowRejectModal(false);
-    setReason("");
-    setSpecificReason("");
+    console.log("Rejecting applicant ID:", selectedBiz.id);
+
+    try {
+      const { data, error } = await supabase
+        .from("business_profiles")
+        .update({
+          status: "rejected",
+          rejection_reason: reason,
+          rejection_notes: specificReason || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", selectedBiz.id)
+        .select("*");
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setBusinesses((prev) =>
+          prev.map((b) =>
+            b.id === selectedBiz.id
+              ? { ...b, status: "rejected", rejection_reason: reason, rejection_notes: specificReason }
+              : b
+          )
+        );
+        setSelectedBiz(null);
+        setShowRejectModal(false);
+        setReason("");
+        setSpecificReason("");
+        alert("Applicant rejected successfully.");
+      } else {
+        alert("No applicant updated. Please try again.");
+      }
+    } catch (err) {
+      console.error("Error rejecting applicant:", err);
+      alert("Failed to reject applicant. Please try again.");
+    }
   };
 
   return (
     <div className="applications-root">
-      {/* ✅ Sidebar */}
       <Sidebar isOpen={sidebarOpen} activePage="applications" />
 
       <main className={`applications-main ${sidebarOpen ? "" : "expanded"}`}>
-        {/* Header */}
         <header className="applications-header">
-          <div className="applications-header-left">
-            <div>
-              <h2 className="applications-title">Applications</h2>
-              <p className="applications-subtitle">
-                Review, Approve, or Reject submitted business applications
-              </p>
-            </div>
+          <div>
+            <h2 className="applications-title">Applications</h2>
+            <p className="applications-subtitle">
+              Review, Approve, or Reject submitted business applications
+            </p>
           </div>
           <div className="applications-header-icons">
-            <div className="notification-wrapper">
-              <Notifications />
-            </div>
-            <FiSettings
-              size={22}
-              className="settings-icon"
-              onClick={() => navigate("/settings")}
-            />
+            <Notifications />
+            <FiSettings size={22} className="settings-icon" onClick={() => navigate("/settings")} />
             <img
               src="https://via.placeholder.com/32"
               alt="profile"
@@ -309,7 +230,6 @@ function Applications() {
           </div>
         </header>
 
-        {/* ✅ Table or Review panel */}
         {!selectedBiz ? (
           <>
             {/* Filters */}
@@ -319,7 +239,6 @@ function Applications() {
                 <span className="count">{filteredBusinesses.length}</span>
               </div>
 
-              {/* Search */}
               <div className="applications-search-box" ref={searchRef}>
                 <FiSearch className="search-icon" />
                 <input
@@ -351,21 +270,32 @@ function Applications() {
                 )}
               </div>
 
-              {/* ✅ Date & Transaction Filters */}
-              <ApplicationsFilterRight
-                startDate={startDate}
-                endDate={endDate}
-                setStartDate={setStartDate}
-                setEndDate={setEndDate}
-                showDateDropdown={showDateDropdown}
-                setShowDateDropdown={setShowDateDropdown}
-                handleCustomDateFilter={handleCustomDateFilter}
-                handleFilterStatus={handleFilterStatus}
-                selectedStatus={selectedStatus}
-              />
+              <div className="applications-filter-right">
+                <DateRangePicker
+                  startDate={startDate}
+                  endDate={endDate}
+                  onChangeStart={setStartDate}
+                  onChangeEnd={setEndDate}
+                  onApply={handleCustomDateFilter}
+                  buttonClassName="a-date-btn"
+                  formatLabel={(s, e) =>
+                    s && e
+                      ? `${new Date(s).toLocaleDateString()} - ${new Date(e).toLocaleDateString()}`
+                      : "Filter by Date Range"
+                  }
+                  align="right"
+                />
+                <AccessibleDropdown
+                  buttonClassName="a-all-btn"
+                  selected={selectedStatus}
+                  options={["All Transactions", "Pending", "Approved", "Rejected"]}
+                  onSelect={handleFilterStatus}
+                  placeholder="All Transactions"
+                  align="right"
+                />
+              </div>
             </div>
 
-            {/* Table */}
             <div className="applications-table-wrapper">
               <h3 className="applications-table-title">Applicants For Review</h3>
               <table className="applications-table">
@@ -381,38 +311,20 @@ function Applications() {
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr>
-                      <td colSpan="6">Loading...</td>
-                    </tr>
+                    <tr><td colSpan="6">Loading...</td></tr>
                   ) : filteredBusinesses.length > 0 ? (
                     filteredBusinesses.map((biz) => (
                       <tr key={biz.id}>
-                        <td>
-                          <button
-                            className="review-btn"
-                            onClick={() => setSelectedBiz(biz)}
-                          >
-                            Review
-                          </button>
-                        </td>
+                        <td><button className="review-btn" onClick={() => setSelectedBiz(biz)}>Review</button></td>
                         <td>{biz.business_name}</td>
-                        <td>
-                          {biz.owner_first_name} {biz.owner_last_name}
-                        </td>
+                        <td>{biz.owner_first_name} {biz.owner_last_name}</td>
                         <td>{biz.business_phone_number}</td>
-                        <td>
-                          {biz.created_at &&
-                            new Date(biz.created_at).toLocaleDateString("en-US")}
-                        </td>
-                        <td className={`status ${biz.status || "pending"}`}>
-                          {biz.status || "Pending"}
-                        </td>
+                        <td>{biz.created_at && new Date(biz.created_at).toLocaleDateString()}</td>
+                        <td className={`status ${biz.status || "pending"}`}>{biz.status || "Pending"}</td>
                       </tr>
                     ))
                   ) : (
-                    <tr>
-                      <td colSpan="6">No businesses found.</td>
-                    </tr>
+                    <tr><td colSpan="6">No businesses found.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -421,16 +333,9 @@ function Applications() {
         ) : (
           <div className="applications-review-panel">
             <h3>{selectedBiz.business_name} — Review</h3>
-            <p>
-              <strong>Owner:</strong> {selectedBiz.owner_first_name}{" "}
-              {selectedBiz.owner_last_name}
-            </p>
-            <p>
-              <strong>Phone:</strong> {selectedBiz.business_phone_number}
-            </p>
-            <p>
-              <strong>Address:</strong> {selectedBiz.business_address}
-            </p>
+            <p><strong>Owner:</strong> {selectedBiz.owner_first_name} {selectedBiz.owner_last_name}</p>
+            <p><strong>Phone:</strong> {selectedBiz.business_phone_number}</p>
+            <p><strong>Address:</strong> {selectedBiz.business_address}</p>
 
             <div className="review-docs">
               <div className="doc-box">
@@ -439,10 +344,7 @@ function Applications() {
               </div>
               <div className="doc-box">
                 <p>Business Certificate</p>
-                {renderDocumentImage(
-                  selectedBiz.business_certificate_url,
-                  "Certificate"
-                )}
+                {renderDocumentImage(selectedBiz.business_certificate_url, "Certificate")}
               </div>
               <div className="doc-box">
                 <p>Mayor’s Permit</p>
@@ -451,24 +353,14 @@ function Applications() {
             </div>
 
             <div className="review-actions">
-              <button className="approve-btn" onClick={handleApprove}>
-                Approve
-              </button>
-              <button
-                className="reject-btn"
-                onClick={() => setShowRejectModal(true)}
-              >
-                Reject
-              </button>
-              <button className="back-btn" onClick={() => setSelectedBiz(null)}>
-                Back
-              </button>
+              <button className="approve-btn" onClick={handleApprove}>Approve</button>
+              <button className="reject-btn" onClick={() => setShowRejectModal(true)}>Reject</button>
+              <button className="back-btn" onClick={() => setSelectedBiz(null)}>Back</button>
             </div>
           </div>
         )}
       </main>
 
-      {/* ✅ Image Preview */}
       {preview && (
         <div className="preview-overlay" onClick={() => setPreview(null)}>
           <div className="preview-content">
@@ -477,28 +369,16 @@ function Applications() {
         </div>
       )}
 
-      {/* ✅ Reject Modal */}
       {showRejectModal && (
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">
               <h3>Rejecting Applicant</h3>
-              <button
-                className="close-btn"
-                onClick={() => setShowRejectModal(false)}
-              >
-                ×
-              </button>
+              <button className="close-btn" onClick={() => setShowRejectModal(false)}>×</button>
             </div>
-
             <div className="modal-body">
               <h4>Reason for Rejection</h4>
-              {[
-                "Incomplete Documents",
-                "Invalid Documents",
-                "Duplicate Registration",
-                "Unclear Photo of Documentation",
-              ].map((r) => (
+              {["Incomplete Documents", "Invalid Documents", "Duplicate Registration", "Unclear Photo of Documentation"].map((r) => (
                 <label key={r}>
                   <input
                     type="radio"
@@ -518,11 +398,8 @@ function Applications() {
                 onChange={(e) => setSpecificReason(e.target.value)}
               />
             </div>
-
             <div className="modal-footer">
-              <button className="reject-confirm" onClick={handleReject}>
-                Reject
-              </button>
+              <button className="reject-confirm" onClick={handleReject}>Reject</button>
             </div>
           </div>
         </div>

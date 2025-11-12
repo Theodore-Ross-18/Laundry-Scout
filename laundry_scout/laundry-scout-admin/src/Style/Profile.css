@@ -121,6 +121,7 @@
     display: flex;
     align-items: center;
     gap: 15px;
+    color: var(--text-color);
 }
 
 .register-name{
